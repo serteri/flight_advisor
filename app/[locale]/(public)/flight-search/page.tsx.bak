@@ -1,0 +1,254 @@
+"use client";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { submitFlightSearch } from "@/app/actions/submit-search";
+import { useRouter } from "@/i18n/routing";
+import { useState } from "react";
+import { Loader2, Plane, ArrowRight, Calendar, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { useTranslations } from 'next-intl';
+
+interface SearchResult {
+    success: boolean;
+    price?: number;
+    currency?: string;
+    carrier?: string;
+    error?: string;
+}
+
+export default function FlightSearchPage() {
+    const router = useRouter();
+    const t = useTranslations('FlightSearch');
+    const [loading, setLoading] = useState(false);
+    const [tripType, setTripType] = useState<'oneWay' | 'roundTrip'>('roundTrip');
+    const [result, setResult] = useState<SearchResult | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    function validateForm(formData: FormData): boolean {
+        const newErrors: Record<string, string> = {};
+
+        const from = formData.get('from') as string;
+        const to = formData.get('to') as string;
+        const departureDate = formData.get('departureDate') as string;
+        const returnDate = formData.get('returnDate') as string;
+
+        if (!from || from.length < 3) {
+            newErrors.from = t('errors.originRequired');
+        }
+        if (!to || to.length < 3) {
+            newErrors.to = t('errors.destinationRequired');
+        }
+        if (!departureDate) {
+            newErrors.departureDate = t('errors.departureDateRequired');
+        } else {
+            const depDate = new Date(departureDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (depDate < today) {
+                newErrors.departureDate = t('errors.departureDatePast');
+            }
+        }
+        if (tripType === 'roundTrip' && !returnDate) {
+            newErrors.returnDate = t('errors.returnDateRequired');
+        }
+        if (returnDate && departureDate) {
+            if (new Date(returnDate) < new Date(departureDate)) {
+                newErrors.returnDate = t('errors.returnDateBeforeDeparture');
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    }
+
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+
+        if (!validateForm(formData)) {
+            return;
+        }
+
+        setLoading(true);
+        setResult(null);
+        setErrors({});
+
+        // Call Server Action
+        const result = await submitFlightSearch(formData);
+
+        setLoading(false);
+
+        if (result?.success) {
+            setResult({
+                success: true,
+                price: result.price,
+                currency: result.currency,
+                carrier: result.carrier,
+            });
+        } else {
+            setResult({
+                success: false,
+                error: result?.error || t('errors.generic'),
+            });
+        }
+    }
+
+    return (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100">
+                <h1 className="text-3xl font-bold mb-2 text-slate-900 flex items-center gap-2">
+                    <Plane className="text-blue-600" /> {t('title')}
+                </h1>
+                <p className="text-slate-500 mb-8">{t('subtitle')}</p>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Trip Type Toggle */}
+                    <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
+                        <button
+                            type="button"
+                            onClick={() => setTripType('oneWay')}
+                            className={`px-6 py-2 rounded-md font-medium transition-colors ${tripType === 'oneWay' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                        >
+                            {t('oneWay')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTripType('roundTrip')}
+                            className={`px-6 py-2 rounded-md font-medium transition-colors ${tripType === 'roundTrip' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                        >
+                            {t('roundTrip')}
+                        </button>
+                    </div>
+
+                    {/* Origin & Dest */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('from')}</label>
+                            <Input
+                                name="from"
+                                placeholder="IST, Istanbul"
+                                className={`uppercase h-12 text-lg ${errors.from ? 'border-red-500' : ''}`}
+                            />
+                            {errors.from && (
+                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} /> {errors.from}
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('to')}</label>
+                            <Input
+                                name="to"
+                                placeholder="LHR, London"
+                                className={`uppercase h-12 text-lg ${errors.to ? 'border-red-500' : ''}`}
+                            />
+                            {errors.to && (
+                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} /> {errors.to}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('departureDate')}</label>
+                            <Input
+                                name="departureDate"
+                                type="date"
+                                className={`h-12 ${errors.departureDate ? 'border-red-500' : ''}`}
+                            />
+                            {errors.departureDate && (
+                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} /> {errors.departureDate}
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">
+                                {t('returnDate')} {tripType === 'oneWay' && <span className="text-slate-400 font-normal">({t('optional')})</span>}
+                            </label>
+                            <Input
+                                name="returnDate"
+                                type="date"
+                                disabled={tripType === 'oneWay'}
+                                className={`h-12 ${errors.returnDate ? 'border-red-500' : ''}`}
+                            />
+                            {errors.returnDate && (
+                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                                    <AlertCircle size={14} /> {errors.returnDate}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Cabin & Pax */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('cabin')}</label>
+                            <select name="cabin" className="w-full h-12 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950">
+                                <option value="ECONOMY">{t('economy')}</option>
+                                <option value="BUSINESS">{t('business')}</option>
+                                <option value="FIRST">{t('firstClass')}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('adults')}</label>
+                            <Input name="adults" type="number" min="1" max="9" defaultValue="1" className="h-12" />
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold mb-2 block text-slate-700">{t('children')}</label>
+                            <Input name="children" type="number" min="0" max="9" defaultValue="0" className="h-12" />
+                        </div>
+                    </div>
+
+                    <div className="pt-4">
+                        <Button type="submit" className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700 font-bold shadow-lg shadow-blue-600/30 transition-transform active:scale-[0.98]" disabled={loading}>
+                            {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t('searching')}</> : t('searchButton')}
+                        </Button>
+                    </div>
+                </form>
+
+                {/* Search Result */}
+                {result && (
+                    <div className={`mt-8 p-6 rounded-xl border-2 ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                        {result.success ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle2 size={24} />
+                                    <h3 className="text-xl font-bold">{t('success')}</h3>
+                                </div>
+                                <div className="bg-white p-4 rounded-lg shadow-sm">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-slate-600">{t('currentPrice')}</span>
+                                        <span className="text-3xl font-bold text-blue-600">
+                                            {result.price?.toFixed(0)} {result.currency}
+                                        </span>
+                                    </div>
+                                    {result.carrier && (
+                                        <div className="text-sm text-slate-500">
+                                            {t('carrier')}: <span className="font-medium">{result.carrier}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-slate-700">{t('trackingStarted')}</p>
+                                <Button onClick={() => router.push('/dashboard')} className="w-full">
+                                    {t('viewDashboard')} <ArrowRight size={16} className="ml-2" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-red-700">
+                                    <AlertCircle size={24} />
+                                    <h3 className="text-xl font-bold">{t('error')}</h3>
+                                </div>
+                                <p className="text-red-700">{result.error}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

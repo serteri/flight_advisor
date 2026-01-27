@@ -1,0 +1,301 @@
+{
+    "Navbar": {
+        "home": "Startseite",
+        "search": "Flüge Suchen",
+        "features": "Funktionen",
+        "login": "Anmelden",
+        "logout": "Abmelden",
+        "dashboard": "Übersicht",
+        "getStarted": "Loslegen"
+    },
+    "HomePage": {
+        "hero": {
+            "title": "Ihr persönlicher",
+            "titleHighlight": "Flugpreis-Experte",
+            "subtitle": "Erleben Sie die Zukunft der Reiseplanung. Wir analysieren täglich Millionen von Flugpreisen, damit Sie zum perfekten Zeitpunkt buchen können.",
+            "ctaPrimary": "Jetzt Entdecken",
+            "ctaSecondary": "Mehr Erfahren"
+        },
+        "features": {
+            "title": "Warum FlightAdvisor?",
+            "subtitle": "Alles, was Sie brauchen, um die besten Flugangebote zu finden",
+            "smartAlerts": {
+                "title": "Intelligente Preisalarme",
+                "desc": "Legen Sie Ihren Wunschpreis fest und lassen Sie sich von unserer KI benachrichtigen, sobald er fällt."
+            },
+            "priceHistory": {
+                "title": "Preisverlauf",
+                "desc": "Sehen Sie sich historische Preistrends an, um die beste Reisezeit zu ermitteln."
+            },
+            "globalSearch": {
+                "title": "Globale Suche",
+                "desc": "Vergleichen Sie sofort Preise von Tausenden von Fluggesellschaften und Reisebüros."
+            },
+            "noFees": {
+                "title": "Keine versteckten Gebühren",
+                "desc": "Was Sie sehen, ist was Sie bezahlen. Wir glauben an völlige Transparenz."
+            },
+            "instantNotify": {
+                "title": "Sofortige Benachrichtigung",
+                "desc": "Erhalten Sie eine E-Mail oder SMS, sobald ein Angebot gefunden wird."
+            },
+            "trends": {
+                "title": "Reisetrends",
+                "desc": "Entdecken Sie beliebte Reiseziele und saisonale Preistrends."
+            }
+        },
+        "howItWorks": {
+            "title": "Wie es funktioniert",
+            "subtitle": "Einfache Schritte zu großen Einsparungen",
+            "step1": {
+                "title": "Suchen",
+                "desc": "Geben Sie Ihr Ziel und Ihre Daten ein."
+            },
+            "step2": {
+                "title": "Verfolgen",
+                "desc": "Aktivieren Sie die Verfolgung für Ihre gewünschte Route."
+            },
+            "step3": {
+                "title": "Sparen",
+                "desc": "Buchen Sie, wenn wir Sie über den Preisrückgang informieren."
+            }
+        }
+    },
+    "AboutPage": {
+        "title": "Über FlightAdvisor",
+        "subtitle": "Reisedaten für alle demokratisieren.",
+        "mission": {
+            "title": "Unsere Mission",
+            "content": "Wir bei FlightAdvisor glauben, dass Reisen für jeden zugänglich sein sollte. Unsere Mission ist es, fortschrittliche Analysen und KI zu nutzen, um Ihnen zu helfen, die absolut besten Flugpreise ohne Kopfschmerzen zu finden."
+        },
+        "story": {
+            "title": "Unsere Geschichte",
+            "content": "FlightAdvisor wurde 2024 gegründet und entstand aus der Frustration über undurchsichtige Flugpreise."
+        }
+    },
+    "Auth": {
+        "title": "Willkommen zurück",
+        "subtitle": "Melden Sie sich bei Ihrem Konto an",
+        "registerTitle": "Konto erstellen",
+        "registerSubtitle": "Beginnen Sie heute mit der Flugverfolgung",
+        "signIn": "Anmelden",
+        "register": "Registrieren",
+        "email": "E-Mail",
+        "password": "Passwort",
+        "name": "Name",
+        "surname": "Nachname",
+        "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+        "dontHaveAccount": "Haben Sie noch kein Konto?",
+        "signInWithGoogle": "Mit Google anmelden",
+        "signInWithGithub": "Mit GitHub anmelden",
+        "signInWithMicrosoft": "Mit Microsoft anmelden",
+        "backToHome": "Zurück zur Startseite"
+    },
+    "Dashboard": {
+        "title": "Übersicht",
+        "routes": "Routen",
+        "settings": "Einstellungen",
+        "home": "Startseite",
+        "trackNewRoute": "Neue Route verfolgen",
+        "noRoutes": "Sie verfolgen noch keine Flüge.",
+        "createAlert": "Ersten Alarm erstellen",
+        "trackedRoutes": "Verfolgte Routen",
+        "addNewRoute": "Neue Route hinzufügen",
+        "emptyState": "Beginnen Sie mit der Flugverfolgung, um sie hier zu sehen",
+        "pleaseSignIn": "Bitte anmelden",
+        "needLogin": "Sie müssen eingeloggt sein, um auf Ihr Flug-Dashboard zuzugreifen."
+    },
+    "FlightSearch": {
+        "title": "Flüge Suchen & Verfolgen",
+        "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
+        "heroTitle": "Wohin fliegen wir?",
+        "heroSubtitle": "Entdecken Sie die besten Flugangebote",
+        "oneWay": "Nur Hinflug",
+        "roundTrip": "Hin- und Rückflug",
+        "from": "Von",
+        "to": "Nach",
+        "placeholder": "Stadt oder Flughafen suchen...",
+        "departureDate": "Abflugdatum",
+        "returnDate": "Rückflugdatum",
+        "selectDate": "Datum auswählen",
+        "optional": "optional",
+        "cabin": "Kabinenklasse",
+        "economy": "Economy",
+        "business": "Business",
+        "firstClass": "First Class",
+        "adults": "Erwachsene",
+        "passengers": "Passagiere",
+        "children": "Kinder",
+        "infants": "Kleinkinder",
+        "adultLabel": "Erwachsener",
+        "childLabel": "Kind (2-11)",
+        "infantLabel": "Kleinkind (0-2)",
+        "totalPassengers": "Gesamt: {count} Passagiere",
+        "searching": "Flüge werden gesucht...",
+        "searchingDesc": "Wir durchsuchen 54+ Fluggesellschaften, um die besten Angebote zu finden",
+        "searchButton": "Flüge Finden",
+        "success": "Flug Gefunden!",
+        "error": "Suche Fehlgeschlagen",
+        "resultsFound": "Flüge gefunden",
+        "currentPrice": "Aktueller Preis",
+        "carrier": "Fluggesellschaft",
+        "score": "Bewertung",
+        "duration": "Dauer",
+        "stops": "Zwischenstopps",
+        "direct": "Direktflug",
+        "stop": "Stopp",
+        "airlines": "Fluggesellschaften",
+        "layover": "Aufenthalt",
+        "transferAt": "Umsteigen in",
+        "cheapest": "Günstigste",
+        "fastest": "Schnellste",
+        "bestScore": "Beste Bewertung",
+        "price": "Preis",
+        "trackFlight": "Diesen Flug Verfolgen",
+        "flightDetails": "Flugdetails",
+        "excellentDeal": "Ausgezeichnetes Angebot",
+        "goodDeal": "Gutes Angebot",
+        "fair": "Mittelmäßig",
+        "poor": "Schlecht",
+        "veryPoor": "Sehr Schlecht",
+        "noFlights": "Keine Flüge gefunden",
+        "fillAllFields": "Bitte füllen Sie alle Felder aus",
+        "trackingStarted": "Wir haben begonnen, diese Route für Sie zu verfolgen. Wir senden Benachrichtigungen, wenn wir Preissenkungen erkennen.",
+        "viewDashboard": "Dashboard Ansehen",
+        "flightTime": "Flugdauer",
+        "waitTime": "Aufenthalt",
+        "estimatedBaggage": "Geschätztes Gepäck",
+        "otherOptions": "Andere Preis-/Paketoptionen",
+        "select": "Auswählen",
+        "refundable": "Erstattungsfähig",
+        "noRefund": "Nicht erstattungsfähig",
+        "baggage": "Gepäck",
+        "lowBaggage": "Wenig Gepäck",
+        "whyBuy": "Warum Buchen?",
+        "watchOut": "Achtung",
+        "decision": "ENTSCHEIDUNG",
+        "baggageExtras": {
+            "noBaggage": "Kein Gepäck",
+            "excluded": "Ohne Gepäck (+~2500 TL)",
+            "restricted": "(Begrenzt)",
+            "generous": "(Großzügiges Gepäck)",
+            "warningTitle": "Achtung: Kein Gepäck enthalten!",
+            "warningDesc": "Sie müssen möglicherweise zusätzliches Gepäck bei der Fluggesellschaft kaufen. Durchschnittskosten: ~2.500 TL"
+        },
+        "hideDetails": "Details ausblenden",
+        "errors": {
+            "originRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
+            "destinationRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
+            "departureDateRequired": "Bitte wählen Sie ein Abflugdatum",
+            "departureDatePast": "Das Abflugdatum darf nicht in der Vergangenheit liegen",
+            "returnDateRequired": "Für Hin- und Rückflüge ist ein Rückflugdatum erforderlich",
+            "returnDateBeforeDeparture": "Das Rückflugdatum muss nach dem Abflugdatum liegen",
+            "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+        }
+    },
+    "priceOracle": {
+        "title": "Preisorakel",
+        "confidence": "Vertrauen",
+        "riskScore": "Risikobewertung",
+        "badges": {
+            "buyNow": "JETZT KAUFEN",
+            "buy": "KAUFEN",
+            "wait": "WARTEN",
+            "monitor": "BEOBACHTEN"
+        },
+        "trends": {
+            "rising": "STEIGENDER TREND",
+            "falling": "FALLENDER TREND",
+            "stable": "STABIL"
+        },
+        "signals": {
+            "last72Hours": "Letzte 72 Stunden: Preise können stündlich steigen.",
+            "lastWeek": "Letzte Woche! Preise könnten jederzeit sprunghaft ansteigen.",
+            "twoWeekRule": "14-Tage-Regel: Rabattierte Tarifklassen sind geschlossen.",
+            "idealTime": "Idealer Zeitpunkt: Sie befinden sich im sichersten Buchungsfenster.",
+            "tooEarly": "Zu früh: Wettbewerbsfähige Kampagnen haben möglicherweise noch nicht begonnen.",
+            "plentyOfTime": "4+ Monate übrig: Keine Eile, weiter beobachten.",
+            "lessThanMonth": "Weniger als ein Monat: Idealer Buchungszeitraum.",
+            "bottomPrice": "Tiefstpreis: Sie haben den Marktboden erreicht.",
+            "belowAverage": "Gelegenheit: {percent}% unter dem Marktdurchschnitt.",
+            "aboveAverage": "Teuer: {percent}% über dem Durchschnitt. Eine Korrektur könnte kommen.",
+            "peakSeason": "Hochsaison: Hohe globale Reisenachfrage (Sommer/Feiertage).",
+            "lowSeason": "Nebensaison: Nachfrage ist gering, Preise könnten fallen.",
+            "weekend": "Wochenendflug: Normalerweise teurer.",
+            "tuesdayWednesday": "Dienstag/Mittwoch: Normalerweise die günstigsten Tage."
+        }
+    },
+    "baggage": {
+        "generous": "Großzügiges Gepäck",
+        "standard": "Standardgepäck",
+        "limited": "Begrenztes Gepäck",
+        "cabinOnly": "Nur Handgepäck",
+        "noInfo": "Keine Info"
+    },
+    "flightConsultant": {
+        "headlines": {
+            "undisputedLeader": "🏆 UNBESTRITTENER LEADER",
+            "stayAway": "🚫 FINGER WEG",
+            "sensibleChoice": "⭐ VERNÜNFTIGE WAHL",
+            "thinkTwice": "⚠️ ÜBERLEGEN SIE ES SICH",
+            "notRecommended": "❌ NICHT EMPFOHLEN"
+        },
+        "identities": {
+            "travelHacker": {
+                "label": "😎 Travel Hacker",
+                "description": "Sie haben den besten Komfort zum besten Preis bekommen."
+            },
+            "transferVictim": {
+                "label": "😵 Transfer-Opfer",
+                "description": "Dieser Flug könnte Sie unterwegs altern lassen."
+            },
+            "timeIsValuable": {
+                "label": "🎩 Zeit ist Geld",
+                "description": "Sie haben extra bezahlt, um Zeit zu kaufen."
+            },
+            "logisticsExpert": {
+                "label": "📦 Logistik-Experte",
+                "description": "Sie tragen Ihr ganzes Haus mit - das macht am meisten Sinn."
+            },
+            "wasteOfMoney": {
+                "label": "💸 Geldverschwendung",
+                "description": "Es gibt keinen logischen Grund, dies zu kaufen."
+            },
+            "dealHunter": {
+                "label": "🦊 Schnäppchenjäger",
+                "description": "Sie haben die Qualität/Preis-Balance perfekt getroffen."
+            },
+            "standardPassenger": {
+                "label": "😐 Standardpassagier",
+                "description": "Weder gut noch schlecht, eine durchschnittliche Erfahrung."
+            }
+        },
+        "pros": {
+            "lowestPrice": "💰 Niedrigster Preis auf dem Markt.",
+            "lifesaverBaggage": "📦 Lebensrettendes Gepäck für Vielreisende.",
+            "lowStress": "😌 Niedriger Stress, komfortable Route.",
+            "fastestRoute": "⚡ Schnellste Route."
+        },
+        "cons": {
+            "highStress": "😰 Hoher Stress: Ermüdende Reise.",
+            "priceDifference": "💸 {amount} {currency} mehr als der günstigste.",
+            "tooManyTransfers": "🛑 Zu viele Umstiege: Könnte anstrengend sein."
+        },
+        "decisions": {
+            "mustBuy": "**Wir würden nicht zweimal überlegen.** Ein {identity} Paket, das sowohl Ihren Geldbeutel als auch Ihren Komfort schätzt. Nicht verpassen.",
+            "dontBuy": "**Wir würden das definitiv nicht kaufen.** Dieser Flug macht Sie zu einem \"{identity}\". Nicht wert für Ihr Geld oder Ihre Zeit.",
+            "risky": "Vorsicht. Dieser Flug mag günstig erscheinen, aber **Stressbewertung: {stress}/10**. Sie entscheiden, ob es die Erschöpfung wert ist.",
+            "goodWithTimeSaving": "Es gibt einen **{priceDiff} {currency}** Unterschied zum günstigsten, aber Sie sparen **{timeSaved} Stunden** Reisezeit. Lohnt sich, wenn Sie Komfort schätzen.",
+            "goodWithPrice": "Toller Preis{transferNote}. Budgetfreundlich, vernünftiger Kompromiss.",
+            "balanced": "Eine ausgewogene Option. Weder zu teuer noch zu lang. {description}"
+        },
+        "transferNote": ", aber {stops} Umstieg(e) könnten Sie ermüden",
+        "fareRestrictions": {
+            "noRefund": "Nicht erstattungsfähig",
+            "noChange": "Änderungen kostenpflichtig",
+            "noSeatSelection": "Sitzplatzwahl kostenpflichtig",
+            "noMeal": "Mahlzeiten kostenpflichtig",
+            "cabinBagOnly": "Nur Handgepäck"
+        }
+    }
+}

@@ -1,0 +1,97 @@
+
+// ... (EXISTING MODELS REMAIN THE SAME)
+
+// ----------------------------
+// 🛡️ TRAVEL GUARDIAN (SAAS ENGINE)
+// ----------------------------
+model MonitoredTrip {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Uçuş Bilgileri (PNR ile Amadeus'tan çekilir)
+  pnr             String   // Rezervasyon Kodu (Örn: QLWZE)
+  airlineCode     String   // TK
+  flightNumber    String   // 1984
+  departureDate   DateTime // Kalkış zamanı
+  arrivalDate     DateTime // Varış zamanı
+  origin          String   // BNE
+  destination     String   // IST
+
+  // 💰 Finansal Veriler (Arbitraj Hesabı İçin)
+  originalPrice   Float    // Kullanıcının ödediği: 1500.00
+  currency        String   @default("AUD")
+  ticketClass     String   // ECONOMY (Y), BUSINESS (J)
+  fareBasis       String?  // Biletin kural kodu (Esneklik kontrolü için)
+  isRefundable    Boolean  @default(false) // İadeli mi?
+
+  // 🎛️ Aktif Modüller (Kullanıcı hangilerini açtı?)
+  watchPrice      Boolean  @default(true)  // Fiyat düşerse haber ver (Arbitraj)
+  watchDelay      Boolean  @default(true)  // Rötar tazminatı kovala (Disruption)
+  watchUpgrade    Boolean  @default(false) // Business ucuzlarsa haber ver
+  watchSeat       Boolean  @default(false) // Yanım dolarsa haber ver
+  watchSchedule   Boolean  @default(true)  // Saat değişirse haber ver
+
+  // 🤖 Worker (Bot) Yönetimi
+  status          TripStatus @default(ACTIVE)
+  lastCheckedAt   DateTime?  // En son ne zaman taradık?
+  nextCheckAt     DateTime   // Bir sonraki tarama ne zaman? (Kuyruk buna bakar)
+  checkFrequency  Int        @default(60) // Dakika cinsinden tarama sıklığı
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alerts          GuardianAlert[] // Yakalanan fırsatlar
+
+  @@index([userId])
+  @@index([status, nextCheckAt]) // Worker'lar bu indexi kullanıp iş çekecek
+}
+
+enum TripStatus {
+  ACTIVE      // Takipte
+  COMPLETED   // Uçuş bitti
+  CANCELLED   // Kullanıcı iptal etti
+  ARCHIVED    // Eski veri
+}
+
+// ----------------------------
+// 🔔 GUARDIAN ALERTS (FIRSATLAR)
+// ----------------------------
+model GuardianAlert {
+  id              String   @id @default(cuid())
+  tripId          String
+  
+  type            AlertType // Ne bulduk?
+  severity        AlertSeverity // Ne kadar önemli?
+  
+  title           String   // Örn: "💰 600€ Tazminat Hakkı"
+  message         String   // Detaylı açıklama
+  
+  potentialValue  String?  // Örn: "600 EUR" veya "Save 300 AUD"
+  actionLabel     String?  // Örn: "Tazminat Başlat" veya "Upgrade Et"
+  
+  isRead          Boolean  @default(false)
+  isActioned      Boolean  @default(false) // Kullanıcı butona bastı mı?
+
+  createdAt       DateTime @default(now())
+
+  trip            MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+enum AlertType {
+  PRICE_DROP          // Arbitraj fırsatı
+  DISRUPTION_MONEY    // Rötar tazminatı
+  UPGRADE_OPPORTUNITY // Business ucuzladı
+  SEAT_ALERT          // Yan koltuk doldu / İyi koltuk boşaldı
+  SCHEDULE_CHANGE     // Saat değişikliği
+  AMENITY_COMPENSATION // Wi-Fi bozuktu vs.
+}
+
+enum AlertSeverity {
+  INFO      // Bilgilendirme
+  WARNING   // Dikkat (Saat değişimi vs.)
+  CRITICAL  // Acil (Uçuş iptali)
+  MONEY     // PARA KAZANDIRAN (Tazminat/Arbitraj) - Yeşil yanar
+}

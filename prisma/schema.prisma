@@ -1,0 +1,403 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 💳 ÖDEME SİSTEMİ (STRIPE)
+  stripeCustomerId       String?   @unique // Stripe'daki ID'si
+  stripeSubscriptionId   String?   @unique // Aktif abonelik ID'si
+  stripePriceId          String?   // Hangi paketi aldı?
+  stripeCurrentPeriodEnd DateTime? // Abonelik ne zaman bitiyor?
+  
+  isPremium              Boolean   @default(false) // Hızlı kontrol için
+
+  routes          Route[]
+  accounts        Account[]
+  sessions        Session[]
+  watchedFlights  WatchedFlight[]
+  monitors        Monitor[]
+  monitoredTrips  MonitoredTrip[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+model Route {
+  id        String   @id @default(cuid())
+  userId    String
+  originCode      String
+  destinationCode String
+  startDate DateTime
+  endDate   DateTime?
+  cabin     CabinClass   @default(ECONOMY)
+  active    Boolean  @default(true)
+  
+  // Anomaly Detection Cache
+  currentPrice     Float?
+  stats_mean       Float?
+  stats_stdDev     Float?
+  stats_lastUpdated DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priceSnapshots    PriceSnapshot[]
+  alertLogs    AlertLog[]
+
+  @@index([userId])
+  @@index([originCode, destinationCode])
+}
+
+model PriceSnapshot {
+  id          String   @id @default(cuid())
+  routeId     String
+  provider    String   @default("Skyscanner")
+  amount      Float
+  currency    String   @default("TRY")
+  timestamp   DateTime @default(now()) // alias for collectedAt
+
+  route       Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  // Flight Scoring & Details
+  score     Float?   // 1.0 - 10.0 Quality Score
+  explanation String?  // Reason for selection
+  duration    Int?     // Total minutes
+  stops       Int?     // Number of stops
+}
+
+model AlertLog {
+  id        String   @id @default(cuid())
+  routeId   String
+  message   String
+  score     Float?       // 1.0 - 10.0 Quality Score
+  oldPrice  Float?
+  newPrice  Float?
+  dropPercent Float?
+  isRead    Boolean  @default(false)
+  sentAt    DateTime @default(now()) // alias for createdAt
+
+  route     Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+}
+
+enum AirportType {
+  DOMESTIC
+  INTERNATIONAL
+  REGIONAL
+}
+
+model Airport {
+  id        String   @id @default(cuid())
+  cityId    String
+  code      String   // IATA code
+  name      String   // Airport name
+  isMajor   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@index([cityId])
+  @@index([code])
+}
+
+model City {
+  id        String    @id @default(cuid())
+  name      String
+  country   String
+  airports  Airport[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+}
+
+// ----------------------------
+// HISTORICAL SEARCH DATA
+// ----------------------------
+
+// 🔥 YENİ: ORACLE'IN HAFIZASI (Route Benchmark)
+model RouteStatistics {
+  id              String   @id @default(cuid())
+  originCode      String   // BNE
+  destinationCode String   // IST
+  month           Int      // 1-12 (Mevsimsellik için)
+  
+  // İstatistikler
+  minPrice        Float    // Bugüne kadar görülmüş en düşük fiyat
+  maxPrice        Float    // Bugüne kadar görülmüş en yüksek fiyat
+  avgPrice        Float    // Hareketli Ortalama (Moving Average)
+  
+  sampleSize      Int      // Kaç arama üzerinden hesaplandı? (Güven skoru için)
+  
+  lastUpdated     DateTime @updatedAt
+
+  // Aynı rota ve ay için tek kayıt olsun (BNE-IST-Haziran)
+  @@unique([originCode, destinationCode, month])
+  @@index([originCode, destinationCode])
+}
+
+// 🗂️ ARAMA GEÇMİŞİ (Kullanıcı için)
+model SearchHistory {
+  id              String   @id @default(cuid())
+  userId          String?  // Anonim de olabilir
+  originCode      String
+  destinationCode String
+  departureDate   DateTime
+  
+  // Sonuçların özetini buraya gömelim (Join yapmaya gerek kalmasın)
+  bestPrice       Float?   // O anki en ucuz
+  bestDuration    Int?     // O anki en hızlı
+  
+  createdAt       DateTime @default(now())
+
+  // Ham sonuçları (SearchResult) saklamak zorunda değiliz.
+}
+
+// ----------------------------
+// WATCHED FLIGHTS (User Tracking)
+// ----------------------------
+
+model WatchedFlight {
+  id            String   @id @default(cuid())
+  userId        String?  // Optional: if auth is available
+  flightNumber  String   // e.g., CZ382
+  airline       String   // e.g., China Southern
+  origin        String   // BNE
+  destination   String   // IST
+  departureDate DateTime // Flight departure date
+  initialPrice  Float    // Price when tracking started
+  currentPrice  Float?   // Latest checked price
+  priceHistory  Json?    // [{"date": "2026-01-21", "price": 23595}]
+  currency      String   @default("TRY")
+  status        String   @default("ACTIVE") // ACTIVE, EXPIRED, BOUGHT
+  lastChecked   DateTime?
+  
+  // Flight Details
+  totalDuration Int?     // Total minutes
+  stops         Int?     // Number of stops
+  segments      Json?    // Full segment details: [{from, to, carrier, flightNumber, departure, arrival, duration}]
+  layovers      Json?    // Layover info: [{airport, city, duration}]
+  baggageWeight Int?     // Baggage allowance in kg
+  cabin         String?  // ECONOMY, BUSINESS, etc.
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([origin, destination])
+  @@index([departureDate])
+  @@index([status])
+}
+
+// ----------------------------
+// TRAVEL GUARDIAN (Premium) - V1 Legacy
+// ----------------------------
+
+enum MonitorType {
+  UPGRADE_SNIPER
+  DISRUPTION_HUNTER
+  EMPTY_SEAT
+  SCHEDULE_GUARDIAN
+  AMENITY_WATCHDOG
+}
+
+enum MonitorStatus {
+  ACTIVE
+  COMPLETED
+  TRIGGERED
+}
+
+model Monitor {
+  id              String        @id @default(cuid())
+  userId          String
+  pnr             String?       // Booking Reference
+  flightNumber    String
+  date            DateTime
+  type            MonitorType
+  status          MonitorStatus @default(ACTIVE)
+  
+  // Specific Data
+  targetPrice     Float?        // For Upgrade Sniper
+  originalSchedule Json?        // For Schedule Guardian: { dep, arr, duration }
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims          CompensationClaim[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum ClaimType {
+  DELAY
+  CANCELLATION
+  AMENITY
+}
+
+enum ClaimStatus {
+  DRAFT
+  SENT
+  PAID
+  REJECTED
+}
+
+model CompensationClaim {
+  id              String      @id @default(cuid())
+  monitorId       String
+  type            ClaimType
+  amount          Float?
+  currency        String      @default("EUR")
+  status          ClaimStatus @default(DRAFT)
+  details         Json?       // detailed reason, flight context
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  monitor         Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId])
+}
+
+// ----------------------------
+// 🛡️ TRAVEL GUARDIAN V2 (SaaS ENGINE)
+// ----------------------------
+model MonitoredTrip {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Uçuş Bilgileri
+  pnr             String
+  airlineCode     String
+  flightNumber    String
+  departureDate   DateTime
+  arrivalDate     DateTime
+  origin          String
+  destination     String
+
+  // Finansal Veriler
+  originalPrice   Float
+  currency        String   @default("AUD")
+  ticketClass     String
+  fareBasis       String?
+  isRefundable    Boolean  @default(false)
+  
+  targetUpgradePrice Float?  // Max price willing to pay for upgrade
+
+  // Aktif Modüller
+  watchPrice      Boolean  @default(true)
+  watchDelay      Boolean  @default(true)
+  watchUpgrade    Boolean  @default(false)
+  watchSeat       Boolean  @default(false)
+  watchSchedule   Boolean  @default(true)
+
+  // Worker
+  status          TripStatus @default(ACTIVE)
+  lastCheckedAt   DateTime?
+  nextCheckAt     DateTime
+  checkFrequency  Int        @default(60)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alerts          GuardianAlert[]
+
+  @@index([userId])
+  @@index([status, nextCheckAt])
+}
+
+enum TripStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+model GuardianAlert {
+  id              String   @id @default(cuid())
+  tripId          String
+  
+  type            AlertType
+  severity        AlertSeverity
+  
+  title           String
+  message         String
+  
+  potentialValue  String?
+  actionLabel     String?
+  
+  isRead          Boolean  @default(false)
+  isActioned      Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+
+  trip            MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+enum AlertType {
+  PRICE_DROP
+  DISRUPTION_MONEY
+  UPGRADE_OPPORTUNITY
+  SEAT_ALERT
+  SCHEDULE_CHANGE
+  AMENITY_COMPENSATION
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+  MONEY
+}

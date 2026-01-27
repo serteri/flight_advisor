@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(tasklist:*)",
+      "Bash(powershell \"Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, ProcessName\")",
+      "Bash(cat:*)",
+      "Bash(powershell:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build)",
+      "Bash(timeout /t 5)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

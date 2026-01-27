@@ -1,0 +1,20 @@
+
+> flight_ai@0.1.0 lint
+> eslint
+
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\dashboard\page.tsx
+  49:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\flight-search\page.tsx
+  20:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\serte\Desktop\flight_ai\app\actions\add-route.ts
+  5:10  warning  'redirect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\serte\Desktop\flight_ai\app\actions\submit-search.ts
+  20:11  warning  '_adults' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  21:11  warning  '_children' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 5 problems (2 errors, 3 warnings)
+

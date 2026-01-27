@@ -1,0 +1,474 @@
+{
+    "Navbar": {
+        "home": "Home",
+        "search": "Search Flights",
+        "features": "Features",
+        "login": "Log in",
+        "logout": "Log out",
+        "dashboard": "Dashboard",
+        "getStarted": "Get Started"
+    },
+    "HomePage": {
+        "hero": {
+            "title": "Your Personal Flight",
+            "titleHighlight": "Pricing Expert",
+            "subtitle": "Experience the future of travel planning. We analyze millions of flight prices daily to ensure you book at the perfect moment.",
+            "ctaPrimary": "Start Exploring",
+            "ctaSecondary": "Learn More"
+        },
+        "features": {
+            "title": "Why Choose FlightAdvisor?",
+            "subtitle": "Everything you need to find the best flight deals",
+            "smartAlerts": {
+                "title": "Smart Price Alerts",
+                "desc": "Set your target price and let our AI notify you the moment it drops."
+            },
+            "priceHistory": {
+                "title": "Price History",
+                "desc": "View historical price trends to understand the best time to fly."
+            },
+            "globalSearch": {
+                "title": "Global Search",
+                "desc": "Compare prices across thousands of airlines and travel agencies instantly."
+            },
+            "noFees": {
+                "title": "No Hidden Fees",
+                "desc": "What you see is what you pay. We believe in complete transparency."
+            },
+            "instantNotify": {
+                "title": "Instant Notifications",
+                "desc": "Get notified via Email or SMS the second a deal is found."
+            },
+            "trends": {
+                "title": "Travel Trends",
+                "desc": "Discover popular destinations and seasonal pricing trends."
+            }
+        },
+        "howItWorks": {
+            "title": "How It Works",
+            "subtitle": "Simple steps to big savings",
+            "step1": {
+                "title": "Search",
+                "desc": "Enter your destination and dates."
+            },
+            "step2": {
+                "title": "Track",
+                "desc": "Enable tracking for your desired route."
+            },
+            "step3": {
+                "title": "Save",
+                "desc": "Book when we notify you of the price drop."
+            }
+        }
+    },
+    "AboutPage": {
+        "title": "About FlightAdvisor",
+        "subtitle": "Democratizing travel data for everyone.",
+        "mission": {
+            "title": "Our Mission",
+            "content": "At FlightAdvisor, we believe that travel should be accessible to everyone. Our mission is to use advanced analytics and AI to help you find the absolute best flight prices without the headache of constant searching."
+        },
+        "story": {
+            "title": "Our Story",
+            "content": "Started in 2024, FlightAdvisor was born out of frustration with opaque flight pricing."
+        }
+    },
+    "Auth": {
+        "title": "Welcome Back",
+        "subtitle": "Sign in to your account",
+        "registerTitle": "Create Account",
+        "registerSubtitle": "Start tracking flights today",
+        "signIn": "Sign In",
+        "register": "Register",
+        "email": "Email",
+        "password": "Password",
+        "name": "Name",
+        "surname": "Surname",
+        "alreadyHaveAccount": "Already have an account?",
+        "dontHaveAccount": "Don't have an account?",
+        "signInWithGoogle": "Sign in with Google",
+        "signInWithGithub": "Sign in with GitHub",
+        "signInWithMicrosoft": "Sign in with Microsoft",
+        "backToHome": "Back to Home"
+    },
+    "Dashboard": {
+        "title": "Dashboard",
+        "routes": "Routes",
+        "settings": "Settings",
+        "home": "Home",
+        "trackNewRoute": "Track New Route",
+        "noRoutes": "You are not monitoring any flights yet.",
+        "createAlert": "Create your first Alert",
+        "trackedRoutes": "Tracked Routes",
+        "addNewRoute": "Add New Route",
+        "emptyState": "Start tracking flights to see them here",
+        "pleaseSignIn": "Please Sign In",
+        "needLogin": "You need to be logged in to access your flight dashboard."
+    },
+    "RouteDetails": {
+        "backToDashboard": "Back to Dashboard",
+        "currentBestPrice": "Current Best Price",
+        "dealQuality": "Deal Quality",
+        "excellent": "Excellent Opportunity!",
+        "fair": "Fair Price",
+        "poor": "Wait for drop",
+        "calculating": "Calculating explanation...",
+        "duration": "Duration",
+        "nonstop": "Non-stop",
+        "stopResult": "stop",
+        "stopsResult": "stops",
+        "average30d": "30-Day Average",
+        "historicalData": "Based on historical data",
+        "recentHistory": "Recent Price History",
+        "noData": "No price data collected yet.",
+        "noInfo": "No info"
+    },
+    "FlightSearch": {
+        "title": "Search & Track Flights",
+        "subtitle": "Enter your flight details. We'll track the prices and alert you when it's time to buy.",
+        "heroTitle": "Where are we flying?",
+        "heroSubtitle": "Discover the best flight deals",
+        "oneWay": "One Way",
+        "roundTrip": "Round Trip",
+        "from": "From",
+        "to": "To",
+        "placeholder": "Search city or airport...",
+        "departureDate": "Departure Date",
+        "returnDate": "Return Date",
+        "selectDate": "Select a date",
+        "optional": "optional",
+        "cabin": "Cabin Class",
+        "economy": "Economy",
+        "business": "Business",
+        "firstClass": "First Class",
+        "adults": "Adults",
+        "passengers": "Passengers",
+        "children": "Children",
+        "infants": "Infants",
+        "adultLabel": "Adult",
+        "childLabel": "Child (2-11)",
+        "infantLabel": "Infant (0-2)",
+        "totalPassengers": "Total: {count} passengers",
+        "searching": "Searching Flights...",
+        "searchingDesc": "We are scanning 54+ airlines to find the best deals",
+        "searchButton": "Find Flights",
+        "success": "Flight Found!",
+        "error": "Search Failed",
+        "resultsFound": "Flights Found",
+        "currentPrice": "Current Price",
+        "carrier": "Airline",
+        "score": "Score",
+        "duration": "Duration",
+        "stops": "Stops",
+        "airlines": "Airlines",
+        "direct": "Direct",
+        "stop": "stop",
+        "layover": "layover",
+        "transferAt": "Transfer at",
+        "cheapest": "Cheapest",
+        "fastest": "Fastest",
+        "bestScore": "Best Score",
+        "price": "Price",
+        "trackFlight": "Track this Flight",
+        "flightDetails": "Flight Details",
+        "hideDetails": "Hide details",
+        "excellentDeal": "Excellent Deal",
+        "goodDeal": "Good Deal",
+        "fair": "Fair",
+        "poor": "Poor",
+        "veryPoor": "Very Poor",
+        "noFlights": "No flights found",
+        "fillAllFields": "Please fill in all fields",
+        "trackingStarted": "We've started tracking this route for you. We'll send alerts when we detect price drops.",
+        "viewDashboard": "View Dashboard",
+        "flightTime": "flight",
+        "waitTime": "layover",
+        "estimatedBaggage": "Est. Baggage",
+        "otherOptions": "Other Price/Package Options",
+        "select": "Select",
+        "refundable": "Refundable",
+        "noRefund": "No Refund",
+        "baggage": "Baggage",
+        "lowBaggage": "Low Baggage",
+        "whyBuy": "Why Buy?",
+        "watchOut": "Watch Out",
+        "decision": "DECISION",
+        "baggageExtras": {
+            "noBaggage": "No Baggage",
+            "excluded": "No Bag (Extra fees apply)",
+            "restricted": "(Restricted)",
+            "generous": "(Generous)",
+            "warningTitle": "Warning: No baggage included!",
+            "warningDesc": "You may need to purchase extra baggage from the airline. Avg cost: ~2,500 TRY"
+        },
+        "errors": {
+            "originRequired": "Please select a valid city or airport",
+            "destinationRequired": "Please select a valid city or airport",
+            "departureDateRequired": "Please select a departure date",
+            "departureDatePast": "Departure date cannot be in the past",
+            "returnDateRequired": "Return date is required for round trips",
+            "returnDateBeforeDeparture": "Return date must be after departure date",
+            "generic": "An error occurred. Please try again."
+        },
+        "layover": {
+            "risk": {
+                "critical": "CRITICAL - Risky Transfer!",
+                "high": "Risky - Be Fast",
+                "medium": "Medium - Relaxed but careful",
+                "low": "Relaxed - Enjoy your time"
+            },
+            "advice": {
+                "default_short": "Short layover. Rush to the gate immediately.",
+                "default_medium": "Reasonable time. Grab a coffee but locate your gate first.",
+                "default_long": "Plenty of time. Enjoy the lounge or restaurants.",
+                "DXB_short": "Dubai is massive. Run to your gate immediately!",
+                "DXB_medium": "Terminal 3 train might be needed. You have time but don't linger.",
+                "DXB_long": "Plenty of time in Dubai. Try Sleep Pods or Marhaba Lounge.",
+                "DOH_short": "Doha is compact but <60m is risky. Run to gate.",
+                "DOH_medium": "Time for a quick coffee at the Orchard, but check your gate distance.",
+                "DOH_long": "World's best airport. Check out 'Orchard' garden and lounges.",
+                "IST_short": "Istanbul Airport is huge. 20min walking distance possible. Hurry!",
+                "IST_medium": "Distances are long. Locate your gate first, then relax.",
+                "IST_long": "Turkish Airlines Business Lounge is legendary. Worth paying for entry.",
+                "SIN_short": "Changi is compact but security is tight. Skip Jewel.",
+                "SIN_medium": "Jewel is tempting but Security is at the gate. Don't risk it.",
+                "SIN_long": "Changi is world famous. Must see the Jewel waterfall and butterfly garden."
+            }
+        }
+    },
+    "priceOracle": {
+        "title": "Price Oracle",
+        "confidence": "Confidence",
+        "riskScore": "Risk Score",
+        "badges": {
+            "buyNow": "BUY NOW",
+            "buy": "BUY",
+            "wait": "WAIT",
+            "monitor": "MONITOR"
+        },
+        "trends": {
+            "rising": "RISING TREND",
+            "falling": "FALLING TREND",
+            "stable": "STABLE"
+        },
+        "signals": {
+            "last72Hours": "Last 72 Hours: Prices may increase hourly.",
+            "lastWeek": "Last Week! Prices could spike anytime.",
+            "twoWeekRule": "14-Day Rule: Discounted fare classes are closed.",
+            "idealTime": "Ideal Time: You're in the safest booking window.",
+            "tooEarly": "Too Early: Competitive campaigns may not have started yet.",
+            "plentyOfTime": "4+ Months Left: No rush, keep monitoring.",
+            "lessThanMonth": "Less Than a Month: Prime booking period.",
+            "bottomPrice": "Bottom Price: You've caught the market floor.",
+            "belowAverage": "Opportunity: {percent}% below market average.",
+            "aboveAverage": "Expensive: {percent}% above average. A correction may come.",
+            "peakSeason": "Peak Season: High global travel demand (Summer/Holidays).",
+            "lowSeason": "Low Season: Demand is low, prices may ease.",
+            "weekend": "Weekend Flight: Usually more expensive.",
+            "tuesdayWednesday": "Tuesday/Wednesday: Usually the cheapest days."
+        },
+        "oracle": {
+            "badge_rare": "💎 HIDDEN GEM",
+            "title_rare": "The Perfect Balance",
+            "desc_rare": "Top-tier airline, great price, and no wasted time. This is the unicorn of flights.",
+            "badge_smart": "🧠 SMART UPGRADE",
+            "title_smart": "Worth Every Penny",
+            "desc_smart": "Yes, it costs a bit more, but you save hours of travel time and fly in comfort. Treat yourself.",
+            "badge_hacker": "⚡ HACKER FARE",
+            "title_hacker": "For The Adventurous",
+            "desc_hacker": "Lowest price guaranteed, but requires self-transfer. Ideal if you travel light and flexible.",
+            "badge_bad": "🚫 POOR VALUE",
+            "title_bad": "Think Twice",
+            "desc_bad": "There are faster and cheaper options than this. We do not recommend this flight.",
+            "badge_standard": "⚖️ STANDARD",
+            "title_standard": "Decent Option",
+            "desc_standard": "Fair price for average duration.",
+            "pro_quality": "Top Rated Airline",
+            "pro_time": "Fastest Route",
+            "pro_comfort_win": "Huge Comfort Upgrade",
+            "pro_luxury": "Luxury Experience",
+            "pro_price_king": "Absolute Lowest Price",
+            "con_risk_high": "Self-Transfer Risk",
+            "con_bag_missing": "No Checked Bags",
+            "con_overpriced": "Overpriced",
+            "con_slow": "Too Many Layovers",
+            "badge_overpriced": "🛑 OVERPRICED",
+            "title_overpriced": "Poor Value",
+            "desc_overpriced": "This flight is significantly more expensive than the market average. Only book if necessary.",
+            "badge_best_pick": "🏆 BEST PICK",
+            "title_best_pick": "Most Balanced Choice",
+            "desc_best_pick": "Lowest risk of regret. Balanced price, comfort, and duration.",
+            "badge_hidden_gem": "💎 HIDDEN GEM",
+            "badge_acceptable": "✅ ACCEPTABLE",
+            "title_acceptable": "Solid Option",
+            "desc_acceptable": "Good standard flight, nothing fancy but gets you there safely.",
+            "badge_risky": "⚠️ RISKY",
+            "title_risky": "Trade-offs Required",
+            "desc_risky": "Likely has long layovers or self-transfer risks.",
+            "badge_avoid": "🛑 AVOID",
+            "title_avoid": "Poor Value",
+            "desc_avoid": "We generally recommend avoiding this unless budget is the only priority."
+        },
+        "verdicts": {
+            "rareFind": {
+                "title": "Rare Find",
+                "description": "Excellent price relative to the market with low risk. Hard to find this quality at this price."
+            },
+            "hacker": {
+                "title": "Hacker Deal",
+                "description": "Significantly cheaper than average but requires Self-Transfer. Book only if you are flexible and have no checked bags."
+            },
+            "overpriced": {
+                "title": "Overpriced",
+                "description": "Both expensive and risky. Not recommended unless necessary."
+            },
+            "premium": {
+                "title": "Premium Choice",
+                "description": "Higher price for maximum comfort and peace of mind. Recommended for families."
+            }
+        },
+        "pros": {
+            "excellentPrice": "Excellent Price",
+            "lowRisk": "Low Risk",
+            "dirtCheap": "Dirt Cheap",
+            "maxComfort": "Maximum Comfort",
+            "refundable": "Refundable Guarantee",
+            "priceDropping": "Price Trend: Falling"
+        },
+        "cons": {
+            "highRisk": "High Transfer Risk",
+            "noBag": "Baggage Not Included",
+            "badValue": "Poor Value for Money",
+            "priceRising": "Urgent: Price Rising!"
+        }
+    },
+    "baggage": {
+        "generous": "Generous Baggage",
+        "standard": "Standard Baggage",
+        "limited": "Limited Baggage",
+        "cabinOnly": "Cabin Bag Only",
+        "noInfo": "No Info"
+    },
+    "flightConsultant": {
+        "headlines": {
+            "undisputedLeader": "🏆 UNDISPUTED LEADER",
+            "stayAway": "🚫 STAY AWAY",
+            "sensibleChoice": "⭐ SENSIBLE CHOICE",
+            "thinkTwice": "⚠️ THINK TWICE",
+            "notRecommended": "❌ NOT RECOMMENDED"
+        },
+        "identities": {
+            "travelHacker": {
+                "label": "😎 Travel Hacker",
+                "description": "You got the best comfort at the best price."
+            },
+            "transferVictim": {
+                "label": "😵 Transfer Victim",
+                "description": "This flight might age you on the road."
+            },
+            "timeIsValuable": {
+                "label": "🎩 Time Is Valuable",
+                "description": "You paid extra to buy time."
+            },
+            "logisticsExpert": {
+                "label": "📦 Logistics Expert",
+                "description": "Carrying your whole house, this makes the most sense."
+            },
+            "wasteOfMoney": {
+                "label": "💸 Waste of Money",
+                "description": "There's no logical reason to buy this."
+            },
+            "dealHunter": {
+                "label": "🦊 Deal Hunter",
+                "description": "You nailed the quality/price balance perfectly."
+            },
+            "standardPassenger": {
+                "label": "😐 Standard Passenger",
+                "description": "Neither good nor bad, an average experience."
+            }
+        },
+        "pros": {
+            "lowestPrice": "💰 Lowest price in the market.",
+            "lifesaverBaggage": "📦 Lifesaver baggage for heavy packers.",
+            "lowStress": "😌 Low stress, comfortable route.",
+            "fastestRoute": "⚡ Fastest route."
+        },
+        "cons": {
+            "highStress": "😰 High stress: Tiring journey.",
+            "priceDifference": "💸 {amount} {currency} more than the cheapest.",
+            "tooManyTransfers": "🛑 Too many transfers: Could be exhausting."
+        },
+        "decisions": {
+            "mustBuy": "**We wouldn't think twice.** A {identity} package that values both your wallet and comfort. Don't miss it.",
+            "dontBuy": "**We definitely wouldn't buy this.** This flight makes you a \"{identity}\". Not worth your money or time.",
+            "risky": "Be careful. This flight may look cheap but **Stress Score: {stress}/10**. You decide if it's worth the exhaustion.",
+            "goodWithTimeSaving": "There's a **{priceDiff} {currency}** difference from the cheapest, but you save **{timeSaved} hours** on travel. Worth it if you value comfort.",
+            "goodWithPrice": "Great price{transferNote}. Budget-friendly, sensible trade-off.",
+            "balanced": "A balanced option. Neither too pricey nor too long. {description}"
+        },
+        "transferNote": " but {stops} transfer(s) might tire you",
+        "fareRestrictions": {
+            "noRefund": "Non-refundable",
+            "noChange": "Changes are paid",
+            "noSeatSelection": "Seat selection is paid",
+            "noMeal": "Meals are paid",
+            "cabinBagOnly": "Cabin bag only"
+        }
+    },
+    "badge_best_pick": "🏆 BEST PICK",
+    "badge_hidden_gem": "💎 HIDDEN GEM",
+    "badge_acceptable": "✅ ACCEPTABLE",
+    "badge_hacker": "⚡ HACKER FARE",
+    "badge_avoid": "🛑 AVOID",
+    "badge_standard": "⚖️ STANDARD",
+    "verdict_title_recommended": "Our Recommendation",
+    "verdict_title_consider": "Worth Considering",
+    "verdict_title_avoid": "We Would Avoid This",
+    "verdict_headline_best": "We'd book this without hesitation",
+    "verdict_headline_good": "Strong choice with minor trade-offs",
+    "verdict_headline_consider": "Decent option if times suit you",
+    "verdict_headline_hacker": "Cheap but risky (Experts Only)",
+    "verdict_headline_avoid": "We'd skip this one",
+    "verdict_reason_best_pick": "The winner. Best balance of quality and price in this search.",
+    "verdict_reason_value": "Great value. High quality airline for a fair price.",
+    "verdict_reason_acceptable": "Strong contender. Good balance of cost and comfort.",
+    "verdict_reason_hacker": "Warning: It's cheap, but requires compromises on comfort or transfers.",
+    "verdict_reason_avoid": "We would avoid this. The risk or fatigue is not worth the savings.",
+    "verdict_reason_standard": "An average option. Neither great nor terrible.",
+    "pro_baggage_included": "Checked baggage included",
+    "pro_meal_included": "Meal service included",
+    "pro_premium_airline": "Premium airline service",
+    "pro_fast_route": "Among the fastest options",
+    "pro_good_price": "Good price for this route",
+    "pro_nonstop": "Non-stop flight",
+    "pro_short_layover": "Comfortable layover time",
+    "con_self_transfer": "Self-transfer required",
+    "con_no_baggage": "No checked baggage included",
+    "con_no_meal": "No meal included on long flight",
+    "con_long_duration": "Significantly slower than average",
+    "con_expensive": "Price is higher than average",
+    "con_multiple_stops": "Multiple stops involved",
+    "con_lcc_longhaul": "Low-cost carrier on long route",
+    "warning_self_transfer": "Self-transfer: Missed connection is YOUR responsibility.",
+    "warning_layover_trap": "Travelers often underestimate this long layover.",
+    "warning_lcc_fatigue": "Low-cost long-haul is physically exhausting.",
+    "tradeoff_money_time": "Saves money, but costs significant time.",
+    "tradeoff_time_money": "Saves time, but costs extra money.",
+    "tradeoff_balanced": "A balanced choice between cost and comfort.",
+    "identity_smart_choice": "Smart Choice",
+    "identity_tired_saver": "Tired Saver",
+    "identity_comfort_seeker": "Comfort Seeker",
+    "identity_regret_risk": "Risk Taker",
+    "identity_standard": "Standard",
+    "identity_desc_smart": "Smart balance of price and quality.",
+    "identity_desc_tired": "Saving money, but at the cost of fatigue.",
+    "identity_desc_comfort": "Prioritizing comfort over price.",
+    "identity_desc_risk": "High risk of missed connections.",
+    "identity_desc_standard": "Standard flight option.",
+    "social_proof_self_transfer": "82% of travelers avoid self-transfers due to missed connection risk.",
+    "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
+    "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
+    "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
+    "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
+}
+}

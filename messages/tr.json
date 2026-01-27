@@ -1,0 +1,405 @@
+{
+    "Navbar": {
+        "home": "Ana Sayfa",
+        "search": "Uçuş Ara",
+        "features": "Özellikler",
+        "login": "Giriş Yap",
+        "logout": "Çıkış Yap",
+        "dashboard": "Panel",
+        "getStarted": "Başlayın"
+    },
+    "HomePage": {
+        "hero": {
+            "title": "Kişisel Uçuş Fiyat",
+            "titleHighlight": "Uzmanınız",
+            "subtitle": "Seyahat planlamanın geleceğini deneyimleyin. Her gün milyonlarca uçuş fiyatını analiz ediyor, tam zamanında rezervasyon yapmanızı sağlıyoruz.",
+            "ctaPrimary": "Keşfetmeye Başla",
+            "ctaSecondary": "Daha Fazla Bilgi"
+        },
+        "features": {
+            "title": "Neden FlightAdvisor?",
+            "subtitle": "En iyi uçuş fırsatlarını bulmanız için gereken her şey",
+            "smartAlerts": {
+                "title": "Akıllı Fiyat Alarmları",
+                "desc": "Hedef fiyatınızı belirleyin, yapay zekamız düştüğü an size haber versin."
+            },
+            "priceHistory": {
+                "title": "Fiyat Geçmişi",
+                "desc": "Uçmak için en iyi zamanı anlamak adına geçmiş fiyat trendlerini inceleyin."
+            },
+            "globalSearch": {
+                "title": "Küresel Arama",
+                "desc": "Binlerce havayolu ve seyahat acentesindeki fiyatları anında karşılaştırın."
+            },
+            "noFees": {
+                "title": "Gizli Ücret Yok",
+                "desc": "Ne görüyorsanız onu ödersiniz. Tam şeffaflığa inanıyoruz."
+            },
+            "instantNotify": {
+                "title": "Anında Bildirim",
+                "desc": "Bir fırsat bulunduğunda E-posta veya SMS ile anında haberdar olun."
+            },
+            "trends": {
+                "title": "Seyahat Trendleri",
+                "desc": "Popüler destinasyonları ve mevsimsel fiyatlandırma trendlerini keşfedin."
+            }
+        },
+        "howItWorks": {
+            "title": "Nasıl Çalışır?",
+            "subtitle": "Büyük tasarruf için basit adımlar",
+            "step1": {
+                "title": "Ara",
+                "desc": "Destinasyonunuzu ve tarihlerinizi girin."
+            },
+            "step2": {
+                "title": "Takip Et",
+                "desc": "İstediğiniz rota için takibi etkinleştirin."
+            },
+            "step3": {
+                "title": "Tasarruf Et",
+                "desc": "Fiyat düşüşünü size bildirdiğimizde rezervasyon yapın."
+            }
+        }
+    },
+    "AboutPage": {
+        "title": "FlightAdvisor Hakkında",
+        "subtitle": "Seyahat verilerini herkes için demokratikleştiriyoruz.",
+        "mission": {
+            "title": "Misyonumuz",
+            "content": "FlightAdvisor olarak seyahatin herkes için erişilebilir olması gerektiğine inanıyoruz. Misyonumuz, sürekli arama derdi olmadan en iyi uçuş fiyatlarını bulmanıza yardımcı olmak için gelişmiş analitik ve yapay zeka kullanmaktır."
+        },
+        "story": {
+            "title": "Hikayemiz",
+            "content": "2024 yılında başlayan FlightAdvisor, şeffaf olmayan uçuş fiyatlandırmasından duyulan hayal kırıklığının bir sonucu olarak doğdu."
+        }
+    },
+    "Auth": {
+        "title": "Tekrar Hoşgeldiniz",
+        "subtitle": "Hesabınıza giriş yapın",
+        "registerTitle": "Hesap Oluştur",
+        "registerSubtitle": "Uçuşları bugün takip etmeye başlayın",
+        "signIn": "Giriş Yap",
+        "register": "Kayıt Ol",
+        "email": "E-posta",
+        "password": "Şifre",
+        "name": "İsim",
+        "surname": "Soyisim",
+        "alreadyHaveAccount": "Zaten hesabınız var mı?",
+        "dontHaveAccount": "Hesabınız yok mu?",
+        "signInWithGoogle": "Google ile Giriş Yap",
+        "signInWithGithub": "GitHub ile Giriş Yap",
+        "signInWithMicrosoft": "Microsoft ile Giriş Yap",
+        "backToHome": "Ana Sayfaya Dön"
+    },
+    "Dashboard": {
+        "title": "Panel",
+        "routes": "Rotalar",
+        "settings": "Ayarlar",
+        "home": "Ana Sayfa",
+        "trackNewRoute": "Yeni Rota Takip Et",
+        "noRoutes": "Henüz uçuş takip etmiyorsunuz.",
+        "createAlert": "İlk Alarmı Oluştur",
+        "trackedRoutes": "Takip Edilen Rotalar",
+        "addNewRoute": "Yeni Rota Ekle",
+        "emptyState": "Burada görmek için uçuşları takip etmeye başlayın",
+        "pleaseSignIn": "Lütfen Giriş Yapın",
+        "needLogin": "Uçuş panelinize erişmek için giriş yapmanız gerekiyor."
+    },
+    "RouteDetails": {
+        "backToDashboard": "Panele Dön",
+        "currentBestPrice": "En İyi Güncel Fiyat",
+        "dealQuality": "Fırsat Kalitesi",
+        "excellent": "Mükemmel Fırsat!",
+        "fair": "Makul Fiyat",
+        "poor": "Düşmesini Bekle",
+        "calculating": "Açıklama hesaplanıyor...",
+        "duration": "Süre",
+        "nonstop": "Aktarmasız",
+        "stopResult": "aktarma",
+        "stopsResult": "aktarma",
+        "average30d": "30 Günlük Ortalama",
+        "historicalData": "Geçmiş verilere dayalı",
+        "recentHistory": "Son Fiyat Geçmişi",
+        "noData": "Henüz fiyat verisi toplanmadı.",
+        "noInfo": "Bilgi yok"
+    },
+    "FlightSearch": {
+        "title": "Uçuş Ara & Takip Et",
+        "subtitle": "Uçuş bilgilerinizi girin. Fiyatları takip edip en uygun zamanda satın almanız için sizi uyaracağız.",
+        "heroTitle": "Nereye Uçuyoruz?",
+        "heroSubtitle": "En iyi uçuş fırsatlarını keşfedin",
+        "oneWay": "Tek Yön",
+        "roundTrip": "Gidiş-Dönüş",
+        "from": "Nereden",
+        "to": "Nereye",
+        "placeholder": "Şehir veya havalimanı ara...",
+        "departureDate": "Gidiş Tarihi",
+        "returnDate": "Dönüş Tarihi",
+        "selectDate": "Tarih seçin",
+        "optional": "isteğe bağlı",
+        "cabin": "Kabin Sınıfı",
+        "economy": "Ekonomi",
+        "business": "Business",
+        "firstClass": "First Class",
+        "adults": "Yetişkin",
+        "passengers": "Yolcu Sayısı",
+        "children": "Çocuk",
+        "infants": "Bebek",
+        "adultLabel": "Yetişkin",
+        "childLabel": "Çocuk (2-11)",
+        "infantLabel": "Bebek (0-2)",
+        "totalPassengers": "Toplam: {count} yolcu",
+        "searching": "Uçuşlar Aranıyor...",
+        "searchingDesc": "En iyi fırsatları bulmak için 54+ havayolunu tarıyoruz",
+        "searchButton": "Uçuşları Bul",
+        "success": "Uçuş Bulundu!",
+        "error": "Arama Başarısız",
+        "resultsFound": "Uçuş Bulundu",
+        "currentPrice": "Güncel Fiyat",
+        "carrier": "Havayolu",
+        "score": "Skor",
+        "duration": "Süre",
+        "stops": "Aktarma",
+        "direct": "Direkt",
+        "stop": "Aktarma",
+        "airlines": "Havayolları",
+        "layover": "bekleme",
+        "transferAt": "Aktarma",
+        "cheapest": "En Ucuz",
+        "fastest": "En Hızlı",
+        "bestScore": "En İyi Skor",
+        "price": "Fiyat",
+        "trackFlight": "Bu Uçuşu Takip Et",
+        "flightDetails": "Uçuş Detayları",
+        "hideDetails": "Detayları gizle",
+        "excellentDeal": "Mükemmel Fırsat",
+        "goodDeal": "İyi Fırsat",
+        "fair": "Orta",
+        "poor": "Kötü",
+        "veryPoor": "Çok Kötü",
+        "noFlights": "Uçuş bulunamadı",
+        "fillAllFields": "Lütfen tüm alanları doldurun",
+        "trackingStarted": "Bu rotayı sizin için takip etmeye başladık. Fiyat düşüşlerini tespit ettiğimizde size haber vereceğiz.",
+        "viewDashboard": "Paneli Görüntüle",
+        "flightTime": "uçuş",
+        "waitTime": "bekleme",
+        "estimatedBaggage": "Tahmini Bagaj",
+        "otherOptions": "Diğer Fiyat/Paket Seçenekleri",
+        "select": "Seç",
+        "refundable": "İade",
+        "noRefund": "İade Yok",
+        "baggage": "Bagaj",
+        "lowBaggage": "Az Bagaj",
+        "whyBuy": "Neden Almalısın?",
+        "watchOut": "Dikkat Et",
+        "decision": "KARAR",
+        "baggageExtras": {
+            "noBaggage": "Bagajsız",
+            "excluded": "Bagaj Hariç (+~2500 TL)",
+            "restricted": "(Kısıtlı)",
+            "generous": "(Bol Bagaj)",
+            "warningTitle": "Dikkat: Bu bilet bagajsız!",
+            "warningDesc": "Eğer yolculuğunuzda bagaj gerekiyorsa, havayolundan ekstra bagaj satın almanız gerekecek. Ortalama maliyet: ~2.500 TL"
+        },
+        "errors": {
+            "originRequired": "Lütfen listeden geçerli bir şehir veya havalimanı seçin.",
+            "destinationRequired": "Lütfen listeden geçerli bir şehir veya havalimanı seçin.",
+            "departureDateRequired": "Lütfen gidiş tarihini seçin",
+            "departureDatePast": "Gidiş tarihi geçmişte olamaz",
+            "returnDateRequired": "Gidiş-dönüş biletler için dönüş tarihi gereklidir",
+            "returnDateBeforeDeparture": "Dönüş tarihi gidiş tarihinden sonra olmalıdır",
+            "generic": "Bir hata oluştu. Lütfen tekrar deneyin."
+        },
+        "layover": {
+            "risk": {
+                "critical": "KRİTİK - Riskli Aktarma!",
+                "high": "Riskli - Hızlı Olun",
+                "medium": "Orta - Rahat ama Dikkatli",
+                "low": "Rahat - Keyfine Bak"
+            },
+            "advice": {
+                "default_short": "Kısa aktarma. Pasaport/Güvenlik kontrolü varsa sıkışabilirsiniz. Koşar adım gidin.",
+                "default_medium": "Aktarma süresi makul. Bir kahve içip dinlenebilirsiniz ama kalkış kapısını önceden bulun.",
+                "default_long": "Bol zamanınız var. Lounge, restoran veya dinlenme alanlarını değerlendirebilirsiniz.",
+                "DXB_short": "Dubai çok büyük. Uçaktan iner inmez koşar adım kapıya!",
+                "DXB_medium": "Terminal 3 tren kullanmayı gerektirebilir. Vaktiniz var ama oyalanmayın.",
+                "DXB_long": "Dubai'de zaman bol. Ücretsiz 'Sleep Pod'ları veya Marhaba Lounge'ı deneyebilirsiniz.",
+                "DOH_short": "Doha kompakt ama 60dk altı çok riskli. Koşmalısın.",
+                "DOH_medium": "Orchard bahçesinde kısa bir kahve molası verebilirsin ama kapı mesafesini kontrol et.",
+                "DOH_long": "Doha dünyanın en iyi havalimanı. 'Orchard' tropik bahçesini mutlaka gör.",
+                "IST_short": "İstanbul Havalimanı çok büyük. Kapılar arası 20dk yürüyüş sürebilir. Acele et!",
+                "IST_medium": "Mesafeler uzun. Önce kapını bul, sonra dinlen.",
+                "IST_long": "Türk Hava Yolları Business Lounge efsanevi. Economy bile olsanız ücretli giriş yapılabilir.",
+                "SIN_short": "Changi harika ama güvenlik kapı girişinde. Jewel'a gitme.",
+                "SIN_medium": "Jewel çok cazip ama Güvenlik kapıda. Riske atma.",
+                "SIN_long": "Changi dünyaca ünlü. Jewel'daki şelaleyi ve kelebek bahçesini mutlaka görün."
+            }
+        }
+    },
+    "priceOracle": {
+        "title": "Fiyat Kahini",
+        "confidence": "Güven",
+        "riskScore": "Risk Skoru",
+        "badges": {
+            "buyNow": "HEMEN AL",
+            "buy": "AL",
+            "wait": "BEKLE",
+            "monitor": "TAKİP ET"
+        },
+        "trends": {
+            "rising": "YÜKSELİŞ TRENDİ",
+            "falling": "DÜŞÜŞ TRENDİ",
+            "stable": "SABİT"
+        },
+        "signals": {
+            "last72Hours": "Son 72 Saat: Fiyatlar artık saatlik olarak artabilir.",
+            "lastWeek": "Son Hafta! Fiyatlar her an fırlayabilir.",
+            "twoWeekRule": "14 Gün Kuralı: İndirimli bilet sınıfları kapandı.",
+            "idealTime": "İdeal Zaman: Rezervasyon için en güvenli aralıktasınız.",
+            "tooEarly": "Çok Erken: Henüz rekabetçi kampanyalar başlamamış olabilir.",
+            "plentyOfTime": "4+ Ay Var: Acele etme, izle.",
+            "lessThanMonth": "1 Aydan Az: İdeal alım dönemi.",
+            "bottomPrice": "Dip Fiyat: Pazarın en alt tabanını yakaladınız.",
+            "belowAverage": "Fırsat: Pazar ortalamasının %{percent} altında.",
+            "aboveAverage": "Pahalı: Ortalamadan %{percent} yüksek. Düzeltme gelebilir.",
+            "peakSeason": "Yüksek Sezon: Global seyahat yoğunluğu yüksek (Yaz/Yılbaşı).",
+            "lowSeason": "Düşük Sezon: Talep düşük, fiyatlar gevşeyebilir.",
+            "weekend": "Hafta Sonu Uçuşu: Genelde pahalı.",
+            "tuesdayWednesday": "Salı/Çarşamba: Genelde en ucuz günler."
+        },
+        "oracle": {
+            "badge_rare": "💎 GİZLİ HAZİNE",
+            "title_rare": "Mükemmel Denge",
+            "desc_rare": "Hem kaliteli havayolu, hem hızlı, hem de fiyatı harika. Bu uçuşu kaçırma.",
+            "badge_smart": "🧠 MANTIKLI SEÇİM",
+            "title_smart": "Verdiğin Paraya Değer",
+            "desc_smart": "Evet biraz daha pahalı ama saatlerce yolda sürünmezsin. Konforuna değer.",
+            "badge_hacker": "⚡ MACERA FIRSATI",
+            "title_hacker": "Sırt Çantalılar İçin",
+            "desc_hacker": "Piyasadaki en ucuz fiyat! Ama \"Kendi Aktarman\" riskini alman lazım. Bagajın yoksa kaçırma.",
+            "badge_bad": "🚫 KÖTÜ SEÇİM",
+            "title_bad": "Tavsiye Etmiyoruz",
+            "desc_bad": "Hem pahalı hem de yavaş. Listede çok daha iyi seçenekler var.",
+            "badge_standard": "⚖️ STANDART",
+            "title_standard": "Ortalama Seçenek",
+            "desc_standard": "Fiyat ve süre dengesi piyasa standartlarında.",
+            "pro_quality": "Kaliteli Havayolu",
+            "pro_time": "En Hızlı Rota",
+            "pro_comfort_win": "Konfor Farkı",
+            "pro_luxury": "Lüks Deneyim",
+            "pro_price_king": "En Uygun Fiyat",
+            "con_risk_high": "Aktarma Riski Var",
+            "con_bag_missing": "Bagaj Dahil Değil",
+            "con_overpriced": "Gereksiz Pahalı",
+            "con_slow": "Çok Fazla Durak",
+            "badge_overpriced": "🛑 KAZIK FİYAT",
+            "title_overpriced": "Fiyat/Performans Kötü",
+            "desc_overpriced": "Bu uçuş piyasa ortalamasının çok üzerinde. Sadece zorunluysanız alın."
+        },
+        "verdicts": {
+            "rareFind": {
+                "title": "Kaçırılmayacak Fırsat!",
+                "description": "Piyasa ortalamasının çok altında ve güvenli. Bu fiyata bu kalite zor bulunur."
+            },
+            "hacker": {
+                "title": "Cesurlar İçin!",
+                "description": "Normalden çok daha ucuz ama \"Self-Transfer\" gerektiriyor. Bagajın yoksa ve esneksen al."
+            },
+            "overpriced": {
+                "title": "Dikkatli Olun",
+                "description": "Hem pahalı hem de riskli bir uçuş. Mecbur değilseniz almayın."
+            },
+            "premium": {
+                "title": "Konfor Odaklı",
+                "description": "Fiyat yüksek ama hizmet kalitesi ve güvencesi tam. Aileler için önerilir."
+            }
+        },
+        "pros": {
+            "excellentPrice": "Mükemmel Fiyat",
+            "lowRisk": "Düşük Risk",
+            "dirtCheap": "İnanılmaz Ucuz",
+            "maxComfort": "Maksimum Konfor",
+            "refundable": "İade Garantisi",
+            "priceDropping": "Fiyat Düşüş Eğiliminde"
+        },
+        "cons": {
+            "highRisk": "Aktarma Riski Yüksek",
+            "noBag": "Bagaj Dahil Değil",
+            "badValue": "Fiyat/Performans Kötü",
+            "priceRising": "Fiyat Anlık Artabilir!"
+        }
+    },
+    "baggage": {
+        "generous": "Bol Bagaj",
+        "standard": "Standart Bagaj",
+        "limited": "Sınırlı Bagaj",
+        "cabinOnly": "Sadece Kabin Bagajı",
+        "noInfo": "Bilgi Yok"
+    },
+    "flightConsultant": {
+        "headlines": {
+            "undisputedLeader": "🏆 TARTIŞMASIZ LİDER",
+            "stayAway": "🚫 UZAK DUR",
+            "sensibleChoice": "⭐ MANTIKLI SEÇİM",
+            "thinkTwice": "⚠️ DÜŞÜNDÜRÜCÜ",
+            "notRecommended": "❌ ÖNERİLMİYOR"
+        },
+        "identities": {
+            "travelHacker": {
+                "label": "😎 Travel Hacker",
+                "description": "En iyi fiyata en iyi konforu kaptın."
+            },
+            "transferVictim": {
+                "label": "😵 Aktarma Mağduru",
+                "description": "Bu uçuş seni yollarda yaşlandırabilir."
+            },
+            "timeIsValuable": {
+                "label": "🎩 Vakti Değerli",
+                "description": "Parayı bastın, zamanı satın aldın."
+            },
+            "logisticsExpert": {
+                "label": "📦 Lojistik Uzmanı",
+                "description": "Evi sırtlayıp götürüyorsun, en mantıklısı bu."
+            },
+            "wasteOfMoney": {
+                "label": "💸 Para İsrafı",
+                "description": "Bunu almak için hiçbir mantıklı sebep yok."
+            },
+            "dealHunter": {
+                "label": "🦊 Fırsat Avcısı",
+                "description": "Kalite/fiyat dengesini mükemmel tuttun."
+            },
+            "standardPassenger": {
+                "label": "😐 Standart Yolcu",
+                "description": "Ne iyi ne kötü, ortalama bir deneyim."
+            }
+        },
+        "pros": {
+            "lowestPrice": "💰 Piyasadaki en dip fiyat.",
+            "lifesaverBaggage": "📦 Taşınanlar için hayat kurtaran bagaj.",
+            "lowStress": "😌 Düşük stresli, konforlu rota.",
+            "fastestRoute": "⚡ En hızlı rota."
+        },
+        "cons": {
+            "highStress": "😰 Yüksek stres: Yorucu yolculuk.",
+            "priceDifference": "💸 En ucuza göre {amount} {currency} fazla.",
+            "tooManyTransfers": "🛑 Çok aktarma: Yıpratıcı olabilir."
+        },
+        "decisions": {
+            "mustBuy": "**Biz olsak hiç düşünmezdik.** Hem cebini hem konforunu düşünen {identity} paketi. Kaçırma.",
+            "dontBuy": "**Biz olsak bunu kesinlikle almazdık.** Bu uçuş seni \"{identity}\" yapar. Parana ve zamanına yazık.",
+            "risky": "Dikkatli ol. Bu uçuş ucuz görünebilir ama **Stres Skoru: {stress}/10**. Yorgunluğa değip değmeyeceğine sen karar ver.",
+            "goodWithTimeSaving": "En ucuza göre **{priceDiff} {currency}** fark var ama yoldan **{timeSaved} saat** kazanıyorsun. Konforuna düşkünsen değer.",
+            "goodWithPrice": "Fiyatı çok iyi{transferNote}. Bütçe dostu, mantıklı bir takas.",
+            "balanced": "Dengeli bir seçenek. Ne çok pahalı ne çok uzun. {description}"
+        },
+        "transferNote": " ama {stops} aktarma biraz yorabilir",
+        "fareRestrictions": {
+            "noRefund": "İade yok",
+            "noChange": "Değişiklik ücretli",
+            "noSeatSelection": "Koltuk seçimi ücretli",
+            "noMeal": "Yemek ücretli",
+            "cabinBagOnly": "Sadece kabin bagajı"
+        }
+    }
+}

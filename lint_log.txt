@@ -1,0 +1,39 @@
+
+> flight_ai@0.1.0 lint
+> eslint
+
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\(public)\page.tsx
+  11:27  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\dashboard\layout.tsx
+  12:21  error  Do not use an `<a>` element to navigate to `/dashboard/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages           @next/next/no-html-link-for-pages
+  12:21  error  Do not use an `<a>` element to navigate to `/dashboard/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages           @next/next/no-html-link-for-pages
+  13:21  error  Do not use an `<a>` element to navigate to `/dashboard/settings/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+  13:21  error  Do not use an `<a>` element to navigate to `/dashboard/settings/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\dashboard\page.tsx
+  49:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\dashboard\routes\add\page.tsx
+  20:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\serte\Desktop\flight_ai\app\[locale]\flight-search\page.tsx
+   8:26   warning  'Calendar' is defined but never used                             @typescript-eslint/no-unused-vars
+   8:36   warning  'Users' is defined but never used                                @typescript-eslint/no-unused-vars
+  20:61   error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  37:81   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  37:123  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\serte\Desktop\flight_ai\app\actions\add-route.ts
+  5:10  warning  'redirect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\serte\Desktop\flight_ai\app\actions\submit-search.ts
+  20:11  warning  'adults' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  21:11  warning  'children' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\serte\Desktop\flight_ai\components\ui\input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+✖ 16 problems (11 errors, 5 warnings)
+
