@@ -31,6 +31,8 @@ export async function POST(req: Request) {
             });
         }
 
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
         // 2. Ödeme Oturumu (Checkout Session) Oluştur
         const stripeSession = await stripe.checkout.sessions.create({
             customer: stripeCustomerId,
@@ -53,8 +55,8 @@ export async function POST(req: Request) {
             metadata: {
                 userId: session.user.id, // Parayı kimin ödediğini bilmek için
             },
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
+            success_url: `${appUrl}/dashboard?success=true`,
+            cancel_url: `${appUrl}/dashboard?canceled=true`,
         });
 
         return NextResponse.json({ url: stripeSession.url });

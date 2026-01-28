@@ -103,7 +103,68 @@
         "addNewRoute": "Yeni Rota Ekle",
         "emptyState": "Burada görmek için uçuşları takip etmeye başlayın",
         "pleaseSignIn": "Lütfen Giriş Yapın",
-        "needLogin": "Uçuş panelinize erişmek için giriş yapmanız gerekiyor."
+        "needLogin": "Uçuş panelinize erişmek için giriş yapmanız gerekiyor.",
+        "myTrips": "Seyahatlerim",
+        "myTripsDesc": "Premium koruma altındaki uçuşlarınız.",
+        "addTrip": "Yeni Seyahat Ekle",
+        "emptyTitle": "Seyahat Listeniz Boş",
+        "emptyDesc": "Yapay zeka asistanınızı aktif etmek için uçuşunuzu ekleyin.",
+        "addTripShort": "+ Seyahat Ekle",
+        "protected": "KORUMA ALTINDA",
+        "trackedFlights": "Takip Edilen Fırsatlar",
+        "trackedFlightsDesc": "Fiyatını izlediğiniz potansiyel uçuşlar.",
+        "noTrackedFlights": "Henüz takip ettiğiniz bir uçuş yok.",
+        "lastUpdated": "Son güncelleme: {time}",
+        "nextUpdate": "Sıradaki güncelleme: {time}",
+        "delete": "Takibi Bırak",
+        "updatesDaily": "Her Gün Güncellenir"
+    },
+    "Guardian": {
+        "back": "Geri Dön",
+        "systemStatus": "Sistem Durumu",
+        "activeScanning": "Aktif & Taranıyor",
+        "lastCheck": "Son Kontrol",
+        "justNow": "Az önce",
+        "actionRequired": "Aksiyon Gerektiren Fırsatlar",
+        "activeShields": "Aktif Koruma Kalkanları",
+        "active": "Aktif",
+        "warning": "Uyarı Var",
+        "pending": "Beklemede",
+        "resolved": "Çözüldü"
+    },
+    "ScheduleChange": {
+        "title": "Uçuş Saati Değişti",
+        "airlineUpdate": "{airline} havayolu kalkış saatini güncelledi.",
+        "earlier": "Lütfen dikkat, uçak {hours}sa {minutes}dk ERKEN kalkacak.",
+        "later": "Uçak {hours}sa {minutes}dk geç kalkacak.",
+        "oldPlan": "Eski Plan",
+        "newPlan": "Yeni Plan",
+        "callAirline": "Havayolunu Ara (Ücretsiz Değişim)",
+        "confirmNewTime": "Yeni Saati Onayla"
+    },
+    "Modules": {
+        "disruptionHunter": {
+            "title": "Disruption Hunter",
+            "desc": "Rötar ve İptal takibi yapılıyor."
+        },
+        "priceArbitrage": {
+            "title": "Price Arbitrage",
+            "desc": "Fiyat düşüşü bekleniyor."
+        },
+        "seatSpy": {
+            "title": "Seat Spy",
+            "desc": "Yan koltuk doldu, aksiyon alın.",
+            "descEmpty": "Yan koltuk boş."
+        },
+        "scheduleGuardian": {
+            "title": "Schedule Guardian",
+            "desc": "Tarife değişikliği yok.",
+            "descChange": "Tarife değişikliği tespit edildi."
+        },
+        "upgradeSniper": {
+            "title": "Upgrade Sniper",
+            "desc": "Business Class henüz açılmadı."
+        }
     },
     "RouteDetails": {
         "backToDashboard": "Panele Dön",
@@ -170,6 +231,7 @@
         "bestScore": "En İyi Skor",
         "price": "Fiyat",
         "trackFlight": "Bu Uçuşu Takip Et",
+        "trackingThisFlight": "Bu uçuşu takip ediyorsunuz",
         "flightDetails": "Uçuş Detayları",
         "hideDetails": "Detayları gizle",
         "excellentDeal": "Mükemmel Fırsat",
@@ -401,5 +463,42 @@
             "noMeal": "Yemek ücretli",
             "cabinBagOnly": "Sadece kabin bagajı"
         }
+    },
+    "pricing": {
+        "title": "Travel Guardian Premium",
+        "subtitle": "Seyahatinizi şansa bırakmayın.",
+        "priceMonth": "/ay",
+        "feature1": "7/24 Uçuş Takibi (Sınırsız)",
+        "feature2": "Tazminat Avcısı (%0 Komisyon)",
+        "feature3": "Business Upgrade Fırsatları",
+        "feature4": "Fiyat Arbitraj Uyarıları",
+        "feature5": "Koltuk Casusu (Yan Koltuk Uyarısı)",
+        "feature6": "Öncelikli E-posta Bildirimleri",
+        "cta": "Korumayı Başlat",
+        "secure": "İstediğiniz zaman iptal edebilirsiniz. Güvenli ödeme Stripe ile sağlanır."
+    },
+    "addTrip": {
+        "title": "Yeni Seyahat İzle",
+        "pnr": "PNR Kodu",
+        "pnrPlaceholder": "Örn: R7X992",
+        "flightNumber": "Uçuş Numarası",
+        "flightPlaceholder": "Örn: TK1984",
+        "start": "Takibi Başlat",
+        "close": "Kapat",
+        "processing": "PNR Sorgulanıyor..."
+    },
+    "amenity": {
+        "title": "Hizmet Kusuru Bildirimi",
+        "subtitle": "Yolculukta bir şeyler ters mi gitti? İşaretleyin, tazminat isteyelim.",
+        "wifi": "Wi-Fi Bozuktu",
+        "ife": "Ekran/TV Bozuktu",
+        "food": "Yemek Kötü/Yoktu",
+        "seat": "Koltuk Kırıktı",
+        "crew": "Kaba Personel",
+        "target": "Hedef",
+        "summary": "Oluşturulacak Talep Özeti",
+        "send": "Tazminat Talebini Gönder",
+        "sent": "Şikayet İletildi!",
+        "sentDesc": "{airline} Müşteri İlişkileri'ne resmi bir 'Goodwill Compensation' (İyi Niyet Tazminatı) talebi gönderdik. Genellikle 7 gün içinde mil veya hediye çeki tanımlarlar."
     }
 }

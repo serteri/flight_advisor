@@ -34,4 +34,5 @@ export interface GuardianAlert {
     actionLabel?: string; // "Tazminat Talep Et" veya "Upgrade Al"
     potentialValue?: string; // "600€" veya "Business Class"
     timestamp: string;
+    metadata?: any; // Alert-specific data (e.g., oldTime, newTime)
 }

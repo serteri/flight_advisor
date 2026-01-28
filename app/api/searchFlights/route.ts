@@ -43,6 +43,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
         }
 
+        // Auth Check for Tracking Status
+        const { auth } = await import("@/auth");
+        const session = await auth();
+        let watchedFlights: any[] = [];
+        if (session?.user?.id) {
+            watchedFlights = await prisma.watchedFlight.findMany({
+                where: {
+                    userId: session.user.id,
+                    status: 'ACTIVE'
+                },
+                select: {
+                    flightNumber: true,
+                    departureDate: true,
+                    segments: true
+                }
+            });
+        }
+
         // ---------------------------------------------------------
         // AIRPORT VALIDATION (STRICT FILTERING CHECK)
         // ---------------------------------------------------------
@@ -146,6 +164,54 @@ export async function POST(req: NextRequest) {
             console.error("❌ Veritabanı Kayıt Hatası:", dbError);
         }
 
+
+        // Check Tracking Status
+        if (watchedFlights.length > 0) {
+            console.log(`[SEARCH] Checking ${watchedFlights.length} watched flights against results.`);
+            results.forEach((group: any) => {
+                group.options.forEach((flight: any) => {
+                    const flightDepDate = new Date(flight.departureTime || flight.segments[0].departure).toISOString().split('T')[0];
+                    const isTracked = watchedFlights.some(wf => {
+                        const wfDate = new Date(wf.departureDate).toISOString().split('T')[0];
+
+                        // 1. Date Check
+                        if (wfDate !== flightDepDate) return false;
+
+                        // 2. Exact Segment Match (Deep Comparison)
+                        if (Array.isArray(wf.segments) && wf.segments.length > 0 && Array.isArray(flight.segments)) {
+                            // Length check
+                            if (wf.segments.length !== flight.segments.length) return false;
+
+                            // Check EVERY segment's flight number AND carrier
+                            // (Using flightNumber alone is usually enough but airline ensures stricter safety)
+                            const allSegmentsMatch = wf.segments.every((wfSeg: any, index: number) => {
+                                const currentSeg = flight.segments[index];
+                                return wfSeg.flightNumber === currentSeg.flightNumber;
+                            });
+
+                            if (allSegmentsMatch) {
+                                console.log(`[STRICT MATCH] ${flight.flightNumber} via full segment comparison.`);
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        // 3. Fallback: Main Flight Number Check (Legacy or missing segments in DB)
+                        // Only use this if segments are completely missing in DB record
+                        if (!wf.segments || !Array.isArray(wf.segments) || wf.segments.length === 0) {
+                            return wf.flightNumber === flight.flightNumber;
+                        }
+
+                        return false;
+                    });
+
+                    flight.isTracked = isTracked;
+                    if (group.mainFlight.id === flight.id) {
+                        group.mainFlight.isTracked = isTracked;
+                    }
+                });
+            });
+        }
 
         return NextResponse.json({ results });
     } catch (error: any) {

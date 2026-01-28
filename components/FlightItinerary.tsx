@@ -2,6 +2,7 @@
 
 import { Plane, Clock, MapPin, Luggage, Utensils, AlignJustify } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
+import { useFormatter } from "next-intl";
 
 interface FlightItineraryProps {
     segments: any[];
@@ -9,6 +10,8 @@ interface FlightItineraryProps {
 }
 
 export function FlightItinerary({ segments = [], layovers = [] }: FlightItineraryProps) {
+    const format = useFormatter();
+
     if (!segments || segments.length === 0) return null;
 
     return (
@@ -17,8 +20,10 @@ export function FlightItinerary({ segments = [], layovers = [] }: FlightItinerar
             <div className="absolute left-[19px] top-4 bottom-4 w-[2px] bg-slate-200 z-0"></div>
 
             {segments.map((seg, idx) => {
-                const depTime = new Date(seg.departure).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-                const arrTime = new Date(seg.arrival).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const depTime = format.dateTime(new Date(seg.departure), { hour: '2-digit', minute: '2-digit' });
+                const arrTime = format.dateTime(new Date(seg.arrival), { hour: '2-digit', minute: '2-digit' });
+                const depDate = format.dateTime(new Date(seg.departure), { day: 'numeric', month: 'numeric', year: 'numeric' });
+
                 const durationH = Math.floor(seg.duration / 60);
                 const durationM = seg.duration % 60;
 
@@ -66,7 +71,7 @@ export function FlightItinerary({ segments = [], layovers = [] }: FlightItinerar
                                 <div className="flex-1 py-1 space-y-4">
                                     <div className="text-sm text-slate-600">
                                         <div className="font-medium text-slate-900 mb-1">Departing from {seg.from}</div>
-                                        <div className="text-xs text-slate-400">{new Date(seg.departure).toLocaleDateString()}</div>
+                                        <div className="text-xs text-slate-400">{depDate}</div>
                                     </div>
 
                                     {/* Amenities / Info */}

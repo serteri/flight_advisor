@@ -33,25 +33,61 @@ async function runScheduler() {
 
             // 2. İŞLERİ KUYRUĞA AT (REDIS)
             for (const trip of tripsToCheck) {
-
                 // A. Kuyruğa ekle (Worker bunu işleyecek)
                 await flightMonitorQueue.add('check-flight', { tripId: trip.id }, {
                     removeOnComplete: true,
                     attempts: 3
                 });
 
-                // B. Veritabanını güncelle (Hemen tekrar seçilmesin diye ileri at)
-                // Worker işi bitirince bu süreyi "Akıllı Süre" ile tekrar güncelleyecek.
-                // Şimdilik "İşlemde" olduğunu belirtmek için 5 dakika ileri atıyoruz.
+                // B. Veritabanını güncelle
                 await prisma.monitoredTrip.update({
                     where: { id: trip.id },
                     data: {
-                        nextCheckAt: new Date(now.getTime() + 5 * 60000) // 5 dk sonra (Geçici)
+                        nextCheckAt: new Date(now.getTime() + 5 * 60000) // 5 dk sonra
                     }
                 });
             }
 
             console.log(`🚀 Dispatched ${tripsToCheck.length} jobs to the worker fleet.`);
+
+
+            // ------------------------------------------
+            // 3. AMENITY WATCHDOG (Uçuş Bitti mi?)
+            // ------------------------------------------
+            const completedTrips = await prisma.monitoredTrip.findMany({
+                where: {
+                    status: 'ACTIVE',
+                    arrivalDate: { lt: now } // Geçmiş varış tarihi
+                }
+            });
+
+            if (completedTrips.length > 0) {
+                console.log(`🐕 Amenity Watchdog: Found ${completedTrips.length} completed trips.`);
+
+                for (const trip of completedTrips) {
+                    // 1. Durumu COMPLETED yap
+                    await prisma.monitoredTrip.update({
+                        where: { id: trip.id },
+                        data: { status: 'COMPLETED' }
+                    });
+
+                    // 2. Alert Oluştur (Notification simülasyonu)
+                    await prisma.guardianAlert.create({
+                        data: {
+                            tripId: trip.id,
+                            type: 'AMENITY_COMPENSATION',
+                            severity: 'INFO',
+                            title: 'Hoş Geldiniz! Yolculuk nasıldı?',
+                            message: 'Eğer Wi-Fi bozuksa veya ekran çalışmadıysa tazminat alabiliriz. Tıklayın.',
+                            actionLabel: 'Tazminat İste',
+                            potentialValue: '5.000 Mil',
+                            isRead: false
+                        }
+                    });
+
+                    console.log(`✨ Trip ${trip.pnr} Completed. Amenity alert Sent.`);
+                }
+            }
 
         } catch (error) {
             console.error("❌ Scheduler Error:", error);

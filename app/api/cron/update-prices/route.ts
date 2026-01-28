@@ -65,11 +65,28 @@ export async function GET(request: Request) {
 
                 // Update each watched flight
                 for (const watchedFlight of flights) {
-                    // Find matching flight by flight number
+                    // Find matching flight by flight number (Robust Check)
                     const matchingOffer = searchResults.data.find((offer: any) => {
-                        const segments = offer.itineraries?.[0]?.segments || [];
-                        return segments.some((seg: any) =>
-                            `${seg.carrierCode}${seg.number}` === watchedFlight.flightNumber
+                        const offerSegments = offer.itineraries?.[0]?.segments || [];
+
+                        // 1. Strict Segment Match (if segments exist in DB)
+                        if (Array.isArray(watchedFlight.segments) && (watchedFlight.segments as any[]).length > 0) {
+                            const wfSegments = watchedFlight.segments as any[];
+                            if (wfSegments.length !== offerSegments.length) return false;
+
+                            // Check all segments
+                            return wfSegments.every((wfSeg, idx) => {
+                                const offerSeg = offerSegments[idx];
+                                const offerFlightNum = `${offerSeg.carrierCode}${offerSeg.number}`;
+                                return offerFlightNum === wfSeg.flightNumber.replace(/\s/g, '');
+                            });
+                        }
+
+                        // 2. Fallback: Main Flight Number Check
+                        // Sanitize (remove spaces, e.g. "CI 54" -> "CI54")
+                        const targetFn = watchedFlight.flightNumber.replace(/\s/g, '');
+                        return offerSegments.some((seg: any) =>
+                            `${seg.carrierCode}${seg.number}` === targetFn
                         );
                     });
 
@@ -82,7 +99,23 @@ export async function GET(request: Request) {
                         const today = new Date().toISOString().split('T')[0];
                         const lastDate = lastEntry?.date?.split('T')[0];
 
-                        if (!lastEntry || lastDate !== today || lastEntry.price !== newPrice) {
+                        // Log significantly different prices (anomaly detection)
+                        if (Math.abs(newPrice - watchedFlight.currentPrice!) > 5000) {
+                            console.warn(`[CRON] Large price swing for ${watchedFlight.flightNumber}: ${watchedFlight.currentPrice} -> ${newPrice}`);
+                        }
+
+                        const lastEntry = currentHistory[currentHistory.length - 1];
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastDate = lastEntry?.date ? new Date(lastEntry.date).toISOString().split('T')[0] : null;
+
+                        // Check if we need to add a new history point
+                        // 1. If no history exists
+                        // 2. If it's a new day (even if price is same) -> User wants daily graph points
+                        // 3. If price changed intraday
+                        const isNewDay = lastDate !== today;
+                        const hasPriceChanged = lastEntry?.price !== newPrice;
+
+                        if (!lastEntry || isNewDay || hasPriceChanged) {
                             await prisma.watchedFlight.update({
                                 where: { id: watchedFlight.id },
                                 data: {
@@ -95,20 +128,24 @@ export async function GET(request: Request) {
                                 }
                             });
 
-                            console.log(`[CRON] Updated ${watchedFlight.flightNumber}: ${watchedFlight.currentPrice} -> ${newPrice}`);
+                            const changeType = hasPriceChanged ? (newPrice > (lastEntry?.price || 0) ? 'Price Change' : 'Price Change') : 'Daily Log';
+                            console.log(`[CRON] ${watchedFlight.flightNumber}: ${changeType} at ${newPrice} (History updated)`);
                             updated++;
                         } else {
-                            // Even if price/date same, update lastChecked to show we tried
+                            // Only update timestamp if we already logged a price for today and it hasn't changed
                             await prisma.watchedFlight.update({
                                 where: { id: watchedFlight.id },
-                                data: {
-                                    lastChecked: new Date()
-                                }
+                                data: { lastChecked: new Date() }
                             });
-                            console.log(`[CRON] ${watchedFlight.flightNumber}: No change (updated timestamp)`);
+                            console.log(`[CRON] ${watchedFlight.flightNumber}: Stable at ${newPrice} (Intraday check)`);
                         }
                     } else {
-                        console.log(`[CRON] Flight ${watchedFlight.flightNumber} not found in search results`);
+                        console.log(`[CRON] Flight ${watchedFlight.flightNumber} not found in search results. (Params: ${origin}->${destination} ${dateStr})`);
+                        // Still update lastChecked to show we tried (and maybe mark as potentially unavailable?)
+                        await prisma.watchedFlight.update({
+                            where: { id: watchedFlight.id },
+                            data: { lastChecked: new Date() }
+                        });
                         failed++;
                     }
                 }

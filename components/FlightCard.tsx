@@ -261,6 +261,7 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
                     {/* TRACK THIS FLIGHT BUTTON */}
                     <div className="mt-8 pt-6 border-t border-slate-200 flex justify-end">
                         <Button
+                            disabled={flight.isTracked}
                             onClick={async () => {
                                 const btn = document.getElementById(`track-btn-${flight.id}`);
                                 if (btn) {
@@ -305,10 +306,22 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
                                 }
                             }}
                             id={`track-btn-${flight.id}`}
-                            className="bg-slate-900 text-white hover:bg-slate-800 gap-2 font-bold shadow-lg shadow-slate-200/50 transition-all"
+                            className={`gap-2 font-bold shadow-lg shadow-slate-200/50 transition-all ${flight.isTracked
+                                ? "bg-green-600 text-white cursor-default hover:bg-green-600 opacity-90 shadow-none"
+                                : "bg-slate-900 text-white hover:bg-slate-800"
+                                }`}
                         >
-                            <span className="text-lg">👀</span>
-                            Track This Flight
+                            {flight.isTracked ? (
+                                <>
+                                    <span className="text-lg">✅</span>
+                                    {t('trackingThisFlight')}
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-lg">👀</span>
+                                    {t('trackFlight')}
+                                </>
+                            )}
                         </Button>
                     </div>
                 </div>

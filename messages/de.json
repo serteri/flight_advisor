@@ -297,5 +297,42 @@
             "noMeal": "Mahlzeiten kostenpflichtig",
             "cabinBagOnly": "Nur Handgepäck"
         }
+    },
+    "pricing": {
+        "title": "Travel Guardian Premium",
+        "subtitle": "Überlassen Sie Ihre Reise nicht dem Zufall.",
+        "priceMonth": "/Monat",
+        "feature1": "24/7 Flugverfolgung (Unbegrenzt)",
+        "feature2": "Entschädigungsjäger (0% Provision)",
+        "feature3": "Business Upgrade Chancen",
+        "feature4": "Preis-Arbitrage-Alarme",
+        "feature5": "Sitzplatz-Spion (Leerer Nebensitz)",
+        "feature6": "Priorisierte E-Mail-Benachrichtigungen",
+        "cta": "Schutz Starten",
+        "secure": "Jederzeit kündbar. Sichere Zahlung über Stripe."
+    },
+    "addTrip": {
+        "title": "Neue Reise Verfolgen",
+        "pnr": "PNR Code",
+        "pnrPlaceholder": "z.B. R7X992",
+        "flightNumber": "Flugnummer",
+        "flightPlaceholder": "z.B. TK1984",
+        "start": "Verfolgung Starten",
+        "close": "Schließen",
+        "processing": "PNR wird gesucht..."
+    },
+    "amenity": {
+        "title": "Service-Mangel-Bericht",
+        "subtitle": "Lief etwas schief? Wählen Sie Probleme für Entschädigung.",
+        "wifi": "WLAN Defekt",
+        "ife": "Bildschirm/TV Defekt",
+        "food": "Schlechtes/Kein Essen",
+        "seat": "Defekter Sitz",
+        "crew": "Unhöfliches Personal",
+        "target": "Ziel",
+        "summary": "Anspruchszusammenfassung",
+        "send": "Anspruch Senden",
+        "sent": "Anspruch Gesendet!",
+        "sentDesc": "Wir haben eine formelle Anfrage auf Kulanzentschädigung an {airline} gesendet. Sie sollten innerhalb von 7 Tagen eine Rückmeldung erhalten."
     }
 }

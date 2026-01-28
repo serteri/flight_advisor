@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, Plane } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { AddTripModal } from './AddTripModal';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
 
@@ -15,6 +16,8 @@ interface DashboardClientProps {
 export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const t = useTranslations('Dashboard');
+
     return (
         <div className="space-y-12">
 
@@ -22,15 +25,15 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             <div>
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-900">Seyahatlerim</h2>
-                        <p className="text-slate-500">Premium koruma altındaki uçuşlarınız.</p>
+                        <h2 className="text-2xl font-bold text-slate-900">{t('myTrips')}</h2>
+                        <p className="text-slate-500">{t('myTripsDesc')}</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-emerald-200"
                     >
                         <Plus className="w-5 h-5" />
-                        Yeni Seyahat Ekle
+                        {t('addTrip')}
                     </button>
                 </div>
 
@@ -39,15 +42,15 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                         <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-slate-400">
                             <Plane className="w-6 h-6" />
                         </div>
-                        <h3 className="text-sm font-bold text-slate-900">Seyahat Listeniz Boş</h3>
+                        <h3 className="text-sm font-bold text-slate-900">{t('emptyTitle')}</h3>
                         <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">
-                            Yapay zeka asistanınızı aktif etmek için uçuşunuzu ekleyin.
+                            {t('emptyDesc')}
                         </p>
                         <button
                             onClick={() => setIsModalOpen(true)}
                             className="text-emerald-600 text-sm font-bold hover:underline"
                         >
-                            + Seyahat Ekle
+                            {t('addTripShort')}
                         </button>
                     </div>
                 ) : (
@@ -64,7 +67,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                                             <div className="flex items-center gap-2 text-sm text-slate-500">
                                                 <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{trip.pnr}</span>
                                                 <span>•</span>
-                                                <span>{new Date(trip.departureDate).toLocaleDateString()}</span>
+                                                <span>{new Date(trip.departureDate).toLocaleDateString('tr-TR')}</span>
                                                 <span>•</span>
                                                 <span>{trip.flightNumber}</span>
                                             </div>
@@ -73,7 +76,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                                     <div className="text-right">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${trip.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             }`}>
-                                            {trip.status === 'ACTIVE' ? 'KORUMA ALTINDA' : trip.status}
+                                            {trip.status === 'ACTIVE' ? t('protected') : trip.status}
                                         </span>
                                     </div>
                                 </div>
@@ -86,13 +89,13 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             {/* --- SECTION 2: TAKİP EDİLEN UÇUŞLAR (TRACKED FLIGHTS) --- */}
             <div>
                 <div className="mb-6 border-t pt-8">
-                    <h2 className="text-2xl font-bold text-slate-900">Takip Edilen Fırsatlar</h2>
-                    <p className="text-slate-500">Fiyatını izlediğiniz potansiyel uçuşlar.</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('trackedFlights')}</h2>
+                    <p className="text-slate-500">{t('trackedFlightsDesc')}</p>
                 </div>
 
                 {trackedFlights.length === 0 ? (
                     <div className="text-center py-8 opacity-60">
-                        <p>Henüz takip ettiğiniz bir uçuş yok.</p>
+                        <p>{t('noTrackedFlights')}</p>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">

@@ -77,7 +77,7 @@ export default async function FlightDetailPage({ params }: { params: Promise<{ i
                     <div className="text-right">
                         <div className="text-sm text-slate-500 mb-1">Current Price</div>
                         <div className="text-4xl font-black text-slate-900 flex items-baseline justify-end gap-1">
-                            {Math.round(currentPrice).toLocaleString()}
+                            {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             <span className="text-lg font-bold text-slate-400">{flight.currency}</span>
                         </div>
                         {drop > 0 && (

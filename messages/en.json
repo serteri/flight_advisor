@@ -103,7 +103,68 @@
         "addNewRoute": "Add New Route",
         "emptyState": "Start tracking flights to see them here",
         "pleaseSignIn": "Please Sign In",
-        "needLogin": "You need to be logged in to access your flight dashboard."
+        "needLogin": "You need to be logged in to access your flight dashboard.",
+        "myTrips": "My Trips",
+        "myTripsDesc": "Your flights under premium protection.",
+        "addTrip": "Add New Trip",
+        "emptyTitle": "Your Trip List is Empty",
+        "emptyDesc": "Add a flight to activate your AI assistant.",
+        "addTripShort": "+ Add Trip",
+        "protected": "PROTECTED",
+        "trackedFlights": "Tracked Opportunities",
+        "trackedFlightsDesc": "Potential flights you are monitoring for price drops.",
+        "noTrackedFlights": "You are not tracking any flights yet.",
+        "lastUpdated": "Last updated: {time}",
+        "nextUpdate": "Next update: {time}",
+        "delete": "Stop Tracking",
+        "updatesDaily": "Updates Daily"
+    },
+    "Guardian": {
+        "back": "Back",
+        "systemStatus": "System Status",
+        "activeScanning": "Active & Scanning",
+        "lastCheck": "Last Check",
+        "justNow": "Just now",
+        "actionRequired": "Opportunities Requiring Action",
+        "activeShields": "Active Protection Shields",
+        "active": "Active",
+        "warning": "Warning",
+        "pending": "Pending",
+        "resolved": "Resolved"
+    },
+    "ScheduleChange": {
+        "title": "Flight Schedule Changed",
+        "airlineUpdate": "{airline} has updated the departure time.",
+        "earlier": "Attention, flight will depart {hours}h {minutes}m EARLIER.",
+        "later": "Flight is delayed by {hours}h {minutes}m.",
+        "oldPlan": "Old Plan",
+        "newPlan": "New Plan",
+        "callAirline": "Call Airline (Free Change)",
+        "confirmNewTime": "Confirm New Time"
+    },
+    "Modules": {
+        "disruptionHunter": {
+            "title": "Disruption Hunter",
+            "desc": "Monitoring for delays and cancellations."
+        },
+        "priceArbitrage": {
+            "title": "Price Arbitrage",
+            "desc": "Waiting for price drops."
+        },
+        "seatSpy": {
+            "title": "Seat Spy",
+            "desc": "Seat alert! Take action.",
+            "descEmpty": "Side seat is occupied."
+        },
+        "scheduleGuardian": {
+            "title": "Schedule Guardian",
+            "desc": "No schedule changes.",
+            "descChange": "Schedule change detected."
+        },
+        "upgradeSniper": {
+            "title": "Upgrade Sniper",
+            "desc": "Business Class not yet available."
+        }
     },
     "RouteDetails": {
         "backToDashboard": "Back to Dashboard",
@@ -170,6 +231,7 @@
         "bestScore": "Best Score",
         "price": "Price",
         "trackFlight": "Track this Flight",
+        "trackingThisFlight": "You are tracking this flight",
         "flightDetails": "Flight Details",
         "hideDetails": "Hide details",
         "excellentDeal": "Excellent Deal",
@@ -469,6 +531,43 @@
     "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
     "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
     "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
-    "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
+    "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route.",
+    "pricing": {
+        "title": "Travel Guardian Premium",
+        "subtitle": "Don't leave your trip to chance.",
+        "priceMonth": "/month",
+        "feature1": "24/7 Flight Tracking (Unlimited)",
+        "feature2": "Compensation Hunter (0% Commission)",
+        "feature3": "Business Upgrade Opportunities",
+        "feature4": "Price Arbitrage Alerts",
+        "feature5": "Seat Spy (Empty Seat Alert)",
+        "feature6": "Priority Email Notifications",
+        "cta": "Start Protection",
+        "secure": "Cancel anytime. Secure payment via Stripe."
+    },
+    "addTrip": {
+        "title": "Monitor New Trip",
+        "pnr": "PNR Code",
+        "pnrPlaceholder": "e.g. R7X992",
+        "flightNumber": "Flight Number",
+        "flightPlaceholder": "e.g. TK1984",
+        "start": "Start Tracking",
+        "close": "Close",
+        "processing": "Looking up PNR..."
+    },
+    "amenity": {
+        "title": "Service Defect Report",
+        "subtitle": "Did something go wrong? Select issues to claim compensation.",
+        "wifi": "Wi-Fi Broken",
+        "ife": "Screen/TV Broken",
+        "food": "Bad/No Food",
+        "seat": "Broken Seat",
+        "crew": "Rude Crew",
+        "target": "Target",
+        "summary": "Claim Summary",
+        "send": "Send Claim",
+        "sent": "Claim Sent!",
+        "sentDesc": "We have sent a formal 'Goodwill Compensation' request to {airline} Customer Relations. You should hear back within 7 days."
+    }
 }
 }
