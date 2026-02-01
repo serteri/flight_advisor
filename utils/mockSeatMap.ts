@@ -36,8 +36,11 @@ export function getMockAircraftLayout(aircraftType: string, userSeat: string | n
 
         config.groups.forEach(group => {
             group.forEach(letter => {
-                // Random status logic
-                let status = Math.random() > 0.3 ? 'AVAILABLE' : 'OCCUPIED';
+                // Deterministic pseudo-random status logic to avoid Hydration Error
+                // Use a simple hash of row + letter to determine status
+                const seatId = r * 100 + letter.charCodeAt(0);
+                const isOccupied = (seatId % 7 === 0) || (seatId % 3 === 0 && r % 2 !== 0);
+                let status = isOccupied ? 'OCCUPIED' : 'AVAILABLE';
 
                 // Blocked or Premium logic
                 if (r === 12 || r === 13) status = 'BLOCKED'; // Acil çıkış
