@@ -7,6 +7,7 @@ const AM_HOST = process.env.AMADEUS_HOST === "production"
     : "https://test.api.amadeus.com";
 
 let cachedToken: { access_token: string; expires_at: number } | null = null;
+let clientInstance: AmadeusClientWrapper | null = null;
 
 // Type definitions
 export interface FlightSearchParams {
@@ -277,7 +278,7 @@ class AmadeusClientWrapper {
 
 }
 // ... existing code ...
-export default amadeus;
+
 
 export function getAmadeusClient(): AmadeusClientWrapper {
     if (!clientInstance) {
