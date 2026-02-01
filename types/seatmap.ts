@@ -15,6 +15,7 @@ export interface Seat {
         currency: string;
     };
     features?: string[]; // "WINDOW", "AISLE", "EXIT_ROW", "WING", "LEG_SPACE"
+    isAisleRight?: boolean; // Visual helper: Is there an aisle to the right of this seat?
     travelerPricingStatus?: string; // Raw Amadeus status
 }
 

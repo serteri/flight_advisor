@@ -1,72 +1,57 @@
 
-import { AircraftLayout, Row, Seat } from '@/types/seatmap';
+import { AircraftLayout, Seat, SeatStatus } from '@/types/seatmap';
 
 export function getMockAircraftLayout(aircraftType: string, userSeat: string | null): AircraftLayout {
-    // 1. Uçak Tipine Göre Konfigürasyon
-    // 738, 320: Tek koridor (3-3)
-    // 777, 350: Çift koridor (3-4-3 veya 3-3-3)
-    let config = {
-        rows: 30,
-        layout: '3-3', // ABC-DEF
-        groups: [['A', 'B', 'C'], ['D', 'E', 'F']]
-    };
+    const rows: any[] = [];
 
-    if (aircraftType.includes('77') || aircraftType.includes('350') || aircraftType.includes('380') || aircraftType.includes('787')) {
-        config = {
-            rows: 50,
-            layout: '3-4-3', // ABC-DEFG-HJK
-            groups: [['A', 'B', 'C'], ['D', 'E', 'F', 'G'], ['H', 'J', 'K']]
-        };
-    }
+    // Geniş gövde mi?
+    const isWideBody = ['77W', '777', '350', '330', '787'].includes(aircraftType);
 
-    // 2. Satırları Oluştur
-    const rows: Row[] = [];
+    // 3-4-3 veya 3-3 düzenine göre harfler
+    const letters = isWideBody
+        ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K']
+        : ['A', 'B', 'C', 'D', 'E', 'F'];
 
-    // Parse user seat to highlight it
-    // userSeat format: "24A"
-    const userRowVal = userSeat ? parseInt(userSeat.replace(/\D/g, '')) : -1;
-    const userLetter = userSeat ? userSeat.replace(/\d/g, '').toUpperCase() : '';
+    const rowCount = isWideBody ? 50 : 30;
 
-    for (let r = 1; r <= config.rows; r++) {
-        // Business / Economy ayrımı (İlk 5 sıra business olsun)
-        const isBusiness = r <= 5;
-        // Business ise sıra numarası ve koltuk sayısı değişir genelde ama basit tutalım.
+    for (let i = 1; i <= rowCount; i++) {
+        const rowSeats: Seat[] = [];
 
-        const seats: Seat[] = [];
+        letters.forEach(letter => {
+            const seatNum = `${i}${letter}`;
 
-        config.groups.forEach(group => {
-            group.forEach(letter => {
-                // Deterministic pseudo-random status logic to avoid Hydration Error
-                // Use a simple hash of row + letter to determine status
-                const seatId = r * 100 + letter.charCodeAt(0);
-                const isOccupied = (seatId % 7 === 0) || (seatId % 3 === 0 && r % 2 !== 0);
-                let status = isOccupied ? 'OCCUPIED' : 'AVAILABLE';
+            // Deterministic pseudo-random status logic to avoid Hydration Error
+            // Use a simple hash of row + letter to determine status
+            const seatId = i * 100 + letter.charCodeAt(0);
+            const isOccupiedMath = (seatId % 7 === 0) || (seatId % 3 === 0 && i % 2 !== 0);
+            let status: SeatStatus = isOccupiedMath ? 'OCCUPIED' : 'AVAILABLE';
 
-                // Blocked or Premium logic
-                if (r === 12 || r === 13) status = 'BLOCKED'; // Acil çıkış
+            // Kullanıcının Koltuğu
+            if (userSeat && seatNum === userSeat) {
+                status = 'USER_SEAT';
+            }
 
-                // User Seat Logic
-                if (r === userRowVal && letter === userLetter) {
-                    status = 'USER_SEAT';
-                }
+            // 15. Sıra (Öneri)
+            if (i === 15 && status === 'AVAILABLE') {
+                status = 'RECOMMENDED';
+            }
 
-                seats.push({
-                    number: `${r}${letter}`,
-                    coordinates: { x: letter, y: r },
-                    status: status as any,
-                    features: []
-                });
+            rowSeats.push({
+                number: seatNum,
+                status: status,
+                coordinates: { x: letter, y: i }, // Added coordinates to satisfy type definition if needed, though visualizer doesn't strictly use it now.
+                price: undefined
             });
         });
 
-        rows.push({
-            rowNumber: r,
-            seats: seats
-        });
+        // Not: Artık buraya splice(AISLE) eklemiyoruz! 
+        // Visualizer bunu halledecek.
+
+        rows.push({ rowNumber: i, seats: rowSeats });
     }
 
     return {
-        aircraftType: aircraftType || '738',
+        aircraftType: aircraftType || '77W', // Default to 77W for demo if undefined
         rows: rows
     };
 }
