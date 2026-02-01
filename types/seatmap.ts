@@ -1,24 +1,36 @@
-export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'BLOCKED' | 'USER_SEAT' | 'RECOMMENDED';
-export type SeatType = 'WINDOW' | 'MIDDLE' | 'AISLE';
-export type CabinClass = 'BUSINESS' | 'ECONOMY' | 'FIRST';
 
-export interface Seat {
-    number: string; // "12A"
-    status: SeatStatus;
-    type: SeatType;
-    class: CabinClass;
-    price?: number; // Ücretli koltuksa
-    features?: string[]; // "Exit Row", "Extra Legroom"
+export type SeatStatus = 'AVAILABLE' | 'OCCUPIED' | 'BLOCKED' | 'USER_SEAT' | 'RECOMMENDED';
+
+export interface SeatCoordinates {
+    x: string; // "A", "B", etc. or numeric string depending on raw data
+    y: number; // Row number
 }
 
-export interface SeatRow {
+export interface Seat {
+    number: string; // "24A"
+    status: SeatStatus;
+    coordinates: SeatCoordinates;
+    price?: {
+        amount: number;
+        currency: string;
+    };
+    features?: string[]; // "WINDOW", "AISLE", "EXIT_ROW", "WING", "LEG_SPACE"
+    travelerPricingStatus?: string; // Raw Amadeus status
+}
+
+export interface Row {
     rowNumber: number;
     seats: Seat[];
-    isExitRow: boolean;
-    isWing: boolean; // Kanat üstü mü? (Manzara için önemli)
+    features?: string[]; // "EXIT_ROW" for the whole row
+}
+
+export interface Deck {
+    deckType: string; // "MAIN", "UPPER"
+    rows: Row[];
 }
 
 export interface AircraftLayout {
-    aircraftType: string; // "Boeing 737-800"
-    rows: SeatRow[];
-}
+    aircraftType: string; // "738"
+    rows: Row[]; // Simplified single deck view for MVP
+    decks?: Deck[]; // Full structure
+} // 

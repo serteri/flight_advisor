@@ -315,16 +315,11 @@ model MonitoredTrip {
   id              String   @id @default(cuid())
   userId          String
   
-  // Uçuş Bilgileri
+  // Trip Identity
   pnr             String
-  airlineCode     String
-  flightNumber    String
-  departureDate   DateTime
-  arrivalDate     DateTime
-  origin          String
-  destination     String
-
-  // Finansal Veriler
+  routeLabel      String   // "BNE ➝ IST"
+  
+  // Finansal Veriler (Bilet Bazlı)
   originalPrice   Float
   currency        String   @default("AUD")
   ticketClass     String
@@ -349,11 +344,65 @@ model MonitoredTrip {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relationships
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  segments        FlightSegment[] 
   alerts          GuardianAlert[]
 
   @@index([userId])
   @@index([status, nextCheckAt])
+}
+
+model FlightSegment {
+  id            String   @id @default(cuid())
+  tripId        String
+  
+  // Sıralama (1. uçak, 2. uçak...)
+  segmentOrder  Int      @default(0)
+
+  // Flight Identity
+  airlineCode   String   // TK
+  flightNumber  String   // 55
+  
+  // Route
+  origin        String   // SIN
+  destination   String   // IST
+  
+  // Times
+  departureDate DateTime
+  arrivalDate   DateTime
+  
+  // Aircraft Details
+  aircraftType  String?  // "77W"
+  
+  // User Specifics
+  userSeat      String?  // "24A"
+  cabinClass    String?  // "ECONOMY"
+  
+  // Relationship
+  trip          MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+// NOT: GuardianAlert tablosunu da güncellememiz gerekecek çünkü artık alarm
+// bir Trip'e değil, spesifik bir Segment'e (Uçağa) ait olabilir.
+model GuardianAlert {
+  id          String   @id @default(cuid())
+  tripId      String
+  
+  // YENİ ALAN: Hangi uçakla ilgili? (Opsiyonel, genel alarm da olabilir)
+  segmentId   String?  
+  
+  type        String   // DELAY, PRICE, SEAT, UPGRADE...
+  title       String
+  message     String
+  severity    String   // INFO, WARNING, CRITICAL
+  
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  trip        MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 }
 
 enum TripStatus {
@@ -363,41 +412,3 @@ enum TripStatus {
   ARCHIVED
 }
 
-model GuardianAlert {
-  id              String   @id @default(cuid())
-  tripId          String
-  
-  type            AlertType
-  severity        AlertSeverity
-  
-  title           String
-  message         String
-  
-  potentialValue  String?
-  actionLabel     String?
-  
-  isRead          Boolean  @default(false)
-  isActioned      Boolean  @default(false)
-
-  createdAt       DateTime @default(now())
-
-  trip            MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-
-  @@index([tripId])
-}
-
-enum AlertType {
-  PRICE_DROP
-  DISRUPTION_MONEY
-  UPGRADE_OPPORTUNITY
-  SEAT_ALERT
-  SCHEDULE_CHANGE
-  AMENITY_COMPENSATION
-}
-
-enum AlertSeverity {
-  INFO
-  WARNING
-  CRITICAL
-  MONEY
-}

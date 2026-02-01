@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 // @ts-ignore
 import Amadeus from "amadeus";
 
-const AM_HOST = process.env.AMADEUS_ENV === "LIVE"
+const AM_HOST = process.env.AMADEUS_HOST === "production"
     ? "https://api.amadeus.com"
     : "https://test.api.amadeus.com";
 
@@ -196,7 +196,30 @@ class AmadeusClientWrapper {
         return getCityAirports(cityCode);
     }
 
+    // Get Seat Map
+    async getSeatMap(flightOfferId: string): Promise<any> {
+        const token = await getToken();
+        const client = amadeusClient(token);
+
+        try {
+            // Note: SeatMap usually requires POST with the flight offer
+            // But Amadeus also has a GET for just display based on flight-orderId or simplified params.
+            // Actually, 'shopping/seatmaps' creates a POST request with the offer.
+            // Getting seatmap WITHOUT booking is tricky.
+            // We will try GET /v1/shopping/seatmaps with flight-orderId if available, OR
+            // POST /v1/shopping/seatmaps with the offer object.
+            // For now, let's implement the POST version assuming we have the flight offer JSON.
+            return null; // TODO: Needs complex implementation passing the full offer object.
+        } catch (error) {
+            console.error("[Amadeus] Seat map failed:", error);
+            return null;
+        }
+    }
+
+    // ... existing code ...
+
     async getNearestAirport(latitude: number, longitude: number) {
+        // ... existing implementation ...
         const token = await getToken();
         const client = amadeusClient(token);
 
@@ -215,10 +238,46 @@ class AmadeusClientWrapper {
             return null;
         }
     }
-}
 
-// Singleton instance
-let clientInstance: AmadeusClientWrapper | null = null;
+    // NEW: Seat Map Integration
+    // Since SeatMap requires fully formatted flight offer, we will add a helper
+    // to search -> get offer -> get seatmap.
+    async getRealSeatMap(flightParams: any) {
+        // 1. Search for the flight again to get a fresh 'offer' object
+        const offers = await this.searchFlights({
+            originLocationCode: flightParams.origin,
+            destinationLocationCode: flightParams.destination,
+            departureDate: flightParams.date,
+            adults: 1,
+            currencyCode: flightParams.currency || "USD"
+        });
+
+        const validOffer = offers?.find((o: any) =>
+            o.itineraries?.[0]?.segments?.some((s: any) =>
+                s.carrierCode === flightParams.airlineCode && s.number === flightParams.flightNumber
+            )
+        );
+
+        if (!validOffer) return null;
+
+        // 2. Call SeatMap API using this offer
+        const token = await getToken();
+        const client = amadeusClient(token);
+
+        try {
+            const res = await client.post("/v1/shopping/seatmaps", {
+                data: [validOffer]
+            });
+            return res.data.data?.[0] || null;
+        } catch (e) {
+            console.log("SeatMap API Error (likely not authorized or no data):", e);
+            return null;
+        }
+    }
+
+}
+// ... existing code ...
+export default amadeus;
 
 export function getAmadeusClient(): AmadeusClientWrapper {
     if (!clientInstance) {
@@ -231,7 +290,7 @@ export function getAmadeusClient(): AmadeusClientWrapper {
 const amadeus = new Amadeus({
     clientId: process.env.AMADEUS_API_KEY,
     clientSecret: process.env.AMADEUS_API_SECRET,
-    hostname: process.env.AMADEUS_ENV === "LIVE" ? "production" : "test",
+    hostname: process.env.AMADEUS_HOST === "production" ? "production" : "test",
 });
 
 // Default export for routes that use amadeus SDK directly

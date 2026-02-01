@@ -1,56 +1,50 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { addFlightCheckJob } from '@/workers/queue';
+import { auth } from '@/auth';
 
 export async function POST(req: Request) {
+    const session = await auth();
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     try {
-        const body = await req.json();
+        const { pnr, flightData } = await req.json();
 
-        // 1. Kullanıcıdan gelen veriyi al
-        const {
-            pnr, airlineCode, flightNumber, departureDate,
-            arrivalDate, pricePaid, userId, origin, destination
-        } = body;
-
-        // Basic Validation
-        if (!pnr || !airlineCode || !flightNumber) {
-            return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+        // Basic validation
+        if (!pnr || !flightData) {
+            return NextResponse.json({ error: 'PNR ve uçuş verisi gereklidir.' }, { status: 400 });
         }
 
-        // 2. Veritabanına Kaydet (The Contract)
+        // 1. Önce Ana Yolculuğu Yarat
         const trip = await prisma.monitoredTrip.create({
             data: {
-                userId,
-                pnr,
-                airlineCode,
-                flightNumber,
-                origin,
-                destination,
-                departureDate: new Date(departureDate),
-                arrivalDate: new Date(arrivalDate),
-                originalPrice: pricePaid,
-                ticketClass: 'ECONOMY', // Default or from body
-                // Varsayılan olarak tüm koruma kalkanları aktif başlar
-                watchPrice: true,
-                watchDelay: true,
-                watchUpgrade: true,
-                watchSchedule: true,
-                status: 'ACTIVE',
-                nextCheckAt: new Date(), // "Hemen şimdi kontrol et" komutu
+                userId: session.user.id,
+                pnr: pnr,
+                routeLabel: `${flightData.origin} ➝ ${flightData.destination}`, // BNE -> IST
+                originalPrice: flightData.price?.total || 0, // Fallback if not provided
+                currency: flightData.price?.currency || "AUD",
+                ticketClass: flightData.travelClass || "ECONOMY",
+                nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // Check in 1 hour
+
+                // 2. Segmentleri İçine Göm (Nested Write)
+                segments: {
+                    create: flightData.segments.map((seg: any, index: number) => ({
+                        segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
+                        airlineCode: seg.carrierCode,   // SQ
+                        flightNumber: seg.number,       // 236
+                        origin: seg.departure.iataCode, // BNE
+                        destination: seg.arrival.iataCode, // SIN
+                        departureDate: new Date(seg.departure.at),
+                        arrivalDate: new Date(seg.arrival.at),
+                        aircraftType: seg.aircraft?.code || '738' // Default
+                    }))
+                }
             }
         });
 
-        console.log(`✅ Trip saved to DB: ${trip.id}`);
-
-        // 3. Kuyruğa At (The Trigger)
-        // Bu, Worker'ı dürtmek demektir: "Hey, iş var!"
-        await addFlightCheckJob(trip.id, 1); // Öncelik 1 (Yüksek)
-
         return NextResponse.json({ success: true, tripId: trip.id });
-
     } catch (error) {
-        console.error("Monitor Error:", error);
-        return NextResponse.json({ success: false, error: 'Failed to start monitoring' }, { status: 500 });
+        console.error("Trip creation error:", error);
+        return NextResponse.json({ error: 'Uçuş takibi başlatılamadı.' }, { status: 500 });
     }
 }

@@ -2,7 +2,15 @@
 import { useState } from 'react';
 import { FileText, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 
-export function DisruptionCard({ value, tripId }: { value: string, tripId?: string }) {
+export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[] }) {
+    // Determine status based on alerts and segment
+    // For now, if there is a disruption alert, we assume compensation is value
+    const disruptionAlert = alerts.find(a => a.type === 'DISRUPTION');
+    const value = disruptionAlert ? "600€" : "0€"; // Mock logic based on alert existence
+
+    // If no disruption, dont show or show safe state? 
+    // Requirement implies this card appears when relevant features are active.
+    // Let's assume we show it always but it changes state based on alerts.
     const [status, setStatus] = useState<'IDLE' | 'LOADING' | 'SENT'>('IDLE');
 
     const handleClaim = async () => {
@@ -11,7 +19,7 @@ export function DisruptionCard({ value, tripId }: { value: string, tripId?: stri
         // API'ye istek at
         const res = await fetch('/api/actions/claim', {
             method: 'POST',
-            body: JSON.stringify({ tripId, iban: 'TR12...' }) // IBAN normalde formdan gelir
+            body: JSON.stringify({ tripId: segment.tripId, iban: 'TR12...' }) // IBAN normalde formdan gelir
         });
 
         if (res.ok) {

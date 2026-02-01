@@ -14,6 +14,7 @@ import { StressMap } from "@/components/StressMap";
 import { VerdictCard } from "@/components/VerdictCard";
 import { getLayoverGuide } from "@/lib/airportGuide"; // Kept for expanded view logic
 import { useTranslations } from "next-intl";
+import { FlexibilityWidget } from "@/components/search/FlexibilityWidget";
 
 interface FlightCardProps {
     flight: any; // Using any to be flexible with the complex Flight type for now
@@ -53,6 +54,12 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
     const getIdentityLabel = (label: string) => {
         return tCommon(label) === label ? label : tCommon(label); // Fallback if key missing
     };
+
+    // Calculate days to departure
+    const departureDate = new Date(firstSegment.departure);
+    const today = new Date();
+    const diffTime = Math.abs(departureDate.getTime() - today.getTime());
+    const daysToDeparture = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return (
         <div className={`group relative bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md mb-4 ${verdict.decision === 'recommended'
@@ -149,11 +156,18 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
 
                     {/* RIGHT: Price & Actions */}
                     <div className="flex flex-col items-end justify-between min-w-[140px] pt-2">
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-1">
                             <div className="text-2xl font-black text-slate-900">
                                 {Math.round(flight.price).toLocaleString()}
                                 <span className="text-sm font-medium text-slate-500 ml-1">{flight.currency}</span>
                             </div>
+
+                            {/* RISK ANALYSIS WIDGET */}
+                            <FlexibilityWidget
+                                price={flight.price}
+                                daysToDeparture={daysToDeparture}
+                            />
+
                             {/* Amenity Badges */}
                             <div className="mt-2 flex justify-end">
                                 <AmenityBadges flight={flight} compact />

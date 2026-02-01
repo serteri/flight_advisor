@@ -1,8 +1,16 @@
 import { generateMockSeatMap } from '@/utils/mockSeatMap';
 import { SeatMapVisualizer } from '../SeatMapVisualizer';
+import { useState, useEffect } from 'react';
+import { AircraftLayout } from '@/types/seatmap';
 
 export function SeatAlertCard() {
-    const layout = generateMockSeatMap();
+    const [layout, setLayout] = useState<AircraftLayout | null>(null);
+
+    useEffect(() => {
+        setLayout(generateMockSeatMap());
+    }, []);
+
+    if (!layout) return <div className="p-6 text-center text-slate-400">Loading seat map...</div>;
 
     return (
         <div className="border border-red-200 bg-red-50 rounded-xl p-6 shadow-lg">
