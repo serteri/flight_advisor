@@ -5,11 +5,12 @@
  * All scoring logic is now centralized in flightScoreEngine.ts
  */
 
-scoreFlightsStrict,
+export {
+    scoreFlightsStrict,
     calculateFlightScore,
     getBaggageStatus,
     type FlightScoreResult,
-        type FlightForScoring
+    type FlightForScoring
 } from "./flightScoreEngine";
 
 // Legacy interface for backward compatibility

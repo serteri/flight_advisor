@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { flightMonitorQueue } from '@/workers/queue';
+import { searchFlights } from '@/lib/amadeus';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,16 +98,12 @@ export async function GET(request: Request) {
                         // Only add to history if price changed or it's a new day
                         const lastEntry = currentHistory[currentHistory.length - 1];
                         const today = new Date().toISOString().split('T')[0];
-                        const lastDate = lastEntry?.date?.split('T')[0];
+                        const lastDate = lastEntry?.date ? new Date(lastEntry.date).toISOString().split('T')[0] : null;
 
                         // Log significantly different prices (anomaly detection)
-                        if (Math.abs(newPrice - watchedFlight.currentPrice!) > 5000) {
+                        if (Math.abs(newPrice - (watchedFlight.currentPrice || 0)) > 5000) {
                             console.warn(`[CRON] Large price swing for ${watchedFlight.flightNumber}: ${watchedFlight.currentPrice} -> ${newPrice}`);
                         }
-
-                        const lastEntry = currentHistory[currentHistory.length - 1];
-                        const today = new Date().toISOString().split('T')[0];
-                        const lastDate = lastEntry?.date ? new Date(lastEntry.date).toISOString().split('T')[0] : null;
 
                         // Check if we need to add a new history point
                         // 1. If no history exists
