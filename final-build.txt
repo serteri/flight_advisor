@@ -1,0 +1,94 @@
+﻿
+> flight_ai@0.1.0 build
+> prisma generate && next build
+
+node.exe : warn The configuration property 
+`package.json#prisma` is deprecated and will 
+be removed in Prisma 7. Please migrate to a 
+Prisma config file (e.g., 
+`prisma.config.ts`).
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Users\serte\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified:  
+   (warn The config...ma.config.ts`).:Strin  
+  g) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandE 
+   rror
+ 
+For more information, see: 
+https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Γ£ö Generated Prisma Client (v6.19.2) to .\node_modules\@prisma\client in 80ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 16.0.8 (Turbopack)
+   - Environments: .env
+
+ ΓÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. 
+Learn more: https://nextjs.org/docs/messages/
+middleware-to-proxy
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 2.9s
+   Running TypeScript ...
+Failed to compile.
+
+./app/dashboard/guardian/[id]/page.tsx:101:81
+Type error: Type '{ value: string | 
+undefined; }' is not assignable to type 
+'IntrinsicAttributes & { segment: any; 
+alerts: any[]; }'.
+  Property 'value' does not exist on type 
+'IntrinsicAttributes & { segment: any; 
+alerts: any[]; }'.
+
+[0m [90m  99 |[39m                        
+ {trip[33m.[39malerts[33m.[39mmap((alert
+[33m,[39m idx) [33m=>[39m (
+ [90m 100 |[39m                            
+ [33m<[39m[33mdiv[39m 
+key[33m=[39m{idx}[33m>[39m
+[31m[1m>[22m[39m[90m 101 |[39m         
+                        
+{alert[33m.[39mtype [33m===[39m 
+[32m'DISRUPTION'[39m [33m&&[39m 
+[33m<[39m[33mDisruptionCard[39m 
+value[33m=[39m{alert[33m.[39mvalue} 
+[33m/[39m[33m>[39m}
+ [90m     |[39m                            
+                                             
+        [31m[1m^[22m[39m
+ [90m 102 |[39m                            
+     {alert[33m.[39mtype [33m===[39m 
+[32m'PRICE_DROP'[39m [33m&&[39m 
+[33m<[39m[33mArbitrageCard[39m original[
+33m=[39m{trip[33m.[39moriginalPrice} 
+current[33m=[39m{[35m1100[39m} 
+currency[33m=[39m{trip[33m.[39mcurrency} 
+[33m/[39m[33m>[39m}
+ [90m 103 |[39m                 [90m// 
+@ts-ignore[39m
+ [90m 104 |[39m                            
+     {alert[33m.[39mtype [33m===[39m 
+[32m'SEAT_ALERT'[39m [33m&&[39m 
+[33m<[39m[33mSeatAlertCard[39m 
+[33m/[39m[33m>[39m}[0m
+Next.js build worker exited with code: 1 and 
+signal: null

@@ -6,7 +6,8 @@ import Stripe from 'stripe';
 
 export async function POST(req: Request) {
     const body = await req.text();
-    const signature = headers().get('Stripe-Signature') as string;
+    const headersList = await headers();
+    const signature = headersList.get('Stripe-Signature') as string;
 
     let event: Stripe.Event;
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
 
     // 2. Ödeme Başarılı Olduysa (subscription.created veya invoice.paid)
     if (event.type === 'checkout.session.completed') {
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+        const subscriptionData: any = await stripe.subscriptions.retrieve(session.subscription as string);
 
         if (!session?.metadata?.userId) {
             return new NextResponse('User ID is missing in metadata', { status: 400 });
@@ -35,10 +36,10 @@ export async function POST(req: Request) {
         await prisma.user.update({
             where: { id: session.metadata.userId },
             data: {
-                stripeSubscriptionId: subscription.id,
-                stripeCustomerId: subscription.customer as string,
-                stripePriceId: subscription.items.data[0].price.id,
-                stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                stripeSubscriptionId: subscriptionData.id,
+                stripeCustomerId: subscriptionData.customer as string,
+                stripePriceId: subscriptionData.items.data[0].price.id,
+                stripeCurrentPeriodEnd: new Date(subscriptionData.current_period_end * 1000),
                 isPremium: true, // ARTIK PREMIUM!
             },
         });

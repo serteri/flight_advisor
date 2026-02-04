@@ -1,0 +1,81 @@
+﻿
+> flight_ai@0.1.0 build
+> prisma generate && next build
+
+node.exe : warn The configuration property 
+`package.json#prisma` is deprecated and will 
+be removed in Prisma 7. Please migrate to a 
+Prisma config file (e.g., 
+`prisma.config.ts`).
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Users\serte\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified:  
+   (warn The config...ma.config.ts`).:Strin  
+  g) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandE 
+   rror
+ 
+For more information, see: 
+https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Γ£ö Generated Prisma Client (v6.19.2) to .\node_modules\@prisma\client in 73ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 16.0.8 (Turbopack)
+   - Environments: .env
+
+ ΓÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. 
+Learn more: https://nextjs.org/docs/messages/
+middleware-to-proxy
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 2.9s
+   Running TypeScript ...
+Failed to compile.
+
+./app/api/webhooks/stripe/route.ts:42:63
+Type error: Property 'current_period_end' 
+does not exist on type 
+'Response<Subscription>'.
+
+[0m [90m 40 |[39m                 
+stripeCustomerId[33m:[39m 
+subscription[33m.[39mcustomer [36mas[39m 
+string[33m,[39m
+ [90m 41 |[39m                 
+stripePriceId[33m:[39m subscription[33m.[
+39mitems[33m.[39mdata[[35m0[39m][33m.[3
+9mprice[33m.[39mid[33m,[39m
+[31m[1m>[22m[39m[90m 42 |[39m          
+       stripeCurrentPeriodEnd[33m:[39m 
+[36mnew[39m [33mDate[39m(subscription[33
+m.[39mcurrent_period_end [33m*[39m 
+[35m1000[39m)[33m,[39m
+ [90m    |[39m                             
+                                  
+[31m[1m^[22m[39m
+ [90m 43 |[39m                 
+isPremium[33m:[39m 
+[36mtrue[39m[33m,[39m [90m// ARTIK 
+PREMIUM![39m
+ [90m 44 |[39m             }[33m,[39m
+ [90m 45 |[39m         })[33m;[39m[0m
+Next.js build worker exited with code: 1 and 
+signal: null
