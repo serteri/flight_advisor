@@ -44,6 +44,7 @@ export interface FlightForScoring {
     // --- ENRICHED DATA ---
     effectivePrice?: number; // Gizli maliyetler eklenmis
     baggageWeight?: number; // kg
+    baggageQuantity?: number; // pieces
     baggageIncluded?: boolean; // legacy
     hasMeal?: boolean;
     isSelfTransfer?: boolean;

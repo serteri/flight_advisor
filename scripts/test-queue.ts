@@ -27,16 +27,24 @@ async function main() {
             data: {
                 userId: userId,
                 pnr: 'TEST_DIRECT',
-                airlineCode: 'TK',
-                flightNumber: '2024',
-                origin: 'IST',
-                destination: 'JFK',
-                departureDate: new Date(),
-                arrivalDate: new Date(),
+                routeLabel: "IST ➝ JFK",
                 originalPrice: 1000,
+                currency: "USD",
                 ticketClass: 'ECONOMY',
                 status: 'ACTIVE',
-                nextCheckAt: new Date()
+                nextCheckAt: new Date(),
+                segments: {
+                    create: [{
+                        segmentOrder: 0,
+                        airlineCode: 'TK',
+                        flightNumber: '2024',
+                        origin: 'IST',
+                        destination: 'JFK',
+                        departureDate: new Date(),
+                        arrivalDate: new Date(Date.now() + 36000000),
+                        aircraftType: "738"
+                    }]
+                }
             }
         });
     }

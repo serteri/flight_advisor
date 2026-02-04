@@ -57,7 +57,11 @@ async function runScheduler() {
             const completedTrips = await prisma.monitoredTrip.findMany({
                 where: {
                     status: 'ACTIVE',
-                    arrivalDate: { lt: now } // Geçmiş varış tarihi
+                    segments: {
+                        every: {
+                            arrivalDate: { lt: now }
+                        }
+                    }
                 }
             });
 

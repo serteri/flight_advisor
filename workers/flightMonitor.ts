@@ -2,7 +2,7 @@
 // workers/flightMonitor.ts
 import { Queue, Worker } from 'bullmq';
 import { prisma } from '../lib/prisma'; // Adjust import path as needed
-import { checkAmadeusPrice, checkFlightAwareStatus } from '../services/api/flightProviders'; // Using the API layer we created
+import { checkAmadeusPrice, checkFlightAwareStatus } from '../services/api'; // Using the API layer we created
 
 // Redis Connection (Mock for local dev if needed, or process.env)
 const redisConnection = {
@@ -56,21 +56,24 @@ export const flightWorker = new Worker('flight-monitoring', async (job) => {
 
         // --- B. DISRUPTION CHECK (FLIGHTAWARE) ---
         if (trip.watchDelay) {
-            const status = await checkFlightAwareStatus(trip.flightNumber, trip.departureDate.toISOString()); // Approx date usage
+            if (trip.segments.length > 0) {
+                const segment = trip.segments[0];
+                const status = await checkFlightAwareStatus(`${segment.airlineCode}${segment.flightNumber}`, segment.departureDate.toISOString());
 
-            if (status.delayMinutes > 180 && status.reason === 'TECHNICAL') { // strict check
-                await prisma.guardianAlert.create({
-                    data: {
-                        tripId: trip.id,
-                        type: 'DISRUPTION_MONEY',
-                        severity: 'MONEY',
-                        title: '💰 Disruption Compensation',
-                        message: 'Flight delayed > 3 hours due to airline fault. Claim 600€.',
-                        potentialValue: '600 EUR',
-                        actionLabel: 'File Claim'
-                    }
-                });
-                console.log(`🚨 [Disruption] Found eligible delay for ${trip.pnr}`);
+                if (status.delayMinutes > 180 && status.reason === 'TECHNICAL') { // strict check
+                    await prisma.guardianAlert.create({
+                        data: {
+                            tripId: trip.id,
+                            type: 'DISRUPTION_MONEY',
+                            severity: 'MONEY',
+                            title: '💰 Disruption Compensation',
+                            message: 'Flight delayed > 3 hours due to airline fault. Claim 600€.',
+                            potentialValue: '600 EUR',
+                            actionLabel: 'File Claim'
+                        }
+                    });
+                    console.log(`🚨 [Disruption] Found eligible delay for ${trip.pnr}`);
+                }
             }
         }
 

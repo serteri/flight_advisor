@@ -76,7 +76,7 @@ function parseRawFlightsToScorable(
         // DB Fallback if API returned 0
         if (baggageWeight === 0 && baggageQuantity === 0) {
             const info = getAirlineInfo(carrier);
-            if (info.baggage === 'INCLUDED') {
+            if (info.hasFreeBag) {
                 baggageWeight = 23;
             }
         }
@@ -208,7 +208,7 @@ export async function findVirtualInterlineFlights(
                             baggageQuantity: Math.min(f1.baggageQuantity || 0, f2.baggageQuantity || 0),
 
                             // Flag for UI - ONLY True if BOTH legs have confirmed baggage
-                            baggageIncluded: (f1.baggageWeight > 0 && f2.baggageWeight > 0) || (f1.baggageIncluded && f2.baggageIncluded),
+                            baggageIncluded: ((f1.baggageWeight || 0) > 0 && (f2.baggageWeight || 0) > 0) || (f1.baggageIncluded && f2.baggageIncluded),
 
                             // Flag for UI
                             isSelfTransfer: true,

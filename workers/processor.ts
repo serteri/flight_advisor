@@ -1,7 +1,8 @@
-
 import { getRealTimeFlightData } from '@/lib/flightaware';
-
-// ... (keep existing imports)
+import connection from '@/lib/redis';
+import { prisma } from '@/lib/prisma';
+import { searchFlights } from '@/lib/amadeus';
+import { Worker, Job } from 'bullmq';
 
 async function checkDisruption(flight: any) {
     // 1. FlightAware'den CANLI veri çek
@@ -55,33 +56,6 @@ async function checkDisruption(flight: any) {
         }
     }
 }
-
-const worker = new Worker('flight-monitor', async (job: Job) => {
-    const { flightId } = job.data;
-
-    // FETCH FLIGHT
-    const flight = await prisma.watchedFlight.findUnique({ where: { id: flightId } });
-    if (!flight) throw new Error("Flight not found");
-
-    if (job.name === 'check-price') {
-        // ... existing price check logic ...
-        // (I should keep the existing code and just add the new call)
-
-        // RUN DISRUPTION CHECK PARALLEL OR AFTER
-        await checkDisruption(flight);
-    }
-
-    // ... existing logic continuation ...
-    // Note: The replace_file_content needs to match exact context. 
-    // I should probably read the file again or be very careful.
-    // The previous view_file showed the whole file. 
-    // I will append the checkDisruption function and call it.
-
-}, { connection });
-
-import connection from '@/lib/redis';
-import { prisma } from '@/lib/prisma';
-import { searchFlights } from '@/lib/amadeus';
 
 // CACHE HELPER: Prevent repeated API calls for same route/date
 async function getCachedFlightSearch(origin: string, dest: string, date: string, currency: string) {
@@ -171,6 +145,9 @@ const worker = new Worker('flight-monitor', async (job: Job) => {
                     data: { lastChecked: new Date() }
                 });
             }
+
+            // 5. RUN DISRUPTION CHECK
+            await checkDisruption(flight);
 
         } else {
             console.log(`⚠️ Flight (${flight.flightNumber}) not found in search results.`);

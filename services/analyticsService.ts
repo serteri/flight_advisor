@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'; // Prisma client
-import { Flight } from '@/types'; // Use centralized type if available, or FlightForScoring
+import { Flight } from '@/lib/flightTypes'; // Use centralized type if available, or FlightForScoring
 
 // Define a subset interface if Flight is not perfectly compatible or imports are messy
 interface AnalyticsFlight {

@@ -73,7 +73,7 @@ async function searchStandardFlights(params: any): Promise<FlightForScoring[]> {
             if (baggageWeight === 0 && baggageQuantity === 0) {
                 const { getAirlineInfo } = require('./airlineDB'); // Import locally if not at top, or ensure top import
                 const info = getAirlineInfo(carrier);
-                if (info.baggage === 'INCLUDED') {
+                if (info.hasFreeBag) {
                     baggageWeight = 23;
                 }
             }

@@ -1,5 +1,8 @@
 
-import { MonitoredTrip, GuardianAlert, AlertType, AlertSeverity } from '@prisma/client';
+import { MonitoredTrip, GuardianAlert } from '@prisma/client';
+
+export type AlertType = 'PRICE_DROP' | 'DISRUPTION_MONEY' | 'UPGRADE_OPPORTUNITY' | 'SEAT_ALERT' | 'SCHEDULE_CHANGE' | 'AMENITY_COMPENSATION';
+export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL' | 'MONEY';
 
 // --- TYPES AND CONFIGURATION ---
 
