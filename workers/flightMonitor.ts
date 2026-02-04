@@ -18,11 +18,14 @@ export const flightQueue = new Queue('flight-monitoring', { connection: redisCon
 export const flightWorker = new Worker('flight-monitoring', async (job) => {
     const { tripId } = job.data;
 
-    // Fetch Trip
-    const trip = await prisma.monitoredTrip.findUnique({ where: { id: tripId } });
+    // Fetch Trip with segments
+    const trip = await prisma.monitoredTrip.findUnique({
+        where: { id: tripId },
+        include: { segments: true }
+    });
     if (!trip || trip.status !== 'ACTIVE') return;
 
-    console.log(`[Worker] Checking flight: ${trip.airlineCode}${trip.flightNumber} (${trip.pnr})`);
+    console.log(`[Worker] Checking flight: ${trip.routeLabel} (${trip.pnr})`);
 
     try {
         // --- A. PRICE CHECK (AMADEUS) ---

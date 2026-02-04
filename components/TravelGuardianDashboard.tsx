@@ -30,7 +30,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                         Travel Guardian Active
                     </h2>
                     <p className="text-slate-400 text-sm mt-1">
-                        PNR: <span className="font-mono text-white">{trip.pnr}</span> • {trip.airlineCode}{trip.flightNumber} izleniyor.
+                        PNR: <span className="font-mono text-white">{trip.pnr}</span> • {trip.routeLabel} izleniyor.
                     </p>
                 </div>
                 <div className="text-right">
