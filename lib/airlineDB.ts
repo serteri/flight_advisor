@@ -112,3 +112,20 @@ export function getAirlineInfo(code: string): AirlineInfo {
         hasEntertainment: false // Ekran garantisi verme
     };
 }
+
+// Standart Bagaj Ücretleri (Bilinmiyorsa kullanılacak)
+export const BAGGAGE_FEES: Record<string, number> = {
+    'JQ': 45, // Jetstar
+    'TR': 40, // Scoot
+    'AK': 35, // AirAsia
+    'D7': 45, // AirAsia X
+    'PC': 30, // Pegasus
+    'VF': 25, // AJet
+    'W6': 40, // Wizz Air
+    'FR': 35, // Ryanair
+    'U2': 30, // EasyJet
+    'TK': 0,  // THY (Genelde dahil)
+    'SQ': 0,  // Singapore Airlines
+    'EK': 0,  // Emirates
+    'QR': 0,  // Qatar
+};

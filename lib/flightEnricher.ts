@@ -1,6 +1,6 @@
 
 import { FlightForScoring } from './flightTypes';
-import { getAirlineInfo } from './airlineDB';
+import { getAirlineInfo, BAGGAGE_FEES } from './airlineDB';
 
 export function enrichFlightData(flight: FlightForScoring): FlightForScoring {
     const carrier = flight.carrier || (flight.airlineCode ? flight.airlineCode.split(' ')[0] : 'XX');
@@ -28,7 +28,11 @@ export function enrichFlightData(flight: FlightForScoring): FlightForScoring {
     let effectivePrice = flight.price;
 
     // Baggage Penalty cost
-    if (baggageWeight === 0) effectivePrice += 80; // Adjusted from 140 to 80 (approx 25-30 EUR per bag equivalent)
+    if (baggageWeight === 0) {
+        // Use airline specific fee or default to 50
+        const bagFee = BAGGAGE_FEES[carrier] || 50;
+        effectivePrice += bagFee;
+    }
     // Meal Penalty cost
     if (!hasMeal) effectivePrice += 20; // Adjusted from 40
     // Self Transfer Risk cost (Monetary value of stress)

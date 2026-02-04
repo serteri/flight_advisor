@@ -15,6 +15,7 @@ import { VerdictCard } from "@/components/VerdictCard";
 import { getLayoverGuide } from "@/lib/airportGuide"; // Kept for expanded view logic
 import { useTranslations } from "next-intl";
 import { FlexibilityWidget } from "@/components/search/FlexibilityWidget";
+import { FareExplainer } from "@/components/FareExplainer";
 
 interface FlightCardProps {
     flight: any; // Using any to be flexible with the complex Flight type for now
@@ -217,7 +218,11 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
             {/* --- EXPANDED DETAILS (LEGACY / SIMPLIFIED) --- */}
             {isExpanded && (
                 <div className="border-t border-slate-100 bg-slate-50/50 p-5 rounded-b-2xl animate-in slide-in-from-top-2 duration-200">
-                    <div className="space-y-6">
+
+                    {/* AGENT ANALYSIS BOX */}
+                    <FareExplainer restrictions={flight.fareRestrictions} />
+
+                    <div className="space-y-6 mt-6">
                         {/* Segments Loop */}
                         {segments.map((seg: any, idx: number) => (
                             <div key={idx} className="relative pl-6 border-l-2 border-slate-200 ml-2 pb-6 last:pb-0 last:border-0">
