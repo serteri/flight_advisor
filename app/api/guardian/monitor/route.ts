@@ -22,17 +22,25 @@ export async function POST(req: Request) {
                 data: {
                     userId,
                     pnr,
-                    airlineCode: "TK",
-                    flightNumber: "1984",
-                    departureDate: new Date(Date.now() + 86400000), // Tomorrow
-                    arrivalDate: new Date(Date.now() + 90000000),
-                    origin: "IST",
-                    destination: "JFK",
+                    routeLabel: "IST → JFK",
                     originalPrice: 1200,
+                    currency: "USD",
                     ticketClass: "ECONOMY",
                     watchDelay: true,
                     watchUpgrade: true,
-                    nextCheckAt: new Date()
+                    nextCheckAt: new Date(),
+                    segments: {
+                        create: [{
+                            segmentOrder: 0,
+                            airlineCode: "TK",
+                            flightNumber: "1984",
+                            origin: "IST",
+                            destination: "JFK",
+                            departureDate: new Date(Date.now() + 86400000), // Tomorrow
+                            arrivalDate: new Date(Date.now() + 90000000),
+                            cabinClass: "ECONOMY"
+                        }]
+                    }
                 }
             });
         }

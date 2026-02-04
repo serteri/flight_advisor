@@ -1,0 +1,106 @@
+﻿
+> flight_ai@0.1.0 build
+> prisma generate && next build
+
+node.exe : warn The configuration property 
+`package.json#prisma` is deprecated and will 
+be removed in Prisma 7. Please migrate to a 
+Prisma config file (e.g., 
+`prisma.config.ts`).
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Users\serte\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified:  
+   (warn The config...ma.config.ts`).:Strin  
+  g) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandE 
+   rror
+ 
+For more information, see: 
+https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Γ£ö Generated Prisma Client (v6.19.2) to .\node_modules\@prisma\client in 74ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+   Γû▓ Next.js 16.0.8 (Turbopack)
+   - Environments: .env
+
+ ΓÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. 
+Learn more: https://nextjs.org/docs/messages/
+middleware-to-proxy
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this 
+module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm 
+i baseline-browser-mapping@latest -D`
+ Γ£ô Compiled successfully in 3.0s
+   Running TypeScript ...
+Failed to compile.
+
+./app/api/trips/monitor/route.ts:20:13
+Type error: Type '{ userId: string | 
+undefined; pnr: any; routeLabel: string; 
+originalPrice: any; currency: any; 
+ticketClass: any; nextCheckAt: Date; 
+segments: { create: any; }; }' is not 
+assignable to type 
+'(Without<MonitoredTripCreateInput, 
+MonitoredTripUncheckedCreateInput> & 
+MonitoredTripUncheckedCreateInput) | 
+(Without<...> & MonitoredTripCreateInput)'.
+  Type '{ userId: string | undefined; pnr: 
+any; routeLabel: string; originalPrice: any; 
+currency: any; ticketClass: any; 
+nextCheckAt: Date; segments: { create: any; 
+}; }' is not assignable to type 
+'Without<MonitoredTripUncheckedCreateInput, 
+MonitoredTripCreateInput> & 
+MonitoredTripCreateInput'.
+    Type '{ userId: string | undefined; pnr: 
+any; routeLabel: string; originalPrice: any; 
+currency: any; ticketClass: any; 
+nextCheckAt: Date; segments: { create: any; 
+}; }' is not assignable to type 
+'Without<MonitoredTripUncheckedCreateInput, 
+MonitoredTripCreateInput>'.
+      Types of property 'userId' are 
+incompatible.
+        Type 'string | undefined' is not 
+assignable to type 'undefined'.
+          Type 'string' is not assignable to 
+type 'undefined'.
+
+[0m [90m 18 |[39m         [90m// 1. 
+├ûnce Ana Yolculu─ƒu Yarat[39m
+ [90m 19 |[39m         [36mconst[39m 
+trip [33m=[39m [36mawait[39m prisma[33m.
+[39mmonitoredTrip[33m.[39mcreate({
+[31m[1m>[22m[39m[90m 20 |[39m          
+   data[33m:[39m {
+ [90m    |[39m             
+[31m[1m^[22m[39m
+ [90m 21 |[39m                 
+userId[33m:[39m session[33m.[39muser[33m
+.[39mid[33m,[39m
+ [90m 22 |[39m                 
+pnr[33m:[39m pnr[33m,[39m
+ [90m 23 |[39m                 
+routeLabel[33m:[39m 
+[32m`${flightData.origin} Γ₧¥ 
+${flightData.destination}`[39m[33m,[39m 
+[90m// BNE -> IST[39m[0m
+Next.js build worker exited with code: 1 and 
+signal: null

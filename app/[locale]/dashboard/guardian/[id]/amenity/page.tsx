@@ -7,14 +7,18 @@ import { Link } from "@/i18n/routing";
 export default async function AmenityPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Fetch MonitoredTrip
+    // Fetch MonitoredTrip with segments
     const trip = await prisma.monitoredTrip.findUnique({
-        where: { id }
+        where: { id },
+        include: { segments: true }
     });
 
     if (!trip) {
         notFound();
     }
+
+    // Get airline code from first segment
+    const airlineCode = trip.segments[0]?.airlineCode || 'Unknown';
 
     return (
         <div className="max-w-4xl mx-auto py-12 px-4">
@@ -24,7 +28,7 @@ export default async function AmenityPage({ params }: { params: Promise<{ id: st
             </Link>
 
             <AmenityClaimForm
-                airline={trip.airlineCode}
+                airline={airlineCode}
                 pnr={trip.pnr}
             />
         </div>

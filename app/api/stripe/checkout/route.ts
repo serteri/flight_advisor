@@ -18,15 +18,15 @@ export async function POST(req: Request) {
 
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
-                email: session.user.email,
+                email: session.user.email!,
                 name: session.user.name || 'Travel Guardian User',
-                metadata: { userId: session.user.id } // Webhook için önemli!
+                metadata: { userId: session.user.id! } // Webhook için önemli!
             });
             stripeCustomerId = customer.id;
 
             // DB'yi güncelle
             await prisma.user.update({
-                where: { id: session.user.id },
+                where: { id: session.user.id! },
                 data: { stripeCustomerId }
             });
         }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
         // 2. Ödeme Oturumu (Checkout Session) Oluştur
         const stripeSession = await stripe.checkout.sessions.create({
-            customer: stripeCustomerId,
+            customer: stripeCustomerId!,
             mode: 'subscription', // Aylık abonelik
             payment_method_types: ['card'],
             line_items: [
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
                 },
             ],
             metadata: {
-                userId: session.user.id, // Parayı kimin ödediğini bilmek için
+                userId: session.user.id!, // Parayı kimin ödediğini bilmek için
             },
             success_url: `${appUrl}/dashboard?success=true`,
             cancel_url: `${appUrl}/dashboard?canceled=true`,

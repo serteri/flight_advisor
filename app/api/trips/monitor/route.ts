@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         // 1. Önce Ana Yolculuğu Yarat
         const trip = await prisma.monitoredTrip.create({
             data: {
-                userId: session.user.id,
+                userId: session.user.id!,
                 pnr: pnr,
                 routeLabel: `${flightData.origin} ➝ ${flightData.destination}`, // BNE -> IST
                 originalPrice: flightData.price?.total || 0, // Fallback if not provided
