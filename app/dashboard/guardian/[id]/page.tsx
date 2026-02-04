@@ -98,14 +98,13 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
                         {/* ALERT TİPİNE GÖRE KART GÖSTER */}
                         {trip.alerts.map((alert, idx) => (
                             <div key={idx}>
-                                {alert.type === 'DISRUPTION' && <DisruptionCard value={alert.value} />}
+                                {alert.type === 'DISRUPTION' && <DisruptionCard segment={trip} alerts={trip.alerts} />}
                                 {alert.type === 'PRICE_DROP' && <ArbitrageCard original={trip.originalPrice} current={1100} currency={trip.currency} />}
-                // @ts-ignore
                                 {alert.type === 'SEAT_ALERT' && <SeatAlertCard />}
                                 {alert.type === 'SCHEDULE_CHANGE' && (
                                     <ScheduleChangeCard
-                                        oldTime={alert.metadata.oldTime}
-                                        newTime={alert.metadata.newTime}
+                                        oldTime={alert.metadata?.oldTime || ''}
+                                        newTime={alert.metadata?.newTime || ''}
                                         airline={trip.airline}
                                     />
                                 )}
