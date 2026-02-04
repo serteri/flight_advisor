@@ -30,7 +30,6 @@ import { FlightCard } from "@/components/FlightCard";
 // import type { AnalysisResult, TranslatableText } from "@/lib/flightConsultant";
 
 import {
-    getBaggageWeightKg,
     type ScoredFlight,
     type FlightSegment
 } from "@/lib/flightScoreEngine";
