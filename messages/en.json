@@ -130,7 +130,8 @@
         "active": "Active",
         "warning": "Warning",
         "pending": "Pending",
-        "resolved": "Resolved"
+        "resolved": "Resolved",
+        "estimatedValue": "Estimated Value"
     },
     "ScheduleChange": {
         "title": "Flight Schedule Changed",

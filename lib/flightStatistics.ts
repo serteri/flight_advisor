@@ -12,7 +12,7 @@ export interface BatchStats {
 
 export function calculateBatchStats(flights: FlightForScoring[]): BatchStats {
     if (!flights || flights.length === 0) {
-        return { minPrice: 0, maxPrice: 0, medianPrice: 0, p10Price: 0, minDuration: 0 };
+        return { minPrice: 0, maxPrice: 0, medianPrice: 0, p10Price: 0, minDuration: 0, maxDuration: 0 };
     }
 
     // Fiyatları küçükten büyüğe sırala (Use effectivePrice if available)
@@ -38,7 +38,6 @@ export function calculateBatchStats(flights: FlightForScoring[]): BatchStats {
         maxPrice: prices[prices.length - 1],
         medianPrice,
         p10Price,
-        referencePrice, // New standard for scoring
         minDuration: durations[0],
         maxDuration: durations[durations.length - 1] // Added for normalization
     };

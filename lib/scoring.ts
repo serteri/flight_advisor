@@ -8,7 +8,6 @@
 export {
     scoreFlightsStrict,
     calculateFlightScore,
-    getBaggageStatus,
     type FlightScoreResult,
     type FlightForScoring
 } from "./flightScoreEngine";

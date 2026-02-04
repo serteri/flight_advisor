@@ -2,12 +2,14 @@
 import React from 'react';
 import { ShieldCheck, Clock, Armchair, Plane, DollarSign } from "lucide-react";
 import type { MonitoredTrip, GuardianAlert } from "@prisma/client";
+import { useTranslations } from 'next-intl';
 
 interface DashboardProps {
     trip: MonitoredTrip & { alerts: GuardianAlert[] };
 }
 
 export function TravelGuardianDashboard({ trip }: DashboardProps) {
+    const t = useTranslations('Guardian');
 
     // Renk ve İkon Yardımcıları
     const getSeverityStyle = (severity: string) => {
@@ -88,7 +90,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                                 <p className="text-sm mt-1 opacity-90">{alert.message}</p>
                                 {alert.potentialValue && (
                                     <div className="mt-2 inline-block bg-white/50 px-2 py-1 rounded text-xs font-bold">
-                                        Tahmini Değer: {alert.potentialValue}
+                                        {t('estimatedValue')}: {alert.potentialValue}
                                     </div>
                                 )}
                             </div>

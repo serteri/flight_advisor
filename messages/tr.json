@@ -130,7 +130,8 @@
         "active": "Aktif",
         "warning": "Uyarı Var",
         "pending": "Beklemede",
-        "resolved": "Çözüldü"
+        "resolved": "Çözüldü",
+        "estimatedValue": "Tahmini Değer"
     },
     "ScheduleChange": {
         "title": "Uçuş Saati Değişti",

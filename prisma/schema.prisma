@@ -399,6 +399,10 @@ model GuardianAlert {
   message     String
   severity    String   // INFO, WARNING, CRITICAL
   
+  // Para değeri veya fırsat bilgisi
+  potentialValue  String?  // "600 EUR", "Business Class", etc.
+  actionLabel     String?  // "File Claim", "Swap Ticket", etc.
+  
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
 
