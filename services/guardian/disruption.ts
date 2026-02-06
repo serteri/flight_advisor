@@ -79,6 +79,6 @@ export async function analyzeDisruption(flight: any): Promise<DisruptionAnalysis
         delayMinutes,
         compensationAmount,
         reason,
-        affiliateLink
+        affiliateLink: affiliateLink || undefined
     };
 }
