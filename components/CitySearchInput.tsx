@@ -13,15 +13,17 @@ interface CityResult {
 }
 
 interface CitySearchInputProps {
-    name: string;
-    label: string;
+    name?: string;
+    label?: string;
     placeholder?: string;
     defaultValue?: string;
     defaultIataCode?: string;
     error?: string;
+    onSelect?: (city: any) => void;
+    className?: string;
 }
 
-export function CitySearchInput({ name, label, placeholder, defaultValue, defaultIataCode, error }: CitySearchInputProps) {
+export function CitySearchInput({ name, label, placeholder, defaultValue, defaultIataCode, error, onSelect, className }: CitySearchInputProps) {
     const [query, setQuery] = useState(defaultValue || ""); // Visible text
     const [iataCode, setIataCode] = useState(defaultIataCode || ""); // Actual value
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
@@ -88,6 +90,9 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
         setQuery(displayText);
         setIataCode(city.iataCode);
         setShowSuggestions(false);
+
+        // Notify parent component
+        onSelect?.({ iata: city.iataCode, name: displayText });
     };
 
     return (
