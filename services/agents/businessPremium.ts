@@ -8,13 +8,13 @@ export interface BusinessSeatAnalysis {
     seatType: 'LIE_FLAT' | 'ANGLED_FLAT' | 'RECLINER' | 'UNKNOWN';
     pitch: number; // Seat pitch in inches
     width: number; // Seat width in inches
-  hasDirect AisleAccess: boolean;
-configuration: string; // "1-2-1", "2-2-2", etc.
-verdict: string;
-betterAlternative ?: {
-    flight: string;
-    reason: string;
-};
+    hasDirectAisleAccess: boolean;
+    configuration: string; // "1-2-1", "2-2-2", etc.
+    verdict: string;
+    betterAlternative?: {
+        flight: string;
+        reason: string;
+    };
 }
 
 export interface LoungeDetails {
