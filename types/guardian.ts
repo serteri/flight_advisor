@@ -36,3 +36,20 @@ export interface GuardianAlert {
     timestamp: string;
     metadata?: any; // Alert-specific data (e.g., oldTime, newTime)
 }
+
+export interface TrackedFlight {
+    id: string;
+    pnr: string;
+    origin: string;
+    destination: string;
+    departureTime: string;
+    originalDepartureTime: string;
+    status: string;
+    delayMinutes: number;
+    pricePaid: number;
+    currentBusinessPrice?: number | null;
+    carrier?: string | null;
+    flightNumber?: string | null;
+    passengers: any[];
+}
+
