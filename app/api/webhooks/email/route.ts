@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
         // 4. AI Parse Email Content (prefer HTML, fallback to text)
         const emailContent = html || text || '';
-        const userLanguage = user.locale || 'en';
+        const userLanguage = 'en'; // TODO: Add locale to User schema
 
         const parsedFlight = await parseFlightEmail(emailContent, userLanguage);
 
