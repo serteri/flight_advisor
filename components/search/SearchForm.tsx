@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Search, Plane } from "lucide-react";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { DatePicker } from "@/components/DatePicker";
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 export function SearchForm() {
     const t = useTranslations('SearchForm');
+    const locale = useLocale();
     const router = useRouter();
     const [origin, setOrigin] = useState<any>(null);
     const [destination, setDestination] = useState<any>(null);
@@ -58,6 +59,7 @@ export function SearchForm() {
                     <DatePicker
                         date={date}
                         setDate={setDate}
+                        locale={locale as any}
                         className="h-14 w-full bg-slate-50 border-slate-200 rounded-xl"
                     />
                 </div>
