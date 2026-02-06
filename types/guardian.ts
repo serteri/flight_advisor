@@ -53,3 +53,12 @@ export interface TrackedFlight {
     passengers: any[];
 }
 
+export interface FlightAnalysis {
+    isDisrupted: boolean;
+    hasScheduleChange: boolean;
+    isSniperAlert: boolean;
+    isJuniorAtRisk: boolean;
+    compensationAmount: number;
+    scheduleChangeMinutes: number;
+}
+
