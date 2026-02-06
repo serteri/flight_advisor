@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Search, Plane } from "lucide-react";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { DatePicker } from "@/components/DatePicker";
+import { useTranslations } from 'next-intl';
 
 export function SearchForm() {
+    const t = useTranslations('SearchForm');
     const router = useRouter();
     const [origin, setOrigin] = useState<any>(null);
     const [destination, setDestination] = useState<any>(null);
@@ -30,7 +32,7 @@ export function SearchForm() {
                     </div>
                     <div className="pl-1">
                         <CitySearchInput
-                            placeholder="Nereden?"
+                            placeholder={t('origin_placeholder')}
                             onSelect={setOrigin}
                             className="pl-10 h-14 w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all"
                         />
@@ -44,7 +46,7 @@ export function SearchForm() {
                     </div>
                     <div className="pl-1">
                         <CitySearchInput
-                            placeholder="Nereye?"
+                            placeholder={t('destination_placeholder')}
                             onSelect={setDestination}
                             className="pl-10 h-14 w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all"
                         />
@@ -68,7 +70,7 @@ export function SearchForm() {
                         className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-95"
                     >
                         <Search className="mr-2 h-5 w-5" />
-                        Ara
+                        {t('search_button')}
                     </Button>
                 </div>
             </div>
@@ -76,12 +78,13 @@ export function SearchForm() {
             {/* Quick Filters / Class Selection (Optional Future) */}
             <div className="flex gap-4 text-sm text-slate-500 px-2">
                 <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
-                    <input type="radio" name="tripType" defaultChecked className="accent-blue-600" /> Tek Yön
+                    <input type="radio" name="tripType" defaultChecked className="accent-blue-600" /> {t('one_way')}
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600">
-                    <input type="radio" name="tripType" className="accent-blue-600" /> Gidiş-Dönüş
+                    <input type="radio" name="tripType" className="accent-blue-600" /> {t('round_trip')}
                 </label>
             </div>
         </div>
     );
 }
+

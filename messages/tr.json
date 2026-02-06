@@ -8,6 +8,18 @@
         "dashboard": "Panel",
         "getStarted": "Başlayın"
     },
+    "SearchForm": {
+        "origin_placeholder": "Nereden?",
+        "destination_placeholder": "Nereye?",
+        "search_button": "Ara",
+        "one_way": "Tek Yön",
+        "round_trip": "Gidiş-Dönüş"
+    },
+    "DatePicker": {
+        "placeholder": "Tarih seçin",
+        "today": "Bugüne Git",
+        "close": "Kapat"
+    },
     "HomePage": {
         "hero": {
             "title": "Kişisel Uçuş Fiyat",

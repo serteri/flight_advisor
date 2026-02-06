@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay } from "date-fns";
 import { tr, de, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 interface DatePickerProps {
     label?: string;
@@ -46,6 +47,7 @@ export function DatePicker({
     setDate,
     className
 }: DatePickerProps) {
+    const t = useTranslations('DatePicker');
     const [selected, setSelected] = useState<Date | undefined>(
         date || (value ? new Date(value) : undefined)
     );
@@ -53,6 +55,13 @@ export function DatePicker({
     const [currentMonth, setCurrentMonth] = useState(date || (value ? new Date(value) : new Date()));
 
     const dateLocale = localeMap[locale] || localeMap.tr;
+    // We can also use locale from next-intl, but let's stick to props if passed, or fallback
+    // Note: The 'locale' prop passed to DatePicker might be from the parent which gets it from params.
+    // If not passed, we might want to get it from useLocale().
+    // For now, let's assume the passed locale is correct or handle it.
+
+    // Check if we need to translate weekdays dynamic? No, they are abbreviations.
+
     const days = weekDays[locale] || weekDays.tr;
 
     useEffect(() => {
@@ -123,7 +132,7 @@ export function DatePicker({
                 `}
             >
                 <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                {selected ? format(selected, "d MMMM yyyy", { locale: dateLocale }) : (placeholder || "Tarih seçin")}
+                {selected ? format(selected, "d MMMM yyyy", { locale: dateLocale }) : (placeholder || t('placeholder'))}
             </button>
 
             {/* Calendar Dropdown */}
@@ -278,14 +287,14 @@ export function DatePicker({
                                 onClick={() => setCurrentMonth(new Date())}
                                 className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                             >
-                                Bugüne Git
+                                {t('today')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setIsOpen(false)}
                                 className="text-xs text-slate-500 hover:text-slate-700"
                             >
-                                Kapat
+                                {t('close')}
                             </button>
                         </div>
                     </div>

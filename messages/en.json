@@ -8,6 +8,18 @@
         "dashboard": "Dashboard",
         "getStarted": "Get Started"
     },
+    "SearchForm": {
+        "origin_placeholder": "Where from?",
+        "destination_placeholder": "Where to?",
+        "search_button": "Search",
+        "one_way": "One Way",
+        "round_trip": "Round Trip"
+    },
+    "DatePicker": {
+        "placeholder": "Select date",
+        "today": "Go to Today",
+        "close": "Close"
+    },
     "HomePage": {
         "hero": {
             "title": "Your Personal Flight",

@@ -8,6 +8,18 @@
         "dashboard": "Übersicht",
         "getStarted": "Loslegen"
     },
+    "SearchForm": {
+        "origin_placeholder": "Von wo?",
+        "destination_placeholder": "Wohin?",
+        "search_button": "Suchen",
+        "one_way": "Hinflug",
+        "round_trip": "Hin- und Rückflug"
+    },
+    "DatePicker": {
+        "placeholder": "Datum wählen",
+        "today": "Zu Heute",
+        "close": "Schließen"
+    },
     "HomePage": {
         "hero": {
             "title": "Ihr persönlicher",
