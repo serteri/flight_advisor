@@ -429,3 +429,71 @@ export function generateAllFlightInsights(
 
     return insightsMap;
 }
+// ----------------------------
+// 6. SCENARIO STORYTELLING (AI Simulation)
+// ----------------------------
+
+export interface FlightChapter {
+    timeOfDay: string;
+    title: string;
+    description: string;
+    emoji: string;
+    tip?: string;
+}
+
+export interface FlightStory {
+    summary: string;
+    chapters: FlightChapter[];
+}
+
+export function getScenarioStory(flight: any): FlightStory {
+    const chapters: FlightChapter[] = [];
+    const depTime = new Date(flight.departureDate);
+    const arrTime = new Date(flight.arrivalDate);
+    const durationHours = flight.duration / 60;
+
+    // CHAPTER 1: DEPARTURE
+    chapters.push({
+        timeOfDay: depTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        title: `Kalkış: ${flight.origin}`,
+        description: `Yolculuk ${flight.origin} havalimanında başlıyor. ${depTime.getHours() < 8 ? 'Erken saat, kahve şart.' : 'Rahat bir saatte havaalanına geçiş.'}`,
+        emoji: '🛫',
+        tip: 'Online check-in yaparak 45dk kazanabilirsin.'
+    });
+
+    // CHAPTER 2: IN-FLIGHT / LAYOVER
+    if (flight.stops > 0 && flight.segments && flight.segments[0]) {
+        const firstSegment = flight.segments[0];
+        const layoverCity = firstSegment.destination;
+        chapters.push({
+            timeOfDay: 'Yolculuk Sırası',
+            title: `Aktarma: ${layoverCity}`,
+            description: `${layoverCity} şehrinde bir mola. Bacaklarını esnetmek için fırsat.`,
+            emoji: '🛑',
+            tip: 'Bu havalimanında ücretsiz Wi-Fi genellikle mevcuttur.'
+        });
+    } else {
+        chapters.push({
+            timeOfDay: 'Uçuşta',
+            title: 'Bulutların Üzerinde',
+            description: `${durationHours.toFixed(1)} saatlik kesintisiz bir uçuş.`,
+            emoji: '☁️',
+            tip: 'Gürültü önleyici kulaklığını tak ve filmin tadını çıkar.'
+        });
+    }
+
+    // CHAPTER 3: ARRIVAL
+    chapters.push({
+        timeOfDay: arrTime.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        title: `Varış: ${flight.destination}`,
+        description: `${flight.destination} şehrine hoş geldin. Yolculuk tamamlandı.`,
+        emoji: '🛬',
+        tip: 'Şehir merkezine UBER veya metro ile geçiş yapabilirsin.'
+    });
+
+    let summary = "Standart bir yolculuk.";
+    if (flight.score > 8) summary = "Bu uçuş seni yormayacak, harika bir seçim.";
+    else if (flight.score < 5) summary = "Biraz yorucu olabilir ama hedefe varacaksın.";
+
+    return { chapters, summary };
+}
