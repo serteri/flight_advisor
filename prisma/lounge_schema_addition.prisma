@@ -1,0 +1,80 @@
+// Addition to prisma/schema.prisma
+// Add these models at the end of your schema file
+
+// Lounge Access Rules (Dynamic Configuration)
+model LoungeAccessRule {
+  id              String   @id @default(cuid())
+  
+  // Required Asset
+  requiredAsset   String   // Card/Status identifier
+  assetType       AssetType
+  network         LoungeNetwork
+  accessLevel     AccessLevel
+  priority        Int      @default(50)
+  
+  // Guest Policy (JSON or separate fields)
+  maxGuests       Int
+  childFriendly   Boolean  @default(true)
+  childAgeLimit   Int      @default(12)
+  infantFree      Boolean  @default(true)
+  
+  // Optional Restrictions
+  maxVisitsPerYear Int?
+  requiresBooking  Boolean @default(false)
+  minHoursBeforeFlight Int?
+  maxHoursBeforeFlight Int?
+  
+  // Metadata
+  isActive        Boolean  @default(true)
+  validFrom       DateTime @default(now())
+  validUntil      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([network, accessLevel])
+  @@index([requiredAsset])
+}
+
+// User's Wallet (Cards, Statuses, Memberships)
+model UserAsset {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Asset Details
+  assetId     String    // AMEX_PLATINUM, QANTAS_GOLD, etc.
+  assetType   AssetType
+  name        String    // Display name
+  issuer      String?   // Bank/Airline
+  
+  // Validity
+  isActive    Boolean   @default(true)
+  expiryDate  DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([userId, assetId])
+  @@index([userId, isActive])
+}
+
+enum AssetType {
+  CARD
+  STATUS
+  MEMBERSHIP
+}
+
+enum LoungeNetwork {
+  CENTURION
+  PRIORITY_PASS
+  LOUNGE_KEY
+  PLAZA_PREMIUM
+  DRAGON_PASS
+  AIRLINE_LOUNGE
+}
+
+enum AccessLevel {
+  FREE
+  DISCOUNTED
+  PAID
+}

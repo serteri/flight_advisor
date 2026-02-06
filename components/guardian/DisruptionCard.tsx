@@ -1,17 +1,25 @@
 'use client';
 
-import { AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
+import { generateCompensationLink } from '@/services/guardian/airhelp';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[] }) {
     // Bu uçuş bacağı (Segment) ile ilgili bir 'DISRUPTION' (Rötar/İptal) alarmı var mı?
-    const disruptionAlert = alerts.find(a =>
+    const disruptionAlert = alerts && alerts.length > 0 ? alerts.find(a =>
         a.type === 'DISRUPTION' &&
-        (a.segmentId === segment.id || !a.segmentId) // Segment özelinde veya genel alarm
+        (a.segmentId === segment.id || !a.segmentId)
+    ) : null;
+
+    // Link Generation
+    const claimLink = generateCompensationLink(
+        segment.flightNumber || 'FLIGHT',
+        segment.departureTime || '',
+        segment.origin || '',
+        segment.destination || ''
     );
 
     // ----------------------------------------------------------------
     // DURUM 1: HER ŞEY YOLUNDA (Yeşil Mod)
-    // Alarm yoksa kullanıcıya güven verelim.
     // ----------------------------------------------------------------
     if (!disruptionAlert) {
         return (
@@ -29,7 +37,6 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
                     <p className="text-sm text-slate-500 leading-relaxed">
                         Uçuşunuz (<strong>{segment.airlineCode}{segment.flightNumber}</strong>) saniye saniye izleniyor.
                         Şu an herhangi bir rötar veya iptal görünmüyor.
-                        Sorun olursa anında bildireceğiz.
                     </p>
                 </div>
             </div>
@@ -37,12 +44,10 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
     }
 
     // ----------------------------------------------------------------
-    // DURUM 2: SORUN VAR! (Kırmızı Mod - Tazminat Hakkı)
-    // Alarm varsa parayı gösterelim.
+    // DURUM 2: SORUN VAR! (Kırmızı Mod)
     // ----------------------------------------------------------------
     return (
         <div className="bg-red-50 p-6 rounded-2xl border border-red-200 shadow-lg relative overflow-hidden group">
-
             {/* Arkaplan Efekti */}
             <div className="absolute top-0 right-0 p-4 opacity-10 -rotate-12 group-hover:opacity-20 transition-opacity">
                 <AlertTriangle className="w-32 h-32 text-red-600" />
@@ -56,11 +61,10 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
                         </div>
                         <span>Tazminat Hakkı Doğdu!</span>
                     </div>
-
-                    {/* Para Miktarı */}
                     <div className="text-right">
                         <div className="text-xs font-bold text-red-400 uppercase">Tahmini Tutar</div>
-                        <span className="text-3xl font-black text-slate-900">{disruptionAlert.potentialValue || '600€'}</span>
+                        {/* Use bracket notation or cast if potentialValue is missing from type */}
+                        <span className="text-3xl font-black text-slate-900">{(disruptionAlert as any).potentialValue || '600€'}</span>
                     </div>
                 </div>
 
@@ -68,9 +72,15 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
                     {disruptionAlert.message}
                 </p>
 
-                <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                <a
+                    href={claimLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                >
                     Dilekçeyi Oluştur (%0 Komisyon)
-                </button>
+                    <ShieldCheck className="w-5 h-5" />
+                </a>
             </div>
         </div>
     );

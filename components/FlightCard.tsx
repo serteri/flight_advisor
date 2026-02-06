@@ -16,6 +16,9 @@ import { getLayoverGuide } from "@/lib/airportGuide"; // Kept for expanded view 
 import { useTranslations } from "next-intl";
 import { FlexibilityWidget } from "@/components/search/FlexibilityWidget";
 import { FareExplainer } from "@/components/FareExplainer";
+import { analyzeUpgradeOpportunity } from "@/services/guardian/upgradeSniper";
+import { analyzeDisruption } from "@/services/guardian/disruption";
+import WatchButton from "@/components/flights/WatchButton";
 
 interface FlightCardProps {
     flight: any; // Using any to be flexible with the complex Flight type for now
@@ -29,6 +32,13 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
     const [isExpanded, setIsExpanded] = useState(false);
     const t = useTranslations("FlightSearch");
     const tCommon = useTranslations(); // For root keys like 'smart_choice'
+
+    // Agent Module Integrations
+    const economyPrice = flight.price || 0;
+    const businessPrice = flight.businessPrice || (economyPrice * 2.5);
+    const sniperResult = analyzeUpgradeOpportunity(economyPrice, businessPrice);
+    const delayMinutes = flight.delayMinutes || 0;
+    const poorMansBusiness = flight.poorMansBusiness || null;
 
     const formatTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -63,10 +73,16 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
     const daysToDeparture = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return (
-        <div className={`group relative bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md mb-4 ${verdict.decision === 'recommended'
+        <div className={`group relative bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md mb-4 overflow-hidden ${verdict.decision === 'recommended'
             ? 'border-emerald-200 ring-1 ring-emerald-100'
             : 'border-slate-200'
             }`}>
+            {/* 🎯 UPGRADE SNIPER BADGE */}
+            {sniperResult.isSniperDeal && (
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl shadow-lg z-10 animate-pulse">
+                    🎯 {sniperResult.message.split(':')[0]}
+                </div>
+            )}
             {/* --- TOP BANNER: IDENTITY & BADGE --- */}
             <div className="flex justify-between items-center px-5 py-3 border-b border-slate-50 bg-slate-50/30 rounded-t-2xl">
                 <div className="flex gap-2 items-center">
@@ -87,14 +103,17 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
                     )}
                 </div>
 
-                {/* Score */}
-                <div className="text-right flex items-baseline gap-1">
-                    <span className={`text-2xl font-black tracking-tight ${scores.total >= 8.5 ? 'text-emerald-600' :
-                        scores.total >= 6.5 ? 'text-slate-700' : 'text-red-500'
-                        }`}>
-                        {scores.total}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">/10</span>
+                {/* Score & Watch Button */}
+                <div className="flex items-center gap-2">
+                    <div className="text-right flex items-baseline gap-1">
+                        <span className={`text-2xl font-black tracking-tight ${scores.total >= 8.5 ? 'text-emerald-600' :
+                            scores.total >= 6.5 ? 'text-slate-700' : 'text-red-500'
+                            }`}>
+                            {scores.total}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">/10</span>
+                    </div>
+                    <WatchButton flightId={flight.id} />
                 </div>
             </div>
 
@@ -180,9 +199,38 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
                             <StressMap stress={stress} />
                         </div>
 
-                        {/* Mobile Button will be below */}
+                        {/* 🛡️ DISRUPTION HUNTER / BOOKING BUTTON */}
+                        <div className="mt-4">
+                            {delayMinutes > 180 ? (
+                                <a
+                                    href={flight.disruptionLink || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block w-full px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-lg hover:from-orange-600 hover:to-red-600 transition shadow-lg text-center"
+                                >
+                                    ⚠️ 600€ TAZMİNAT AL
+                                </a>
+                            ) : (
+                                <a
+                                    href={flight.deepLink || flight.affiliateUrl || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block w-full px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-md text-center"
+                                >
+                                    REZERVE ET
+                                </a>
+                            )}
+                        </div>
                     </div>
                 </div>
+
+                {/* 💺 POOR MAN'S BUSINESS ALERT */}
+                {poorMansBusiness && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-green-700 font-semibold bg-green-50 p-3 rounded-lg">
+                        <span className="text-lg">✨</span>
+                        <span>{poorMansBusiness.alert}</span>
+                    </div>
+                )}
 
                 {/* STRESS MAP (Mobile) */}
                 <div className="mt-4 md:hidden">
