@@ -22,21 +22,21 @@ export async function getTrackedFlights(userId: string): Promise<TrackedFlight[]
 
         // Convert MonitoredTrip to TrackedFlight format
         return monitoredTrips.map(trip => {
-            const firstFlight = trip.segments?.[0];
+            const firstSegment = trip.segments?.[0];
 
             return {
                 id: trip.id,
                 pnr: trip.pnr,
-                origin: firstFlight?.origin || 'N/A',
-                destination: firstFlight?.destination || 'N/A',
-                departureTime: firstFlight?.departureTime || new Date().toISOString(),
-                originalDepartureTime: firstFlight?.scheduledDeparture || firstFlight?.departureTime || new Date().toISOString(),
-                status: firstFlight?.status || 'SCHEDULED',
-                delayMinutes: firstFlight?.delayMinutes || 0,
+                origin: firstSegment?.origin || 'N/A',
+                destination: firstSegment?.destination || 'N/A',
+                departureTime: firstSegment?.departureDate.toISOString() || new Date().toISOString(),
+                originalDepartureTime: firstSegment?.departureDate.toISOString() || new Date().toISOString(),
+                status: 'SCHEDULED', // FlightSegment doesn't have status, default to SCHEDULED
+                delayMinutes: 0, // FlightSegment doesn't track delays directly
                 pricePaid: trip.originalPrice,
                 currentBusinessPrice: trip.targetUpgradePrice,
-                carrier: firstFlight?.carrier,
-                flightNumber: firstFlight?.flightNumber,
+                carrier: firstSegment?.airlineCode,
+                flightNumber: firstSegment?.flightNumber,
                 passengers: [] // Would need passenger data from separate table
             } as TrackedFlight;
         });
@@ -63,21 +63,21 @@ export async function getTrackedFlightById(id: string, userId: string): Promise<
 
         if (!trip) return null;
 
-        const firstFlight = trip.segments?.[0];
+        const firstSegment = trip.segments?.[0];
 
         return {
             id: trip.id,
             pnr: trip.pnr,
-            origin: firstFlight?.origin || 'N/A',
-            destination: firstFlight?.destination || 'N/A',
-            departureTime: firstFlight?.departureTime || new Date().toISOString(),
-            originalDepartureTime: firstFlight?.scheduledDeparture || firstFlight?.departureTime || new Date().toISOString(),
-            status: firstFlight?.status || 'SCHEDULED',
-            delayMinutes: firstFlight?.delayMinutes || 0,
+            origin: firstSegment?.origin || 'N/A',
+            destination: firstSegment?.destination || 'N/A',
+            departureTime: firstSegment?.departureDate.toISOString() || new Date().toISOString(),
+            originalDepartureTime: firstSegment?.departureDate.toISOString() || new Date().toISOString(),
+            status: 'SCHEDULED',
+            delayMinutes: 0,
             pricePaid: trip.originalPrice,
             currentBusinessPrice: trip.targetUpgradePrice,
-            carrier: firstFlight?.carrier,
-            flightNumber: firstFlight?.flightNumber,
+            carrier: firstSegment?.airlineCode,
+            flightNumber: firstSegment?.flightNumber,
             passengers: []
         } as TrackedFlight;
     } catch (error) {
