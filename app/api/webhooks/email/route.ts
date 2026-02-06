@@ -71,7 +71,8 @@ export async function POST(req: Request) {
                 watchUpgrade: true,
                 watchSeat: hasJuniorPassenger, // Auto-enable Seat Spy for children
 
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                nextCheckAt: new Date()
             }
         });
 
