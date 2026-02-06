@@ -558,6 +558,58 @@
         "cta": "Start Protection",
         "secure": "Cancel anytime. Secure payment via Stripe."
     },
+    "Pricing": {
+        "title": "Membership Plans",
+        "subtitle": "Tailored protection packages for every traveler.",
+        "trial": "7 Days Free Trial (Elite)",
+        "monthly": "/mo",
+        "plans": {
+            "free": {
+                "name": "Free",
+                "badge": "Traveler",
+                "price": "$0"
+            },
+            "guardian": {
+                "name": "Guardian",
+                "badge": "Pro",
+                "price": "$9.90"
+            },
+            "elite": {
+                "name": "Elite",
+                "badge": "Family & Biz",
+                "price": "$19.90"
+            }
+        },
+        "features": {
+            "search_score": "Search & Scoring",
+            "scenario_sim": "Scenario Simulation",
+            "disruption_hunter": "Disruption Hunter",
+            "inbox_parser": "Inbox Parser (Email)",
+            "schedule_guardian": "Schedule Guardian",
+            "junior_guardian": "Junior Guardian",
+            "backup_generator": "Backup Generator",
+            "lounge_intel": "Lounge Intelligence"
+        },
+        "values": {
+            "unlimited": "Unlimited",
+            "limited_3": "Limited (3/day)",
+            "link_only": "Link Only",
+            "auto_track": "Auto Track",
+            "priority": "Priority Support",
+            "none": "None",
+            "tickets_2": "2 Tickets/mo",
+            "watch_247": "24/7 Watch",
+            "full_protection": "Full Protection",
+            "crisis_mgmt": "Crisis Management",
+            "list_only": "List Only",
+            "full_analysis": "Full Access Analysis"
+        },
+        "cta": {
+            "current": "Current Plan",
+            "upgrade": "Upgrade",
+            "start_trial": "Start Trial"
+        }
+    },
     "addTrip": {
         "title": "Monitor New Trip",
         "pnr": "PNR Code",

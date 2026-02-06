@@ -490,6 +490,58 @@
         "cta": "Korumayı Başlat",
         "secure": "İstediğiniz zaman iptal edebilirsiniz. Güvenli ödeme Stripe ile sağlanır."
     },
+    "Pricing": {
+        "title": "Üyelik Planları",
+        "subtitle": "Her yolculuk tipi için özel koruma paketleri.",
+        "trial": "7 Gün Ücretsiz Deneme (Elite)",
+        "monthly": "/ay",
+        "plans": {
+            "free": {
+                "name": "Free",
+                "badge": "Gezgin",
+                "price": "$0"
+            },
+            "guardian": {
+                "name": "Guardian",
+                "badge": "Pro",
+                "price": "$9.90"
+            },
+            "elite": {
+                "name": "Elite",
+                "badge": "Aile & İş",
+                "price": "$19.90"
+            }
+        },
+        "features": {
+            "search_score": "Arama & Skorlama",
+            "scenario_sim": "Senaryo Simülasyonu",
+            "disruption_hunter": "Disruption Hunter",
+            "inbox_parser": "Inbox Parser (E-mail)",
+            "schedule_guardian": "Schedule Guardian",
+            "junior_guardian": "Junior Guardian",
+            "backup_generator": "Backup Generator",
+            "lounge_intel": "Lounge Intelligence"
+        },
+        "values": {
+            "unlimited": "Sınırsız",
+            "limited_3": "Kısıtlı (Günde 3)",
+            "link_only": "Sadece Link",
+            "auto_track": "Otomatik Takip",
+            "priority": "Öncelikli Destek",
+            "none": "Yok",
+            "tickets_2": "Aylık 2 Bilet",
+            "watch_247": "7/24 Nöbet",
+            "full_protection": "Tam Koruma",
+            "crisis_mgmt": "Kriz Yönetimi",
+            "list_only": "Sadece Liste",
+            "full_analysis": "Tam Erişim Analizi"
+        },
+        "cta": {
+            "current": "Mevcut Plan",
+            "upgrade": "Yükselt",
+            "start_trial": "Denemeyi Başlat"
+        }
+    },
     "addTrip": {
         "title": "Yeni Seyahat İzle",
         "pnr": "PNR Kodu",

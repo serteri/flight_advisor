@@ -323,6 +323,58 @@
         "cta": "Schutz Starten",
         "secure": "Jederzeit kündbar. Sichere Zahlung über Stripe."
     },
+    "Pricing": {
+        "title": "Mitgliedschaftspläne",
+        "subtitle": "Maßgeschneiderte Schutzpakete für jeden Reisenden.",
+        "trial": "7 Tage kostenlos (Elite)",
+        "monthly": "/Monat",
+        "plans": {
+            "free": {
+                "name": "Kostenlos",
+                "badge": "Reisender",
+                "price": "$0"
+            },
+            "guardian": {
+                "name": "Guardian",
+                "badge": "Pro",
+                "price": "$9.90"
+            },
+            "elite": {
+                "name": "Elite",
+                "badge": "Familie & Biz",
+                "price": "$19.90"
+            }
+        },
+        "features": {
+            "search_score": "Suche & Bewertung",
+            "scenario_sim": "Szenario-Simulation",
+            "disruption_hunter": "Disruption Hunter",
+            "inbox_parser": "Inbox Parser (E-Mail)",
+            "schedule_guardian": "Zeitplan-Wächter",
+            "junior_guardian": "Junior Guardian",
+            "backup_generator": "Backup Generator",
+            "lounge_intel": "Lounge Intelligence"
+        },
+        "values": {
+            "unlimited": "Unbegrenzt",
+            "limited_3": "Begrenzt (3/Tag)",
+            "link_only": "Nur Link",
+            "auto_track": "Auto-Tracking",
+            "priority": "Priorisierter Support",
+            "none": "Keine",
+            "tickets_2": "2 Tickets/Monat",
+            "watch_247": "24/7 Überwachung",
+            "full_protection": "Vollschutz",
+            "crisis_mgmt": "Krisenmanagement",
+            "list_only": "Nur Liste",
+            "full_analysis": "Vollzugriffsanalyse"
+        },
+        "cta": {
+            "current": "Aktueller Plan",
+            "upgrade": "Upgrade",
+            "start_trial": "Test starten"
+        }
+    },
     "addTrip": {
         "title": "Neue Reise Verfolgen",
         "pnr": "PNR Code",

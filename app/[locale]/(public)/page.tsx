@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingDown, ShieldCheck, Globe2, BrainCircuit, Zap, Search } from "lucide-react";
 import { SearchForm } from "@/components/search/SearchForm";
+import { PricingTable } from "@/components/marketing/PricingTable";
 
 export default function HomePage() {
     const t = useTranslations('HomePage');
@@ -97,6 +98,9 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
+
+            {/* Pricing Section */}
+            <PricingTable />
         </div>
     );
 }
