@@ -6,7 +6,7 @@ import { tr, de, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DatePickerProps {
-    label: string;
+    label?: string;
     placeholder?: string;
     error?: string;
     disabled?: boolean;
@@ -14,6 +14,11 @@ interface DatePickerProps {
     onChange?: (date: string) => void;
     minDate?: Date;
     locale?: "en" | "tr" | "de";
+
+    // Alternative API (React state setters)
+    date?: Date | undefined;
+    setDate?: (date: Date | undefined) => void;
+    className?: string;
 }
 
 const localeMap = {
@@ -36,27 +41,37 @@ export function DatePicker({
     value,
     onChange,
     minDate,
-    locale = "tr"
+    locale = "tr",
+    date,
+    setDate,
+    className
 }: DatePickerProps) {
     const [selected, setSelected] = useState<Date | undefined>(
-        value ? new Date(value) : undefined
+        date || (value ? new Date(value) : undefined)
     );
     const [isOpen, setIsOpen] = useState(false);
-    const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
+    const [currentMonth, setCurrentMonth] = useState(date || (value ? new Date(value) : new Date()));
 
     const dateLocale = localeMap[locale] || localeMap.tr;
     const days = weekDays[locale] || weekDays.tr;
 
     useEffect(() => {
-        if (value && value !== format(selected || new Date(0), "yyyy-MM-dd")) {
+        if (date && date !== selected) {
+            setSelected(date);
+        } else if (value && value !== format(selected || new Date(0), "yyyy-MM-dd")) {
             setSelected(new Date(value));
         }
-    }, [value, selected]);
+    }, [value, selected, date]);
 
-    const handleSelect = (date: Date) => {
-        setSelected(date);
+    const handleSelect = (selectedDate: Date) => {
+        setSelected(selectedDate);
+
+        // Call appropriate callback
+        if (setDate) {
+            setDate(selectedDate);
+        }
         if (onChange) {
-            onChange(format(date, "yyyy-MM-dd"));
+            onChange(format(selectedDate, "yyyy-MM-dd"));
         }
         setIsOpen(false);
     };
