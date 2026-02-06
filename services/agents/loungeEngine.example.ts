@@ -148,7 +148,7 @@ async function checkLoungeAccessFromDB(userId: string, loungeId: string) {
     });
 
     // 4. Convert DB rules to engine format
-    const engineRules = dbRules.map(r => ({
+    const engineRules = dbRules.map((r: any) => ({
         id: r.id,
         requiredAsset: r.requiredAsset,
         assetType: r.assetType,
