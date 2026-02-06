@@ -80,15 +80,15 @@ export async function POST(req: Request) {
         await prisma.flightSegment.create({
             data: {
                 tripId: monitoredTrip.id,
-                carrier: parsedFlight.airline || 'XX',
+                airlineCode: parsedFlight.airline || 'XX',
                 flightNumber: parsedFlight.flightNumber || '0',
                 origin: parsedFlight.origin!,
                 destination: parsedFlight.destination!,
-                departureTime: `${parsedFlight.departureDate}T${parsedFlight.departureTime}:00Z`,
-                arrivalTime: parsedFlight.arrivalDate
+                departureDate: new Date(`${parsedFlight.departureDate}T${parsedFlight.departureTime}:00Z`),
+                arrivalDate: new Date(parsedFlight.arrivalDate
                     ? `${parsedFlight.arrivalDate}T23:59:00Z`
-                    : `${parsedFlight.departureDate}T23:59:00Z`,
-                sequenceNumber: 1
+                    : `${parsedFlight.departureDate}T23:59:00Z`),
+                segmentOrder: 1
             }
         });
 
