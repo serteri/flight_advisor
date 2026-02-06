@@ -1,6 +1,6 @@
 
 import { prisma } from '@/lib/prisma';
-import { checkSegmentDisruption } from '@/services/guardian/disruption';
+import { analyzeDisruption } from '@/services/guardian/disruption';
 import { checkSeatComfort } from '@/services/guardian/seatSpy';
 import { generateBackupPlan } from '@/services/guardian/backupGenerator';
 import { checkConnectionRisk } from '@/services/guardian/connectionGuard';
@@ -26,7 +26,7 @@ export async function runGuardianChecks() {
         console.log(`Processing segment ${segment.airlineCode}${segment.flightNumber} (${segment.origin}-${segment.destination})...`);
 
         // A. Tazminat Kontrolü (FlightAware)
-        await checkSegmentDisruption(segment.id);
+        await analyzeDisruption(segment);
         // Not: Disruption servisi 'CANCELLED' tespit ederse BackupGenerator çağırabilir.
         // Şimdilik basitlik adına burada kontrol etmiyoruz, Disruption servisi içinden çağrılması daha doğru olurdu (Task 7 mantığı).
         // Ancak kullanıcı örneği main.ts'de comment ile göstermiş.
