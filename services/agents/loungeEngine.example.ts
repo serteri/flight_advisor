@@ -169,7 +169,7 @@ async function checkLoungeAccessFromDB(userId: string, loungeId: string) {
         include: { passengers: true }
     });
 
-    const passengers = trip?.passengers.map(p => ({
+    const passengers = trip?.passengers.map((p: any) => ({
         age: p.age,
         type: p.type
     })) || [];
