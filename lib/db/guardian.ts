@@ -13,7 +13,7 @@ export async function getTrackedFlights(userId: string): Promise<TrackedFlight[]
                 status: 'ACTIVE' // Only active trips
             },
             include: {
-                flights: true // Include related flight segments
+                segments: true // Include related flight segments
             },
             orderBy: {
                 createdAt: 'desc'
@@ -22,7 +22,7 @@ export async function getTrackedFlights(userId: string): Promise<TrackedFlight[]
 
         // Convert MonitoredTrip to TrackedFlight format
         return monitoredTrips.map(trip => {
-            const firstFlight = trip.flights?.[0];
+            const firstFlight = trip.segments?.[0];
 
             return {
                 id: trip.id,
@@ -57,13 +57,13 @@ export async function getTrackedFlightById(id: string, userId: string): Promise<
                 userId
             },
             include: {
-                flights: true
+                segments: true
             }
         });
 
         if (!trip) return null;
 
-        const firstFlight = trip.flights?.[0];
+        const firstFlight = trip.segments?.[0];
 
         return {
             id: trip.id,
