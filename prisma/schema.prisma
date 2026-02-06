@@ -347,10 +347,25 @@ model MonitoredTrip {
   // Relationships
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   segments        FlightSegment[] 
+  passengers      Passenger[]
   alerts          GuardianAlert[]
 
   @@index([userId])
   @@index([status, nextCheckAt])
+}
+
+model Passenger {
+  id            String   @id @default(cuid())
+  tripId        String
+  
+  name          String
+  type          String   // "ADULT", "CHILD", "INFANT"
+  age           Int?
+  
+  // Relationship
+  trip          MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  @@index([tripId])
 }
 
 model FlightSegment {

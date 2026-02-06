@@ -72,7 +72,16 @@ export async function POST(req: Request) {
                 watchSeat: hasJuniorPassenger, // Auto-enable Seat Spy for children
 
                 status: 'ACTIVE',
-                nextCheckAt: new Date()
+                nextCheckAt: new Date(),
+
+                // Save Passengers
+                passengers: {
+                    create: parsedFlight.passengers.map(p => ({
+                        name: p.name,
+                        type: p.type,
+                        age: p.age
+                    }))
+                }
             }
         });
 
