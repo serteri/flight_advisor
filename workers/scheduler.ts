@@ -100,4 +100,12 @@ async function runScheduler() {
 }
 
 // Servisi Başlat
-runScheduler();
+// runScheduler(); 
+// Not: Bu dosyayı import edenler (Next.js build) otomatik başlatmasın diye kapattık.
+// Çalıştırmak için: `npm run scheduler` (scripts/start-scheduler.ts veya tek seferlik çağrı gerekir)
+
+if (require.main === module) {
+    runScheduler();
+}
+
+export { runScheduler };

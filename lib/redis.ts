@@ -8,12 +8,23 @@ import IORedis from 'ioredis';
 // 3. Otherwise, return null (prevent build-time connection errors)
 
 const getRedisConnection = () => {
+    // PREVENT CONNECTION DURING BUILD (CI or Static Generation)
+    if (process.env.CI) return null;
+
     if (process.env.REDIS_URL) {
-        return new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
+        return new IORedis(process.env.REDIS_URL, {
+            maxRetriesPerRequest: null,
+            lazyConnect: true // Wait for first command
+        });
     }
-    // Only connect to localhost if explicitly enabled (avoid Vercel build errors)
+    // Only connect to localhost if explicitly enabled
     if (process.env.ENABLE_LOCAL_REDIS === 'true') {
-        return new IORedis({ host: 'localhost', port: 6379, maxRetriesPerRequest: null });
+        return new IORedis({
+            host: 'localhost',
+            port: 6379,
+            maxRetriesPerRequest: null,
+            lazyConnect: true // Wait for first command 
+        });
     }
     return null;
 };
