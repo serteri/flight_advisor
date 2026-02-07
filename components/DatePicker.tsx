@@ -112,9 +112,11 @@ export function DatePicker({
 
     return (
         <div className="relative">
-            <label className="text-sm font-semibold mb-2 block text-slate-700">
-                {label}
-            </label>
+            {label && (
+                <label className="text-sm font-semibold mb-2 block text-slate-700">
+                    {label}
+                </label>
+            )}
 
             {/* Input trigger */}
             <button
