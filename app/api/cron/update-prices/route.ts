@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { flightMonitorQueue } from '@/workers/queue';
+import { addFlightCheckJob } from '@/workers/queue';
 import { searchFlights } from '@/lib/amadeus';
 
 export const dynamic = 'force-dynamic';
