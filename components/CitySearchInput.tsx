@@ -107,10 +107,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                     <MapPin size={18} />
                 </div>
 
-                import {cn} from "@/lib/utils"; // Add to imports if not present, but I can't start at line 1. Assuming line 4 is safe or I need to add import separately.
 
-                // Actually I'll just use the replace chunk for the wrapper div, but I need to make sure 'cn' is imported.
-                // I'll do a separate replace for import.
 
                 <div className={cn(
                     "relative flex items-center bg-white rounded-lg border-2 transition-all duration-200",
