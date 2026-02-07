@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export type NotificationType = 'SCHEDULE_CHANGE' | 'DISRUPTION' | 'PRICE_ALERT' | 'SEAT_ALERT' | 'UPGRADE_ALERT' | 'INFO';
 

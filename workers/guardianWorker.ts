@@ -1,5 +1,5 @@
 // workers/guardianWorker.ts
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { checkAmadeusFlightStatus } from "@/services/amadeus/status";
 import { notifyUser } from "@/lib/notifications";
 import { TripStatus } from "@prisma/client";
