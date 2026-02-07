@@ -6,6 +6,7 @@ import {
     ChevronDown,
     ChevronUp,
     Clock,
+    Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AirlineLogo } from "@/components/AirlineLogo";
@@ -105,13 +106,25 @@ export function FlightCard({ flight, searchParams, bestPrice, bestDuration }: Fl
 
                 {/* Score & Watch Button */}
                 <div className="flex items-center gap-2">
-                    <div className="text-right flex items-baseline gap-1">
-                        <span className={`text-2xl font-black tracking-tight ${scores.total >= 8.5 ? 'text-emerald-600' :
-                            scores.total >= 6.5 ? 'text-slate-700' : 'text-red-500'
-                            }`}>
-                            {scores.total}
-                        </span>
+                    <div className="text-right flex items-baseline gap-1 relative group/score cursor-help">
+                        {/* PREMIUM GATE: Blur the score if not premium (simulated) */}
+                        <div className="relative">
+                            <span className={`text-2xl font-black tracking-tight blur-[6px] opacity-40 select-none text-slate-400`}>
+                                {scores.total}
+                            </span>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Lock className="w-4 h-4 text-slate-400/80" />
+                            </div>
+                        </div>
                         <span className="text-[10px] text-slate-400 font-medium">/10</span>
+
+                        {/* Tooltip for Upsell */}
+                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-slate-900 text-white text-xs p-2 rounded-lg shadow-xl opacity-0 invisible group-hover/score:opacity-100 group-hover/score:visible transition-all z-20 pointer-events-none">
+                            <div className="font-bold flex items-center gap-1">
+                                <span className="text-amber-400">★</span> Premium Feature
+                            </div>
+                            Unlock Agent Score IQ to see the true value of this flight.
+                        </div>
                     </div>
                     <WatchButton flightId={flight.id} />
                 </div>

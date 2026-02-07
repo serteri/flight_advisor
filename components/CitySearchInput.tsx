@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Plane, Building, MapPin, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CityResult {
     iataCode: string;
@@ -97,7 +98,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
 
     return (
         <div className="relative" ref={wrapperRef}>
-            <label className="text-sm font-bold mb-2 block text-slate-700 uppercase tracking-wider text-xs">{label}</label>
+            {label && <label className="text-sm font-bold mb-2 block text-slate-700 uppercase tracking-wider text-xs">{label}</label>}
             <div className="relative group">
                 {/* Hidden input for the actual form submission */}
                 <input type="hidden" name={name} value={iataCode} />
@@ -106,9 +107,16 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                     <MapPin size={18} />
                 </div>
 
-                <div className={`relative flex items-center bg-white rounded-lg border-2 transition-all duration-200 
-                    ${error ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100'}
-                `}>
+                import {cn} from "@/lib/utils"; // Add to imports if not present, but I can't start at line 1. Assuming line 4 is safe or I need to add import separately.
+
+                // Actually I'll just use the replace chunk for the wrapper div, but I need to make sure 'cn' is imported.
+                // I'll do a separate replace for import.
+
+                <div className={cn(
+                    "relative flex items-center bg-white rounded-lg border-2 transition-all duration-200",
+                    error ? "border-red-500 bg-red-50" : "border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
+                    className
+                )}>
                     <Input
                         name={`${name}_search`} // distinct visible name
                         value={query}
