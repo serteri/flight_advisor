@@ -63,6 +63,7 @@ async function getCachedFlightSearch(origin: string, dest: string, date: string,
     const cacheKey = `search:${origin}:${dest}:${date}:${currency}`;
 
     // 1. Check Redis
+    if (!connection) return null;
     const cached = await connection.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -73,91 +74,98 @@ async function getCachedFlightSearch(origin: string, dest: string, date: string,
     });
 
     // 3. Save to Redis for 1 hour (3600s)
-    if (results?.data) {
+    if (results?.data && connection) {
         await connection.setex(cacheKey, 3600, JSON.stringify(results));
     }
 
     return results;
 }
 
-const worker = new Worker('flight-monitor', async (job: Job) => {
-    const { flightId } = job.data;
+// Safe Worker Initialization
+const worker = connection
+    ? new Worker('flight-monitor', async (job: Job) => {
+        const { flightId } = job.data;
 
-    if (job.name !== 'check-price') return;
+        if (job.name !== 'check-price') return;
 
-    // 1. Fetch Flight Details from DB
-    // Using WatchedFlight to maintain compatibility with current Dashboard
-    const flight = await prisma.watchedFlight.findUnique({ where: { id: flightId } });
-    if (!flight) throw new Error("Flight not found");
+        // 1. Fetch Flight Details from DB
+        // Using WatchedFlight to maintain compatibility with current Dashboard
+        const flight = await prisma.watchedFlight.findUnique({ where: { id: flightId } });
+        if (!flight) throw new Error("Flight not found");
 
-    const dateStr = flight.departureDate.toISOString().split('T')[0];
+        const dateStr = flight.departureDate.toISOString().split('T')[0];
 
-    try {
-        // 2. Search (Cache Protected)
-        const searchResults = await getCachedFlightSearch(flight.origin, flight.destination, dateStr, flight.currency);
+        try {
+            // 2. Search (Cache Protected)
+            const searchResults = await getCachedFlightSearch(flight.origin, flight.destination, dateStr, flight.currency);
 
-        if (!searchResults?.data) {
-            console.log(`❌ Flight Not Found or API Error: ${flight.flightNumber}`);
-            return;
-        }
-
-        // 3. LOGIC: Match Flight Number
-        const matchingOffer = searchResults.data.find((offer: any) => {
-            const segments = offer.itineraries?.[0]?.segments || [];
-            // Check if our specific flight number exists in the segments
-            return segments.some((seg: any) =>
-                `${seg.carrierCode}${seg.number}` === flight.flightNumber
-            );
-        });
-
-        if (matchingOffer) {
-            const newPrice = parseFloat(matchingOffer.price?.total || '0');
-            const currentHistory = (flight.priceHistory as any[]) || [];
-
-            console.log(`📊 Price Check: ${flight.flightNumber} | Old: ${flight.currentPrice} -> New: ${newPrice}`);
-
-            // 4. Update Database
-            const lastEntry = currentHistory[currentHistory.length - 1];
-            const today = new Date().toISOString();
-
-            let needsUpdate = false;
-            if (!lastEntry || lastEntry.price !== newPrice) {
-                needsUpdate = true;
+            if (!searchResults?.data) {
+                console.log(`❌ Flight Not Found or API Error: ${flight.flightNumber}`);
+                return;
             }
 
-            if (needsUpdate) {
-                await prisma.watchedFlight.update({
-                    where: { id: flight.id },
-                    data: {
-                        currentPrice: newPrice,
-                        lastChecked: new Date(),
-                        priceHistory: [
-                            ...currentHistory,
-                            { date: today, price: newPrice }
-                        ]
-                    }
-                });
-                console.log(`💰 Updated Price for ${flight.flightNumber}`);
+            // 3. LOGIC: Match Flight Number
+            const matchingOffer = searchResults.data.find((offer: any) => {
+                const segments = offer.itineraries?.[0]?.segments || [];
+                // Check if our specific flight number exists in the segments
+                return segments.some((seg: any) =>
+                    `${seg.carrierCode}${seg.number}` === flight.flightNumber
+                );
+            });
+
+            if (matchingOffer) {
+                const newPrice = parseFloat(matchingOffer.price?.total || '0');
+                const currentHistory = (flight.priceHistory as any[]) || [];
+
+                console.log(`📊 Price Check: ${flight.flightNumber} | Old: ${flight.currentPrice} -> New: ${newPrice}`);
+
+                // 4. Update Database
+                const lastEntry = currentHistory[currentHistory.length - 1];
+                const today = new Date().toISOString();
+
+                let needsUpdate = false;
+                if (!lastEntry || lastEntry.price !== newPrice) {
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                    await prisma.watchedFlight.update({
+                        where: { id: flight.id },
+                        data: {
+                            currentPrice: newPrice,
+                            lastChecked: new Date(),
+                            priceHistory: [
+                                ...currentHistory,
+                                { date: today, price: newPrice }
+                            ]
+                        }
+                    });
+                    console.log(`💰 Updated Price for ${flight.flightNumber}`);
+                } else {
+                    // Just update timestamp
+                    await prisma.watchedFlight.update({
+                        where: { id: flight.id },
+                        data: { lastChecked: new Date() }
+                    });
+                }
+
+                // 5. RUN DISRUPTION CHECK
+                await checkDisruption(flight);
+
             } else {
-                // Just update timestamp
-                await prisma.watchedFlight.update({
-                    where: { id: flight.id },
-                    data: { lastChecked: new Date() }
-                });
+                console.log(`⚠️ Flight (${flight.flightNumber}) not found in search results.`);
             }
 
-            // 5. RUN DISRUPTION CHECK
-            await checkDisruption(flight);
-
-        } else {
-            console.log(`⚠️ Flight (${flight.flightNumber}) not found in search results.`);
+        } catch (error) {
+            console.error(`❌ Worker Error (${flight.flightNumber}):`, error);
+            throw error; // Let BullMQ retry
         }
 
-    } catch (error) {
-        console.error(`❌ Worker Error (${flight.flightNumber}):`, error);
-        throw error; // Let BullMQ retry
-    }
+    }, { connection })
+    : null;
 
-}, { connection });
-
-console.log("👷 Flight Monitor Worker Started...");
+if (worker) {
+    console.log("👷 Flight Monitor Worker Started...");
+} else {
+    console.log("⚠️ Flight Monitor Worker logic skipped (No Redis connection).");
+}
