@@ -145,4 +145,5 @@ export function SearchForm() {
             </div>
         </div>
     );
+}
 
