@@ -13,6 +13,7 @@ interface PassengerSelectorProps {
     setInfants: (val: number) => void;
     cabin: "ECONOMY" | "BUSINESS" | "FIRST";
     setCabin: (val: "ECONOMY" | "BUSINESS" | "FIRST") => void;
+    variant?: "default" | "ghost";
     className?: string;
 }
 
@@ -25,6 +26,7 @@ export function PassengerSelector({
     setInfants,
     cabin,
     setCabin,
+    variant = "default",
     className
 }: PassengerSelectorProps) {
     const t = useTranslations('FlightSearch');
@@ -59,7 +61,9 @@ export function PassengerSelector({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full h-14 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left"
+                className={`w-full h-14 px-4 flex items-center justify-between transition-all text-left rounded-xl
+                    ${variant === 'default' ? 'bg-slate-50 border border-slate-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' : 'bg-transparent hover:bg-slate-50/50'}
+                `}
             >
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Users className="h-5 w-5 text-slate-400 shrink-0" />

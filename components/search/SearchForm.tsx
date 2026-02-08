@@ -48,48 +48,61 @@ export function SearchForm() {
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div className="w-full relative">
+            {/* Unified Search Bar Container */}
+            <div className="bg-white rounded-3xl md:rounded-full shadow-2xl shadow-blue-900/20 border border-slate-200/50 p-2 flex flex-col md:flex-row relative z-20">
+
                 {/* Origin */}
-                <div className="md:col-span-3 lg:col-span-3 relative group">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none z-10">
-                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <div className="relative flex-1 group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
+                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                     </div>
-                    <div className="pl-1">
-                        <CitySearchInput
-                            placeholder={t('origin_placeholder')}
-                            onSelect={setOrigin}
-                            className="pl-10 h-14 w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all"
-                        />
-                    </div>
+                    <CitySearchInput
+                        placeholder={t('origin_placeholder')}
+                        onSelect={setOrigin}
+                        variant="ghost"
+                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-l-full md:rounded-r-none transition-colors"
+                    />
                 </div>
+
+                {/* Divider */}
+                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="md:hidden h-px bg-slate-200 mx-4" />
 
                 {/* Destination */}
-                <div className="md:col-span-3 lg:col-span-3 relative group">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none z-10">
-                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors rotate-90" />
+                <div className="relative flex-1 group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
+                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors rotate-90" />
                     </div>
-                    <div className="pl-1">
-                        <CitySearchInput
-                            placeholder={t('destination_placeholder')}
-                            onSelect={setDestination}
-                            className="pl-10 h-14 w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl transition-all"
-                        />
-                    </div>
+                    <CitySearchInput
+                        placeholder={t('destination_placeholder')}
+                        onSelect={setDestination}
+                        variant="ghost"
+                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
+                    />
                 </div>
 
+                {/* Divider */}
+                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="md:hidden h-px bg-slate-200 mx-4" />
+
                 {/* Date */}
-                <div className="md:col-span-3 lg:col-span-2">
+                <div className="relative md:w-[220px] group">
                     <DatePicker
                         date={date}
                         setDate={setDate}
                         locale={locale as any}
-                        className="h-14 w-full bg-slate-50 border-slate-200 rounded-xl"
+                        variant="ghost"
+                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
                     />
                 </div>
 
+                {/* Divider */}
+                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="md:hidden h-px bg-slate-200 mx-4" />
+
                 {/* Passengers */}
-                <div className="md:col-span-3 lg:col-span-2">
+                <div className="relative md:w-[200px] group">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -99,38 +112,37 @@ export function SearchForm() {
                         setInfants={setInfants}
                         cabin={cabin}
                         setCabin={setCabin}
-                        className="h-14 w-full"
+                        variant="ghost"
+                        className="h-[72px] hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
                     />
                 </div>
 
-                {/* Button */}
-                <div className="md:col-span-12 lg:col-span-2">
+                {/* Search Button */}
+                <div className="p-2 md:pl-0">
                     <Button
                         onClick={handleSearch}
                         disabled={!origin || !destination || !date}
-                        className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-95 text-lg"
+                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                     >
-                        <Search className="mr-2 h-5 w-5" />
-                        {t('search_button')}
+                        <Search className="h-6 w-6" />
+                        <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>
                     </Button>
                 </div>
             </div>
 
-            {/* Quick Filters / Class Selection (Optional Future) */}
-            <div className="flex gap-4 text-sm text-slate-500 px-2 justify-center md:justify-start">
-                <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 group transition-colors">
-                    <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center group-hover:border-blue-400">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full" />
+            {/* Trip Type Toggles (Optional - positioned below) */}
+            <div className="absolute -bottom-10 left-6 flex gap-6 text-sm font-medium text-white/80">
+                <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                    <div className="w-4 h-4 rounded-full border-2 border-white/50 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
                     </div>
                     {t('one_way')}
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 group transition-colors opacity-50 cursor-not-allowed" title="Coming soon">
-                    <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center group-hover:border-blue-400">
-                    </div>
+                <label className="flex items-center gap-2 cursor-not-allowed opacity-60">
+                    <div className="w-4 h-4 rounded-full border-2 border-white/30" />
                     {t('round_trip')}
                 </label>
             </div>
         </div>
     );
-}
 

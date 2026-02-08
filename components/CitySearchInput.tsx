@@ -21,10 +21,11 @@ interface CitySearchInputProps {
     defaultIataCode?: string;
     error?: string;
     onSelect?: (city: any) => void;
+    variant?: "default" | "ghost";
     className?: string;
 }
 
-export function CitySearchInput({ name, label, placeholder, defaultValue, defaultIataCode, error, onSelect, className }: CitySearchInputProps) {
+export function CitySearchInput({ name, label, placeholder, defaultValue, defaultIataCode, error, onSelect, variant = "default", className }: CitySearchInputProps) {
     const [query, setQuery] = useState(defaultValue || ""); // Visible text
     const [iataCode, setIataCode] = useState(defaultIataCode || ""); // Actual value
     const [suggestions, setSuggestions] = useState<CityResult[]>([]);
@@ -110,8 +111,10 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
 
 
                 <div className={cn(
-                    "relative flex items-center bg-white rounded-lg border-2 transition-all duration-200",
-                    error ? "border-red-500 bg-red-50" : "border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
+                    "relative flex items-center transition-all duration-200",
+                    variant === "default" && "bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
+                    variant === "ghost" && "bg-transparent border-0 hover:bg-slate-50/50 rounded-xl",
+                    error ? "border-red-500 bg-red-50" : "",
                     className
                 )}>
                     <Input

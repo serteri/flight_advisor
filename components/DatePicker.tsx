@@ -13,6 +13,7 @@ interface DatePickerProps {
     onChange?: (date: string) => void;
     minDate?: Date;
     locale?: "en" | "tr" | "de";
+    variant?: "default" | "ghost";
 
     // Alternative API (React state setters)
     date?: Date | undefined;
@@ -41,6 +42,7 @@ export function DatePicker({
     onChange,
     minDate,
     locale = "en",
+    variant = "default",
     date,
     setDate,
     className
@@ -130,12 +132,14 @@ export function DatePicker({
                 disabled={disabled}
                 className={`
                     w-full h-14 px-4 pl-12 text-left relative
-                    bg-white border rounded-xl
-                    hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200
-                    transition-all duration-200 flex items-center
+                    rounded-xl flex items-center transition-all duration-200
+                    ${variant === 'default'
+                        ? 'bg-white border hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                        : 'bg-transparent border-0 hover:bg-slate-50/50'
+                    }
                     ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}
-                    ${error ? 'border-red-500' : 'border-slate-200'}
-                    ${selected ? 'text-slate-900 border-blue-500 ring-1 ring-blue-100' : 'text-slate-400'}
+                    ${error ? 'border-red-500' : (variant === 'default' ? 'border-slate-200' : '')}
+                    ${selected && variant === 'default' ? 'text-slate-900 border-blue-500 ring-1 ring-blue-100' : (selected ? 'text-slate-900' : 'text-slate-400')}
                     ${className}
                 `}
             >
@@ -162,9 +166,9 @@ export function DatePicker({
 
             {/* Calendar Popover */}
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-2 bg-white rounded-2xl shadow-xl shadow-blue-900/10 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-left xl:w-[670px] w-[320px]">
+                <div className="absolute top-full left-0 z-50 mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-left xl:w-[670px] w-[320px] overflow-hidden">
                     {/* Header Controls */}
-                    <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white">
+                    <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
                         <button
                             type="button"
                             onClick={() => setCurrentMonth(prev => addMonths(prev, -1))}
