@@ -146,23 +146,23 @@ export function DatePicker({
                 <div className="flex flex-col justify-center h-full">
                     {selected
                         ? (
-                            <>
-                                <span className="text-xs text-slate-500 font-medium -mb-0.5">
+                            <div className="flex flex-col items-start justify-center">
+                                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">
                                     {format(selected, "EEEE", { locale: dateLocale })}
                                 </span>
-                                <span className="text-sm font-bold text-slate-900">
+                                <span className="text-lg font-bold text-slate-900 leading-none">
                                     {format(selected, "d MMMM yyyy", { locale: dateLocale })}
                                 </span>
-                            </>
+                            </div>
                         )
-                        : <span className="text-slate-400 text-sm font-medium">{placeholder || t('placeholder')}</span>
+                        : <span className="text-slate-400 text-lg font-semibold">{placeholder || t('placeholder')}</span>
                     }
                 </div>
             </button>
 
             {/* Calendar Popover */}
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-2 bg-white rounded-2xl shadow-xl shadow-blue-900/10 border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 origin-top-left md:w-[670px] w-[320px]">
+                <div className="absolute top-full left-0 z-50 mt-2 bg-white rounded-2xl shadow-xl shadow-blue-900/10 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-left xl:w-[670px] w-[320px]">
                     {/* Header Controls */}
                     <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white">
                         <button
@@ -176,7 +176,7 @@ export function DatePicker({
 
                         <div className="flex-1 flex justify-center md:justify-start md:pl-10 font-bold text-slate-800 text-lg">
                             {/* Mobile view only shows one title, desktop shows 2 via grid below, but we can simplify header logic */}
-                            <span className="md:hidden">
+                            <span className="xl:hidden">
                                 {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
                             </span>
                         </div>
@@ -190,10 +190,10 @@ export function DatePicker({
                         </button>
                     </div>
 
-                    <div className="flex flex-col md:flex-row">
+                    <div className="flex flex-col xl:flex-row">
                         {/* Month 1 */}
-                        <div className="p-4 w-full md:w-1/2 md:border-r border-slate-100">
-                            <div className="text-center font-bold text-slate-800 mb-4 hidden md:block">
+                        <div className="p-4 w-full xl:w-1/2 xl:border-r border-slate-100">
+                            <div className="text-center font-bold text-slate-800 mb-4 hidden xl:block">
                                 {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
                             </div>
 
@@ -234,8 +234,8 @@ export function DatePicker({
                             </div>
                         </div>
 
-                        {/* Month 2 (Hidden on Mobile) */}
-                        <div className="p-4 w-full md:w-1/2 hidden md:block">
+                        {/* Month 2 (Hidden on Mobile/Tablet/Small Laptop) */}
+                        <div className="p-4 w-full xl:w-1/2 hidden xl:block">
                             <div className="text-center font-bold text-slate-800 mb-4">
                                 {format(nextMonthDate, "MMMM yyyy", { locale: dateLocale })}
                             </div>
