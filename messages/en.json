@@ -11,7 +11,11 @@
     "SearchForm": {
         "origin_placeholder": "Where from?",
         "destination_placeholder": "Where to?",
-        "search_button": "Search",
+        "origin_label": "From",
+        "destination_label": "To",
+        "date_label": "Departure",
+        "passengers_label": "Passengers",
+        "search_button": "Search Flights",
         "one_way": "One Way",
         "round_trip": "Round Trip"
     },
@@ -222,6 +226,8 @@
         "adultLabel": "Adult",
         "childLabel": "Child (2-11)",
         "infantLabel": "Infant (0-2)",
+        "travelers_label": "Travelers & Cabin",
+        "passengers_short": "Guest",
         "totalPassengers": "Total: {count} passengers",
         "searching": "Searching Flights...",
         "searchingDesc": "We are scanning 54+ airlines to find the best deals",

@@ -29,6 +29,8 @@ import { TrackButton } from "@/components/TrackButton";
 import { FlightCard } from "@/components/FlightCard";
 // import type { AnalysisResult, TranslatableText } from "@/lib/flightConsultant";
 
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import {
     type ScoredFlight,
     type FlightSegment
@@ -57,6 +59,14 @@ const popularDestinations = [
 ];
 
 export default function SkyscannerSearchPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
+            <SearchPageContent />
+        </Suspense>
+    );
+}
+
+function SearchPageContent() {
     const t = useTranslations('FlightSearch');
     const tConsultant = useTranslations();
     const locale = useLocale() as "en" | "tr" | "de";
@@ -89,12 +99,45 @@ export default function SkyscannerSearchPage() {
         setToIata(tempIata);
     };
 
-    // Auto-detect city on mount (with localStorage caching)
+    // URL params handling
+    const searchParams = useSearchParams();
+
+    // Initial load from URL or Cache
     useEffect(() => {
+        const urlOrigin = searchParams.get('origin');
+        const urlDestination = searchParams.get('destination');
+        const urlDate = searchParams.get('date');
+        const urlAdults = searchParams.get('adults');
+        const urlChildren = searchParams.get('children');
+        const urlInfants = searchParams.get('infants');
+        const urlCabin = searchParams.get('cabin');
+
+        // CACHE LOGIC
         const CACHE_KEY = 'flightai_user_location';
         const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-        // Check cache first
+        // 1. Priority: URL Params
+        if (urlOrigin && urlDestination && urlDate) {
+            setFromIata(urlOrigin);
+            setToIata(urlDestination);
+            setDepartureDate(urlDate);
+            if (urlAdults) setAdults(parseInt(urlAdults));
+            if (urlChildren) setChildren(parseInt(urlChildren));
+            if (urlInfants) setInfants(parseInt(urlInfants));
+            if (urlCabin) setCabin(urlCabin as any);
+
+            // Fetch cities names for UI (optional, but good for UX)
+            // For now, we rely on the IATA codes which is fine or we can fetch details.
+            // Let's create a quick helper to fetch city name if we only have IATA
+            fetchCityName(urlOrigin).then(name => setFromCity(name || urlOrigin));
+            fetchCityName(urlDestination).then(name => setToCity(name || urlDestination));
+
+            // TRIGGER SEARCH AUTOMATICALLY
+            triggerSearch(urlOrigin, urlDestination, urlDate, urlAdults, urlChildren, urlInfants, urlCabin);
+            return;
+        }
+
+        // 2. Fallback: Cache or Geo detection (only if no URL params)
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
             try {
@@ -103,19 +146,15 @@ export default function SkyscannerSearchPage() {
                 if (!isExpired && city && iata) {
                     setFromCity(city);
                     setFromIata(iata);
-                    console.log('[Auto-detect] Using cached location:', city);
-                    return; // Skip API call
+                    return;
                 }
             } catch (e) {
                 localStorage.removeItem(CACHE_KEY);
             }
         }
 
-        async function saveToCache(city: string, iata: string) {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ city, iata, timestamp: Date.now() }));
-        }
-
         async function detectCity() {
+            // ... (existing geo detection logic)
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
@@ -162,8 +201,68 @@ export default function SkyscannerSearchPage() {
             }
         }
 
+        async function saveToCache(city: string, iata: string) {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ city, iata, timestamp: Date.now() }));
+        }
+
         detectCity();
-    }, []);
+    }, [searchParams]);
+
+    // Helper to fetch city name by IATA (simple version)
+    const fetchCityName = async (iata: string) => {
+        try {
+            // This is a bit of a hack, we use the autocomplete API with the IATA code
+            // Ideally we should have a `api/city-details?iata=XYZ` endpoint
+            const res = await fetch(`/api/autocomplete?q=${iata}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return data[0].city;
+            }
+            return iata;
+        } catch {
+            return iata;
+        }
+    };
+
+    const triggerSearch = async (origin: string, destination: string, date: string, ad?: string | null, ch?: string | null, in_?: string | null, cab?: string | null) => {
+        setLoading(true);
+        setError(null);
+        setResults([]);
+
+        try {
+            const res = await fetch('/api/searchFlights', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    from: origin,
+                    to: destination,
+                    departureDate: date,
+                    returnDate: undefined, // pending URL support
+                    adults: ad ? parseInt(ad) : 1,
+                    children: ch ? parseInt(ch) : 0,
+                    infants: in_ ? parseInt(in_) : 0,
+                    cabin: cab || "ECONOMY",
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || t('error'));
+            }
+
+            if (data.results && data.results.length > 0) {
+                setResults(data.results);
+            } else {
+                setError(t('noFlights'));
+            }
+        } catch (err) {
+            console.error('[Search] Error:', err);
+            setError(err instanceof Error ? err.message : t('errors.generic'));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     async function handleSearch(e: React.FormEvent) {
         e.preventDefault();

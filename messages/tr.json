@@ -11,7 +11,11 @@
     "SearchForm": {
         "origin_placeholder": "Nereden?",
         "destination_placeholder": "Nereye?",
-        "search_button": "Ara",
+        "origin_label": "Nereden",
+        "destination_label": "Nereye",
+        "date_label": "Gidiş Tarihi",
+        "passengers_label": "Yolcular",
+        "search_button": "Uçuş Ara",
         "one_way": "Tek Yön",
         "round_trip": "Gidiş-Dönüş"
     },
@@ -222,6 +226,8 @@
         "adultLabel": "Yetişkin",
         "childLabel": "Çocuk (2-11)",
         "infantLabel": "Bebek (0-2)",
+        "travelers_label": "Yolcular & Kabin",
+        "passengers_short": "Misafir",
         "totalPassengers": "Toplam: {count} yolcu",
         "searching": "Uçuşlar Aranıyor...",
         "searchingDesc": "En iyi fırsatları bulmak için 54+ havayolunu tarıyoruz",
