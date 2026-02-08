@@ -11,7 +11,7 @@ export default function HomePage() {
     return (
         <div className="flex flex-col min-h-screen">
             {/* Hero Section with Search Bar */}
-            <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-white">
+            <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 bg-white">
                 <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-50"></div>
 
                 <div className="container relative mx-auto px-4 md:px-6">
