@@ -99,24 +99,40 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
 
     return (
         <div className="relative" ref={wrapperRef}>
-            {label && <label className="text-sm font-bold mb-2 block text-slate-700 uppercase tracking-wider text-xs">{label}</label>}
+            {/* For default variant, label is outside. For ghost, we handle it inside to allow full-height click */}
+            {label && variant === "default" && <label className="text-sm font-bold mb-2 block text-slate-700 uppercase tracking-wider text-xs">{label}</label>}
+
             <div className="relative group">
                 {/* Hidden input for the actual form submission */}
                 <input type="hidden" name={name} value={iataCode} />
 
-                <div className="flex items-center absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none">
-                    <MapPin size={18} />
-                </div>
-
-
+                {/* Icon - only show for default variant or if specifically desired in ghost (skipping for ghost to keep clean text look) */}
+                {variant === "default" && (
+                    <div className="flex items-center absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none">
+                        <MapPin size={18} />
+                    </div>
+                )}
 
                 <div className={cn(
-                    "relative flex items-center transition-all duration-200",
-                    variant === "default" && "bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
-                    variant === "ghost" && "bg-transparent border-0 hover:bg-slate-50/50 rounded-xl",
+                    "relative transition-all duration-200",
+                    variant === "default" && "flex items-center bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
+                    variant === "ghost" && "flex flex-col justify-center px-4 md:px-6 h-full cursor-text hover:bg-slate-100/80 rounded-lg", // Hover effect handled by parent or here
                     error ? "border-red-500 bg-red-50" : "",
                     className
-                )}>
+                )}
+                    onClick={() => {
+                        // Focus the input when clicking the container (mostly for ghost mode user experience)
+                        const input = wrapperRef.current?.querySelector('input[type="text"]') as HTMLInputElement;
+                        if (input) input.focus();
+                    }}
+                >
+                    {/* Ghost Variant Label */}
+                    {variant === "ghost" && label && (
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5 select-none">
+                            {label}
+                        </div>
+                    )}
+
                     <Input
                         name={`${name}_search`} // distinct visible name
                         value={query}
@@ -140,13 +156,17 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                                 setShowSuggestions(false);
                             }, 200);
                         }}
-                        placeholder={placeholder}
-                        className="border-0 bg-transparent h-14 pl-12 text-lg font-semibold text-slate-800 placeholder:text-slate-400 focus-visible:ring-0"
+                        placeholder={variant === "ghost" ? "" : placeholder} // Hide placeholder in ghost mode as label serves that purpose usually, or keep if empty
+                        className={cn(
+                            "border-0 bg-transparent focus-visible:ring-0 p-0 shadow-none file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                            variant === "default" && "h-14 pl-12 text-lg font-semibold text-slate-800",
+                            variant === "ghost" && "h-auto text-xl md:text-2xl font-black text-slate-900 placeholder:text-slate-300 truncate leading-none"
+                        )}
                         autoComplete="off"
                     />
 
                     {loading && (
-                        <div className="pr-4">
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
                             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                         </div>
                     )}

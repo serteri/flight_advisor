@@ -61,22 +61,41 @@ export function PassengerSelector({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full h-14 px-4 flex items-center justify-between transition-all text-left rounded-xl
-                    ${variant === 'default' ? 'bg-slate-50 border border-slate-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' : 'bg-transparent hover:bg-slate-50/50'}
+                className={`w-full transition-all text-left cursor-pointer relative
+                    ${variant === 'default'
+                        ? 'h-14 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                        : 'h-full flex flex-col justify-center px-4 md:px-6 bg-transparent hover:bg-slate-100/80 rounded-lg'
+                    }
                 `}
             >
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <Users className="h-5 w-5 text-slate-400 shrink-0" />
-                    <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-slate-900 truncate">
-                            {totalPassengers} {t('passengers')}
-                        </span>
-                        <span className="text-xs text-slate-500 truncate">
-                            {getCabinLabel(cabin)}
-                        </span>
+                {variant === "default" && (
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <Users className="h-5 w-5 text-slate-400 shrink-0" />
+                        <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-slate-900 truncate">
+                                {totalPassengers} {t('passengers')}
+                            </span>
+                            <span className="text-xs text-slate-500 truncate">
+                                {getCabinLabel(cabin)}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                )}
+
+                {variant === "ghost" && (
+                    <>
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">
+                            {t('travelers_label') || "Travelers & Cabin"}
+                        </div>
+                        <div className="text-xl md:text-2xl font-black text-slate-900 truncate leading-none">
+                            {totalPassengers} {t('passengers_short') || "Guest"}, {getCabinLabel(cabin).substring(0, 3)}
+                        </div>
+                    </>
+                )}
+
+                {variant === "default" && (
+                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                )}
             </button>
 
             {/* Popover Content */}

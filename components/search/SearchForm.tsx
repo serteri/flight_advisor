@@ -54,55 +54,52 @@ export function SearchForm() {
 
                 {/* Origin */}
                 <div className="relative flex-1 group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
-                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                    </div>
                     <CitySearchInput
+                        label={t('origin_label') || "From"}
                         placeholder={t('origin_placeholder')}
                         onSelect={setOrigin}
                         variant="ghost"
-                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-l-full md:rounded-r-none transition-colors"
+                        className="h-[88px] w-full rounded-2xl md:rounded-l-full md:rounded-r-none transition-colors"
                     />
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="hidden md:block w-px bg-slate-200 my-4" />
                 <div className="md:hidden h-px bg-slate-200 mx-4" />
 
                 {/* Destination */}
                 <div className="relative flex-1 group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
-                        <Plane className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors rotate-90" />
-                    </div>
                     <CitySearchInput
+                        label={t('destination_label') || "To"}
                         placeholder={t('destination_placeholder')}
                         onSelect={setDestination}
                         variant="ghost"
-                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
+                        className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
                     />
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="hidden md:block w-px bg-slate-200 my-4" />
                 <div className="md:hidden h-px bg-slate-200 mx-4" />
 
                 {/* Date */}
                 <div className="relative md:w-[220px] group">
                     <DatePicker
+                        label={t('date_label') || "Depart"}
                         date={date}
                         setDate={setDate}
                         locale={locale as any}
                         variant="ghost"
-                        className="h-[72px] w-full text-lg font-bold hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
+                        className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
                     />
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-3" />
+                <div className="hidden md:block w-px bg-slate-200 my-4" />
                 <div className="md:hidden h-px bg-slate-200 mx-4" />
 
                 {/* Passengers */}
-                <div className="relative md:w-[200px] group">
+                <div className="relative md:w-[220px] group">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -113,7 +110,7 @@ export function SearchForm() {
                         cabin={cabin}
                         setCabin={setCabin}
                         variant="ghost"
-                        className="h-[72px] hover:bg-slate-50 rounded-2xl md:rounded-none transition-colors"
+                        className="h-[88px] rounded-2xl md:rounded-none transition-colors"
                     />
                 </div>
 
