@@ -37,8 +37,8 @@ export default function HomePage() {
                     </div>
 
                     {/* Integrated Search Bar */}
-                    <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl shadow-blue-900/10 border border-slate-200/60 p-2 md:p-6 relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    <div className="max-w-4xl mx-auto p-2 md:p-6 relative z-50 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-50">
                             🚀 Flight Agent: AI Mode
                         </div>
                         <SearchForm />

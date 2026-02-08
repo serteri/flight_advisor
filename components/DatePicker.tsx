@@ -166,7 +166,7 @@ export function DatePicker({
 
             {/* Calendar Popover */}
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-left xl:w-[670px] w-[320px] overflow-hidden">
+                <div className="absolute top-full right-0 md:right-0 md:translate-x-1/4 z-[60] mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-right xl:w-[670px] w-[320px] overflow-hidden">
                     {/* Header Controls */}
                     <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
                         <button

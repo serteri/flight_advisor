@@ -81,7 +81,7 @@ export function PassengerSelector({
 
             {/* Popover Content */}
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in zoom-in-95 min-w-[280px]">
+                <div className="absolute top-full right-0 mt-4 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-[60] animate-in fade-in zoom-in-95 w-[320px]">
                     {/* Cabin Selection */}
                     <div className="mb-4">
                         <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wider">
