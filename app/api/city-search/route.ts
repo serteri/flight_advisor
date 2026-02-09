@@ -64,36 +64,39 @@ export async function GET(request: Request) {
         const formattedSuggestions = uniqueSuggestions.map(item => {
             const isCity = item.type === 'CITY';
 
-            // Display Name: Main Bold Text
-            // e.g. "Paris" or "London"
-            const displayName = item.cityName || item.name;
+            // Display Name Logic (Bold Part)
+            // Priority: City Name -> Name -> "Unknown City"
+            let displayName = item.cityName || item.name;
+            if (!displayName) {
+                displayName = item.iataCode; // Fallback to Code if absolutely nothing else
+            }
 
-            // Detail Name: Subtitle Text
-            // e.g. "France" (for City) OR "Heathrow, United Kingdom" (for Airport)
+            // Detail Name Logic (Light Part)
+            // Priority: Country -> "International"
             let detailName = item.countryName || "";
 
             if (!isCity) {
-                // If it's an airport, show Airport Name + Country
-                // e.g. "Sabiha Gokcen, Turkey"
-                // Clean up airport name if it contains the city name to avoid redundancy
-                let airportName = item.name;
-                if (airportName.toLowerCase().includes(item.cityName?.toLowerCase())) {
-                    // e.g. "Istanbul Sabiha Gokcen" -> "Sabiha Gokcen" if we want, 
-                    // but usually keeping full name is safer unless it's identical
-                }
+                // AIRPORT
+                const airportName = item.name || item.iataCode;
 
-                detailName = `${airportName}, ${item.countryName}`;
+                // If airport name contains city name, we might want to shorten it, 
+                // but for now let's just show "Airport Name, Country" to be safe and descriptive.
+                if (detailName) {
+                    detailName = `${airportName}, ${detailName}`;
+                } else {
+                    detailName = airportName;
+                }
             } else {
-                // For City, just show Country or "All Airports" hint
-                // e.g. "United Kingdom"
-                // The UI can add generic "Any Airport" text if needed
+                // CITY
+                // Just show Country. If Country is missing (rare), show "All Airports" to imply city code.
+                if (!detailName) detailName = "All Airports";
             }
 
             return {
                 iataCode: item.iataCode,
-                name: item.name, // Original full name
-                cityName: item.cityName,
-                countryName: item.countryName,
+                name: item.name || displayName,
+                cityName: item.cityName || displayName,
+                countryName: item.countryName || "",
                 type: item.type,
                 displayName: displayName,
                 detailName: detailName
