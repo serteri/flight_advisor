@@ -27,6 +27,12 @@ export async function searchDuffel(params: HybridSearchParams): Promise<FlightRe
             fareType: 'standard',
             seatComfortScore: 8.5, // Mock data for enrichment later
             wifi: true,
+            entertainment: true,
+            power: true,
+            meal: 'included',
+            legroom: '79cm',
+            aircraftAge: 3,
+            layout: '3-3-3',
             delayRisk: 'low',
             bookingLink: 'https://duffel.com/book/...'
         },
@@ -49,6 +55,12 @@ export async function searchDuffel(params: HybridSearchParams): Promise<FlightRe
             fareType: 'basic',
             seatComfortScore: 7.0,
             wifi: false,
+            entertainment: true,
+            power: false,
+            meal: 'paid',
+            legroom: '74cm',
+            aircraftAge: 12,
+            layout: '3-4-3',
             delayRisk: 'medium',
             bookingLink: 'https://duffel.com/book/...'
         }

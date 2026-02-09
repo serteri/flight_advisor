@@ -36,6 +36,12 @@ export type FlightResult = {
     fareType?: FareType;
     seatComfortScore?: number;
     wifi?: boolean;
+    entertainment?: boolean;
+    power?: boolean;
+    meal?: "included" | "paid" | "none";
+    legroom?: string; // e.g. "79cm"
+    aircraftAge?: number; // years
+    layout?: string; // e.g. "3-3-3"
     delayRisk?: DelayRisk;
     rarityScore?: number;
     score?: number;

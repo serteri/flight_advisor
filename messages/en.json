@@ -230,7 +230,7 @@
         "passengers_short": "Guest",
         "totalPassengers": "Total: {count} passengers",
         "searching": "Searching Flights...",
-        "searchingDesc": "We are scanning 54+ airlines to find the best deals",
+        "searchingDesc": "We are scanning hundreds of airlines to find the best deals",
         "searchButton": "Find Flights",
         "success": "Flight Found!",
         "error": "Search Failed",

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FlightResult } from '@/types/hybridFlight';
-import { Loader2, Shield, Trophy, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Shield, Trophy, AlertTriangle, CheckCircle2, Wifi, Zap, Utensils, Armchair, LayoutGrid, Clock } from 'lucide-react';
 
 interface FlightResultCardProps {
     flight: FlightResult;
@@ -12,6 +12,7 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
     const [analyzing, setAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<FlightResult['analysis'] | null>(null);
     const [score, setScore] = useState<number | null>(null);
+    const [enrichedFlight, setEnrichedFlight] = useState<FlightResult | null>(null);
 
     const handleAnalyze = async () => {
         setAnalyzing(true);
@@ -22,6 +23,7 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
                 body: JSON.stringify(flight),
             });
             const data: FlightResult = await res.json();
+            setEnrichedFlight(data); // Store full enriched flight
             setAnalysis(data.analysis);
             setScore(data.score ?? 0);
         } catch (error) {
@@ -80,7 +82,7 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
             </div>
 
             {/* PREMIUM VIEW: Analysis Section */}
-            {analysis && (
+            {analysis && enrichedFlight && (
                 <div className="mt-6 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex items-start gap-4 mb-4">
                         <div className="p-3 bg-blue-50 rounded-2xl">
@@ -90,6 +92,16 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
                             <h4 className="font-bold text-slate-900">Why this flight?</h4>
                             <p className="text-sm text-slate-600 leading-relaxed">{analysis.recommendationText}</p>
                         </div>
+                    </div>
+
+                    {/* Detailed Amenities Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <AmenityItem icon={Wifi} label="Wi-Fi" value={enrichedFlight.wifi ? "Available" : "No"} high={enrichedFlight.wifi} />
+                        <AmenityItem icon={Zap} label="Power" value={enrichedFlight.power ? "USB/Outlets" : "No"} high={enrichedFlight.power} />
+                        <AmenityItem icon={Utensils} label="Meal" value={enrichedFlight.meal === 'included' ? "Included" : "Paid/None"} high={enrichedFlight.meal === 'included'} />
+                        <AmenityItem icon={Armchair} label="Legroom" value={enrichedFlight.legroom || "Standard"} />
+                        <AmenityItem icon={LayoutGrid} label="Layout" value={enrichedFlight.layout || "Unk"} />
+                        <AmenityItem icon={Clock} label="Plane Age" value={enrichedFlight.aircraftAge ? `${enrichedFlight.aircraftAge}y` : "Unk"} high={enrichedFlight.aircraftAge ? enrichedFlight.aircraftAge < 5 : false} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -124,6 +136,18 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
             )}
         </div>
     );
+}
+
+function AmenityItem({ icon: Icon, label, value, high }: { icon: any, label: string, value: string, high?: boolean }) {
+    return (
+        <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+            <Icon className={`w-4 h-4 ${high === true ? 'text-green-600' : high === false ? 'text-red-400' : 'text-slate-400'}`} />
+            <div>
+                <div className="text-[10px] text-slate-400 uppercase font-bold">{label}</div>
+                <div className="text-xs font-bold text-slate-700">{value}</div>
+            </div>
+        </div>
+    )
 }
 
 function formatTime(dateString: string) {

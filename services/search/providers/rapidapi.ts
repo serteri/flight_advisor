@@ -26,6 +26,12 @@ export async function searchRapidAPI(params: HybridSearchParams): Promise<Flight
             fareType: 'basic',
             seatComfortScore: 5.5,
             wifi: false,
+            entertainment: false,
+            power: false,
+            meal: 'none',
+            legroom: '71cm',
+            aircraftAge: 15,
+            layout: '2-4-2',
             delayRisk: 'high',
             bookingLink: 'https://skyscanner.com/...'
         },
@@ -48,6 +54,12 @@ export async function searchRapidAPI(params: HybridSearchParams): Promise<Flight
             fareType: 'flex',
             seatComfortScore: 9.5,
             wifi: true,
+            entertainment: true,
+            power: true,
+            meal: 'included',
+            legroom: '82cm',
+            aircraftAge: 2,
+            layout: '3-4-3',
             delayRisk: 'low',
             bookingLink: 'https://skyscanner.com/...'
         }
