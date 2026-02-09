@@ -60,16 +60,45 @@ export async function GET(request: Request) {
             return true;
         });
 
-        // 4. Format for display - show city name and airport code for airports
-        const formattedSuggestions = uniqueSuggestions.map(item => ({
-            iataCode: item.iataCode,
-            name: item.type === 'AIRPORT'
-                ? `${item.name} (${item.iataCode})`
-                : item.cityName || item.name,
-            cityName: item.cityName || item.name,
-            countryName: item.countryName,
-            type: item.type
-        }));
+        // 4. Format for Skyscanner-style display
+        const formattedSuggestions = uniqueSuggestions.map(item => {
+            const isCity = item.type === 'CITY';
+
+            // Display Name: Main Bold Text
+            // e.g. "Paris" or "London"
+            const displayName = item.cityName || item.name;
+
+            // Detail Name: Subtitle Text
+            // e.g. "France" (for City) OR "Heathrow, United Kingdom" (for Airport)
+            let detailName = item.countryName || "";
+
+            if (!isCity) {
+                // If it's an airport, show Airport Name + Country
+                // e.g. "Sabiha Gokcen, Turkey"
+                // Clean up airport name if it contains the city name to avoid redundancy
+                let airportName = item.name;
+                if (airportName.toLowerCase().includes(item.cityName?.toLowerCase())) {
+                    // e.g. "Istanbul Sabiha Gokcen" -> "Sabiha Gokcen" if we want, 
+                    // but usually keeping full name is safer unless it's identical
+                }
+
+                detailName = `${airportName}, ${item.countryName}`;
+            } else {
+                // For City, just show Country or "All Airports" hint
+                // e.g. "United Kingdom"
+                // The UI can add generic "Any Airport" text if needed
+            }
+
+            return {
+                iataCode: item.iataCode,
+                name: item.name, // Original full name
+                cityName: item.cityName,
+                countryName: item.countryName,
+                type: item.type,
+                displayName: displayName,
+                detailName: detailName
+            };
+        });
 
         return NextResponse.json({ data: formattedSuggestions });
     } catch (error) {
@@ -81,7 +110,9 @@ export async function GET(request: Request) {
             name: item.cityName,
             cityName: item.cityName,
             countryName: item.countryName,
-            type: 'CITY'
+            type: 'CITY',
+            displayName: item.cityName,
+            detailName: item.countryName
         }));
         return NextResponse.json({ data: formattedFallbacks });
     }

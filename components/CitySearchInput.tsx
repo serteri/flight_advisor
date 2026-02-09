@@ -11,6 +11,8 @@ interface CityResult {
     cityName: string;
     countryName: string;
     type: "CITY" | "AIRPORT";
+    displayName: string; // New field from API
+    detailName: string; // New field from API
 }
 
 interface CitySearchInputProps {
@@ -46,13 +48,9 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
     // Simple debounce effect
     useEffect(() => {
         const timer = setTimeout(async () => {
-            if (query.length < 2) {
-                setSuggestions([]);
-                return;
-            }
-
-            // Don't search if the query matches the selected format to avoid re-searching on selection
-            if (query.includes('(') && query.includes(')')) {
+            // Don't search if query is very short or looks like a completed selection "City (Code)"
+            if (query.length < 2 || (query.includes('(') && query.includes(')'))) {
+                if (query.length < 2) setSuggestions([]);
                 return;
             }
 
@@ -68,7 +66,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
             } finally {
                 setLoading(false);
             }
-        }, 500);
+        }, 300); // Faster debounce for snappy feel
 
         return () => clearTimeout(timer);
     }, [query]);
@@ -85,10 +83,9 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
     }, []);
 
     const handleSelect = (city: CityResult) => {
-        // For airports, show the full name with code; for cities, show city name
-        const displayText = city.type === 'AIRPORT'
-            ? city.name  // Already includes airport name + code from API
-            : (city.cityName || city.name);
+        // Display Text: "Paris (PAR)" or "Heathrow (LHR)"
+        const displayText = `${city.displayName} (${city.iataCode})`;
+
         setQuery(displayText);
         setIataCode(city.iataCode);
         setShowSuggestions(false);
@@ -99,14 +96,13 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
 
     return (
         <div className="relative" ref={wrapperRef}>
-            {/* For default variant, label is outside. For ghost, we handle it inside to allow full-height click */}
+            {/* For default variant, label is outside. For ghost, we handle it inside. */}
             {label && variant === "default" && <label className="text-sm font-bold mb-2 block text-slate-700 uppercase tracking-wider text-xs">{label}</label>}
 
             <div className="relative group">
-                {/* Hidden input for the actual form submission */}
                 <input type="hidden" name={name} value={iataCode} />
 
-                {/* Icon - only show for default variant or if specifically desired in ghost (skipping for ghost to keep clean text look) */}
+                {/* Icon - only show for default variant */}
                 {variant === "default" && (
                     <div className="flex items-center absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none">
                         <MapPin size={18} />
@@ -116,12 +112,11 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 <div className={cn(
                     "relative transition-all duration-200",
                     variant === "default" && "flex items-center bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
-                    variant === "ghost" && "flex flex-col justify-center px-4 md:px-6 h-full cursor-text hover:bg-slate-100/80 rounded-lg", // Hover effect handled by parent or here
+                    variant === "ghost" && "flex flex-col justify-center px-4 md:px-6 h-full cursor-text hover:bg-slate-100/80 rounded-lg",
                     error ? "border-red-500 bg-red-50" : "",
                     className
                 )}
                     onClick={() => {
-                        // Focus the input when clicking the container (mostly for ghost mode user experience)
                         const input = wrapperRef.current?.querySelector('input[type="text"]') as HTMLInputElement;
                         if (input) input.focus();
                     }}
@@ -134,7 +129,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                     )}
 
                     <Input
-                        name={`${name}_search`} // distinct visible name
+                        name={`${name}_search`}
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
@@ -147,16 +142,14 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                             if (suggestions.length > 0) setShowSuggestions(true);
                         }}
                         onBlur={() => {
+                            // Small delay to allow click on suggestion to register
                             setTimeout(() => {
-                                if (query && !iataCode && suggestions.length > 0) {
-                                    handleSelect(suggestions[0]);
-                                } else if (!query) {
-                                    setIataCode("");
-                                }
+                                // If user leaves field without selecting, we could auto-select top result OR clear. 
+                                // For now, let's keep it lenient.
                                 setShowSuggestions(false);
                             }, 200);
                         }}
-                        placeholder={variant === "ghost" ? "" : placeholder} // Hide placeholder in ghost mode as label serves that purpose usually, or keep if empty
+                        placeholder={variant === "ghost" ? "" : placeholder}
                         className={cn(
                             "border-0 bg-transparent focus-visible:ring-0 p-0 shadow-none file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                             variant === "default" && "h-14 pl-12 text-lg font-semibold text-slate-800",
@@ -173,30 +166,42 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 </div>
             </div>
 
+            {/* DROPDOWN SUGGESTIONS */}
             {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl max-h-80 overflow-y-auto overflow-x-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute z-50 left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-[400px] overflow-y-auto overflow-x-hidden animate-in fade-in zoom-in-95 duration-150 min-w-[350px] w-full md:w-[150%]">
                     <div className="py-2">
                         {suggestions.map((city, index) => (
                             <button
                                 key={`${city.iataCode}-${city.type}-${index}`}
                                 type="button"
                                 onClick={() => handleSelect(city)}
-                                className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between group"
+                                className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 flex items-center justify-between group"
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-full ${city.type === 'AIRPORT' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                        {city.type === 'AIRPORT' ? <Plane size={18} /> : <Building size={18} />}
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                    {/* Icon Box */}
+                                    <div className={`p-2.5 rounded-lg flex-shrink-0 ${city.type === 'AIRPORT' ? 'bg-slate-100 text-slate-600' : 'bg-blue-100 text-blue-600'}`}>
+                                        {city.type === 'AIRPORT' ? <Plane size={20} strokeWidth={2} /> : <Building size={20} strokeWidth={2} />}
                                     </div>
-                                    <div>
-                                        <div className="font-bold text-slate-800 text-base">{city.name}</div>
-                                        <div className="text-xs text-slate-500 font-medium">{city.countryName}</div>
+
+                                    {/* Text Info */}
+                                    <div className="flex flex-col min-w-0">
+                                        {/* Main Line: City Name or Airport Name */}
+                                        <div className="font-bold text-slate-900 text-base truncate pr-2">
+                                            {city.displayName}
+                                        </div>
+                                        {/* Sub Line: Country or Airport Details */}
+                                        <div className="text-sm text-slate-500 truncate">
+                                            {city.detailName}
+                                        </div>
                                     </div>
                                 </div>
-                                {city.type === 'AIRPORT' && (
-                                    <div className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded">
+
+                                {/* IATA Code Box */}
+                                <div className="ml-4 flex-shrink-0">
+                                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md group-hover:bg-slate-200 transition-colors">
                                         {city.iataCode}
-                                    </div>
-                                )}
+                                    </span>
+                                </div>
                             </button>
                         ))}
                     </div>
