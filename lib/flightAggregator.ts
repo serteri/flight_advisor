@@ -229,11 +229,11 @@ export async function getAllFlights(
     // We now trust the Amadeus API to return valid routes for the requested query.
     // If exact airport match is needed, it should be done at the API request level, not post-filtering.
 
-    // MOCK FALLBACK (If API returns 0 results)
+    // 3.2 MOCK FALLBACK REMOVED (User Request)
+    // User explicitly requested NO mock data. Return empty array if API returns 0 results.
     if (mergedList.length === 0) {
-        console.warn("[AGGREGATOR] 0 results from APIs. Falling back to MOCK data for user demo.");
-        const mockFlights = generateMockFlights(origin, destination, date);
-        mergedList = mockFlights.map(f => enrichFlightData(f));
+        console.warn("[AGGREGATOR] 0 results from APIs. Returning empty list per user request.");
+        return [];
     }
 
     // =========================================================
