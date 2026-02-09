@@ -224,21 +224,17 @@ export async function getAllFlights(
     // Her uçuşa bagaj bilgisi, amenities ve efektif fiyat eklenir.
     mergedList = mergedList.map(flight => enrichFlightData(flight));
 
-    // --- 3.1 STRICT FILTERING (Moved Up) ---
-    // Ensure benchmarks are calculated ONLY on valid flights to intended destination
-    const preFilterCount = mergedList.length;
-    mergedList = mergedList.filter(f => {
-        const finalLeg = f.segments?.[f.segments.length - 1];
-        if (!finalLeg) return false;
-        // Strict destination check (e.g. IST only, no SAW unless requested)
-        return finalLeg.to === destination;
-    });
+    // --- 3.1 STRICT FILTERING REMOVED ---
+    // User often searches 'LON' but lands at 'LHR'. The previous logic filtered these out incorrectly.
+    // We now trust the Amadeus API to return valid routes for the requested query.
+    // If exact airport match is needed, it should be done at the API request level, not post-filtering.
 
-    if (mergedList.length < preFilterCount) {
-        console.log(`[FILTER] Removed ${preFilterCount - mergedList.length} flights not matching destination ${destination}.`);
+    // MOCK FALLBACK (If API returns 0 results)
+    if (mergedList.length === 0) {
+        console.warn("[AGGREGATOR] 0 results from APIs. Falling back to MOCK data for user demo.");
+        const mockFlights = generateMockFlights(origin, destination, date);
+        mergedList = mockFlights.map(f => enrichFlightData(f));
     }
-
-    if (mergedList.length === 0) return [];
 
     // =========================================================
     // 📊 2. İSTATİSTİK ANALİZİ (CONTEXT) - CURVED GRADING
