@@ -1,47 +1,50 @@
-/**
- * STRICT Flight Scoring V1
- *
- * This module re-exports from flightScoreEngine for backward compatibility.
- * All scoring logic is now centralized in flightScoreEngine.ts
- */
+import { EnrichedFlightResult } from "@/types/flight";
 
-export {
-    scoreFlightsStrict,
-    calculateFlightScore,
-    type FlightScoreResult,
-    type FlightForScoring
-} from "./flightScoreEngine";
+// lib/scoring.ts
+export function scoreFlight(f: EnrichedFlightResult): number {
+    let score = 0;
 
-// Legacy interface for backward compatibility
-export interface RawFlight {
-    id: string;
-    price: number;
-    currency: string;
-    duration: number; // minutes
-    stops: number;
-    carrier: string;
-    carrierName: string;
-    layoverHoursTotal?: number;
-}
+    // 1. Fiyat Skoru (Ters orantılı, 1000 USD referans noktası)
+    // Düşük fiyat daha yüksek skor demektir.
+    score += 1000 / (f.price || 1000);
 
-export interface ScoredFlight extends RawFlight {
-    score: number;
-    explanation: string;
-}
+    // 2. Aktarma Skoru
+    if (f.stops === 0) {
+        score += 50; // Aktarmasız uçuşlar için büyük bonus
+    } else if (f.stops === 1) {
+        score += 10; // Tek aktarma kabul edilebilir.
+    }
+    // Çok aktarma (2+) bonus almaz.
 
-/**
- * Legacy function - now uses strict scoring internally
- * @deprecated Use scoreFlightsStrict from flightScoreEngine instead
- */
-export function scoreFlights(flights: RawFlight[]): ScoredFlight[] {
-    // Import and use strict scoring
-    const { scoreFlightsStrict } = require("./flightScoreEngine");
+    // 3. Bilet Esnekliği
+    if (f.fareType === "flex") {
+        score += 40;
+    } else if (f.fareType === "standard") {
+        score += 20;
+    }
 
-    // Convert to FlightForScoring format
-    const flightsForScoring = flights.map(f => ({
-        ...f,
-        layoverHoursTotal: f.layoverHoursTotal || 0
-    }));
+    // 4. Koltuk Konforu
+    score += (f.seatComfortScore || 5) * 5;
 
-    return scoreFlightsStrict(flightsForScoring);
+    // 5. Ekstra Özellikler
+    if (f.wifi) {
+        score += 10;
+    }
+    if (f.baggage === "checked") {
+        score += 15;
+    }
+
+    // 6. Fiyat Nadirliği
+    score += (f.rarityScore || 0) * 3;
+
+    // 7. Gecikme Riski
+    if (f.delayRisk === "low") {
+        score += 20;
+    } else if (f.delayRisk === "high") {
+        score -= 30; // Yüksek risk için ceza puanı
+    }
+
+    // Skoru 0-100 arasına normalize edebiliriz veya ham bırakabiliriz. Şimdilik ham bırakalım.
+    // Daha sonra tüm sonuçlar içinde bir normalizasyon yapılabilir.
+    return Math.round(score);
 }

@@ -110,7 +110,14 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
                 {/* 3. Price & Action */}
                 <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center md:min-w-[120px] pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 mt-2 md:mt-0">
-                    <div className="text-left md:text-right">
+                    <div className="text-left md:text-right flex flex-col items-end">
+                        {/* SCORE BADGE - RESTORED */}
+                        {flight.scores?.total && (
+                            <div className={`mb-2 px-2 py-0.5 rounded-md text-xs font-bold text-white shadow-sm w-fit ${flight.scores.total >= 8 ? 'bg-emerald-500' : flight.scores.total >= 6 ? 'bg-blue-500' : 'bg-amber-500'}`}>
+                                {flight.scores.total.toFixed(1)} / 10
+                            </div>
+                        )}
+
                         {(isCheapest || isFastest) && (
                             <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">
                                 {isCheapest ? "Cheapest" : "Fastest"}

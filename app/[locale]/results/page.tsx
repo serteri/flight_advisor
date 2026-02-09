@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { FlightCard } from '@/components/FlightCard';
+import FlightResultCard from '@/components/search/FlightResultCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { Search } from 'lucide-react';
 
@@ -104,10 +104,9 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                     <div className="grid gap-6">
                         {flights.length > 0 ? (
                             flights.map((flight, index) => (
-                                <FlightCard
+                                <FlightResultCard
                                     key={flight.id || index}
                                     flight={flight}
-                                    searchParams={searchParams}
                                 />
                             ))
                         ) : (

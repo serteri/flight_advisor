@@ -208,15 +208,17 @@ function SearchPageContent() {
         detectCity();
     }, [searchParams]);
 
-    // Helper to fetch city name by IATA (simple version)
+    // Helper to fetch city name by IATA
     const fetchCityName = async (iata: string) => {
         try {
-            // This is a bit of a hack, we use the autocomplete API with the IATA code
-            // Ideally we should have a `api/city-details?iata=XYZ` endpoint
-            const res = await fetch(`/api/autocomplete?q=${iata}`);
+            // Use the new robust city-search API
+            const res = await fetch(`/api/city-search?keyword=${iata}`);
             const data = await res.json();
-            if (data && data.length > 0) {
-                return data[0].city;
+
+            if (data.data && data.data.length > 0) {
+                // Find exact IATA match if possible, otherwise first result
+                const match = data.data.find((item: any) => item.iataCode === iata) || data.data[0];
+                return match.displayName || match.name || iata;
             }
             return iata;
         } catch {
