@@ -46,7 +46,7 @@ export default function FlightResultCard({ flight }: FlightResultCardProps) {
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-bold text-slate-900">{flight.departureTime ? flight.departureTime.split('T')[1].slice(0, 5) : formatTime(flight.departTime)} - {flight.arrivalTime ? flight.arrivalTime.split('T')[1].slice(0, 5) : formatTime(flight.arriveTime)}</h3>
+                            <h3 className="text-lg font-bold text-slate-900">{flight.departTime ? flight.departTime.split('T')[1].slice(0, 5) : formatTime(flight.departTime)} - {flight.arriveTime ? flight.arriveTime.split('T')[1].slice(0, 5) : formatTime(flight.arriveTime)}</h3>
                             {flight.stops === 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Direct</span>}
                         </div>
                         <p className="text-slate-500 text-sm">{flight.airline} • {flight.duration ? Math.floor(flight.duration / 60) : 0}h {flight.duration ? flight.duration % 60 : 0}m</p>
