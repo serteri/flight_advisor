@@ -56,9 +56,6 @@ export async function GET(request: Request) {
                 origin,
                 destination,
                 date
-                // Note: RapidAPI provider updated to take only these params in the snippet, returnDate removed? 
-                // Let's assume the previous update made it match the snippet exactly: params: { origin, destination, date }
-                // If I need returnDate logic again, I will have to add it back to rapidapi.ts
             })
         ]);
 
@@ -66,6 +63,10 @@ export async function GET(request: Request) {
         const rapidFlights = rapidResult.status === 'fulfilled' ? rapidResult.value : [];
 
         console.log(`[HybridEngine] Results - Duffel: ${duffelFlights.length}, Rapid: ${rapidFlights.length}`);
+
+        if (rapidResult.status === 'rejected') {
+            console.error("❌ RAPID API PATLADI:", rapidResult.reason);
+        }
 
         // 2. MERGE
         let allFlights: FlightResult[] = [...duffelFlights, ...rapidFlights];

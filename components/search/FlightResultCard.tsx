@@ -30,7 +30,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
             {/* 🏷️ KAYNAK ETİKETİ (NET GÖRÜNÜR) */}
             <div className="absolute top-0 left-0 z-20">
                 <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-purple-600' : 'bg-orange-500'}`}>
-                    {t('data_source')}: {flight.source}
+                    {t('source')}: {flight.source}
                 </span>
             </div>
 
@@ -38,9 +38,9 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
             <button
                 onClick={handleTrackClick}
                 className="absolute top-3 right-4 text-slate-400 hover:text-blue-600 flex items-center gap-1 transition-colors"
-                title="Fiyatı Takip Et"
+                title={t('track')}
             >
-                <span className="text-[10px] font-bold">Takip Et</span>
+                <span className="text-[10px] font-bold">{t('track')}</span>
                 <BellRing className="w-4 h-4" />
             </button>
 
@@ -88,7 +88,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         <div className="flex items-center gap-1.5">
                             <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
                             <span className="text-[11px] font-medium text-slate-600">
-                                {flight.amenities?.hasMeal ? t('meal_included') : t('meal_paid')}
+                                {flight.amenities?.hasMeal ? t('included') : t('paid')}
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -100,7 +100,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         <div className="flex items-center gap-1.5">
                             <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
                             <span className="text-[11px] font-medium text-slate-600">
-                                {flight.amenities?.baggage || `${t('baggage_info')}: ?`}
+                                {flight.amenities?.baggage || `${t('baggage')}: ?`}
                             </span>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                             // AÇIK HALİ
                             <div className="text-center">
                                 <div className="text-5xl font-black text-blue-600 tracking-tighter">{flight.agentScore?.toFixed(1) || "?.?"}</div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agent_score')}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>
                             </div>
                         )}
                     </div>
@@ -157,7 +157,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         label={flight.source === 'DUFFEL' ? t('book_aviasales') : t('book_site')}
                     />
                     <p className="text-[8px] text-center text-slate-400 mt-1">
-                        {flight.source === 'DUFFEL' ? t('safe_redirect') : t('official_site')}
+                        {flight.source === 'DUFFEL' ? t('safeRedirect') : t('official_site')}
                     </p>
                 </div>
             </div>
