@@ -1,19 +1,7 @@
-// services/search/providers/rapidApi.ts
+export async function searchRapidApi(params: { origin: string, destination: string, date: string }) {
+    if (!process.env.RAPID_API_KEY) return [];
 
-export async function searchRapidApi(params: { origin: string, destination: string, date: string, returnDate?: string }) {
-    // RapidAPI Key check
-    if (!process.env.RAPID_API_KEY) {
-        console.warn("RapidAPI Key missing!");
-        return [];
-    }
-
-    // Using Sky-Scrapper format or similar flight API
-    // Note: The params for custom scraper might differ, adapting to generic structure provided by user
-    let url = `https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${params.date}&cabinClass=economy&adults=1&sortBy=best`;
-
-    if (params.returnDate) {
-        url += `&returnDate=${params.returnDate}`;
-    }
+    const url = `https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${params.date}&cabinClass=economy&adults=1&sortBy=best&currency=AUD`;
 
     try {
         const response = await fetch(url, {
@@ -24,77 +12,61 @@ export async function searchRapidApi(params: { origin: string, destination: stri
             }
         });
 
-        if (!response.ok) {
-            console.error(`RapidAPI Error: ${response.status} ${response.statusText}`);
-            return [];
-        }
-
         const data = await response.json();
-
         if (!data.data || !data.data.itineraries) return [];
 
-        // MAPPING RapidAPI -> FlightResult
         return data.data.itineraries.map((item: any) => {
             const leg = item.legs[0];
             const carrier = leg.carriers.marketing[0];
-
             const airlineName = carrier.name;
-            const logoUrl = carrier.logoUrl;
 
-            // 🧠 INTELLIGENCE: Infer stats for known Full Service Carriers (FSC)
-            // If RapidAPI returns null for amenities, we assume YES for these premium airlines
-            const isFullService = ["Qatar Airways", "Turkish Airlines", "Singapore Airlines", "Emirates", "Lufthansa", "Qantas", "Etihad Airways"].includes(airlineName);
+            // 🧠 1. SÜRE HESAPLAMA (MATEMATİKSEL KESİNLİK)
+            let durationMins = leg.durationInMinutes;
+
+            // Eğer API süreyi 0 veya boş verdiyse, biz hesaplarız
+            if (!durationMins || durationMins === 0) {
+                const start = new Date(leg.departure).getTime();
+                const end = new Date(leg.arrival).getTime();
+                // Milisaniyeyi dakikaya çevir
+                durationMins = Math.floor((end - start) / (1000 * 60));
+            }
+
+            // Dakikayı Saat/Dakika formatına çevir (Örn: 1250 dk -> 20s 50dk)
+            const hours = Math.floor(durationMins / 60);
+            const mins = durationMins % 60;
+            const finalDuration = `${hours}s ${mins}dk`;
+
+            // 🧠 2. AKILLI AMENITIES (PREMIUM HAVAYOLLARI İÇİN)
+            // Bu listedekilerde "Unknown" yazmaz, "Dahil" yazar.
+            const premiumAirlines = ["Qatar Airways", "Turkish Airlines", "Singapore Airlines", "Emirates", "Etihad", "Qantas", "Malaysia Airlines", "British Airways"];
+            const isPremiumCarrier = premiumAirlines.some(p => airlineName.includes(p));
 
             return {
                 id: item.id,
-                source: 'RAPID_API', // 🏷️ Explicit Flag
-                agentScore: 7.5, // Default/Placeholder, will be rescored by engine
-
+                source: 'RAPID_API', // 🏷️ Kaynak Etiketi
                 airline: airlineName,
-                airlineLogo: logoUrl,
-                flightNumber: `${carrier.alternateId || ''}${leg.segments[0].flightNumber || ''}`, // Construct Flight No
-
+                airlineLogo: carrier.logoUrl,
+                flightNumber: `${carrier.alternateId}${leg.segmentIds[0] || ''}`,
                 price: item.price.raw,
-                currency: 'AUD', // RapidAPI usually returns this or we need to map from item.price.currency
-
-                departTime: leg.departure, // ISO String
-                arriveTime: leg.arrival,   // ISO String
-
-                from: leg.origin.displayCode,
-                to: leg.destination.displayCode,
-
-                // 🧠 FIX: Calculate duration manually if missing or 0
-                duration: leg.durationInMinutes && leg.durationInMinutes > 0
-                    ? leg.durationInMinutes
-                    : Math.max(0, Math.floor((new Date(leg.arrival).getTime() - new Date(leg.departure).getTime()) / 60000)),
+                currency: 'AUD',
+                departTime: leg.departure, // Using departTime to match FlightResult type
+                arriveTime: leg.arrival,   // Using arriveTime to match FlightResult type
+                duration: durationMins, // Keeping numerical duration for sorting/scoring, display logic handled in Card or mapped
+                durationLabel: finalDuration, // New field for display if needed, or mapping
                 stops: leg.stopCount,
 
+                // Zeki Veri Atama
                 amenities: {
-                    hasWifi: isFullService ? true : false, // Optimistic assumption for FSC
-                    hasMeal: isFullService ? true : false, // Optimistic assumption for FSC
-                    hasUsb: isFullService ? true : false,
-                    legroom: isFullService ? "79cm" : "Standard"
+                    hasWifi: isPremiumCarrier,
+                    hasMeal: isPremiumCarrier,
+                    baggage: isPremiumCarrier ? "30kg (Tahmini)" : "Kontrol Et"
                 },
-
-                baggageSummary: {
-                    checked: isFullService ? "Usually Included" : "Check Airline",
-                    cabin: "7kg",
-                    totalWeight: "20kg" // Assumption for display
-                },
-
-                legal: {
-                    isRefundable: false, // Safer default
-                    changeFee: "Unknown",
-                    formattedRefund: "Non-refundable"
-                },
-
-                bookingLink: "https://skyscanner.com", // Placeholder or use if specific link logic exists
-                analysis: null
+                deepLink: "https://skyscanner.com"
             };
         });
 
     } catch (error) {
-        console.error("RapidAPI Search Error:", error);
-        return []; // Return empty on error to avoid breaking main flow
+        console.error("RapidAPI Error:", error);
+        return [];
     }
 }

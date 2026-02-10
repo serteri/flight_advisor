@@ -37,6 +37,10 @@ export default function SkyscannerSearchPage() {
     );
 }
 
+// ... (Importlar aynı)
+
+// ... (Importlar aynı)
+
 function SearchPageContent() {
     const t = useTranslations('FlightSearch');
     const locale = useLocale() as "en" | "tr" | "de";
@@ -56,6 +60,13 @@ function SearchPageContent() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabin, setCabin] = useState<"economy" | "business" | "first">("economy");
+
+    // Pagination state
+    const [visibleCount, setVisibleCount] = useState(20);
+
+    const showMore = () => {
+        setVisibleCount(prev => prev + 20);
+    };
 
     // Swap cities function
     const swapCities = () => {
@@ -87,6 +98,7 @@ function SearchPageContent() {
         setLoading(true);
         setError(null);
         setResults([]);
+        setVisibleCount(20); // Reset pagination
 
         try {
             // Convert params to URLSearchParams for GET request
@@ -266,14 +278,26 @@ function SearchPageContent() {
                             <h2 className="text-2xl font-bold text-slate-900">{results.length} {t('resultsFound')}</h2>
                         </div>
                         <div className="space-y-4">
-                            {results.map((flight) => (
+                            {results.slice(0, visibleCount).map((flight) => (
                                 <FlightResultCard
                                     key={flight.id}
                                     flight={flight}
-                                    isPremium={false} // 🔒 MOCKED: Set to true to unlock
+                                    isPremium={false} // MOCKED: Set to true to unlock
                                 />
                             ))}
                         </div>
+
+                        {/* DAHA FAZLA GÖSTER BUTONU */}
+                        {results.length > visibleCount && (
+                            <div className="mt-8 text-center">
+                                <button
+                                    onClick={showMore}
+                                    className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-slate-50 hover:border-slate-400 transition shadow-sm"
+                                >
+                                    Daha Fazla Göster ({results.length - visibleCount} uçuş kaldı)
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

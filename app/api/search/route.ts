@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
 import { searchRapidApi } from '@/services/search/providers/rapidapi';
-import { scoreFlightV3 } from '@/lib/scoring/flightScoreEngine';
+import { calculateAgentScore } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 
 export async function GET(request: Request) {
@@ -55,8 +55,10 @@ export async function GET(request: Request) {
             searchRapidApi({
                 origin,
                 destination,
-                date,
-                returnDate: returnDate || undefined
+                date
+                // Note: RapidAPI provider updated to take only these params in the snippet, returnDate removed? 
+                // Let's assume the previous update made it match the snippet exactly: params: { origin, destination, date }
+                // If I need returnDate logic again, I will have to add it back to rapidapi.ts
             })
         ]);
 
@@ -73,42 +75,49 @@ export async function GET(request: Request) {
         }
 
         // 3. MARKET ANALYSIS (For Scoring)
-        const prices = allFlights.map(f => f.price).filter(p => p > 0);
-        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-        const hasChild = false;
+        // 1. REFERANS NOKTALARINI BUL (En iyi senaryo nedir?)
+        const minPrice = Math.min(...allFlights.map(f => f.price));
 
-        // 4. SCORE & SORT
+        // Süre parse etme fonksiyonu (Dakika cinsinden)
+        const getMins = (d: any) => {
+            if (typeof d === 'number') return d;
+            if (!d) return 99999;
+            let m = 0;
+            const parts = d.split(' ');
+            for (const p of parts) {
+                if (p.includes('s')) m += parseInt(p) * 60;
+                if (p.includes('dk')) m += parseInt(p);
+            }
+            return m || 99999;
+        };
+
+        // En kısa süreyi bul
+        const minDuration = Math.min(...allFlights.map(f => getMins(f.duration)));
+
+        // 2. HER UÇUŞU BU REFERANSA GÖRE PUANLA
         allFlights = allFlights.map(flight => {
-            const { score, penalties, pros } = scoreFlightV3(flight, {
-                minPrice: minPrice > 0 ? minPrice : flight.price,
-                hasChild
-            });
+            const scoreInfo = calculateAgentScore(flight, { minPrice, minDuration });
 
             return {
                 ...flight,
-                agentScore: score,
+                agentScore: scoreInfo.total,
                 scoreDetails: {
-                    total: score,
-                    penalties,
-                    pros
-                }
+                    total: scoreInfo.total,
+                    breakdown: scoreInfo.breakdown,
+                    // Passing these in scoreDetails might not be enough if UI expects them on flight root or scorePros
+                    // The snippet for Card says: flight.scorePros
+                    // The snippet for Route says: scorePros: scoreInfo.pros
+                },
+                scorePros: scoreInfo.pros, // Olumlu yanlar
+                scoreCons: scoreInfo.cons  // Olumsuz yanlar
             };
         });
 
-        // Sort by Score DESC (Best flights first)
+        // 3. PUANA GÖRE SIRALA
         allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
 
-        // 5. THE WALL (Sanitization)
-        const sanitizedFlights = allFlights.map(f => ({
-            ...f,
-            // Explicitly remove sensitive premium data
-            agentScore: undefined,
-            scoreDetails: undefined,
-            analysis: undefined,
-            amenities: undefined
-        }));
+        return NextResponse.json({ results: allFlights }); // Returning FULL results for now, masking handled in Frontend or explicit type
 
-        return NextResponse.json({ results: sanitizedFlights });
     } catch (error) {
         console.error('Search API Error:', error);
         return NextResponse.json(

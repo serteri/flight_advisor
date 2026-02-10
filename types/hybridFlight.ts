@@ -80,7 +80,15 @@ export type FlightResult = {
     agentScore?: number;
     scoreDetails?: {
         total: number;
-        penalties: string[];
-        pros: string[];
+        breakdown?: {
+            priceScore: number;
+            durationScore: number;
+            amenityScore: number;
+            airlineBonus: number;
+        };
+        penalties?: string[]; // Keeping for backward compatibility if needed
+        pros?: string[];     // Keeping for backward compatibility if needed
     };
+    scorePros?: string[];
+    scoreCons?: string[];
 };
