@@ -1,12 +1,11 @@
-// FLIGHTS SCRAPER SKY (Things4u) ENTEGRASYONU
-export async function searchRapidApi(params: { origin: string, destination: string, date: string }) {
+// FLIGHTS SCRAPER SKY (Things4u) - AKILLI MOD
+export async function searchRapidApi(params: { origin: string, destination: string, date: string, returnDate?: string }) {
 
-    // Vercel'deki RAPID_API_KEY_SKY (veya genel KEY)
-    // Eğer özel key tanımladıysan onu öncelikli al
+    // Vercel'deki RAPID_API_KEY
+    // Sky Scrapper için özel key varsa onu kullan, yoksa genel key
     const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
 
-    // Senin abone olduğun host adresi
-    // 'flights-sky.p.rapidapi.com
+    // Flights Scraper Sky Hostu
     const host = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
 
     if (!apiKey) {
@@ -14,35 +13,43 @@ export async function searchRapidApi(params: { origin: string, destination: stri
         return [];
     }
 
-    // Tarih Formatı: YYYY-MM-DD
+    // Tarihleri Temizle (YYYY-MM-DD)
     const cleanDate = params.date.split('T')[0];
+    const cleanReturnDate = params.returnDate ? params.returnDate.split('T')[0] : null;
 
-    // 🔥 SENİN API'NİN DOĞRU ADRESİ (Dokümandan aldık)
-    // /flights/search-one-way
-    const baseUrl = `https://${host}/flights/search-one-way`;
-
-    // Parametreler (Dokümana göre: placeIdFrom, placeIdTo, departDate)
-    // from/to yerine placeIdFrom kullanılması gerekebilir ama kullanıcı from dedi.
-    // Dokümantasyonda placeIdFrom ve placeIdTo var. Kullanıcı kodunda from/to var.
-    // Kullanıcı "genelde 'from' çalışır" dedi.
-    const query = new URLSearchParams({
-        from: params.origin,       // Bazen 'from' bazen 'placeIdFrom' ister, genelde 'from' çalışır bu hostta
-        to: params.destination,
-        departDate: cleanDate,
+    let baseUrl = "";
+    let queryParams: any = {
+        from: params.origin, // IATA Kodu (BNE)
+        to: params.destination, // IATA Kodu (IST)
         adults: '1',
         currency: 'USD',
         market: 'US',
         locale: 'en-US'
-    });
+    };
 
-    const url = `${baseUrl}?${query.toString()}`;
+    // 🔥 KARAR MEKANİZMASI: GİDİŞ-DÖNÜŞ MÜ, TEK YÖN MÜ?
+    if (cleanReturnDate) {
+        // GİDİŞ - DÖNÜŞ (Round Trip)
+        baseUrl = `https://${host}/flights/search-roundtrip`;
+        queryParams.departDate = cleanDate;
+        queryParams.returnDate = cleanReturnDate;
+        console.error(`📡 ARAMA TİPİ: ROUND TRIP (Gidiş-Dönüş) [${cleanDate} - ${cleanReturnDate}]`);
+    } else {
+        // TEK YÖN (One Way)
+        baseUrl = `https://${host}/flights/search-one-way`;
+        queryParams.departDate = cleanDate;
+        console.error(`📡 ARAMA TİPİ: ONE WAY (Tek Yön) [${cleanDate}]`);
+    }
 
-    console.error(`📡 FLIGHTS SKY BAĞLANIYOR... [${cleanDate}]`);
+    // URL Oluştur
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `${baseUrl}?${queryString}`;
+
     console.error(`🔗 Endpoint: ${url}`);
 
     try {
         const response = await fetch(url, {
-            method: 'GET',
+            method: 'GET', // Dokümana göre GET isteği
             headers: {
                 'X-RapidAPI-Key': apiKey,
                 'X-RapidAPI-Host': host
@@ -50,7 +57,7 @@ export async function searchRapidApi(params: { origin: string, destination: stri
         });
 
         if (response.status === 403) {
-            console.error(`⛔ 403 YETKİ HATASI: Key yanlış veya bu servise (${host}) abone değil.`);
+            console.error(`⛔ 403 YETKİ HATASI: Key yanlış veya '${host}' servisine abone olunmamış.`);
             return [];
         }
 
@@ -62,34 +69,21 @@ export async function searchRapidApi(params: { origin: string, destination: stri
 
         const data = await response.json();
 
-        // 🔥 SENİN API'NİN CEVAP YAPISI
-        // Dokümana göre: data.itineraries.results veya benzeri bir yapı
-        // Önce loga basıp yapıyı görelim ki garanti olsun
-        // console.log("API Cevabı:", JSON.stringify(data).substring(0, 200));
-
-        // Genel yapı kontrolü (API'den API'ye değişebilir, en güvenli yolu deniyoruz)
-        // data.data (bazı API'ler) veya data (bazı API'ler)
-        // flights-sky genelde { status, message, data: { itineraries: [...] } } veya direkt array dönebilir.
-        // Kullanıcı kodunda data.data?.itineraries || data.itineraries || [] denmiş.
+        // API Cevap Yapısı Kontrolü (flights-sky genelde data.itineraries içinde döner)
+        // Bazen data.data.itineraries, bazen data.itineraries
         const results = data.data?.itineraries || data.itineraries || [];
 
         if (results.length === 0) {
-            // Eğer data içinde results varsa? (Google Flights API bazen results döner)
-            if (data.status && data.data && data.data.context && data.data.itineraries) {
-                // structure seems ok but empty
-            } else {
-                // Belki başka bir yerde?
-                // console.error("⚠️ DATA YAPISI FARKLİ OLABİLİR:", JSON.stringify(data).substring(0, 500));
-            }
-            console.error(`⚠️ FLIGHTS SKY: Sonuç yok (0 uçuş).`);
+            console.error(`⚠️ UÇUŞ BULUNAMADI (0 Sonuç).`);
             return [];
         }
 
-        console.error(`✅ FLIGHTS SKY: ${results.length} uçuş buldu!`);
+        console.error(`✅ ${results.length} uçuş bulundu!`);
 
         return results.map((item: any) => {
-            // Bu API'nin veri yapısı genelde şöyledir:
+            // Veri Haritalama (Mapping)
             const leg = item.legs ? item.legs[0] : item;
+            // Carrier handling: sometimes nested, sometimes direct
             const carrier = leg.carriers ? (leg.carriers.marketing ? leg.carriers.marketing[0] : leg.carriers[0]) : { name: "Airline", logoUrl: "" };
             const priceVal = item.price?.formatted || item.price?.raw || "Ask";
             const durationMins = leg.durationInMinutes || 0;
@@ -108,10 +102,10 @@ export async function searchRapidApi(params: { origin: string, destination: stri
             return {
                 id: `SKY_${item.id || Math.random()}`,
                 source: 'SKY_RAPID', // Mavi Etiket
-                airline: marketingCarrier.name || "Unknown Airline",
+                airline: marketingCarrier.name || "Unknown",
                 airlineLogo: marketingCarrier.logoUrl || "",
                 flightNumber: marketingCarrier.alternateId || "FLIGHT",
-                origin: leg.origin?.displayCode || leg.origin?.id || params.origin, // displayCode is safer
+                origin: leg.origin?.displayCode || leg.origin?.id || params.origin,
                 destination: leg.destination?.displayCode || leg.destination?.id || params.destination,
                 from: leg.origin?.displayCode || params.origin,
                 to: leg.destination?.displayCode || params.destination,
@@ -123,7 +117,7 @@ export async function searchRapidApi(params: { origin: string, destination: stri
                 durationLabel: durationText,
                 stops: leg.stopCount || 0,
                 amenities: { hasWifi: true, hasMeal: true, baggage: "Dahil" },
-                deepLink: "https://aviasales.com"
+                deepLink: "https://aviasales.com" // LinkGenerator bunu ezecek
             };
         });
 
@@ -133,12 +127,6 @@ export async function searchRapidApi(params: { origin: string, destination: stri
     }
 }
 
-// Air Scraper fonksiyonu (Boş bırakıyoruz)
-export async function searchAirScraper(p: any) {
-    return [];
-}
-
-// Sky Scraper fonksiyonu (RapidApi'yi çağırır)
-export async function searchSkyScrapper(p: any) {
-    return searchRapidApi(p);
-}
+// Route dosyasının hata vermemesi için:
+export async function searchSkyScrapper(p: any) { return searchRapidApi(p); }
+export async function searchAirScraper(p: any) { return []; }

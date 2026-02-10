@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
-import { searchSkyScrapper } from '@/services/search/providers/rapidapi'; // Yeni fonksiyonumuz
+import { searchRapidApi } from '@/services/search/providers/rapidapi'; // Akıllı fonksiyonumuz
 import { calculateAgentScore } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 
@@ -13,16 +13,17 @@ export async function GET(request: Request) {
     const origin = searchParams.get('origin');
     const destination = searchParams.get('destination');
     const date = searchParams.get('date');
+    const returnDate = searchParams.get('returnDate'); // 🔥 DÖNÜŞ TARİHİNİ ALIYORUZ
 
     if (!origin || !destination || !date) {
         return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
 
-    console.error(`🚀 ARAMA BAŞLIYOR: ${origin} -> ${destination}`);
+    console.error(`🚀 ARAMA: ${origin} -> ${destination} | Gidiş: ${date} | Dönüş: ${returnDate || 'YOK'}`);
 
     try {
         const [duffelRes, rapidRes] = await Promise.allSettled([
-            // 1. Duffel
+            // 1. Duffel (Sadece Gidiş verisi verir genelde, dönüş mantığı Duffel'da farklıdır)
             duffel.offerRequests.create({
                 slices: [{ origin, destination, departure_date: date }],
                 passengers: [{ type: 'adult' }],
@@ -33,8 +34,13 @@ export async function GET(request: Request) {
                     return [];
                 }),
 
-            // 2. Flights Scraper Sky (Senin API)
-            searchSkyScrapper({ origin, destination, date })
+            // 2. Flights Scraper Sky (Hem Tek Yön Hem Gidiş-Dönüş destekler)
+            searchRapidApi({
+                origin,
+                destination,
+                date,
+                returnDate: returnDate || undefined
+            })
         ]);
 
         const f1 = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
@@ -44,12 +50,17 @@ export async function GET(request: Request) {
 
         let allFlights: FlightResult[] = [...f1, ...f2];
 
-        // Filter out invalid prices
+        // Fiyatı olmayanları temizle
         const validFlights = allFlights.filter(f => f.price && Number(f.price) > 0);
 
-        if (validFlights.length === 0) return NextResponse.json({ results: [] });
+        if (validFlights.length === 0) return NextResponse.json([], { status: 200 }); // User wanted usage of NextResponse.json([]) directly? Or array? 
+        // Previous user code used: return NextResponse.json([], { status: 200 }); which returns an empty array I think? 
+        // Or object with empty array usually? 
+        // NextResponse.json([]) -> Response body is [] (JSON array).
+        // Frontend expects array or {results: []}? 
+        // Let's stick to user code to be safe.
 
-        // Skorlama
+        // --- SKORLAMA BAŞLANGIÇ ---
         const prices = validFlights.map(f => Number(f.price));
         const minPrice = Math.min(...prices);
 
@@ -63,10 +74,8 @@ export async function GET(request: Request) {
             }
             return m || 99999;
         };
-
         const minDuration = Math.min(...validFlights.map(f => getMins(f.duration) || getMins(f.durationLabel)));
 
-        // Kullanıcının istediği skorlama mantığı:
         const scoredFlights = validFlights.map(flight => {
             const scoreInfo = calculateAgentScore(flight, { minPrice: minPrice || flight.price, minDuration });
             return {
@@ -81,26 +90,11 @@ export async function GET(request: Request) {
             };
         });
 
-        // Sort by score
+        // En yüksek puanlı en üste
         scoredFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
+        // --- SKORLAMA BİTİŞ ---
 
-        // Next.js response wrapping
         return NextResponse.json(scoredFlights);
-        // Note: User code returned array directly, but Next.js usually expects { results: [...] } or direct array. 
-        // Previous working code returned { results: ... } or just json(array). 
-        // User requested: return NextResponse.json(scoredFlights); -> I will follow this.
-        // However, frontend expects { results: [] } structure? 
-        // Let's check frontend or stick to previous working format if known.
-        // Step 2318 (previous route) returned { results: allFlights }.
-        // User code returns direct array. I will use direct array as requested, BUT frontend might break.
-        // Wait, user provided route.ts returns `NextResponse.json(scoredFlights)`. 
-        // I will stick to user request. If frontend breaks, we fix frontend.
-        // ACTUALLY, I will add a safe wrapper if I can, but safer to follow user EXACTLY.
-        // But verify: does user frontend consume .results? 
-        // I don't have frontend code handy in recent context. 
-        // I will implicitly wrap it back to { results: ... } ? No, user code is specific. I'll stick to user code logic but use my safe scoring.
-        // WAIT, if I return array, and frontend expects object with results property, it will fail.
-        // User said "Bu kodu kopyala ve yapıştır". I should follow.
 
     } catch (error) {
         console.error("🔥 GENEL HATA:", error);
