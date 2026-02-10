@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 import { duffel } from '../lib/duffel';
 import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper';
-import { searchRapidApi } from '../services/search/providers/rapidapi';
+import { searchSkyScrapper, searchAirScraper } from '../services/search/providers/rapidapi';
 
 dotenv.config({ path: '.env' });
 
@@ -12,8 +12,6 @@ async function testSearch() {
     const date = '2026-03-08';
 
     console.log(`Testing Search: ${origin} -> ${destination} on ${date}`);
-    console.log(`Duffel Token: ${process.env.DUFFEL_ACCESS_TOKEN ? 'Set' : 'Missing'}`);
-    console.log(`RapidAPI Key: ${process.env.RAPID_API_KEY ? 'Set' : 'Missing'}`);
 
     try {
         console.log('--- DUFFEL CHECK ---');
@@ -30,20 +28,28 @@ async function testSearch() {
         console.log(`Duffel Status: ${duffelRes.status}`);
         console.log(`Duffel Offers: ${duffelRes.data.offers.length}`);
         console.log(`Duffel Time: ${Date.now() - duffelStart}ms`);
-
     } catch (error: any) {
         console.error('Duffel Error:', error.message || error);
-        if (error.meta) console.error('Duffel Meta:', JSON.stringify(error.meta));
     }
 
     try {
-        console.log('\n--- RAPID API CHECK ---');
-        const rapidStart = Date.now();
-        const rapidRes = await searchRapidApi({ origin, destination, date });
-        console.log(`RapidAPI Offers: ${rapidRes.length}`);
-        console.log(`RapidAPI Time: ${Date.now() - rapidStart}ms`);
+        console.log('\n--- SKY SCRAPPER CHECK ---');
+        const skyStart = Date.now();
+        const skyRes = await searchSkyScrapper({ origin, destination, date });
+        console.log(`Sky Offers: ${skyRes.length}`);
+        console.log(`Sky Time: ${Date.now() - skyStart}ms`);
     } catch (error: any) {
-        console.error('RapidAPI Error:', error.message || error);
+        console.error('Sky Error:', error.message || error);
+    }
+
+    try {
+        console.log('\n--- AIR SCRAPER CHECK ---');
+        const airStart = Date.now();
+        const airRes = await searchAirScraper({ origin, destination, date });
+        console.log(`Air Offers: ${airRes.length}`);
+        console.log(`Air Time: ${Date.now() - airStart}ms`);
+    } catch (error: any) {
+        console.error('Air Error:', error.message || error);
     }
 }
 

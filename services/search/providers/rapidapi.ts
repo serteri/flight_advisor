@@ -1,78 +1,71 @@
-export async function searchRapidApi(params: { origin: string, destination: string, date: string }) {
+// Ortak İstek Motoru (Hem Sky hem Air için çalışır)
+async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLabel: string) {
     const apiKey = process.env.RAPID_API_KEY;
 
-    // 🔥 SENİN PRO PLAN'IN OLDUĞU HOST (Bunu sabitliyoruz)
-    const host = 'air-scraper.p.rapidapi.com';
-
     if (!apiKey) {
-        console.error("❌ RAPID API KEY YOK! Vercel ayarlarını kontrol et.");
+        console.error(`❌ ${sourceLabel} HATASI: API Key Yok!`);
         return [];
     }
 
-    // Tarih Temizliği: YYYY-MM-DD
+    if (!hostVar) {
+        console.error(`❌ ${sourceLabel} HATASI: Host adresi (.env) bulunamadı!`);
+        return [];
+    }
+
+    // Tarih Temizliği (YYYY-MM-DD)
     const cleanDate = params.date.split('T')[0];
 
-    // Air Scraper Standart Endpoint (v1 OLMADAN)
-    // 404 Hatası almamak için /api/flights/searchFlights deniyoruz.
-    const url = `https://${host}/api/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
+    // URL (Host dinamik olarak geliyor)
+    const url = `https://${hostVar}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
 
-    console.log(`📡 AIR SCRAPER BAĞLANIYOR... [${cleanDate}]`);
-    console.log(`🔗 URL: ${url}`);
+    console.log(`📡 ${sourceLabel} İSTEĞİ: ${hostVar} -> [${cleanDate}]`);
 
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': host
+                'X-RapidAPI-Host': hostVar // Dinamik Host
             }
         });
 
-        // HTTP HATA KONTROLÜ
         if (response.status === 403) {
-            console.error(`⛔ 403 YETKİ HATASI: '${host}' için abonelik aktif değil veya Key yanlış.`);
+            console.error(`⛔ ${sourceLabel} (403): Yetki Yok! RapidAPI'de '${hostVar}' servisine abone misin?`);
             return [];
         }
 
         if (!response.ok) {
-            const errText = await response.text();
-            console.error(`🔥 API HATA KODU: ${response.status}`, errText);
+            // 404 veya 500 hatası verirse detayını görelim
+            const err = await response.text();
+            console.error(`🔥 ${sourceLabel} API HATASI (${response.status}): ${err}`);
             return [];
         }
 
         const data = await response.json();
-
-        // 🔥 İŞTE BURASI: API NEDEN BOŞ DÖNÜYOR?
-        // Eğer data.status false ise veya data.data yoksa loga basalım.
-        if (!data.status || !data.data) {
-            console.warn("⚠️ API 'BAŞARISIZ' DÖNDÜ. Ham Cevap:", JSON.stringify(data).substring(0, 500));
-            return [];
-        }
-
-        const list = data.data.itineraries || [];
+        const list = data.data?.itineraries || [];
 
         if (list.length === 0) {
-            console.warn("⚠️ API BAŞARILI AMA UÇUŞ YOK (0 Sonuç). Rota/Tarih kaynaklı olabilir.");
+            console.warn(`⚠️ ${sourceLabel}: Sonuç yok (0 uçuş).`);
             return [];
         }
 
-        console.log(`✅ AIR SCRAPER: ${list.length} uçuş buldu!`);
+        console.log(`✅ ${sourceLabel}: ${list.length} uçuş buldu!`);
 
         return list.map((item: any) => {
             const leg = item.legs[0];
             const carrier = leg.carriers.marketing[0];
+            const durationMins = leg.durationInMinutes || 0;
 
-            // Süre Hesapla
             let durationText = "Normal";
-            if (leg.durationInMinutes) {
-                const h = Math.floor(leg.durationInMinutes / 60);
-                const m = leg.durationInMinutes % 60;
+            if (durationMins) {
+                const h = Math.floor(durationMins / 60);
+                const m = durationMins % 60;
                 durationText = `${h}s ${m}dk`;
             }
 
             return {
-                id: item.id,
-                source: 'RAPID_API', // Ekranda görünecek kaynak
+                id: `${sourceLabel}_${item.id}`,
+                source: sourceLabel, // Ekranda SKY_RAPID veya AIR_RAPID yazacak
                 airline: carrier.name,
                 airlineLogo: carrier.logoUrl,
                 flightNumber: carrier.alternateId || "FLIGHT",
@@ -81,11 +74,11 @@ export async function searchRapidApi(params: { origin: string, destination: stri
                 from: params.origin,
                 to: params.destination,
                 price: item.price.raw,
-                currency: 'USD', // API'den USD istedik
-                departureTime: leg.departure,
-                arrivalTime: leg.arrival,
-                duration: leg.durationInMinutes || 0, // Ensure numeric duration for scoring
-                durationLabel: durationText, // For UI
+                currency: 'USD',
+                departTime: leg.departure, // Renamed from departureTime to match FlightResult type
+                arriveTime: leg.arrival, // Renamed from arrivalTime to match FlightResult type
+                duration: durationMins, // Switched to number to match FlightResult type
+                durationLabel: durationText, // Added for UI
                 stops: leg.stopCount,
                 amenities: { hasWifi: true, hasMeal: true, baggage: "Dahil" },
                 deepLink: "https://aviasales.com" // LinkGenerator bunu ezecek
@@ -93,7 +86,19 @@ export async function searchRapidApi(params: { origin: string, destination: stri
         });
 
     } catch (error) {
-        console.error("🔥 KRİTİK KOD HATASI:", error);
+        console.error(`🔥 ${sourceLabel} ÇÖKTÜ:`, error);
         return [];
     }
+}
+
+// 1. FLIGHTS SCRAPER SKY (Mavi Etiket)
+export async function searchSkyScrapper(params: any) {
+    // Vercel'deki RAPID_API_HOST_SKY değişkenini kullanır
+    return fetchFromRapid(process.env.RAPID_API_HOST_SKY, params, 'SKY_RAPID');
+}
+
+// 2. AIR SCRAPER (Yeşil Etiket)
+export async function searchAirScraper(params: any) {
+    // Vercel'deki RAPID_API_HOST_AIR değişkenini kullanır
+    return fetchFromRapid(process.env.RAPID_API_HOST_AIR, params, 'AIR_RAPID');
 }

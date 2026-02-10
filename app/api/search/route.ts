@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
-import { searchRapidApi } from '@/services/search/providers/rapidapi';
+import { searchSkyScrapper, searchAirScraper } from '@/services/search/providers/rapidapi';
 import { calculateAgentScore } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 
@@ -11,64 +11,53 @@ export async function GET(request: Request) {
     const origin = searchParams.get('origin');
     const destination = searchParams.get('destination');
     const date = searchParams.get('date');
-    const returnDate = searchParams.get('returnDate');
+    const returnDate = searchParams.get('returnDate'); // Added returnDate logic if needed later
     const adults = searchParams.get('adults') || '1';
     const cabin = searchParams.get('cabin') || 'economy';
     const tripType = searchParams.get('tripType') || 'ONE_WAY';
 
     if (!origin || !destination || !date) {
-        return NextResponse.json({ error: 'Eksik parametre: origin, destination veya date.' }, { status: 400 });
+        return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
 
-    console.log(`🚀 ARAMA BAŞLADI: ${origin} -> ${destination} (${tripType}) [${date}]`);
+    console.log(`🚀 ÜÇLÜ MOTOR BAŞLIYOR: ${origin} -> ${destination}`);
 
     try {
-        // Duffel Slices
-        const slices: any[] = [{
-            origin: String(origin),
-            destination: String(destination),
-            departure_date: String(date)
-        }];
-
-        if (tripType === 'ROUND_TRIP' && returnDate) {
-            slices.push({
-                origin: String(destination),
-                destination: String(origin),
-                departure_date: String(returnDate)
-            });
-        }
-
-        // 1. DUFFEL + RAPID API (Paralel)
-        const [duffelRes, rapidRes] = await Promise.allSettled([
-            // Duffel
+        const [duffelRes, skyRes, airRes] = await Promise.allSettled([
+            // 1. Duffel (Gri)
             duffel.offerRequests.create({
-                slices,
-                passengers: Array.from({ length: Number(adults) || 1 }, () => ({ type: 'adult' })),
-                cabin_class: (cabin === 'business' ? 'business' : 'economy'),
+                slices: [{ origin, destination, departure_date: date }],
+                passengers: [{ type: 'adult' }],
+                cabin_class: 'economy',
             } as any).then(res => (res.data as any).offers.map(mapDuffelToPremiumAgent))
                 .catch((err: any) => {
                     console.error("[Duffel] Error:", err.message || err);
                     return [];
                 }),
 
-            // Flights Scraper Sky (Senin Yeni Aboneliğin)
-            searchRapidApi({ origin, destination, date })
+            // 2. Flights Scraper Sky (Mavi - .env'den SKY hostunu alır)
+            searchSkyScrapper({ origin, destination, date }),
+
+            // 3. Air Scraper (Yeşil - .env'den AIR hostunu alır)
+            searchAirScraper({ origin, destination, date })
         ]);
 
         // Sonuçları Topla
-        const flightsDuffel = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
-        const flightsRapid = rapidRes.status === 'fulfilled' ? rapidRes.value : [];
+        const f1 = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
+        const f2 = skyRes.status === 'fulfilled' ? skyRes.value : [];
+        const f3 = airRes.status === 'fulfilled' ? airRes.value : [];
 
-        console.log(`📊 SONUÇLAR: Duffel(${flightsDuffel.length}) + Rapid(${flightsRapid.length})`);
+        console.log(`📊 SONUÇLAR: Duffel(${f1.length}) + Sky(${f2.length}) + Air(${f3.length})`);
 
-        let allFlights: FlightResult[] = [...flightsDuffel, ...flightsRapid];
+        let allFlights: FlightResult[] = [...f1, ...f2, ...f3];
 
         if (allFlights.length === 0) {
-            return NextResponse.json({ results: [] });
+            return NextResponse.json({ results: [] }); // Empty array if no results
         }
 
-        // 2. SKORLAMA
-        const minPrice = Math.min(...allFlights.map(f => f.price));
+        // SKORLAMA (from previous route.ts)
+        const prices = allFlights.map(f => f.price).filter(p => p > 0);
+        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
 
         const getMins = (d: any) => {
             if (typeof d === 'number') return d;
@@ -84,7 +73,7 @@ export async function GET(request: Request) {
         const minDuration = Math.min(...allFlights.map(f => getMins(f.duration) || getMins(f.durationLabel)));
 
         allFlights = allFlights.map(flight => {
-            const scoreInfo = calculateAgentScore(flight, { minPrice, minDuration });
+            const scoreInfo = calculateAgentScore(flight, { minPrice: minPrice || flight.price, minDuration });
             return {
                 ...flight,
                 agentScore: scoreInfo.total,
@@ -100,13 +89,10 @@ export async function GET(request: Request) {
         // En yüksek puanlı en üste
         allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
 
-        return NextResponse.json({ results: allFlights });
+        return NextResponse.json(allFlights); // User code returned direct array, but Next usually wraps in object or array. User code: NextResponse.json(allFlights) -> fine.
 
     } catch (error) {
-        console.error('🔥 GENEL ARAMA HATASI:', error);
-        return NextResponse.json(
-            { error: 'Failed to search flights' },
-            { status: 500 }
-        );
+        console.error("🔥 GENEL HATA:", error);
+        return NextResponse.json({ error: 'Server Error' }, { status: 500 });
     }
 }
