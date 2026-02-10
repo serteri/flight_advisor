@@ -15,10 +15,11 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
     // Tarih Temizliği (YYYY-MM-DD)
     const cleanDate = params.date.split('T')[0];
 
-    // URL (Host dinamik olarak geliyor)
-    const url = `https://${hostVar}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
+    // URL: v2 Endpoint (Çoğu Scraper için standart)
+    const url = `https://${hostVar}/api/v2/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
 
-    console.log(`📡 ${sourceLabel} İSTEĞİ: ${hostVar} -> [${cleanDate}]`);
+    // LOGLARI "ERROR" OLARAK BASIYORUZ Kİ VERCEL'DE GÖRÜNSÜN
+    console.error(`📡 ${sourceLabel} İSTEĞİ: ${hostVar} -> [${cleanDate}]`);
 
     try {
         const response = await fetch(url, {
@@ -35,7 +36,6 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
         }
 
         if (!response.ok) {
-            // 404 veya 500 hatası verirse detayını görelim
             const err = await response.text();
             console.error(`🔥 ${sourceLabel} API HATASI (${response.status}): ${err}`);
             return [];
@@ -45,11 +45,12 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
         const list = data.data?.itineraries || [];
 
         if (list.length === 0) {
-            console.warn(`⚠️ ${sourceLabel}: Sonuç yok (0 uçuş).`);
+            // 0 Sonuç da olsa loglansın
+            console.error(`⚠️ ${sourceLabel}: Sonuç yok (0 uçuş).`);
             return [];
         }
 
-        console.log(`✅ ${sourceLabel}: ${list.length} uçuş buldu!`);
+        console.error(`✅ ${sourceLabel}: ${list.length} uçuş buldu!`);
 
         return list.map((item: any) => {
             const leg = item.legs[0];
@@ -65,7 +66,7 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
 
             return {
                 id: `${sourceLabel}_${item.id}`,
-                source: sourceLabel, // Ekranda SKY_RAPID veya AIR_RAPID yazacak
+                source: sourceLabel,
                 airline: carrier.name,
                 airlineLogo: carrier.logoUrl,
                 flightNumber: carrier.alternateId || "FLIGHT",
@@ -75,13 +76,13 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
                 to: params.destination,
                 price: item.price.raw,
                 currency: 'USD',
-                departTime: leg.departure, // Renamed from departureTime to match FlightResult type
-                arriveTime: leg.arrival, // Renamed from arrivalTime to match FlightResult type
-                duration: durationMins, // Switched to number to match FlightResult type
-                durationLabel: durationText, // Added for UI
+                departTime: leg.departure,
+                arriveTime: leg.arrival,
+                duration: durationMins,
+                durationLabel: durationText,
                 stops: leg.stopCount,
                 amenities: { hasWifi: true, hasMeal: true, baggage: "Dahil" },
-                deepLink: "https://aviasales.com" // LinkGenerator bunu ezecek
+                deepLink: "https://aviasales.com"
             };
         });
 
@@ -93,12 +94,10 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
 
 // 1. FLIGHTS SCRAPER SKY (Mavi Etiket)
 export async function searchSkyScrapper(params: any) {
-    // Vercel'deki RAPID_API_HOST_SKY değişkenini kullanır
     return fetchFromRapid(process.env.RAPID_API_HOST_SKY, params, 'SKY_RAPID');
 }
 
 // 2. AIR SCRAPER (Yeşil Etiket)
 export async function searchAirScraper(params: any) {
-    // Vercel'deki RAPID_API_HOST_AIR değişkenini kullanır
     return fetchFromRapid(process.env.RAPID_API_HOST_AIR, params, 'AIR_RAPID');
 }
