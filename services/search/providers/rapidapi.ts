@@ -12,8 +12,9 @@ export async function searchRapidApi(params: { origin: string, destination: stri
     // Tarih Temizliği: YYYY-MM-DD
     const cleanDate = params.date.split('T')[0];
 
-    // Air Scraper Standart Endpoint
-    const url = `https://${host}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
+    // Air Scraper Standart Endpoint (v1 OLMADAN)
+    // 404 Hatası almamak için /api/flights/searchFlights deniyoruz.
+    const url = `https://${host}/api/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
 
     console.log(`📡 AIR SCRAPER BAĞLANIYOR... [${cleanDate}]`);
     console.log(`🔗 URL: ${url}`);
@@ -77,6 +78,8 @@ export async function searchRapidApi(params: { origin: string, destination: stri
                 flightNumber: carrier.alternateId || "FLIGHT",
                 origin: params.origin,
                 destination: params.destination,
+                from: params.origin,
+                to: params.destination,
                 price: item.price.raw,
                 currency: 'USD', // API'den USD istedik
                 departureTime: leg.departure,
