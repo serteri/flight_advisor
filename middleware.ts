@@ -18,14 +18,21 @@ export default auth((req) => {
     const isDashboard = req.nextUrl.pathname.includes('/dashboard');
     const isLogin = req.nextUrl.pathname === '/login';
 
+    // CORS Fix: Use the actual Host header to prevent cross-origin redirects (www vs non-www)
+    const host = req.headers.get('host') || req.nextUrl.host;
+    const protocol = req.nextUrl.protocol; // e.g. "https:"
+
     // If trying to access dashboard without login, redirect to login
     if (isDashboard && !isLoggedIn) {
-        return Response.redirect(new URL('/login', req.nextUrl));
+        const loginUrl = new URL('/login', `${protocol}//${host}`);
+        if (req.nextUrl.search) loginUrl.search = req.nextUrl.search;
+        return NextResponse.redirect(loginUrl);
     }
 
     // If logged in and trying to access login, redirect to dashboard
     if (isLogin && isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', req.nextUrl));
+        const dashboardUrl = new URL('/dashboard', `${protocol}//${host}`);
+        return NextResponse.redirect(dashboardUrl);
     }
 
     // 2. Cloudflare Geo & Intl Middleware
