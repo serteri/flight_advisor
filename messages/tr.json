@@ -8,6 +8,26 @@
         "dashboard": "Panel",
         "getStarted": "Başlayın"
     },
+    "Results": {
+        "data_source": "VERİ KAYNAĞI",
+        "direct": "Direkt",
+        "stop": "Aktarma",
+        "stops": "Aktarma",
+        "meal_included": "Yemek Dahil",
+        "meal_paid": "Ücretli / Yok",
+        "meal_unknown": "Bilgi Yok",
+        "wifi_available": "Wi-Fi Var",
+        "wifi_none": "Wi-Fi Yok",
+        "baggage_info": "Bagaj Bilgisi",
+        "view_analysis": "Analizi Gör",
+        "premium_upgrade": "Premium Ol",
+        "agent_score": "Agent Skoru",
+        "book_aviasales": "Aviasales ile Al",
+        "book_site": "Siteye Git",
+        "safe_redirect": "Güvenli yönlendirme",
+        "official_site": "Resmi siteye yönlendirilir",
+        "currency_aud": "A$"
+    },
     "SearchForm": {
         "origin_placeholder": "Nereden?",
         "destination_placeholder": "Nereye?",

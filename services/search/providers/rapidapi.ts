@@ -63,7 +63,10 @@ export async function searchRapidApi(params: { origin: string, destination: stri
                 from: leg.origin.displayCode,
                 to: leg.destination.displayCode,
 
-                duration: leg.durationInMinutes,
+                // 🧠 FIX: Calculate duration manually if missing or 0
+                duration: leg.durationInMinutes && leg.durationInMinutes > 0
+                    ? leg.durationInMinutes
+                    : Math.max(0, Math.floor((new Date(leg.arrival).getTime() - new Date(leg.departure).getTime()) / 60000)),
                 stops: leg.stopCount,
 
                 amenities: {

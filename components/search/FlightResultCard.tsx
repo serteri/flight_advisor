@@ -10,10 +10,15 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
 
     // Skor Kilidi (Blur)
     const PremiumLock = ({ label }: { label: string }) => (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center z-10 rounded-xl border border-blue-100">
+        <div
+            className="absolute inset-0 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center z-10 rounded-xl border border-blue-100 cursor-not-allowed"
+            onClick={(e) => e.stopPropagation()} // 🛡️ Prevent clicks from revealing anything behind
+        >
             <Lock className="w-5 h-5 text-blue-600 mb-1" />
             <span className="text-[10px] font-bold text-slate-800">{label}</span>
-            <button className="mt-1 text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full">Premium</button>
+            <button className="mt-1 text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm hover:bg-blue-700 pointer-events-auto">
+                {t('premium_upgrade')}
+            </button>
         </div>
     );
 
@@ -23,7 +28,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
             {/* 🏷️ YENİ ÖZELLİK: KAYNAK GÖSTERGESİ (SOL ÜST KÖŞE) */}
             <div className="absolute top-0 left-0 bg-slate-100 rounded-tl-[16px] rounded-br-[10px] border-b border-r border-slate-200 px-3 py-1 z-20">
                 <span className={`text-[10px] font-black tracking-wider ${flight.source === 'DUFFEL' ? 'text-purple-600' : 'text-orange-600'}`}>
-                    DATA: {flight.source}
+                    {t('data_source')}: {flight.source}
                 </span>
             </div>
 
@@ -60,7 +65,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white px-1 text-[10px]">✈️</div>
                             </div>
                             <span className={`text-[9px] font-bold mt-1 ${flight.stops === 0 ? 'text-green-600' : 'text-orange-500'}`}>
-                                {flight.stops === 0 ? "Direkt" : `${flight.stops} Aktarma`}
+                                {flight.stops === 0 ? t('direct') : `${flight.stops} ${t('stops')}`}
                             </span>
                         </div>
 
@@ -71,6 +76,12 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                             <p className="text-[10px] font-bold text-slate-400">{flight.to}</p>
                         </div>
                     </div>
+
+                    {/* AMENITIES - Translating status text */}
+                    <div className="flex gap-4 mt-4 px-2">
+                        {/* We could map amenities here calling t() keys based on logic */}
+                        {/* For now keeping the logic simple but allowing key text */}
+                    </div>
                 </div>
 
                 {/* SAĞ: Fiyat ve Buton */}
@@ -79,15 +90,15 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                     {/* Agent Score (Premium Kilitli) */}
                     <div className="h-14 relative flex items-center justify-center mb-2">
                         {!isPremium ? (
-                            <PremiumLock label="Analizi Gör" />
+                            <PremiumLock label={t('view_analysis')} />
                         ) : (
                             <div className="text-center">
                                 <div className="text-3xl font-black text-blue-600">{flight.agentScore?.toFixed(1) || "?.?"}</div>
-                                <span className="text-[9px] font-bold text-slate-400 uppercase">Agent Score</span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">{t('agent_score')}</span>
                             </div>
                         )}
-                        {/* Arkadaki Blur Görüntü */}
-                        {!isPremium && <span className="absolute text-3xl font-black text-slate-200 blur-sm select-none">8.2</span>}
+                        {/* Arkadaki Blur Görüntü - pointer-events-none added */}
+                        {!isPremium && <span className="absolute text-3xl font-black text-slate-200 blur-sm select-none pointer-events-none">8.2</span>}
                     </div>
 
                     {/* Fiyat */}
@@ -99,11 +110,11 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                     <BookButton
                         flight={flight}
                         // Eğer Duffel ise "Aviasales", Rapid ise "Partner" yazar
-                        label={flight.source === 'DUFFEL' ? "Aviasales ile Al" : "Siteye Git"}
+                        label={flight.source === 'DUFFEL' ? t('book_aviasales') : t('book_site')}
                     />
 
                     <p className="text-[8px] text-center text-slate-400 mt-1">
-                        {flight.source === 'DUFFEL' ? 'Güvenli yönlendirme' : 'Resmi siteye yönlendirilir'}
+                        {flight.source === 'DUFFEL' ? t('safe_redirect') : t('official_site')}
                     </p>
                 </div>
             </div>
