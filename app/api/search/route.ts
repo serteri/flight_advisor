@@ -17,10 +17,18 @@ export async function POST(request: Request) {
 
         const flights = await getHybridFlights(searchParams);
 
-        // Sanitize results: Remove premium data (score, insights, analysis)
-        // The flights are already sorted by score, so the "best" ones are on top,
-        // but the user doesn't know the exact score yet.
-        const sanitizedFlights = flights.map(({ score, insights, analysis, ...rest }) => rest);
+        // 3. Return Sanitized Results (THE WALL)
+        // We proactively STRIP all score and analysis data from this endpoint.
+        // This ensures no one can "inspect element" to see the scores.
+        const sanitizedFlights = flights.map(f => ({
+            ...f,
+            // Explicitly remove these fields
+            agentScore: undefined,
+            scoreDetails: undefined,
+            analysis: undefined,
+            amenities: undefined, // Hide amenities in list view too? User said "Analysis" is premium.
+            // Keep basic info: id, price, airline, time, stops
+        }));
 
         return NextResponse.json(sanitizedFlights);
     } catch (error) {

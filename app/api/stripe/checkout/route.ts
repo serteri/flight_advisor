@@ -1,68 +1,75 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/auth'; // NextAuth
-import { stripe } from '@/lib/stripe'; // Stripe instance
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptions";
 
 export async function POST(req: Request) {
     try {
         const session = await auth();
+        const user = session?.user;
 
-        if (!session?.user || !session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.email || !user.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // 1. Kullanıcının Stripe ID'si var mı? Yoksa oluştur.
-        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        const { priceId, planId } = await req.json();
 
-        let stripeCustomerId = user?.stripeCustomerId;
+        // Verify the plan exists in our config
+        const plan = Object.values(SUBSCRIPTION_PLANS).find(p => p.id === planId);
+        if (!plan) {
+            return new NextResponse("Invalid Plan", { status: 400 });
+        }
+
+        const finalPriceId = priceId || plan.stripePriceId;
+        if (!finalPriceId) {
+            return new NextResponse("Missing Price ID", { status: 400 });
+        }
+
+        // Get or create Stripe Customer
+        let stripeCustomerId = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { stripeCustomerId: true }
+        }).then(u => u?.stripeCustomerId);
 
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
-                email: session.user.email!,
-                name: session.user.name || 'Travel Guardian User',
-                metadata: { userId: session.user.id! } // Webhook için önemli!
+                email: user.email,
+                name: user.name || undefined,
+                metadata: {
+                    userId: user.id
+                }
             });
             stripeCustomerId = customer.id;
 
-            // DB'yi güncelle
             await prisma.user.update({
-                where: { id: session.user.id! },
+                where: { id: user.id },
                 data: { stripeCustomerId }
             });
         }
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
-
-        // 2. Ödeme Oturumu (Checkout Session) Oluştur
-        const stripeSession = await stripe.checkout.sessions.create({
-            customer: stripeCustomerId!,
-            mode: 'subscription', // Aylık abonelik
-            payment_method_types: ['card'],
+        // Create Checkout Session
+        const checkoutSession = await stripe.checkout.sessions.create({
+            customer: stripeCustomerId,
+            mode: "subscription",
+            billing_address_collection: "auto",
             line_items: [
                 {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: 'Travel Guardian Premium',
-                            description: '7/24 Uçuş Takibi, Tazminat Avcısı ve Upgrade Radar',
-                        },
-                        unit_amount: 999, // $9.99 (Kuruş cinsinden yazılır)
-                        recurring: { interval: 'month' },
-                    },
+                    price: finalPriceId,
                     quantity: 1,
                 },
             ],
             metadata: {
-                userId: session.user.id!, // Parayı kimin ödediğini bilmek için
+                userId: user.id,
+                planId: plan.id
             },
-            success_url: `${appUrl}/dashboard?success=true`,
-            cancel_url: `${appUrl}/dashboard?canceled=true`,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
         });
 
-        return NextResponse.json({ url: stripeSession.url });
-
+        return NextResponse.json({ url: checkoutSession.url });
     } catch (error) {
-        console.error("Stripe Error:", error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error("[STRIPE_CHECKOUT]", error);
+        return new NextResponse("Internal Error", { status: 500 });
     }
 }

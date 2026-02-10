@@ -6,63 +6,116 @@ export async function searchDuffel(params: HybridSearchParams): Promise<FlightRe
 
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API latency
 
-    // Basic NDC-like results (Direct flights, major carriers)
-    return [
+    // Mock Data with V3 Premium Fields
+    const mockFlights: FlightResult[] = [
         {
-            id: `duffel-${Date.now()}-1`,
-            source: 'duffel',
-            airline: 'Qatar Airways',
-            flightNumber: 'QR899',
-            aircraft: 'Airbus A350-1000',
-            from: params.origin,
-            to: params.destination,
-            departTime: '2026-03-10T22:10:00',
-            arriveTime: '2026-03-11T11:55:00',
-            duration: 825, // minutes
-            stops: 1,
-            price: 1142,
-            currency: 'USD',
-            cabinClass: params.cabin || 'economy',
-            baggage: 'checked',
-            fareType: 'standard',
-            seatComfortScore: 8.5, // Mock data for enrichment later
-            wifi: true,
-            entertainment: true,
-            power: true,
-            meal: 'included',
-            legroom: '79cm',
-            aircraftAge: 3,
-            layout: '3-3-3',
-            delayRisk: 'low',
-            bookingLink: 'https://duffel.com/book/...'
-        },
-        {
-            id: `duffel-${Date.now()}-2`,
+            id: 'duffel_1',
             source: 'duffel',
             airline: 'Turkish Airlines',
-            flightNumber: 'TK9331',
-            aircraft: 'Boeing 777-300ER',
+            flightNumber: 'TK1984',
             from: params.origin,
             to: params.destination,
-            departTime: '2026-03-10T14:00:00',
-            arriveTime: '2026-03-11T05:00:00',
-            duration: 900,
-            stops: 1,
-            price: 1035,
+            departTime: `${params.date}T10:30:00`,
+            arriveTime: `${params.date}T22:30:00`,
+            duration: 720, // 12h
+            stops: 0,
+            price: 1250, // Reasonable price
             currency: 'USD',
             cabinClass: params.cabin || 'economy',
-            baggage: 'checked',
-            fareType: 'basic',
-            seatComfortScore: 7.0,
-            wifi: false,
-            entertainment: true,
-            power: false,
-            meal: 'paid',
-            legroom: '74cm',
-            aircraftAge: 12,
-            layout: '3-4-3',
-            delayRisk: 'medium',
-            bookingLink: 'https://duffel.com/book/...'
+            // V3 Data
+            amenities: {
+                hasWifi: true,
+                hasPower: true,
+                hasMeal: true,
+                seatType: "Standard Economy (79cm)"
+            },
+            baggageSummary: {
+                checked: "2x23kg",
+                cabin: "8kg",
+                totalWeight: "46"
+            },
+            legal: {
+                refundStatus: "İade Edilebilir (Cezalı)",
+                changeStatus: "Değişim: 50 USD",
+                formattedRefund: "⚠️ Kısmi İade",
+                formattedChange: "Değişim: $50",
+                isRefundable: true,
+                isChangeable: true
+            },
+            bookingLink: 'https://turkishallergies.com/book'
+        },
+        {
+            id: 'duffel_2',
+            source: 'duffel',
+            airline: 'Singapore Airlines', // The expensive one user complained about
+            flightNumber: 'SQ232',
+            from: params.origin,
+            to: params.destination,
+            departTime: `${params.date}T14:00:00`,
+            arriveTime: `${params.date}T06:00:00`, // Next day
+            duration: 960, // 16h
+            stops: 1,
+            price: 6445, // Expensive! Should trigger Price Massacre
+            currency: 'USD',
+            cabinClass: 'economy',
+            // V3 Data
+            amenities: {
+                hasWifi: true,
+                hasPower: true,
+                hasMeal: true,
+                seatType: "Premium Economy-ish"
+            },
+            baggageSummary: {
+                checked: "2x23kg",
+                cabin: "7kg",
+                totalWeight: "46"
+            },
+            legal: {
+                refundStatus: "Tam İade",
+                changeStatus: "Ücretsiz",
+                formattedRefund: "✅ Tam İade",
+                formattedChange: "✅ Ücretsiz Değişim",
+                isRefundable: true,
+                isChangeable: true
+            },
+            bookingLink: 'https://singaporeair.com/book'
+        },
+        {
+            id: 'duffel_3', // "Hacker" Fare to test penalties
+            source: 'duffel',
+            airline: 'Pegasus',
+            flightNumber: 'PC123',
+            from: params.origin,
+            to: params.destination,
+            departTime: `${params.date}T06:00:00`,
+            arriveTime: `${params.date}T18:00:00`,
+            duration: 720,
+            stops: 1,
+            price: 450, // Cheap but...
+            currency: 'USD',
+            cabinClass: 'economy',
+            // V3 Data
+            amenities: {
+                hasWifi: false,
+                hasPower: false,
+                hasMeal: false,
+                seatType: "Tight (72cm)"
+            },
+            baggageSummary: {
+                checked: "0",
+                cabin: "4kg",
+                totalWeight: "0"
+            },
+            legal: {
+                refundStatus: "İade Yok",
+                changeStatus: "Değişim Yok",
+                formattedRefund: "❌ İade Yok",
+                formattedChange: "❌ Değişim Yok",
+                isRefundable: false, // Penalty!
+                isChangeable: false
+            },
+            bookingLink: 'https://flypgs.com'
         }
     ];
+    return mockFlights;
 }

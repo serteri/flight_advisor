@@ -12,8 +12,11 @@ export type HybridSearchParams = {
     origin: string;
     destination: string;
     date: string;
-    adults?: number;
-    cabin?: CabinClass;
+    returnDate?: string;
+    adults: number;
+    children?: number; // For Junior Guardian logic
+    infants?: number;
+    cabin?: "economy" | "business" | "first";
     currency?: string;
 };
 
@@ -53,4 +56,31 @@ export type FlightResult = {
         recommendationText?: string;
     };
     bookingLink?: string;
+
+    // V3 Premium Data
+    amenities?: {
+        hasWifi: boolean;
+        hasPower: boolean;
+        hasMeal: boolean;
+        seatType: string;
+    };
+    baggageSummary?: {
+        checked: string;
+        cabin: string;
+        totalWeight: string;
+    };
+    legal?: {
+        refundStatus: string;
+        changeStatus: string;
+        formattedRefund: string;
+        formattedChange: string;
+        isRefundable: boolean;
+        isChangeable: boolean;
+    };
+    agentScore?: number;
+    scoreDetails?: {
+        total: number;
+        penalties: string[];
+        pros: string[];
+    };
 };

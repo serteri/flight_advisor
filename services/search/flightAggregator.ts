@@ -1,48 +1,44 @@
-import { searchDuffel } from './providers/duffel';
-import { searchRapidAPI } from './providers/rapidapi';
-import { scoreFlight, generateInsights } from '@/lib/scoring/flightScoreEngine';
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
+import { searchDuffel } from "./providers/duffel";
+import { searchRapidAPI } from "./providers/rapidapi";
+import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
-export async function getHybridFlights(searchParams: HybridSearchParams): Promise<FlightResult[]> {
-    // 1. Validate inputs
-    if (!searchParams.origin || !searchParams.destination || !searchParams.date) {
-        throw new Error("Missing required search parameters");
-    }
+export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
+    console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
 
-    // 2. Call providers in parallel
-    const [duffelResults, rapidResults] = await Promise.allSettled([
-        searchDuffel(searchParams),
-        searchRapidAPI(searchParams)
+    // 1. Parallel Fetching
+    const [duffelResults, rapidResults] = await Promise.all([
+        searchDuffel(params),
+        searchRapidAPI(params)
     ]);
 
-    // 3. Normalize and Aggregate
-    let allFlights: FlightResult[] = [];
+    let allFlights = [...duffelResults, ...rapidResults];
 
-    if (duffelResults.status === 'fulfilled') {
-        allFlights = [...allFlights, ...duffelResults.value];
-    } else {
-        console.error("Duffel search failed", duffelResults.reason);
-    }
+    // 2. Market Analysis (Find Min Price for V3 Scoring)
+    const prices = allFlights.map(f => f.price).filter(p => p > 0);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const hasChild = (params.children || 0) > 0 || (params.infants || 0) > 0;
 
-    if (rapidResults.status === 'fulfilled') {
-        allFlights = [...allFlights, ...rapidResults.value];
-    } else {
-        console.error("RapidAPI search failed", rapidResults.reason);
-    }
-
-    // 4. Score and Enrich
-    const scoredFlights = allFlights.map(flight => {
-        const score = scoreFlight(flight);
-        const analysis = generateInsights(flight);
+    // 3. Scoring & Sorting (V3 Ruthless)
+    allFlights = allFlights.map(flight => {
+        const { score, penalties, pros } = scoreFlightV3(flight, {
+            minPrice: minPrice > 0 ? minPrice : flight.price,
+            hasChild
+        });
 
         return {
             ...flight,
-            score,
-            insights: [...analysis.pros, ...analysis.cons], // Flatten basic insights for list view
-            analysis
+            agentScore: score,
+            scoreDetails: {
+                total: score,
+                penalties: penalties,
+                pros: pros
+            }
         };
     });
 
-    // 5. Sort by Score (Desc)
-    return scoredFlights.sort((a, b) => (b.score || 0) - (a.score || 0));
+    // Sort by Score DESC (Best flights first)
+    allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
+
+    return allFlights;
 }

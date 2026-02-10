@@ -70,24 +70,16 @@ function SearchPageContent() {
     // URL params handling
     const searchParams = useSearchParams();
 
-    // Initial load from URL
-    useEffect(() => {
-        const urlOrigin = searchParams.get('origin');
-        const urlDestination = searchParams.get('destination');
-        const urlDate = searchParams.get('date');
-
-        if (urlOrigin && urlDestination && urlDate) {
-            setFromIata(urlOrigin);
-            setToIata(urlDestination);
-            setDepartureDate(urlDate);
-            // Trigger search logic if needed
-        }
-    }, [searchParams]);
-
-    async function handleSearch(e: React.FormEvent) {
-        e.preventDefault();
-
-        if (!fromIata || !toIata || !departureDate) {
+    // Unified Search Logic
+    const executeSearch = async (params: {
+        origin: string;
+        destination: string;
+        date: string;
+        returnDate?: string;
+        adults: number;
+        cabin: string;
+    }) => {
+        if (!params.origin || !params.destination || !params.date) {
             setError(t('fillAllFields'));
             return;
         }
@@ -97,18 +89,10 @@ function SearchPageContent() {
         setResults([]);
 
         try {
-            // New GridSearch API Endpoint
             const res = await fetch('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    origin: fromIata,
-                    destination: toIata,
-                    date: departureDate,
-                    returnDate: tripType === "roundTrip" ? returnDate : undefined,
-                    adults: adults + children + infants, // Send total count as adults for now to match API
-                    cabin: cabin,
-                }),
+                body: JSON.stringify(params),
             });
 
             const data = await res.json();
@@ -128,6 +112,57 @@ function SearchPageContent() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Initial load from URL
+    useEffect(() => {
+        const urlOrigin = searchParams.get('origin');
+        const urlDestination = searchParams.get('destination');
+        const urlDate = searchParams.get('date');
+        const urlReturnDate = searchParams.get('returnDate');
+        const urlAdults = searchParams.get('adults');
+        const urlCabin = searchParams.get('cabin');
+
+        if (urlOrigin && urlDestination && urlDate) {
+            // Populate Form State
+            setFromIata(urlOrigin);
+            setFromCity(urlOrigin); // Set City to IATA so input isn't empty
+
+            setToIata(urlDestination);
+            setToCity(urlDestination); // Set City to IATA so input isn't empty
+
+            setDepartureDate(urlDate);
+
+            if (urlReturnDate) {
+                setReturnDate(urlReturnDate);
+                setTripType("roundTrip");
+            }
+
+            if (urlAdults) setAdults(parseInt(urlAdults));
+            if (urlCabin) setCabin(urlCabin as any);
+
+            // Trigger Search
+            executeSearch({
+                origin: urlOrigin,
+                destination: urlDestination,
+                date: urlDate,
+                returnDate: urlReturnDate || undefined,
+                adults: urlAdults ? parseInt(urlAdults) : 1,
+                cabin: urlCabin || 'economy'
+            });
+        }
+    }, [searchParams]);
+
+    async function handleSearch(e: React.FormEvent) {
+        e.preventDefault();
+        executeSearch({
+            origin: fromIata,
+            destination: toIata,
+            date: departureDate,
+            returnDate: tripType === "roundTrip" ? returnDate : undefined,
+            adults: adults + children + infants,
+            cabin: cabin
+        });
     }
 
     const selectDestination = (dest: typeof popularDestinations[0]) => {
