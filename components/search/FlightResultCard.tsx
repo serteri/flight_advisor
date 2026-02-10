@@ -27,10 +27,13 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
     return (
         <div className="bg-white rounded-[16px] p-5 border border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
 
-            {/* 🏷️ KAYNAK ETİKETİ (NET GÖRÜNÜR) */}
+            {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
-                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-purple-600' : 'bg-orange-500'}`}>
-                    {t('source')}: {flight.source}
+                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-slate-600' :
+                        flight.source === 'SKY_RAPID' ? 'bg-blue-500' :
+                            flight.source === 'AIR_RAPID' ? 'bg-green-500' : 'bg-orange-500'
+                    }`}>
+                    {flight.source === 'SKY_RAPID' ? 'SKYSCANNER' : flight.source === 'AIR_RAPID' ? 'AIR SCRAPER' : flight.source}
                 </span>
             </div>
 

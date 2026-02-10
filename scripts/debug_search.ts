@@ -1,11 +1,8 @@
 
 import dotenv from 'dotenv';
-import { duffel } from '../lib/duffel'; // Adjust path
-import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper'; // Adjust path
-// Mocking RapidAPI call locally or importing if possible. 
-// Since RapidAPI is a service function, I can try to import it if I use ts-node or similar.
-// For simplicity, I will use fetch directly here to emulate RapidAPI if the import is tricky.
-import { searchRapidApi } from '../services/search/providers/rapidapi';
+import { duffel } from '../lib/duffel';
+import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper';
+import { searchSkyScrapper, searchAirScraper } from '../services/search/providers/rapidapi';
 
 dotenv.config({ path: '.env' });
 
@@ -40,13 +37,23 @@ async function testSearch() {
     }
 
     try {
-        console.log('\n--- RAPID API CHECK ---');
-        const rapidStart = Date.now();
-        const rapidRes = await searchRapidApi({ origin, destination, date });
-        console.log(`RapidAPI Offers: ${rapidRes.length}`);
-        console.log(`RapidAPI Time: ${Date.now() - rapidStart}ms`);
+        console.log('\n--- SKY SCRAPPER CHECK ---');
+        const skyStart = Date.now();
+        const skyRes = await searchSkyScrapper({ origin, destination, date });
+        console.log(`Sky Offers: ${skyRes.length}`);
+        console.log(`Sky Time: ${Date.now() - skyStart}ms`);
     } catch (error: any) {
-        console.error('RapidAPI Error:', error.message || error);
+        console.error('Sky Error:', error.message || error);
+    }
+
+    try {
+        console.log('\n--- AIR SCRAPER CHECK ---');
+        const airStart = Date.now();
+        const airRes = await searchAirScraper({ origin, destination, date });
+        console.log(`Air Offers: ${airRes.length}`);
+        console.log(`Air Time: ${Date.now() - airStart}ms`);
+    } catch (error: any) {
+        console.error('Air Error:', error.message || error);
     }
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
-import { searchRapidApi } from '@/services/search/providers/rapidapi';
+import { searchSkyScrapper, searchAirScraper } from '@/services/search/providers/rapidapi';
 import { calculateAgentScore } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 
@@ -15,16 +15,14 @@ export async function GET(request: Request) {
     const cabin = searchParams.get('cabin') || 'economy';
     const tripType = searchParams.get('tripType') || 'ONE_WAY';
 
-    // Parametre kontrolü
     if (!origin || !destination || !date) {
-        return NextResponse.json({ error: 'Missing parameters: origin, destination, or date.' }, { status: 400 });
+        return NextResponse.json({ error: 'Eksik parametre: origin, destination veya date.' }, { status: 400 });
     }
 
-    console.log(`[HybridEngine] (GET) Starting search: ${origin} -> ${destination} (${tripType}) on ${date} ${returnDate ? '& ' + returnDate : ''}`);
+    console.log(`🚀 ÜÇLÜ ARAMA BAŞLADI: ${origin} -> ${destination} (${tripType}) [${date}]`);
 
     try {
-        // 1. PARALLEL EXECUTION: Duffel + RapidAPI
-        // Construct Slices for Duffel
+        // Duffel Slices
         const slices: any[] = [{
             origin: String(origin),
             destination: String(destination),
@@ -39,8 +37,9 @@ export async function GET(request: Request) {
             });
         }
 
-        const [duffelResult, rapidResult] = await Promise.allSettled([
-            // Duffel Call
+        // 1. DUFFEL + SKY + AIR (Hepsi paralel çalışır)
+        const [duffelRes, skyRes, airRes] = await Promise.allSettled([
+            // Duffel
             duffel.offerRequests.create({
                 slices,
                 passengers: Array.from({ length: Number(adults) || 1 }, () => ({ type: 'adult' })),
@@ -51,40 +50,37 @@ export async function GET(request: Request) {
                     return [];
                 }),
 
-            // RapidAPI Call
-            searchRapidApi({
-                origin,
-                destination,
-                date
-            })
+            // Sky Scrapper
+            searchSkyScrapper({ origin, destination, date }),
+
+            // Air Scraper
+            searchAirScraper({ origin, destination, date })
         ]);
 
-        const duffelFlights = duffelResult.status === 'fulfilled' ? duffelResult.value : [];
-        const rapidFlights = rapidResult.status === 'fulfilled' ? rapidResult.value : [];
+        // Sonuçları Topla
+        const flightsDuffel = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
+        const flightsSky = skyRes.status === 'fulfilled' ? skyRes.value : [];
+        const flightsAir = airRes.status === 'fulfilled' ? airRes.value : [];
 
-        console.log(`[HybridEngine] Results - Duffel: ${duffelFlights.length}, Rapid: ${rapidFlights.length}`);
+        console.log(`📊 SONUÇLAR: Duffel(${flightsDuffel.length}) + Sky(${flightsSky.length}) + Air(${flightsAir.length})`);
 
-        if (rapidResult.status === 'rejected') {
-            console.error("❌ RAPID API PATLADI:", rapidResult.reason);
-        }
+        if (skyRes.status === 'rejected') console.error("❌ SKY_RAPID PATLADI:", skyRes.reason);
+        if (airRes.status === 'rejected') console.error("❌ AIR_RAPID PATLADI:", airRes.reason);
 
-        // 2. MERGE
-        let allFlights: FlightResult[] = [...duffelFlights, ...rapidFlights];
+        let allFlights: FlightResult[] = [...flightsDuffel, ...flightsSky, ...flightsAir];
 
         if (allFlights.length === 0) {
             return NextResponse.json({ results: [] });
         }
 
-        // 3. MARKET ANALYSIS (For Scoring)
-        // 1. REFERANS NOKTALARINI BUL (En iyi senaryo nedir?)
+        // 2. SKORLAMA
         const minPrice = Math.min(...allFlights.map(f => f.price));
 
-        // Süre parse etme fonksiyonu (Dakika cinsinden)
         const getMins = (d: any) => {
             if (typeof d === 'number') return d;
             if (!d) return 99999;
             let m = 0;
-            const parts = d.split(' ');
+            const parts = String(d).split(' ');
             for (const p of parts) {
                 if (p.includes('s')) m += parseInt(p) * 60;
                 if (p.includes('dk')) m += parseInt(p);
@@ -92,35 +88,29 @@ export async function GET(request: Request) {
             return m || 99999;
         };
 
-        // En kısa süreyi bul
         const minDuration = Math.min(...allFlights.map(f => getMins(f.duration)));
 
-        // 2. HER UÇUŞU BU REFERANSA GÖRE PUANLA
         allFlights = allFlights.map(flight => {
             const scoreInfo = calculateAgentScore(flight, { minPrice, minDuration });
-
             return {
                 ...flight,
                 agentScore: scoreInfo.total,
                 scoreDetails: {
                     total: scoreInfo.total,
                     breakdown: scoreInfo.breakdown,
-                    // Passing these in scoreDetails might not be enough if UI expects them on flight root or scorePros
-                    // The snippet for Card says: flight.scorePros
-                    // The snippet for Route says: scorePros: scoreInfo.pros
                 },
-                scorePros: scoreInfo.pros, // Olumlu yanlar
-                scoreCons: scoreInfo.cons  // Olumsuz yanlar
+                scorePros: scoreInfo.pros,
+                scoreCons: scoreInfo.cons
             };
         });
 
-        // 3. PUANA GÖRE SIRALA
+        // En yüksek puanlı en üste
         allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
 
-        return NextResponse.json({ results: allFlights }); // Returning FULL results for now, masking handled in Frontend or explicit type
+        return NextResponse.json({ results: allFlights });
 
     } catch (error) {
-        console.error('Search API Error:', error);
+        console.error('🔥 GENEL ARAMA HATASI:', error);
         return NextResponse.json(
             { error: 'Failed to search flights' },
             { status: 500 }

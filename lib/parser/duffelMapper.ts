@@ -1,70 +1,65 @@
-import { FlightResult } from '@/types/hybridFlight';
-
-function parseDuration(isoDuration: string | null): number {
-    if (!isoDuration) return 0;
-    // PT2H30M -> 150 minutes
-    const matches = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-    if (!matches) return 0;
-
-    const hours = parseInt(matches[1] || '0', 10);
-    const minutes = parseInt(matches[2] || '0', 10);
-
-    return (hours * 60) + minutes;
-}
-
 export function mapDuffelToPremiumAgent(offer: any) {
     const firstSlice = offer.slices[0];
     const firstSegment = firstSlice.segments[0];
     const lastSegment = firstSlice.segments[firstSlice.segments.length - 1];
 
-    // 1. UÇUŞ NUMARASI (QRnull hatasını çözer)
-    let flightNum = firstSegment.operating_carrier_flight_number || firstSegment.marketing_carrier_flight_number;
-    if (!flightNum) flightNum = "N/A";
+    // 1. IATA KODU ÇIKARTICI (Undefined Hatasını Çözen Kısım)
+    // Duffel bazen { iata_code: "BNE" } bazen direkt "BNE" döner.
+    const getIata = (location: any) => {
+        if (!location) return "XXX";
+        return location.iata_code || location;
+    };
 
-    const airlineCode = firstSegment.operating_carrier.iata_code || firstSegment.marketing_carrier.iata_code;
+    const originCode = getIata(firstSegment.origin);
+    const destinationCode = getIata(lastSegment.destination);
+
+    // 2. UÇUŞ NO
+    let flightNum = firstSegment.operating_carrier_flight_number || firstSegment.marketing_carrier_flight_number;
+    if (!flightNum) flightNum = "FLY";
+    const airlineCode = firstSegment.operating_carrier?.iata_code || "XX";
     const fullFlightNumber = `${airlineCode}${flightNum}`;
 
-    // 2. SÜRE HESAPLAMA (0s 0dk hatasını çözer)
-    let durationText = "";
+    // 3. TARİH VE SÜRE
+    const departureDate = firstSegment.departing_at || new Date().toISOString();
+    const arrivalDate = lastSegment.arriving_at || new Date().toISOString();
+
     let durationMins = 0;
-    if (firstSlice.duration) {
-        // Duffel formatı (PT14H30M) gelirse parse et
-        // Ama biz garanti olsun diye kalkış-varış farkına bakalım
-        const dep = new Date(firstSegment.departing_at).getTime();
-        const arr = new Date(lastSegment.arriving_at).getTime();
+    let durationText = "Bilinmiyor";
+    try {
+        const dep = new Date(departureDate).getTime();
+        const arr = new Date(arrivalDate).getTime();
         const diffMins = (arr - dep) / 60000;
         durationMins = Math.floor(diffMins);
-        const hours = Math.floor(diffMins / 60);
-        const mins = Math.floor(diffMins % 60);
-        durationText = `${hours}s ${mins}dk`;
-    }
-
-    // 3. AMENITIES
-    const amenities = {
-        hasWifi: firstSegment.amenities?.some((a: any) => a.type === 'wifi') || false,
-        hasMeal: true,
-        baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
-    };
+        const h = Math.floor(diffMins / 60);
+        const m = Math.round(diffMins % 60);
+        durationText = `${h}s ${m}dk`;
+    } catch (e) { console.error(e); }
 
     return {
         id: offer.id,
         source: 'DUFFEL',
-        airline: firstSegment.operating_carrier.name,
-        airlineLogo: firstSegment.operating_carrier.logo_symbol_url,
+        airline: firstSegment.operating_carrier?.name || "Airline",
+        airlineLogo: firstSegment.operating_carrier?.logo_symbol_url || "",
         flightNumber: fullFlightNumber,
-        origin: firstSegment.origin.iata_code,
-        destination: lastSegment.destination.iata_code,
-        // Tarihleri olduğu gibi string olarak bırak, Frontend Date objesine çevirecek
-        departTime: firstSegment.departing_at,
-        arriveTime: lastSegment.arriving_at,
-        duration: durationMins, // Keeping numerical for scoring default
-        durationLabel: durationText, // For UI
+
+        // 🔥 Artık "undefined" olamaz:
+        origin: originCode,
+        destination: destinationCode,
+        from: originCode,
+        to: destinationCode,
+
+        departTime: departureDate,
+        arriveTime: arrivalDate,
+        duration: durationMins,
+        durationLabel: durationText,
         stops: firstSlice.segments.length - 1,
         price: parseFloat(offer.total_amount),
         currency: offer.total_currency,
-        amenities: amenities,
-        // Skorlama için gerekli ham veriler
-        segments: firstSlice.segments,
-        bookingLink: "" // Will be generated or null
+        amenities: {
+            hasWifi: false,
+            hasMeal: true,
+            baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
+        },
+        segments: firstSlice.segments
     };
 }
