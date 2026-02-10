@@ -109,8 +109,12 @@ export async function searchAirScraper(params: any) {
     // Air scraper için özel key yoksa genel keyi kullan
     const airKey = process.env.RAPID_API_KEY_AIR || process.env.RAPID_API_KEY;
 
+    // 🔥 HOST FALLBACK (Loglarda görünmesi için)
+    // Eğer env değişkeni yoksa bu adresi kullan
+    const airHost = process.env.RAPID_API_HOST_AIR || 'air-scraper.p.rapidapi.com';
+
     return fetchFromRapid(
-        process.env.RAPID_API_HOST_AIR,
+        airHost,
         airKey,
         params,
         'AIR_RAPID'
