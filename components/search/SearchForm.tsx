@@ -15,6 +15,9 @@ export function SearchForm() {
     const router = useRouter();
 
 
+    const [tripType, setTripType] = useState<'ONE_WAY' | 'ROUND_TRIP' | 'MULTI_CITY'>('ROUND_TRIP');
+    const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
+
     const [origin, setOrigin] = useState<any>(null);
     const [destination, setDestination] = useState<any>(null);
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -28,20 +31,24 @@ export function SearchForm() {
     const handleSearch = () => {
         if (origin && destination && date) {
             const dateStr = date.toISOString().split('T')[0];
+            const returnDateStr = returnDate ? returnDate.toISOString().split('T')[0] : '';
+
             const queryParams = new URLSearchParams({
+                // Core Params
                 origin: origin.iata,
                 destination: destination.iata,
                 date: dateStr,
+                tripType: tripType, // 'ONE_WAY' | 'ROUND_TRIP'
+
+                // Return Date (if round trip)
+                ...(tripType === 'ROUND_TRIP' && returnDateStr ? { returnDate: returnDateStr } : {}),
+
+                // Passengers
                 adults: adults.toString(),
                 children: childrenCount.toString(),
                 infants: infants.toString(),
                 cabin: cabin
             });
-
-            // If round trip is selected (implementation pending in UI but good to support via URL if extended), we could add it.
-            // For now, homepage UI handles one way or round trip via radio buttons (but logic was missing).
-            // Let's assume one-way for simplicity unless logic is enhanced.
-            // TODO: Enhance tripType logic
 
             router.push(`/flight-search?${queryParams.toString()}`);
         }
@@ -49,6 +56,28 @@ export function SearchForm() {
 
     return (
         <div className="w-full relative">
+            {/* Trip Type Tabs */}
+            <div className="flex gap-6 mb-4 px-2">
+                <button
+                    onClick={() => setTripType('ONE_WAY')}
+                    className={`text-sm font-bold transition-colors ${tripType === 'ONE_WAY' ? 'text-white' : 'text-white/60 hover:text-white'}`}
+                >
+                    {t('one_way') || "One way"}
+                </button>
+                <button
+                    onClick={() => setTripType('ROUND_TRIP')}
+                    className={`text-sm font-bold transition-colors ${tripType === 'ROUND_TRIP' ? 'text-white' : 'text-white/60 hover:text-white'}`}
+                >
+                    {t('round_trip') || "Round trip"}
+                </button>
+                <button
+                    onClick={() => setTripType('MULTI_CITY')}
+                    className={`text-sm font-bold transition-colors ${tripType === 'MULTI_CITY' ? 'text-white' : 'text-white/60 hover:text-white'}`}
+                >
+                    {t('multi_city') || "Multi-city"}
+                </button>
+            </div>
+
             {/* Unified Search Bar Container */}
             <div className="bg-white rounded-3xl md:rounded-full shadow-2xl shadow-blue-900/20 border border-slate-200/50 p-2 flex flex-col md:flex-row relative z-20">
 
@@ -82,16 +111,35 @@ export function SearchForm() {
                 <div className="hidden md:block w-px bg-slate-200 my-4" />
                 <div className="md:hidden h-px bg-slate-200 mx-4" />
 
-                {/* Date */}
-                <div className="relative md:w-[220px] group">
-                    <DatePicker
-                        label={t('date_label') || "Depart"}
-                        date={date}
-                        setDate={setDate}
-                        locale={locale as any}
-                        variant="ghost"
-                        className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
-                    />
+                {/* Date Selection (Dynamic based on Trip Type) */}
+                <div className="relative md:w-[320px] group flex">
+                    <div className="flex-1">
+                        <DatePicker
+                            label={t('date_label') || "Depart"}
+                            date={date}
+                            setDate={setDate}
+                            locale={locale as any}
+                            variant="ghost"
+                            className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
+                        />
+                    </div>
+
+                    {tripType === 'ROUND_TRIP' && (
+                        <>
+                            <div className="hidden md:block w-px bg-slate-200 my-4" />
+                            <div className="flex-1">
+                                <DatePicker
+                                    label={t('return_label') || "Return"}
+                                    date={returnDate}
+                                    setDate={setReturnDate}
+                                    locale={locale as any}
+                                    variant="ghost"
+                                    className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
+                                    placeholder="Add date"
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Divider */}
@@ -99,7 +147,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200 mx-4" />
 
                 {/* Passengers */}
-                <div className="relative md:w-[220px] group">
+                <div className="relative md:w-[150px] group">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -127,19 +175,12 @@ export function SearchForm() {
                 </div>
             </div>
 
-            {/* Trip Type Toggles (Optional - positioned below) */}
-            <div className="absolute -bottom-10 left-6 flex gap-6 text-sm font-medium text-white/80">
-                <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                    <div className="w-4 h-4 rounded-full border-2 border-white/50 flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
-                    </div>
-                    {t('one_way')}
-                </label>
-                <label className="flex items-center gap-2 cursor-not-allowed opacity-60">
-                    <div className="w-4 h-4 rounded-full border-2 border-white/30" />
-                    {t('round_trip')}
-                </label>
-            </div>
+            {/* Multi-City Message (If selected) */}
+            {tripType === 'MULTI_CITY' && (
+                <div className="absolute top-full left-0 mt-4 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 text-white text-sm">
+                    ⚠️ Multi-city search is currently optimized for desktop. Please use our concierge service for complex itineraries.
+                </div>
+            )}
         </div>
     );
 }

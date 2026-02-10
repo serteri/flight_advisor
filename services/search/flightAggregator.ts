@@ -1,6 +1,6 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
-import { searchRapidAPI } from "./providers/rapidapi";
+import { searchRapidApi } from "./providers/rapidapi";
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
@@ -9,7 +9,7 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
     // 1. Parallel Fetching
     const [duffelResults, rapidResults] = await Promise.all([
         searchDuffel(params),
-        searchRapidAPI(params)
+        searchRapidApi(params)
     ]);
 
     let allFlights = [...duffelResults, ...rapidResults];

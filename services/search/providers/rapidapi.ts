@@ -1,67 +1,70 @@
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+// services/search/providers/rapidApi.ts
 
-export async function searchRapidAPI(params: HybridSearchParams): Promise<FlightResult[]> {
-    // Mocking RapidAPI (Skyscanner/Trip generic data)
-    // Usually cheaper, sometimes less detail on aircraft
+export async function searchRapidApi(params: { origin: string, destination: string, date: string, returnDate?: string }) {
+    // RapidAPI Key check
+    if (!process.env.RAPID_API_KEY) {
+        console.warn("RapidAPI Key missing!");
+        return [];
+    }
 
-    await new Promise(resolve => setTimeout(resolve, 1200)); // Slightly slower
+    // Using Sky-Scrapper format or similar flight API
+    // Note: The params for custom scraper might differ, adapting to generic structure provided by user
+    let url = `https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${params.date}&cabinClass=economy&adults=1&sortBy=best`;
 
-    return [
-        {
-            id: `rapid-${Date.now()}-1`,
-            source: 'rapidapi',
-            airline: 'China Eastern',
-            flightNumber: 'MU716',
-            aircraft: 'Airbus A330',
-            from: params.origin,
-            to: params.destination,
-            departTime: '2026-03-10T09:00:00',
-            arriveTime: '2026-03-11T20:00:00',
-            duration: 1860, // Long layover
-            stops: 2,
-            price: 800,
-            currency: 'USD',
-            cabinClass: params.cabin || 'economy',
-            baggage: 'checked',
-            fareType: 'basic',
-            seatComfortScore: 5.5,
-            wifi: false,
-            entertainment: false,
-            power: false,
-            meal: 'none',
-            legroom: '71cm',
-            aircraftAge: 15,
-            layout: '2-4-2',
-            delayRisk: 'high',
-            bookingLink: 'https://skyscanner.com/...'
-        },
-        {
-            id: `rapid-${Date.now()}-2`,
-            source: 'rapidapi',
-            airline: 'Emirates',
-            flightNumber: 'EK415',
-            aircraft: 'Airbus A380',
-            from: params.origin,
-            to: params.destination,
-            departTime: '2026-03-10T06:00:00',
-            arriveTime: '2026-03-10T22:00:00',
-            duration: 960,
-            stops: 1,
-            price: 1400,
-            currency: 'USD',
-            cabinClass: params.cabin || 'economy',
-            baggage: 'checked',
-            fareType: 'flex',
-            seatComfortScore: 9.5,
-            wifi: true,
-            entertainment: true,
-            power: true,
-            meal: 'included',
-            legroom: '82cm',
-            aircraftAge: 2,
-            layout: '3-4-3',
-            delayRisk: 'low',
-            bookingLink: 'https://skyscanner.com/...'
+    if (params.returnDate) {
+        url += `&returnDate=${params.returnDate}`;
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-RapidAPI-Key': process.env.RAPID_API_KEY!,
+                'X-RapidAPI-Host': 'sky-scrapper.p.rapidapi.com'
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`RapidAPI Error: ${response.status} ${response.statusText}`);
+            return [];
         }
-    ];
+
+        const data = await response.json();
+
+        if (!data.data || !data.data.itineraries) return [];
+
+        // MAPPING RapidAPI -> FlightResult
+        return data.data.itineraries.map((item: any) => {
+            const leg = item.legs[0];
+            const carrier = leg.carriers.marketing[0];
+
+            return {
+                id: item.id,
+                source: 'RAPID_API', // TAG: RapidAPI Source
+                airline: carrier.name,
+                airlineLogo: carrier.logoUrl,
+                airlineCode: carrier.alternateId,
+                flightNumber: `${carrier.alternateId || ''} ${leg.segments[0].flightNumber}`, // Construct flight number
+                from: leg.origin.displayCode,
+                to: leg.destination.displayCode,
+                departTime: leg.departure,
+                arriveTime: leg.arrival,
+                duration: leg.durationInMinutes,
+                stops: leg.stopCount,
+                price: item.price.raw,
+                currency: 'USD', // Often USD from this API
+                cabinClass: 'economy',
+
+                // Default details since scraper details are limited
+                amenities: { hasWifi: false, hasMeal: true },
+
+                // Original booking link if available and safe
+                deepLink: "https://skyscanner.com" // Placeholder or use if specific link logic exists
+            };
+        });
+
+    } catch (error) {
+        console.error("RapidAPI Search Error:", error);
+        return []; // Return empty on error to avoid breaking main flow
+    }
 }

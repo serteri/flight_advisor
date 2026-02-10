@@ -89,10 +89,23 @@ function SearchPageContent() {
         setResults([]);
 
         try {
-            const res = await fetch('/api/search', {
-                method: 'POST',
+            // Convert params to URLSearchParams for GET request
+            const queryParams = new URLSearchParams({
+                origin: params.origin,
+                destination: params.destination,
+                date: params.date,
+                adults: params.adults.toString(),
+                cabin: params.cabin,
+                tripType: tripType === "roundTrip" ? "ROUND_TRIP" : "ONE_WAY" // Ensure upper case for backend
+            });
+
+            if (params.returnDate) {
+                queryParams.append('returnDate', params.returnDate);
+            }
+
+            const res = await fetch(`/api/search?${queryParams.toString()}`, {
+                method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(params),
             });
 
             const data = await res.json();

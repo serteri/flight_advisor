@@ -1,53 +1,47 @@
-/**
- * Library to generate deep links for flight bookings.
- * Acts as a "Bridge" between our search results and affiliate partners.
- */
+// lib/booking/linkGenerator.ts
 
 interface FlightParams {
-    origin: string;      // e.g. BNE
-    destination: string; // e.g. IST
-    departureDate: string; // YYYY-MM-DD format (2026-06-15)
-    returnDate?: string;   // Optional
+    origin: string;       // e.g. BNE
+    destination: string;  // e.g. IST
+    departureDate: string; // YYYY-MM-DD
+    returnDate?: string;
     passengers?: number;
-    source?: 'DUFFEL' | 'TRAVELPAYOUTS' | 'AMADEUS' | 'RAPIDAPI' | string;
-    deepLink?: string; // If API provided a ready-to-use link
+    source?: string; // Normalized to string to accept 'duffel' | 'RAPID_API' etc.
+    deepLink?: string;    // If API provided a ready-to-use link
 }
 
 export function generateBookingLink(flight: FlightParams): string {
-    // 1. If we already have a direct affiliate link (e.g. from RapidAPI/Kiwi), use it.
-    if (flight.deepLink && (flight.source === 'TRAVELPAYOUTS' || flight.source === 'RAPIDAPI')) {
+    const source = flight.source?.toUpperCase();
+
+    // 1. If we already have a ready-to-use affiliate link (Rare case, e.g. from a specific partner API)
+    if (flight.deepLink && source === 'AVIASALES') {
         return flight.deepLink;
     }
 
-    // 2. For Duffel/Amadeus (or missing links), construct a search link for Aviasales/Skyscanner.
-    // This ensures we monetize the traffic even if we didn't get a direct link.
+    // 2. BUILD THE LINK (For Duffel, RapidAPI, and others)
+    // Goal: Redirect user to Aviasales search results with your MARKER.
 
-    // Default to Aviasales (Travelpayouts White Label)
-    const marker = process.env.NEXT_PUBLIC_TP_MARKER || 'direct';
-    const domain = process.env.NEXT_PUBLIC_TP_DOMAIN || 'aviasales.com';
+    const marker = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER || 'direct';
+    const domain = process.env.NEXT_PUBLIC_TP_DOMAIN || "aviasales.com";
 
-    // Date Formatting: YYYY-MM-DD -> DDMM (Aviasales format)
-    // Example: 2026-06-15 -> 1506
-    const depDateObj = new Date(flight.departureDate);
-    const day = String(depDateObj.getDate()).padStart(2, '0');
-    const month = String(depDateObj.getMonth() + 1).padStart(2, '0');
-    const dateStr = `${day}${month}`;
+    // Date Format: Aviasales wants "DDMM" (e.g. 22 March -> 2203)
+    const d = new Date(flight.departureDate);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
 
-    let route = `${flight.origin}${dateStr}${flight.destination}`;
+    // Route Construction: BNE2203IST1 (1 Passenger, Economy default)
+    const pax = flight.passengers || 1;
+    let searchRoute = `${flight.origin}${day}${month}${flight.destination}${pax}`;
 
     // Add Return Date if exists
     if (flight.returnDate) {
-        const retDateObj = new Date(flight.returnDate);
-        const rDay = String(retDateObj.getDate()).padStart(2, '0');
-        const rMonth = String(retDateObj.getMonth() + 1).padStart(2, '0');
-        route += `${rDay}${rMonth}`;
+        const r = new Date(flight.returnDate);
+        const rDay = String(r.getDate()).padStart(2, '0');
+        const rMonth = String(r.getMonth() + 1).padStart(2, '0');
+        searchRoute += `${rDay}${rMonth}`;
     }
 
-    // Passenger count (Default 1)
-    const pax = flight.passengers || 1;
-    route += pax;
-
-    // Final Link Construction
-    // Format: https://aviasales.com/search/BNE1506IST1?marker=12345&currency=AUD
-    return `https://${domain}/search/${route}?marker=${marker}&currency=USD&locale=en`;
+    // 🔥 FINAL LINK (Marker is crucial!)
+    // Format: https://aviasales.com/search/BNE2203IST1?marker=12345&currency=AUD
+    return `https://${domain}/search/${searchRoute}?marker=${marker}&currency=USD&locale=en`;
 }
