@@ -21,6 +21,10 @@ export async function GET(request: Request) {
     }
 
     console.log(`🚀 ÜÇLÜ MOTOR BAŞLIYOR: ${origin} -> ${destination}`);
+    console.log("🔍 ENV KONTROLÜ:");
+    console.log("- KEY:", process.env.RAPID_API_KEY ? "✅ Var" : "❌ YOK");
+    console.log("- HOST_SKY:", process.env.RAPID_API_HOST_SKY ? `✅ ${process.env.RAPID_API_HOST_SKY}` : "❌ YOK");
+    console.log("- HOST_AIR:", process.env.RAPID_API_HOST_AIR ? `✅ ${process.env.RAPID_API_HOST_AIR}` : "❌ YOK");
 
     try {
         const [duffelRes, skyRes, airRes] = await Promise.allSettled([
