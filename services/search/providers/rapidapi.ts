@@ -1,7 +1,12 @@
 export async function searchRapidApi(params: { origin: string, destination: string, date: string }) {
-    if (!process.env.RAPID_API_KEY) return [];
+    console.log("[RapidAPI] 🔑 Key present:", !!process.env.RAPID_API_KEY);
+    if (!process.env.RAPID_API_KEY) {
+        console.error("[RapidAPI] ❌ RAPID_API_KEY is missing! Skipping.");
+        return [];
+    }
 
     const url = `https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${params.date}&cabinClass=economy&adults=1&sortBy=best&currency=AUD`;
+    console.log("[RapidAPI] 🌐 URL:", url);
 
     try {
         const response = await fetch(url, {
@@ -12,8 +17,23 @@ export async function searchRapidApi(params: { origin: string, destination: stri
             }
         });
 
+        console.log("[RapidAPI] 📡 HTTP Status:", response.status, response.statusText);
+
         const data = await response.json();
-        if (!data.data || !data.data.itineraries) return [];
+        console.log("[RapidAPI] 📦 Response keys:", Object.keys(data));
+        console.log("[RapidAPI] 📦 data.status:", data.status);
+        console.log("[RapidAPI] 📦 data.message:", data.message);
+        console.log("[RapidAPI] 📦 Has data.data?", !!data.data);
+        if (data.data) {
+            console.log("[RapidAPI] 📦 data.data keys:", Object.keys(data.data));
+            console.log("[RapidAPI] 📦 Has itineraries?", !!data.data.itineraries);
+            console.log("[RapidAPI] 📦 Itinerary count:", data.data.itineraries?.length || 0);
+        }
+
+        if (!data.data || !data.data.itineraries) {
+            console.error("[RapidAPI] ⚠️ No itineraries in response. Full response:", JSON.stringify(data).substring(0, 500));
+            return [];
+        }
 
         return data.data.itineraries.map((item: any) => {
             const leg = item.legs[0];
