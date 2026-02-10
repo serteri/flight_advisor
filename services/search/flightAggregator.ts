@@ -1,19 +1,18 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
-import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
+import { searchRapidApi } from "./providers/rapidapi";
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
 
-    // 1. ÜÇLÜ PARALEL ARAMA
-    const [duffelResults, skyResults, airResults] = await Promise.all([
+    // 1. DUFFEL + RAPID API (Paralel)
+    const [duffelResults, rapidResults] = await Promise.all([
         searchDuffel(params),
-        searchSkyScrapper(params),
-        searchAirScraper(params)
+        searchRapidApi(params) // Eski tekil fonksiyona döndük
     ]);
 
-    let allFlights = [...duffelResults, ...skyResults, ...airResults];
+    let allFlights = [...duffelResults, ...rapidResults];
 
     // 2. Market Analysis
     const prices = allFlights.map(f => f.price).filter(p => p > 0);

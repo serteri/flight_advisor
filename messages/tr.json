@@ -56,6 +56,9 @@
         "today": "Bugüne Git",
         "close": "Kapat"
     },
+    "SearchForm": {
+        "multi_city": "Çoklu Uçuş"
+    },
     "HomePage": {
         "hero": {
             "title": "Kişisel Uçuş Fiyat",

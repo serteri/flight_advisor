@@ -31,6 +31,7 @@ export type FlightResult = {
     departTime: string;
     arriveTime: string;
     duration: number;
+    durationLabel?: string;
     stops: number;
     price: number;
     currency: string;

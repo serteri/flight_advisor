@@ -41,6 +41,7 @@
     "premiumLock": "Login for Analysis"
   },
   "SearchForm": {
+    "multi_city": "Multi-city",
     "origin_placeholder": "Where from?",
     "destination_placeholder": "Where to?",
     "origin_label": "From",

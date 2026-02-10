@@ -1,7 +1,8 @@
+
 import { NextResponse } from 'next/server';
 import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
-import { searchSkyScrapper, searchAirScraper } from '@/services/search/providers/rapidapi';
+import { searchRapidApi } from '@/services/search/providers/rapidapi';
 import { calculateAgentScore } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Eksik parametre: origin, destination veya date.' }, { status: 400 });
     }
 
-    console.log(`🚀 ÜÇLÜ ARAMA BAŞLADI: ${origin} -> ${destination} (${tripType}) [${date}]`);
+    console.log(`🚀 ARAMA BAŞLADI: ${origin} -> ${destination} (${tripType}) [${date}]`);
 
     try {
         // Duffel Slices
@@ -37,8 +38,8 @@ export async function GET(request: Request) {
             });
         }
 
-        // 1. DUFFEL + SKY + AIR (Hepsi paralel çalışır)
-        const [duffelRes, skyRes, airRes] = await Promise.allSettled([
+        // 1. DUFFEL + RAPID API (Paralel)
+        const [duffelRes, rapidRes] = await Promise.allSettled([
             // Duffel
             duffel.offerRequests.create({
                 slices,
@@ -50,24 +51,17 @@ export async function GET(request: Request) {
                     return [];
                 }),
 
-            // Sky Scrapper
-            searchSkyScrapper({ origin, destination, date }),
-
-            // Air Scraper
-            searchAirScraper({ origin, destination, date })
+            // Flights Scraper Sky (Senin Yeni Aboneliğin)
+            searchRapidApi({ origin, destination, date })
         ]);
 
         // Sonuçları Topla
         const flightsDuffel = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
-        const flightsSky = skyRes.status === 'fulfilled' ? skyRes.value : [];
-        const flightsAir = airRes.status === 'fulfilled' ? airRes.value : [];
+        const flightsRapid = rapidRes.status === 'fulfilled' ? rapidRes.value : [];
 
-        console.log(`📊 SONUÇLAR: Duffel(${flightsDuffel.length}) + Sky(${flightsSky.length}) + Air(${flightsAir.length})`);
+        console.log(`📊 SONUÇLAR: Duffel(${flightsDuffel.length}) + Rapid(${flightsRapid.length})`);
 
-        if (skyRes.status === 'rejected') console.error("❌ SKY_RAPID PATLADI:", skyRes.reason);
-        if (airRes.status === 'rejected') console.error("❌ AIR_RAPID PATLADI:", airRes.reason);
-
-        let allFlights: FlightResult[] = [...flightsDuffel, ...flightsSky, ...flightsAir];
+        let allFlights: FlightResult[] = [...flightsDuffel, ...flightsRapid];
 
         if (allFlights.length === 0) {
             return NextResponse.json({ results: [] });
@@ -78,9 +72,8 @@ export async function GET(request: Request) {
 
         const getMins = (d: any) => {
             if (typeof d === 'number') return d;
-            if (!d) return 99999;
             let m = 0;
-            const parts = String(d).split(' ');
+            const parts = String(d || "").split(' ');
             for (const p of parts) {
                 if (p.includes('s')) m += parseInt(p) * 60;
                 if (p.includes('dk')) m += parseInt(p);
@@ -88,7 +81,7 @@ export async function GET(request: Request) {
             return m || 99999;
         };
 
-        const minDuration = Math.min(...allFlights.map(f => getMins(f.duration)));
+        const minDuration = Math.min(...allFlights.map(f => getMins(f.duration) || getMins(f.durationLabel)));
 
         allFlights = allFlights.map(flight => {
             const scoreInfo = calculateAgentScore(flight, { minPrice, minDuration });

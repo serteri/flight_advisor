@@ -1,23 +1,22 @@
-// Ortak Yardımcı Fonksiyon: API İsteği Atan Motor
-async function fetchFromRapid(host: string | undefined, params: any, sourceLabel: string) {
+export async function searchRapidApi(params: { origin: string, destination: string, date: string }) {
     const apiKey = process.env.RAPID_API_KEY;
 
+    // 🔥 SENİN PRO PLAN'IN OLDUĞU HOST (Bunu sabitliyoruz)
+    const host = 'air-scraper.p.rapidapi.com';
+
     if (!apiKey) {
-        console.error(`❌ ${sourceLabel} HATASI: RAPID_API_KEY bulunamadı!`);
+        console.error("❌ RAPID API KEY YOK! Vercel ayarlarını kontrol et.");
         return [];
     }
 
-    if (!host) {
-        console.error(`❌ ${sourceLabel} HATASI: Host adresi (.env) bulunamadı!`);
-        return [];
-    }
-
-    // TARİHİ FORMATLA (YYYY-MM-DD)
+    // Tarih Temizliği: YYYY-MM-DD
     const cleanDate = params.date.split('T')[0];
 
-    const url = `https://${host}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&sortBy=best&currency=AUD`;
+    // Air Scraper Standart Endpoint
+    const url = `https://${host}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
 
-    console.log(`📡 ${sourceLabel} BAĞLANIYOR... [Host: ${host}]`);
+    console.log(`📡 AIR SCRAPER BAĞLANIYOR... [${cleanDate}]`);
+    console.log(`🔗 URL: ${url}`);
 
     try {
         const response = await fetch(url, {
@@ -28,67 +27,70 @@ async function fetchFromRapid(host: string | undefined, params: any, sourceLabel
             }
         });
 
+        // HTTP HATA KONTROLÜ
         if (response.status === 403) {
-            console.error(`⛔ ${sourceLabel} (403): Yetki Yok! RapidAPI'de '${host}' servisine abone misin?`);
+            console.error(`⛔ 403 YETKİ HATASI: '${host}' için abonelik aktif değil veya Key yanlış.`);
+            return [];
+        }
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error(`🔥 API HATA KODU: ${response.status}`, errText);
             return [];
         }
 
         const data = await response.json();
-        const list = data.data?.itineraries || [];
 
-        if (list.length === 0) {
-            console.warn(`⚠️ ${sourceLabel}: Sonuç yok (0 uçuş).`);
+        // 🔥 İŞTE BURASI: API NEDEN BOŞ DÖNÜYOR?
+        // Eğer data.status false ise veya data.data yoksa loga basalım.
+        if (!data.status || !data.data) {
+            console.warn("⚠️ API 'BAŞARISIZ' DÖNDÜ. Ham Cevap:", JSON.stringify(data).substring(0, 500));
             return [];
         }
 
-        console.log(`✅ ${sourceLabel}: ${list.length} uçuş buldu!`);
+        const list = data.data.itineraries || [];
+
+        if (list.length === 0) {
+            console.warn("⚠️ API BAŞARILI AMA UÇUŞ YOK (0 Sonuç). Rota/Tarih kaynaklı olabilir.");
+            return [];
+        }
+
+        console.log(`✅ AIR SCRAPER: ${list.length} uçuş buldu!`);
 
         return list.map((item: any) => {
             const leg = item.legs[0];
             const carrier = leg.carriers.marketing[0];
-            const durationMins = leg.durationInMinutes || 0;
 
-            let durationText = "Bilinmiyor";
-            if (durationMins) {
-                const h = Math.floor(durationMins / 60);
-                const m = durationMins % 60;
+            // Süre Hesapla
+            let durationText = "Normal";
+            if (leg.durationInMinutes) {
+                const h = Math.floor(leg.durationInMinutes / 60);
+                const m = leg.durationInMinutes % 60;
                 durationText = `${h}s ${m}dk`;
             }
 
             return {
-                id: `${sourceLabel}_${item.id}`,
-                source: sourceLabel,
+                id: item.id,
+                source: 'RAPID_API', // Ekranda görünecek kaynak
                 airline: carrier.name,
                 airlineLogo: carrier.logoUrl,
                 flightNumber: carrier.alternateId || "FLIGHT",
                 origin: params.origin,
                 destination: params.destination,
-                from: params.origin,
-                to: params.destination,
                 price: item.price.raw,
-                currency: 'AUD',
-                departTime: leg.departure,
-                arriveTime: leg.arrival,
-                duration: durationMins,
-                durationLabel: durationText,
+                currency: 'USD', // API'den USD istedik
+                departureTime: leg.departure,
+                arrivalTime: leg.arrival,
+                duration: leg.durationInMinutes || 0, // Ensure numeric duration for scoring
+                durationLabel: durationText, // For UI
                 stops: leg.stopCount,
                 amenities: { hasWifi: true, hasMeal: true, baggage: "Dahil" },
-                deepLink: "https://aviasales.com"
+                deepLink: "https://aviasales.com" // LinkGenerator bunu ezecek
             };
         });
 
     } catch (error) {
-        console.error(`🔥 ${sourceLabel} HATASI:`, error);
+        console.error("🔥 KRİTİK KOD HATASI:", error);
         return [];
     }
-}
-
-// 1. SKY-SCRAPPER (Skyscanner)
-export async function searchSkyScrapper(params: any) {
-    return fetchFromRapid(process.env.RAPID_API_HOST_SKY, params, 'SKY_RAPID');
-}
-
-// 2. AIR-SCRAPPER (Google Flights)
-export async function searchAirScraper(params: any) {
-    return fetchFromRapid(process.env.RAPID_API_HOST_AIR, params, 'AIR_RAPID');
 }
