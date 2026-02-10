@@ -62,11 +62,18 @@ export function analyzeForJunior(flight: FlightResult): JuniorAnalysis {
     }
 
     // 4. IN-FLIGHT ENTERTAINMENT (IFE)
-    // If no Wifi and In-flight entertainment...
-    if (!flight.amenities?.hasWifi && !flight.entertainment) {
+    // Only warn if we explicitly know there are NO screens
+    const hasWifi = flight.amenities?.hasWifi;
+    const hasEntertainment = flight.entertainment;
+
+    // Check if data is available (not undefined)
+    const isWifiKnown = hasWifi !== undefined;
+    const isEntertainmentKnown = hasEntertainment !== undefined;
+
+    if (isWifiKnown && !hasWifi && isEntertainmentKnown && !hasEntertainment) {
         score -= 2.0;
         alerts.push("📱 Warning: No screens! Download movies beforehand.");
-    } else if (flight.entertainment) {
+    } else if (hasEntertainment === true) {
         score += 1.0;
         perks.push("🎬 In-Flight Entertainment available.");
     }

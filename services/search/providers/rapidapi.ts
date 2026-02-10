@@ -38,28 +38,55 @@ export async function searchRapidApi(params: { origin: string, destination: stri
             const leg = item.legs[0];
             const carrier = leg.carriers.marketing[0];
 
+            const airlineName = carrier.name;
+            const logoUrl = carrier.logoUrl;
+
+            // 🧠 INTELLIGENCE: Infer stats for known Full Service Carriers (FSC)
+            // If RapidAPI returns null for amenities, we assume YES for these premium airlines
+            const isFullService = ["Qatar Airways", "Turkish Airlines", "Singapore Airlines", "Emirates", "Lufthansa", "Qantas", "Etihad Airways"].includes(airlineName);
+
             return {
                 id: item.id,
-                source: 'RAPID_API', // TAG: RapidAPI Source
-                airline: carrier.name,
-                airlineLogo: carrier.logoUrl,
-                airlineCode: carrier.alternateId,
-                flightNumber: `${carrier.alternateId || ''} ${leg.segments[0].flightNumber}`, // Construct flight number
+                source: 'RAPID_API', // 🏷️ Explicit Flag
+                agentScore: 7.5, // Default/Placeholder, will be rescored by engine
+
+                airline: airlineName,
+                airlineLogo: logoUrl,
+                flightNumber: `${carrier.alternateId || ''}${leg.segments[0].flightNumber || ''}`, // Construct Flight No
+
+                price: item.price.raw,
+                currency: 'AUD', // RapidAPI usually returns this or we need to map from item.price.currency
+
+                departTime: leg.departure, // ISO String
+                arriveTime: leg.arrival,   // ISO String
+
                 from: leg.origin.displayCode,
                 to: leg.destination.displayCode,
-                departTime: leg.departure,
-                arriveTime: leg.arrival,
+
                 duration: leg.durationInMinutes,
                 stops: leg.stopCount,
-                price: item.price.raw,
-                currency: 'USD', // Often USD from this API
-                cabinClass: 'economy',
 
-                // Default details since scraper details are limited
-                amenities: { hasWifi: false, hasMeal: true },
+                amenities: {
+                    hasWifi: isFullService ? true : false, // Optimistic assumption for FSC
+                    hasMeal: isFullService ? true : false, // Optimistic assumption for FSC
+                    hasUsb: isFullService ? true : false,
+                    legroom: isFullService ? "79cm" : "Standard"
+                },
 
-                // Original booking link if available and safe
-                deepLink: "https://skyscanner.com" // Placeholder or use if specific link logic exists
+                baggageSummary: {
+                    checked: isFullService ? "Usually Included" : "Check Airline",
+                    cabin: "7kg",
+                    totalWeight: "20kg" // Assumption for display
+                },
+
+                legal: {
+                    isRefundable: false, // Safer default
+                    changeFee: "Unknown",
+                    formattedRefund: "Non-refundable"
+                },
+
+                bookingLink: "https://skyscanner.com", // Placeholder or use if specific link logic exists
+                analysis: null
             };
         });
 

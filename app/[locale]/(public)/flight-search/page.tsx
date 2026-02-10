@@ -267,7 +267,11 @@ function SearchPageContent() {
                         </div>
                         <div className="space-y-4">
                             {results.map((flight) => (
-                                <FlightResultCard key={flight.id} flight={flight} />
+                                <FlightResultCard
+                                    key={flight.id}
+                                    flight={flight}
+                                    isPremium={false} // 🔒 MOCKED: Set to true to unlock
+                                />
                             ))}
                         </div>
                     </div>

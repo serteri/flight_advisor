@@ -101,6 +101,7 @@ export async function GET(request: Request) {
         // 5. THE WALL (Sanitization)
         const sanitizedFlights = allFlights.map(f => ({
             ...f,
+            // Explicitly remove sensitive premium data
             agentScore: undefined,
             scoreDetails: undefined,
             analysis: undefined,
