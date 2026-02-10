@@ -1,43 +1,41 @@
-// Ortak İstek Motoru (Hem Sky hem Air için çalışır)
-async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLabel: string) {
-    const apiKey = process.env.RAPID_API_KEY;
+// Ortak İstek Fonksiyonu (Key'i dışarıdan alır)
+async function fetchFromRapid(host: string | undefined, apiKey: string | undefined, params: any, sourceLabel: string) {
 
     if (!apiKey) {
-        console.error(`❌ ${sourceLabel} HATASI: API Key Yok!`);
+        console.error(`❌ ${sourceLabel}: API Key Yok! Vercel'i kontrol et.`);
         return [];
     }
 
-    if (!hostVar) {
-        console.error(`❌ ${sourceLabel} HATASI: Host adresi (.env) bulunamadı!`);
+    if (!host) {
+        console.error(`❌ ${sourceLabel}: Host adresi Yok! Vercel'i kontrol et.`);
         return [];
     }
 
-    // Tarih Temizliği (YYYY-MM-DD)
+    // Tarih Temizliği
     const cleanDate = params.date.split('T')[0];
 
-    // URL: v2 Endpoint (Çoğu Scraper için standart)
-    const url = `https://${hostVar}/api/v2/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
+    // URL (Kullanıcı isteği üzerine v1 kullanıyoruz, eğer 404 alırsak v2'ye döneriz)
+    const url = `https://${host}/api/v1/flights/searchFlights?originSky=${params.origin}&destinationSky=${params.destination}&date=${cleanDate}&cabinClass=economy&adults=1&currency=USD`;
 
-    // LOGLARI "ERROR" OLARAK BASIYORUZ Kİ VERCEL'DE GÖRÜNSÜN
-    console.error(`📡 ${sourceLabel} İSTEĞİ: ${hostVar} -> [${cleanDate}]`);
+    console.error(`📡 ${sourceLabel} BAĞLANIYOR... [${cleanDate}]`);
 
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': hostVar // Dinamik Host
+                'X-RapidAPI-Key': apiKey, // 🔥 Dinamik Key
+                'X-RapidAPI-Host': host
             }
         });
 
         if (response.status === 403) {
-            console.error(`⛔ ${sourceLabel} (403): Yetki Yok! RapidAPI'de '${hostVar}' servisine abone misin?`);
+            console.error(`⛔ ${sourceLabel} (403): Bu Key ile '${host}' servisine giriş izni yok!`);
             return [];
         }
 
         if (!response.ok) {
             const err = await response.text();
-            console.error(`🔥 ${sourceLabel} API HATASI (${response.status}): ${err}`);
+            console.error(`🔥 ${sourceLabel} HATASI (${response.status}): ${err}`);
             return [];
         }
 
@@ -45,7 +43,6 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
         const list = data.data?.itineraries || [];
 
         if (list.length === 0) {
-            // 0 Sonuç da olsa loglansın
             console.error(`⚠️ ${sourceLabel}: Sonuç yok (0 uçuş).`);
             return [];
         }
@@ -92,12 +89,30 @@ async function fetchFromRapid(hostVar: string | undefined, params: any, sourceLa
     }
 }
 
-// 1. FLIGHTS SCRAPER SKY (Mavi Etiket)
+// 1. FLIGHTS SCRAPER SKY (Mavi)
+// 🔥 Vercel'deki YENİ "RAPID_API_KEY_SKY" anahtarını kullanır
 export async function searchSkyScrapper(params: any) {
-    return fetchFromRapid(process.env.RAPID_API_HOST_SKY, params, 'SKY_RAPID');
+    // SKY key yoksa genel key'i dene (ne olur ne olmaz)
+    const skyKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
+
+    return fetchFromRapid(
+        process.env.RAPID_API_HOST_SKY,
+        skyKey,
+        params,
+        'SKY_RAPID'
+    );
 }
 
-// 2. AIR SCRAPER (Yeşil Etiket)
+// 2. AIR SCRAPER (Yeşil)
+// 🔥 Vercel'deki normal "RAPID_API_KEY" anahtarını kullanır (veya _AIR yapabilirsin)
 export async function searchAirScraper(params: any) {
-    return fetchFromRapid(process.env.RAPID_API_HOST_AIR, params, 'AIR_RAPID');
+    // Air scraper için özel key yoksa genel keyi kullan
+    const airKey = process.env.RAPID_API_KEY_AIR || process.env.RAPID_API_KEY;
+
+    return fetchFromRapid(
+        process.env.RAPID_API_HOST_AIR,
+        airKey,
+        params,
+        'AIR_RAPID'
+    );
 }
