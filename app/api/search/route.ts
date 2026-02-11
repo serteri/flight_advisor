@@ -18,9 +18,6 @@ export async function GET(request: Request) {
     const returnDate = searchParams.get('returnDate');
 
     // Multi-City Verisi (Eğer URL'de 'flights' diye bir JSON string varsa)
-    // Örn: ?multiCity=[{"origin":"BNE","destination":"IST","date":"..."}, ...]
-    // Kullanıcı 'multiCity' dedi ama body içinde 'flights' geçiyor.
-    // Parametre adı 'multiCity'
     const multiCityJson = searchParams.get('multiCity');
     let multiFlights: any[] = [];
 
@@ -42,7 +39,6 @@ export async function GET(request: Request) {
     try {
         const [duffelRes, rapidRes] = await Promise.allSettled([
             // 1. Duffel (Sadece Basit Aramalar İçin)
-            // Multi-City ise Duffel'ı şimdilik pas geçiyoruz veya sadece ilk bacağı aratıyoruz
             (!multiFlights.length && origin && destination && date) ? duffel.offerRequests.create({
                 slices: [{ origin, destination, departure_date: date }],
                 passengers: [{ type: 'adult' }],
@@ -92,7 +88,16 @@ export async function GET(request: Request) {
         const minDuration = Math.min(...validFlights.map(f => getMins(f.duration) || getMins(f.durationLabel)));
 
         const scoredFlights = validFlights.map(flight => {
-            const scoreInfo = calculateAgentScore(flight, { minPrice: minPrice || flight.price, minDuration });
+
+            const safePrice = Number(flight.price) || 0;
+            const safeMinPrice = (minPrice > 0 ? minPrice : safePrice) || safePrice;
+            const safeMinDuration = Number(minDuration) || 0;
+
+            const scoreInfo = calculateAgentScore(flight, {
+                minPrice: safeMinPrice,
+                minDuration: safeMinDuration
+            });
+
             return {
                 ...flight,
                 agentScore: scoreInfo.total,
