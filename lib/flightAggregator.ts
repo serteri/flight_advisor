@@ -1,5 +1,6 @@
 import { searchFlights } from "@/lib/amadeus";
 import { findVirtualInterlineFlights } from "@/lib/virtualInterlining";
+import { searchAirScraperFlights } from "@/lib/airScraper";
 import { FlightForScoring } from "@/lib/flightTypes";
 
 import { getAirlineInfo } from "@/lib/airlineDB";
@@ -152,7 +153,7 @@ export async function getAllFlights(
     const { searchLCCFares } = await import("@/lib/lccFares");
 
     // 1. RUN ENGINES IN PARALLEL
-    const [standardResult, hackerResult, lccResult] = await Promise.allSettled([
+    const [standardResult, hackerResult, lccResult, scraperResult] = await Promise.allSettled([
         searchStandardFlights({
             origin,
             destination,
@@ -161,17 +162,24 @@ export async function getAllFlights(
             currency: currencyCode
         }),
         findVirtualInterlineFlights(origin, destination, date, adults),
-        searchLCCFares(origin, destination, date)
+        searchLCCFares(origin, destination, date),
+        searchAirScraperFlights({
+            origin,
+            destination,
+            departureDate: date,
+            adults
+        })
     ]);
 
     let standardFlights = standardResult.status === 'fulfilled' ? standardResult.value : [];
     let hackerFlights = hackerResult.status === 'fulfilled' ? hackerResult.value : [];
     let lccFlights = lccResult.status === 'fulfilled' ? lccResult.value : [];
+    let scraperFlights = scraperResult.status === 'fulfilled' ? scraperResult.value : [];
 
-    console.log(`📊 Sonuçlar: Standard (${standardFlights.length}) + Hacker (${hackerFlights.length}) + LCC (${lccFlights.length})`);
+    console.log(`📊 Sonuçlar: Standard (${standardFlights.length}) + Hacker (${hackerFlights.length}) + LCC (${lccFlights.length}) + Scraper (${scraperFlights.length})`);
 
     // 2. MERGE LISTS
-    let allFlights = [...standardFlights, ...hackerFlights, ...lccFlights];
+    let allFlights = [...standardFlights, ...hackerFlights, ...lccFlights, ...scraperFlights];
 
     // 3. DEDUPLICATION (TEMİZLİK) 🧹
     const uniqueFlights = new Map<string, FlightForScoring>();
