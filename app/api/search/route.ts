@@ -5,7 +5,7 @@ import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
 
 // 2. Sky Scraper (RapidAPI - Mavi Takım)
-import { searchSkyScrapper } from '@/services/search/providers/rapidApi';
+import { searchSkyScrapper } from '@/services/search/providers/rapidapi';
 
 // 3. OPENCLAW (Senin Ajanın - Yeşil Takım / Premium Analist) 🔥
 import { searchOpenClaw } from '@/services/search/providers/openClaw';
