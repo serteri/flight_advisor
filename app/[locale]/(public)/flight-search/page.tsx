@@ -126,8 +126,11 @@ function SearchPageContent() {
                 throw new Error(data.error || t('error'));
             }
 
-            if (data.results && data.results.length > 0) {
-                setResults(data.results);
+            // API flat array döner: [...] veya {results: [...]}
+            const flights = Array.isArray(data) ? data : (data.results || []);
+
+            if (flights.length > 0) {
+                setResults(flights);
             } else {
                 setError(t('noFlights'));
             }
