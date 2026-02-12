@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 
 // 1. Duffel (Yedek Güç - Klasik API)
 import { duffel } from '@/lib/duffel';
-import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper'; // Bu fonksiyonun varlığını kontrol et
+import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper'; 
 
 // 2. Sky Scraper (RapidAPI - Mavi Takım)
-import { searchSkyScrapper } from '@/services/search/providers/rapidapi'; // Bu dosya olmayabilir, kontrol edeceğiz
+import { searchSkyScrapper } from '@/services/search/providers/rapidapi'; 
 
 // 3. OPENCLAW (Senin Ajanın - Yeşil Takım / Premium Analist) 🔥
 import { searchOpenClaw } from '@/services/search/providers/openClaw';
@@ -33,19 +33,23 @@ export async function GET(request: Request) {
         const [duffelRes, skyRes, clawRes] = await Promise.allSettled([
 
             // A) DUFFEL
-            // Duffel SDK'sını doğrudan burada kullanmak yerine, belki ayrı bir servisten çağırmak daha temiz olabilir.
-            // Ancak şimdilik mevcut yapıyı koruyorum.
-            /* 
-            NOT: duffel nesnesi ve mapDuffelToPremiumAgent fonksiyonu lib klasöründe olmalı.
-            Eğer yoksa hata verebilir. Bu yüzden try-catch ile sarmaladım.
-            */
             (async () => {
                 try {
                     // @ts-ignore - duffel tipi tanımlı olmayabilir
                     if (!duffel || !duffel.offerRequests) return [];
-                     // @ts-ignore
+                    
+                    /* 
+                       TypeScript Hatasını Önlemek İçin:
+                       slices dizisini 'any' olarak zorluyoruz. 
+                       Duffel API'si sadece departure_date ile çalışır, arrival_time şart değildir.
+                    */
+                    // @ts-ignore
                     const response = await duffel.offerRequests.create({
-                        slices: [{ origin, destination, departure_date: date }],
+                        slices: [{ 
+                            origin, 
+                            destination, 
+                            departure_date: date 
+                        }] as any, // 👈 BURASI KRİTİK: 'any' diyerek tipi eziyoruz
                         passengers: [{ type: 'adult' }],
                         cabin_class: 'economy',
                     });
@@ -58,7 +62,6 @@ export async function GET(request: Request) {
             })(),
 
             // B) SKY SCRAPER
-            // Bu fonksiyonun varlığını varsayıyorum. Yoksa boş dizi döner.
             (async () => {
                 try {
                      // @ts-ignore
@@ -80,7 +83,7 @@ export async function GET(request: Request) {
             })
         ]);
 
-        // Sonuçları Ayıkla (Başarılı olanları al, başarısızları boş dizi yap)
+        // Sonuçları Ayıkla
         // @ts-ignore
         const f1 = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
         // @ts-ignore
@@ -88,11 +91,10 @@ export async function GET(request: Request) {
         // @ts-ignore
         const f3 = clawRes.status === 'fulfilled' ? clawRes.value : [];
 
-        // Loglara yaz (Burası senin göreceğin yer)
+        // Loglara yaz
         console.log(`📊 RAPOR: Duffel(${f1.length}) + Sky(${f2.length}) + OpenClaw(${f3.length})`);
 
         // Hepsini Birleştir
-        // OpenClaw sonuçlarını (f3) en başa koyuyoruz ki Premium özellikler üstte görünsün
         let allFlights = [...f3, ...f2, ...f1];
 
         // Hiç sonuç yoksa
