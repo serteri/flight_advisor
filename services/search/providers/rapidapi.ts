@@ -1,21 +1,15 @@
 export async function searchSkyScrapper(params: { origin: string; destination: string; date: string }) {
-    // Aboneliğin olan Flights Scraper Sky (5 req/s, $15/mo Pro)
-    const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
+    // 🔑 HARDCODED TEST — Vercel env var hatasını ekarte etmek için
+    const apiKey = 'a5019e6badmsh72c554c174620e5p18995ajsn5606f30e000';
     const host = 'flights-sky.p.rapidapi.com';
 
-    if (!apiKey) {
-        console.error("❌ SKY: RAPID_API_KEY_SKY env var bulunamadı!");
-        return [];
-    }
-
-    // Tarih formatı: YYYY-MM-DD
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
-    // 🔥 Entity ID: 3 harfli IATA (BNE) → BNE.AIRPORT formatına çevir
+    // BNE -> BNE.AIRPORT
     const originEntity = params.origin.includes('.') ? params.origin : `${params.origin}.AIRPORT`;
     const destEntity = params.destination.includes('.') ? params.destination : `${params.destination}.AIRPORT`;
 
-    console.log(`📡 SKY İSTEĞİ (Tek Atış): ${originEntity} -> ${destEntity} [${departDate}]`);
+    console.log(`📡 TEST OPERASYONU (HARDCODED KEY): ${originEntity} -> ${destEntity} [${departDate}]`);
 
     try {
         const url = `https://${host}/flights/search-one-way`;
@@ -37,21 +31,17 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             },
         });
 
-        if (res.status === 429) {
-            console.warn("⚠️ SKY KOTA (429): Rate limit. Duffel sonuçlarıyla devam ediliyor.");
-            return [];
-        }
+        console.log(`📊 API YANITI: ${res.status} ${res.statusText}`);
 
         if (!res.ok) {
-            const errText = await res.text();
-            console.error(`❌ SKY HATA (${res.status}): ${errText.substring(0, 300)}`);
+            const err = await res.text();
+            console.error(`🔥 KRİTİK HATA DETAYI:`, err);
             return [];
         }
 
         const data = await res.json();
         const items = data.data?.itineraries || [];
-
-        console.log(`✅ SKY BAŞARILI: ${items.length} uçuş yakalandı.`);
+        console.log(`✅ BAŞARILI: ${items.length} uçuş bulundu.`);
 
         return items.map((item: any) => {
             const leg = item.legs?.[0] || {};
@@ -81,11 +71,11 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             };
         });
     } catch (error: any) {
-        console.error("🔥 SKY Fetch Hatası:", error.message);
+        console.error("🔥 FETCH HATASI:", error.message);
         return [];
     }
 }
 
-// Eski isimlendirme uyumluluğu
+// Uyumluluk
 export async function searchRapidApi(p: any) { return searchSkyScrapper(p); }
 export async function searchAirScraper(_p: any) { return []; }
