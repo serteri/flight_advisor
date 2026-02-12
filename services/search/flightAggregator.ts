@@ -15,8 +15,9 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
         searchOpenClaw(params) 
     ]);
 
-    // Hepsini birleştir
-    let allFlights = [
+    // Hepsini birleştiriyoruz ama tiplerin uyuşmadığı durumlar olabilir.
+    // Bu yüzden 'any' dizisi olarak birleştirip sonra FlightResult'a zorlayacağız.
+    let rawFlights: any[] = [
         ...duffelResults, 
         ...skyResults, 
         ...airResults, 
@@ -24,23 +25,24 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
     ];
 
     // 2. Market Analysis (En ucuz fiyatı bul)
-    // @ts-ignore
-    const prices = allFlights.map(f => f.price).filter(p => p > 0);
+    const prices = rawFlights.map(f => f.price).filter(p => p > 0);
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
     const hasChild = (params.children || 0) > 0 || (params.infants || 0) > 0;
 
     // 3. Scoring & Sorting (V3)
-    allFlights = allFlights.map(flight => {
+    // Sonuçları FlightResult[] tipine dönüştürüyoruz
+    const scoredFlights: FlightResult[] = rawFlights.map(flight => {
         /* 
            TypeScript Hatasını Önlemek İçin:
-           FlightSource tipinde 'OPENCLAW' tanımlı olmayabilir.
-           Bu yüzden flight nesnesini 'any' olarak geçiriyoruz.
+           flight nesnesini 'any' olarak geçiriyoruz.
         */
-        const scoreResult = scoreFlightV3(flight as any, {
+        const scoreResult = scoreFlightV3(flight, {
             minPrice: minPrice > 0 ? minPrice : flight.price,
             hasChild
         });
 
+        // Burada dönen nesneyi FlightResult tipine zorluyoruz (as unknown as FlightResult)
+        // Çünkü dinamik eklenen alanlar (agentScore vb.) TypeScript'i kızdırıyor.
         return {
             ...flight,
             agentScore: scoreResult.score, 
@@ -49,11 +51,12 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
                 penalties: scoreResult.penalties,
                 pros: scoreResult.pros,
             }
-        };
+        } as unknown as FlightResult;
     });
 
     // Puanına göre sırala
-    allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
+    // Artık scoredFlights bir FlightResult[] olduğu için agentScore alanı tanımlı (types/hybridFlight.ts güncellendiği sürece)
+    scoredFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
 
-    return allFlights;
+    return scoredFlights;
 }
