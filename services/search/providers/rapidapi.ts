@@ -22,14 +22,15 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     for (const ep of endpoints) {
         try {
             const url = `https://${host}${ep.path}`;
-            const queryParams = new URLSearchParams({
+            const qObj: Record<string, string> = {
                 ...ep.params,
                 adults: '1',
                 currency: 'USD',
                 market: 'US',
                 locale: 'en-US',
-                ...(skyCookie ? { cookie: skyCookie } : {})
-            });
+            };
+            if (skyCookie) qObj.cookie = skyCookie;
+            const queryParams = new URLSearchParams(qObj);
 
             console.log(`📡 SKY DENİYOR: ${ep.path} [${params.origin} -> ${params.destination}]`);
 
