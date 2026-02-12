@@ -35,6 +35,11 @@ export function mapDuffelToPremiumAgent(offer: any) {
         durationText = `${h}s ${m}dk`;
     } catch (e) { console.error(e); }
 
+    // 4. GOOGLE FLIGHTS LINK OLUŞTURMA 🔗
+    // Örn: https://www.google.com/travel/flights?q=Flights%20to%20IST%20from%20BNE%20on%202026-03-09
+    const depDateOnly = departureDate.split('T')[0]; // 2026-03-09
+    const googleLink = `https://www.google.com/travel/flights?q=Flights+to+${destinationCode}+from+${originCode}+on+${depDateOnly}+${airlineCode}`;
+
     return {
         id: offer.id,
         source: 'DUFFEL',
@@ -60,6 +65,8 @@ export function mapDuffelToPremiumAgent(offer: any) {
             hasMeal: true,
             baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
         },
-        segments: firstSlice.segments
+        segments: firstSlice.segments,
+        deepLink: googleLink, // 👈 ARTIK Google Flights'a gidecek!
+        bookingLink: googleLink // Yedek olarak buraya da koyalım
     };
 }
