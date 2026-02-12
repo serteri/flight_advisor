@@ -4,7 +4,13 @@ export async function searchSkyScrapper(params: any) {
     const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
     const host = 'flights-sky.p.rapidapi.com';
 
-    if (!apiKey) return [];
+    if (!apiKey) {
+        console.error("❌ SKY: API KEY YOK! Vercel env vars kontrol et: RAPID_API_KEY_SKY veya RAPID_API_KEY");
+        return [];
+    }
+
+    // 🕵️ Debug: Key'in ilk/son 4 karakterini göster
+    console.log(`🔑 SKY KEY: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)} (${apiKey.length} karakter)`);
 
     // 📝 Dikkat: Endpointler dokümana göre güncellendi (/flights/...)
     let url = `https://${host}/flights/search-one-way`;
