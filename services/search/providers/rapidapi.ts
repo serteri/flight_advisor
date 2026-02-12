@@ -14,7 +14,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
     // Çift deneme: önce /flights/ sonra /web/flights/
-    const endpoints = [
+    const endpoints: Array<{ path: string; params: Record<string, string> }> = [
         { path: '/flights/search-one-way', params: { fromEntityId: params.origin, toEntityId: params.destination, departDate } },
         { path: '/web/flights/search-one-way', params: { placeIdFrom: params.origin, placeIdTo: params.destination, departDate } }
     ];
