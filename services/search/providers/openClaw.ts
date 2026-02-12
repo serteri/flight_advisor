@@ -1,26 +1,26 @@
 import { prisma } from '@/lib/prisma';
 
-// Tip tanımını buraya alalım veya import edelim (Genelde @/types/hybridFlight içindedir ama burada manuel tanımlayacağım garanti olsun)
+// Tip tanımı
 interface FlightResult {
     id: string;
     source: string;
     airline: string;
+    airlineLogo: string;
     flightNumber: string;
     origin: string;
     destination: string;
     price: number;
     currency: string;
-    departureTime: Date; // Date nesnesi olarak tutuyoruz
+    departureTime: Date;
     arrivalTime: Date;
     durationMinutes: number;
     stops: number;
-    // UI için ek alanlar (TypeScript hatasını çözmek için)
     from: string;
     to: string;
-    departTime: string; // ISO string
-    arriveTime: string; // ISO string
-    duration: string;   // "3h 30m" formatı
-    cabinClass: string; 
+    departTime: string;
+    arriveTime: string;
+    duration: string;
+    cabinClass: string;
     score?: number;
     scoreReason?: string;
     amenities?: any;
@@ -33,68 +33,14 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
 
   if (!agentBaseUrl) return [];
 
-  // 🔥 GÜNCELLEME: 8 sn yerine 60 sn beklesin (Pro olduğun için)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 Saniye
+  const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
-  // 🔥 GÜNCELLENMİŞ "PREMIUM ANALİST" KOMUTU
   const prompt = `
     ROL: Sen "Elite Flight Architect"sin. Sadece Premium müşteriler için çalışan, dünyanın en detaycı uçuş analistisin.
-
-    GÖREV: ${params.origin} ile ${params.destination} arasında ${params.date} tarihindeki uçuşları bul ve "Röntgenini Çek".
-
-    TALİMATLAR (Derinlemesine Analiz):
-    1. **Uçuşları Bul:** Temel listeyi çıkar.
-    2. **PREMIUM ANALİZ (Bu detaylar hayati önem taşır):**
-       * **Koltuk Konforu:** Diz mesafesi (Pitch) kaç cm? (Standart 78cm). 76cm altı "Dar", 81cm üstü "Geniş".
-       * **Yemek:** Sadece kraker/su mu, yoksa Sıcak Yemek (Hot Meal) var mı?
-       * **Teknoloji:** Wi-Fi var mı? (Ücretli/Ücretsiz). Koltuk arkası ekran (AVOD) var mı?
-       * **Bagaj:** Kargo bagajı (Checked Baggage) fiyata dahil mi? Yoksa sadece kabin mi?
-       * **ESNEKLİK & STATÜ (Kritik):**
-         - Bilet iade edilebilir mi? (Refundable).
-         - Tarih/Saat değişikliği yapılabilir mi? (Changeable).
-         - **Upgrade İmkanı:** Bu bilet sınıfı (Fare Class) mil veya parayla Business upgrade'ine açık mı? (Genelde "Eco Flex" açıktır, "Eco Promo" kapalıdır).
-
-    3. **PUANLAMA YAP (10.0 üzerinden - ACIMASIZ OL):**
-       * **Başlangıç:** 10.0 Puan.
-       * **Bagaj Yoksa:** -2.0 Puan (Direkt sil!).
-       * **Yemek Yoksa:** -1.0 Puan.
-       * **Koltuk Darsa (<76cm):** -1.0 Puan.
-       * **Upgrade Kapalıysa:** -0.5 Puan (Premium yolcu bunu sevmez).
-       * **Değişiklik Yasaksa:** -1.5 Puan.
-       * **Aktarma:** Her durak -1.5 Puan. Bekleme <1 saat ise -2.0 (Risk).
-       * **Konfor:** Ekran varsa +0.5, Wi-Fi varsa +0.5.
-
+    GÖREV: ${params.origin} ile ${params.destination} arasında ${params.date} tarihindeki uçuşları bul.
     ÇIKTI FORMATI (Sadece JSON Array):
-    [
-      {
-        "airline": "Türk Hava Yolları",
-        "flightNumber": "TK1882",
-        "departureTime": "YYYY-MM-DDTHH:MM",
-        "arrivalTime": "YYYY-MM-DDTHH:MM",
-        "price": 1250.00,
-        "currency": "USD",
-        "durationMinutes": 180,
-        "stops": 0,
-        "score": 8.9,
-        "scoreReason": "Sıcak yemek, geniş bagaj ve Upgrade imkanı var. Fiyat/Performans harika.",
-        "amenities": {
-          "seatPitch": "81cm",
-          "seatType": "Standard Recline",
-          "food": "Sıcak Yemek (Dahil)",
-          "wifi": true,
-          "entertainment": "Kişisel Ekran (13 inç)"
-        },
-        "policies": {
-          "baggageKg": 30,
-          "cabinBagKg": 8,
-          "refundable": true,
-          "changeAllowed": true,
-          "changeFee": "50 USD",
-          "upgradeAllowed": true
-        }
-      }
-    ]
+    [{"airline": "Havayolu", "price": 100, "currency": "USD", "flightNumber": "TK123", "departureTime": "YYYY-MM-DDTHH:MM", "arrivalTime": "YYYY-MM-DDTHH:MM", "durationMinutes": 180, "stops": 0, "score": 9.0, "scoreReason": "...", "amenities": {}, "policies": {}}]
   `;
 
   console.log(`🤖 OPENCLAW (PRO MOD) BAĞLANIYOR... [${agentBaseUrl}]`);
@@ -103,17 +49,25 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
     const response = await fetch(`${agentBaseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // 🔥 İŞTE SİHİRLİ ANAHTAR!
+        'User-Agent': 'OpenClaw-Agent/1.0'    // Bazı firewall'lar için
       },
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         stream: false
       }),
-      signal: controller.signal // Sayacı bağla
+      signal: controller.signal
     });
 
-    clearTimeout(timeoutId); // Cevap geldiyse sayacı durdur
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        const errText = await response.text();
+        console.error(`🔥 OPENCLAW HATA: ${response.status} - ${errText.substring(0, 100)}`);
+        return [];
+    }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
@@ -131,7 +85,6 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
 
     const savedFlights = [];
     for (const flight of flights) {
-      // Prisma create işlemi
       const saved = await prisma.flightOption.create({
         data: {
           origin: params.origin,
@@ -154,46 +107,32 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
       savedFlights.push(saved);
     }
 
-    console.log(`✅ VERİTABANI GÜNCELLENDİ: ${savedFlights.length} uçuş.`);
-
-    // Frontend'e dönüş (Veriler orada filtrelenecek)
-    // TypeScript hatasını önlemek için tüm alanları dolduruyoruz
+    // TypeScript'e uygun dönüş
     return savedFlights.map(f => ({
       id: f.id,
       source: 'OPENCLAW',
       airline: f.airline,
-      airlineLogo: "", // Logo URL'si eklenebilir
+      airlineLogo: "", 
       flightNumber: f.flightNumber,
-      
-      // Temel bilgiler
       origin: f.origin,
       destination: f.destination,
-      from: f.origin,       // Eksik alan eklendi
-      to: f.destination,    // Eksik alan eklendi
-      
+      from: f.origin,
+      to: f.destination,
       price: f.price,
       currency: f.currency,
-      
-      // Zamanlar (Hem Date hem String olarak)
       departureTime: f.departureTime,
       arrivalTime: f.arrivalTime,
-      departTime: f.departureTime.toISOString(), // Eksik alan eklendi
-      arriveTime: f.arrivalTime.toISOString(),   // Eksik alan eklendi
-      
-      // Süre
-      durationMinutes: f.durationMinutes, // Ham veri kalsın
-      duration: `${Math.floor(f.durationMinutes/60)}s ${f.durationMinutes%60}dk`, // Eksik alan eklendi
-      
+      departTime: f.departureTime.toISOString(),
+      arriveTime: f.arrivalTime.toISOString(),
+      durationMinutes: f.durationMinutes,
+      duration: `${Math.floor(f.durationMinutes/60)}s ${f.durationMinutes%60}dk`,
       stops: f.stops,
-      cabinClass: "economy", // Eksik alan eklendi (Varsayılan)
-      
-      // Premium Detaylar
+      cabinClass: "economy",
       score: f.score || 0,
       scoreReason: f.scoreReason || "",
       amenities: f.amenities,
       policies: f.policies,
-      
-      deepLink: "https://google.com/flights"
+      deepLink: "https://google.com/flights" // Burayı daha sonra özelleştirebiliriz
     }));
 
   } catch (error: any) {
