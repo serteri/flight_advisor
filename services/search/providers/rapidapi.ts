@@ -68,7 +68,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
 
             return {
                 id: `SKY_${flight.id || Math.random()}`,
-                source: 'SKY_SCRAPER',
+                source: 'SKY_RAPID',
                 airline: carrier.name || "Unknown",
                 airlineLogo: carrier.logoUrl || "",
                 flightNumber: carrier.alternateId || "FLIGHT",
