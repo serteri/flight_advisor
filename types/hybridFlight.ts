@@ -1,4 +1,4 @@
-export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "SKY_RAPID" | "AIR_RAPID";
+export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "SKY_RAPID" | "AIR_RAPID" | "OPENCLAW";
 
 export type CabinClass = "economy" | "premium" | "business" | "first";
 
@@ -24,13 +24,14 @@ export type FlightResult = {
     id: string;
     source: FlightSource;
     airline: string;
+    airlineLogo?: string; // Duffel'dan geliyor, burada eksikti
     flightNumber: string;
     aircraft?: string;
     from: string;
     to: string;
     departTime: string;
     arriveTime: string;
-    duration: number;
+    duration: number; // minutes or whatever format you use
     durationLabel?: string;
     stops: number;
     price: number;
@@ -57,14 +58,29 @@ export type FlightResult = {
         recommendationText?: string;
     };
     bookingLink?: string;
+    deepLink?: string; // RapidAPI veya OpenClaw kullanabilir
 
     // V3 Premium Data
     amenities?: {
         hasWifi: boolean;
-        hasPower: boolean;
+        hasPower?: boolean;
         hasMeal: boolean;
-        seatType: string;
+        seatType?: string;
+        baggage?: string; // OpenClaw formatı için
+        entertainment?: string; // OpenClaw formatı için
+        seatPitch?: string; // OpenClaw formatı için
+        food?: string; // OpenClaw formatı için
     };
+    // OpenClaw'ın policies alanı
+    policies?: {
+        baggageKg?: number;
+        cabinBagKg?: number;
+        refundable?: boolean;
+        changeAllowed?: boolean;
+        changeFee?: string;
+        upgradeAllowed?: boolean;
+    };
+    
     baggageSummary?: {
         checked: string;
         cabin: string;
@@ -82,14 +98,15 @@ export type FlightResult = {
     scoreDetails?: {
         total: number;
         breakdown?: {
-            priceScore: number;
-            durationScore: number;
-            amenityScore: number;
-            airlineBonus: number;
+            priceScore?: number;
+            durationScore?: number;
+            amenityScore?: number;
+            airlineBonus?: number;
         };
         penalties?: string[]; // Keeping for backward compatibility if needed
         pros?: string[];     // Keeping for backward compatibility if needed
     };
+    scoreReason?: string; // OpenClaw reason
     scorePros?: string[];
     scoreCons?: string[];
 };
