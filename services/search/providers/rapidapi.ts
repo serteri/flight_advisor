@@ -1,101 +1,91 @@
-export async function searchSkyScrapper(params: { origin: string, destination: string, date: string }) {
-    const apiKey = process.env.RAPID_API_KEY_SKY;
-    const host = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
-    // 🍪 Captcha bypass: Skyscanner cookie Base64 encoded
-    const skyCookie = process.env.SKY_COOKIE || '';
+export async function searchSkyScrapper(params: { origin: string; destination: string; date: string }) {
+    // Aboneliğin olan Flights Scraper Sky (5 req/s, $15/mo Pro)
+    const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
+    const host = 'flights-sky.p.rapidapi.com';
 
-    console.log(`🔍 SKY CONFIG: Host=${host}, Key=${apiKey ? apiKey.substring(0, 5) + '...' : 'YOK'}, Cookie=${skyCookie ? skyCookie.substring(0, 10) + '...' : 'YOK'}`);
-
-    if (!apiKey || !host) {
-        console.error("❌ Vercel'de RAPID_API_KEY_SKY veya HOST_SKY eksik!");
+    if (!apiKey) {
+        console.error("❌ SKY: RAPID_API_KEY_SKY env var bulunamadı!");
         return [];
     }
 
+    // Tarih formatı: YYYY-MM-DD
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
-    // Çift deneme: önce /flights/ sonra /web/flights/
-    const endpoints: Array<{ path: string; params: Record<string, string> }> = [
-        { path: '/flights/search-one-way', params: { fromEntityId: params.origin, toEntityId: params.destination, departDate } },
-        { path: '/web/flights/search-one-way', params: { placeIdFrom: params.origin, placeIdTo: params.destination, departDate } }
-    ];
+    // 🔥 Entity ID: 3 harfli IATA (BNE) → BNE.AIRPORT formatına çevir
+    const originEntity = params.origin.includes('.') ? params.origin : `${params.origin}.AIRPORT`;
+    const destEntity = params.destination.includes('.') ? params.destination : `${params.destination}.AIRPORT`;
 
-    for (const ep of endpoints) {
-        try {
-            const url = `https://${host}${ep.path}`;
-            const qObj: Record<string, string> = {
-                ...ep.params,
-                adults: '1',
-                currency: 'USD',
-                market: 'US',
-                locale: 'en-US',
-            };
-            if (skyCookie) qObj.cookie = skyCookie;
-            const queryParams = new URLSearchParams(qObj);
+    console.log(`📡 SKY İSTEĞİ (Tek Atış): ${originEntity} -> ${destEntity} [${departDate}]`);
 
-            console.log(`📡 SKY DENİYOR: ${ep.path} [${params.origin} -> ${params.destination}]`);
+    try {
+        const url = `https://${host}/flights/search-one-way`;
+        const q = new URLSearchParams({
+            fromEntityId: originEntity,
+            toEntityId: destEntity,
+            departDate,
+            adults: '1',
+            currency: 'USD',
+            market: 'US',
+            locale: 'en-US',
+        });
 
-            const res = await fetch(`${url}?${queryParams}`, {
-                method: 'GET',
-                headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': host }
-            });
+        const res = await fetch(`${url}?${q}`, {
+            method: 'GET',
+            headers: {
+                'X-RapidAPI-Key': apiKey,
+                'X-RapidAPI-Host': host,
+            },
+        });
 
-            if (!res.ok) {
-                const errText = await res.text();
-                console.error(`❌ SKY ${ep.path} (${res.status}): ${errText.substring(0, 200)}`);
-                continue; // Sonraki endpoint'i dene
-            }
-
-            const data = await res.json();
-
-            // Farklı yapıları kontrol et
-            const itineraries = data.data?.itineraries?.results || data.data?.itineraries || [];
-            const list = Array.isArray(itineraries) ? itineraries : [];
-
-            if (list.length === 0) {
-                console.log(`⚠️ SKY ${ep.path}: Sonuç boş, status: ${data.data?.context?.status}`);
-                if (data.data?.context?.status === 'incomplete') {
-                    console.log("⚠️ Status 'incomplete' — tam veri için /search-incomplete lazım.");
-                }
-                continue;
-            }
-
-            console.log(`✅ SKY BAŞARILI (${ep.path}): ${list.length} uçuş!`);
-
-            return list.map((item: any) => {
-                const leg = item.legs?.[0] || {};
-                const carrier = leg.carriers?.marketing?.[0] || { name: "Airline", logoUrl: "" };
-                const durationMins = leg.durationInMinutes || 0;
-
-                return {
-                    id: `SKY_${item.id || Math.random()}`,
-                    source: 'SKY_RAPID',
-                    airline: carrier.name || 'Airline',
-                    airlineLogo: carrier.logoUrl || carrier.logo || '',
-                    flightNumber: leg.segments?.[0]?.flightNumber || carrier.alternateId || 'FLIGHT',
-                    from: leg.origin?.displayCode || params.origin,
-                    to: leg.destination?.displayCode || params.destination,
-                    price: item.price?.raw || 0,
-                    currency: 'USD',
-                    cabinClass: 'economy',
-                    departTime: leg.departure || '',
-                    arriveTime: leg.arrival || '',
-                    duration: durationMins,
-                    durationLabel: `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`,
-                    stops: leg.stopCount || 0,
-                    deepLink: item.pricingOptions?.[0]?.agents?.[0]?.url || "https://www.skyscanner.net"
-                };
-            });
-
-        } catch (error: any) {
-            console.error(`🔥 SKY ${ep.path} HATA:`, error.message);
-            continue;
+        if (res.status === 429) {
+            console.warn("⚠️ SKY KOTA (429): Rate limit. Duffel sonuçlarıyla devam ediliyor.");
+            return [];
         }
-    }
 
-    console.log("❌ SKY: Tüm endpoint'ler başarısız.");
-    return [];
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error(`❌ SKY HATA (${res.status}): ${errText.substring(0, 300)}`);
+            return [];
+        }
+
+        const data = await res.json();
+        const items = data.data?.itineraries || [];
+
+        console.log(`✅ SKY BAŞARILI: ${items.length} uçuş yakalandı.`);
+
+        return items.map((item: any) => {
+            const leg = item.legs?.[0] || {};
+            const carrier = leg.carriers?.marketing?.[0] || {};
+            const durationMins = leg.durationInMinutes || 0;
+            const h = Math.floor(durationMins / 60);
+            const m = durationMins % 60;
+
+            return {
+                id: `SKY_${item.id || Math.random()}`,
+                source: 'SKY_RAPID' as const,
+                airline: carrier.name || 'Airline',
+                airlineLogo: carrier.logoUrl || '',
+                flightNumber: leg.segments?.[0]?.flightNumber || carrier.alternateId || 'SKY',
+                from: leg.origin?.displayCode || params.origin,
+                to: leg.destination?.displayCode || params.destination,
+                price: item.price?.raw || 0,
+                currency: 'USD',
+                cabinClass: 'economy' as const,
+                departTime: leg.departure || '',
+                arriveTime: leg.arrival || '',
+                duration: durationMins,
+                durationLabel: `${h}h ${m}m`,
+                stops: leg.stopCount || 0,
+                amenities: { hasWifi: false, hasMeal: false },
+                deepLink: item.pricingOptions?.[0]?.agents?.[0]?.url || 'https://www.skyscanner.net',
+            };
+        });
+    } catch (error: any) {
+        console.error("🔥 SKY Fetch Hatası:", error.message);
+        return [];
+    }
 }
 
 // Eski isimlendirme uyumluluğu
 export async function searchRapidApi(p: any) { return searchSkyScrapper(p); }
-export async function searchAirScraper(p: any) { return []; }
+export async function searchAirScraper(_p: any) { return []; }
