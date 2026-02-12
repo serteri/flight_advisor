@@ -1,37 +1,34 @@
 import { FlightResult } from '@/types/hybridFlight';
 
-export async function searchSkyScrapper(params: any) {
+export async function searchSkyScrapper(params: { origin: string, destination: string, date: string }) {
+    // Vercel'deki Key ismini doğru aldığından emin ol
     const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
     const host = 'flights-sky.p.rapidapi.com';
 
     if (!apiKey) {
-        console.error("❌ SKY: API KEY YOK! Vercel env vars kontrol et: RAPID_API_KEY_SKY veya RAPID_API_KEY");
+        console.error("❌ Sky Scraper API Key bulunamadı!");
         return [];
     }
 
-    // 🕵️ Debug: Key'in ilk/son 4 karakterini göster
+    // 🕵️ Debug: Key doğruluğunu kontrol et
     console.log(`🔑 SKY KEY: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)} (${apiKey.length} karakter)`);
 
-    // 📝 Dikkat: Endpointler dokümana göre güncellendi (/flights/...)
-    let url = `https://${host}/flights/search-one-way`;
-    if (params.returnDate) url = `https://${host}/flights/search-roundtrip`;
+    // Flights Scraper Sky formatına göre URL (One Way)
+    const url = `https://${host}/flights/search-one-way`;
 
     const queryParams = new URLSearchParams({
-        from: params.origin,
-        to: params.destination,
-        departDate: params.date?.split('T')[0],
+        fromEntityId: params.origin,   // Örn: BNE veya BNE.AIRPORT
+        toEntityId: params.destination, // Örn: IST veya IST.AIRPORT
+        departDate: params.date.split('T')[0], // YYYY-MM-DD
         adults: '1',
         currency: 'USD',
         market: 'US',
         locale: 'en-US'
     });
 
-    if (params.returnDate) {
-        queryParams.append('returnDate', params.returnDate.split('T')[0]);
-    }
-
     try {
-        console.log(`📡 SKY SCRAPER (PRO) BAĞLANIYOR...`);
+        console.log(`📡 FLIGHTS SCRAPER SKY (PRO) ÇAĞRILIYOR: ${params.origin} -> ${params.destination}`);
+
         const response = await fetch(`${url}?${queryParams.toString()}`, {
             method: 'GET',
             headers: {
@@ -41,44 +38,43 @@ export async function searchSkyScrapper(params: any) {
         });
 
         if (!response.ok) {
-            const err = await response.text();
-            console.error(`🔥 SKY HATASI (${response.status}):`, err);
+            const errData = await response.text();
+            console.error(`🔥 SKY HATASI (${response.status}):`, errData);
             return [];
         }
 
-        const data = await response.json();
+        const res = await response.json();
 
-        // 💡 ÖNEMLİ: Eğer status "incomplete" ise Duffel verisiyle devam eder, 
-        // ama gelen ilk verileri de ekrana basarız.
-        const results = data.data?.itineraries || [];
+        // API'nin data->itineraries yapısını kontrol ediyoruz
+        const itineraries = res.data?.itineraries || [];
 
-        // Eğer results bir obje ise ve results.results varsa onu al
-        const itineraryList = Array.isArray(results) ? results : (results.results || []);
+        // itineraries obje mi array mi kontrol et
+        const itineraryList = Array.isArray(itineraries) ? itineraries : (itineraries.results || []);
 
         if (itineraryList.length === 0) {
             console.error("⚠️ SKY: Sonuç dizisi boş.");
-            console.error("📦 HAM CEVAP (İLK 500 KARAKTER):", JSON.stringify(data).substring(0, 500));
+            console.error("📦 HAM CEVAP (İLK 500):", JSON.stringify(res).substring(0, 500));
             return [];
         }
 
-        console.log(`✅ SKY: ${itineraryList.length} uçuş yakaladı!`);
+        console.log(`✅ SKY ${itineraryList.length} uçuş buldu.`);
 
-        return itineraryList.map((item: any) => {
-            const leg = item.legs?.[0] || item;
+        return itineraryList.map((flight: any) => {
+            const leg = flight.legs?.[0] || flight;
             const carrier = leg.carriers?.marketing?.[0] || { name: "Airline", logoUrl: "" };
             const durationMins = leg.durationInMinutes || 0;
             const h = Math.floor(durationMins / 60);
             const m = durationMins % 60;
 
             return {
-                id: `SKY_${item.id || Math.random()}`,
-                source: 'SKY_RAPID',
+                id: `SKY_${flight.id || Math.random()}`,
+                source: 'SKY_SCRAPER',
                 airline: carrier.name || "Unknown",
                 airlineLogo: carrier.logoUrl || "",
                 flightNumber: carrier.alternateId || "FLIGHT",
                 from: leg.origin?.displayCode || params.origin || "",
                 to: leg.destination?.displayCode || params.destination || "",
-                price: item.price?.raw || 0,
+                price: flight.price?.raw || 0,
                 currency: 'USD',
                 cabinClass: 'economy',
                 departTime: leg.departure || "",
@@ -90,8 +86,9 @@ export async function searchSkyScrapper(params: any) {
                 deepLink: "https://www.skyscanner.net"
             } as FlightResult;
         });
-    } catch (e: any) {
-        console.error("🔥 SKY ÇÖKTÜ:", e.message);
+
+    } catch (error: any) {
+        console.error("🔥 SKY PROVIDER HATASI:", error.message);
         return [];
     }
 }
@@ -99,6 +96,6 @@ export async function searchSkyScrapper(params: any) {
 // Eski isimlendirme uyumluluğu
 export async function searchRapidApi(p: any) { return searchSkyScrapper(p); }
 export async function searchAirScraper(p: any) {
-    console.error("⚠️ AIR SCRAPER Devre Dışı (Code Config)");
+    console.error("⚠️ AIR SCRAPER Devre Dışı");
     return [];
 }
