@@ -1,7 +1,7 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
 import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
-import { searchOpenClaw } from "./providers/openClaw"; // 🆕 YENİ OYUNCU
+import { searchOpenClaw } from "./providers/openClaw"; 
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
@@ -12,7 +12,7 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
         searchDuffel(params),
         searchSkyScrapper(params),
         searchAirScraper(params),
-        searchOpenClaw(params) // 👈 BURADA ÇAĞRILIYOR
+        searchOpenClaw(params) 
     ]);
 
     // Hepsini birleştir
@@ -20,42 +20,39 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
         ...duffelResults, 
         ...skyResults, 
         ...airResults, 
-        ...openClawResults // 👈 SONUÇLARA EKLENDİ
+        ...openClawResults 
     ];
 
     // 2. Market Analysis (En ucuz fiyatı bul)
+    // @ts-ignore
     const prices = allFlights.map(f => f.price).filter(p => p > 0);
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
     const hasChild = (params.children || 0) > 0 || (params.infants || 0) > 0;
 
-    // 3. Scoring & Sorting (V3) - Herkes puanlansın!
-    // Not: OpenClaw zaten kendi puanıyla (agentScore) geliyor ama sistem onu normalize edebilir.
+    // 3. Scoring & Sorting (V3)
     allFlights = allFlights.map(flight => {
-        // Eğer OpenClaw zaten puan verdiyse onu koruyalım veya yeniden hesaplayalım.
-        // Şimdilik sistemin puanlamasına güveniyoruz.
-        
-        const scoreResult = scoreFlightV3(flight, {
+        /* 
+           TypeScript Hatasını Önlemek İçin:
+           FlightSource tipinde 'OPENCLAW' tanımlı olmayabilir.
+           Bu yüzden flight nesnesini 'any' olarak geçiriyoruz.
+        */
+        const scoreResult = scoreFlightV3(flight as any, {
             minPrice: minPrice > 0 ? minPrice : flight.price,
             hasChild
         });
 
-        // OpenClaw'ın özel puanını (agentScore) ezmeyelim, eğer varsa koruyalım.
-        // Ama sistem genel bir sıralama yaptığı için V3 puanını kullanmak daha adil olabilir.
-        // Karar: Sistem puanını (scoreResult.score) ana puan yap, OpenClaw puanını yedekte tut.
-
         return {
             ...flight,
-            agentScore: scoreResult.score, // Sistem puanı (Adil yarış)
+            agentScore: scoreResult.score, 
             scoreDetails: {
                 total: scoreResult.score,
                 penalties: scoreResult.penalties,
                 pros: scoreResult.pros,
-                // OpenClaw'dan gelen özel detayları da buraya ekleyebiliriz (opsiyonel)
             }
         };
     });
 
-    // Puanına göre sırala (En yüksek puan en üstte)
+    // Puanına göre sırala
     allFlights.sort((a, b) => (b.agentScore || 0) - (a.agentScore || 0));
 
     return allFlights;
