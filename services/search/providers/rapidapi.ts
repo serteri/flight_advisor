@@ -1,27 +1,29 @@
 export async function searchSkyScrapper(params: { origin: string; destination: string; date: string }) {
-    // 🔑 Hardcoded test key
+    // 🔑 HARDCODED TEST KEY
     const apiKey = 'a5019e6badmsh72c554c174620e5p18995ajsn5606f30e000';
-    const host = 'flights-sky.p.rapidapi.com';
+    // 🔥 DOĞRU HOST: sky-scrapper (flights-sky DEĞİL!)
+    const host = 'sky-scrapper.p.rapidapi.com';
 
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
-    // 🔥 /web/flights/ endpoint + placeIdFrom/placeIdTo (dokümantasyona göre)
-    const url = `https://${host}/web/flights/search-one-way`;
-
-    console.log(`📡 FLIGHTS SKY (WEB) BAĞLANIYOR: ${params.origin} -> ${params.destination}`);
-
-    const queryParams = new URLSearchParams({
-        placeIdFrom: params.origin,
-        placeIdTo: params.destination,
-        departDate,
-        adults: '1',
-        currency: 'USD',
-        market: 'US',
-        locale: 'en-US',
-    });
+    console.log(`📡 SKY-SCRAPPER (DOĞRU HOST): ${params.origin} -> ${params.destination} [${departDate}]`);
 
     try {
-        const res = await fetch(`${url}?${queryParams}`, {
+        // Sky Scrapper endpointi: /api/v1/flights/searchFlights
+        const url = `https://${host}/api/v1/flights/searchFlights`;
+        const q = new URLSearchParams({
+            originSkyId: params.origin,
+            destinationSkyId: params.destination,
+            originEntityId: params.origin,
+            destinationEntityId: params.destination,
+            date: departDate,
+            adults: '1',
+            currency: 'USD',
+            market: 'US',
+            locale: 'en-US',
+        });
+
+        const res = await fetch(`${url}?${q}`, {
             method: 'GET',
             headers: {
                 'X-RapidAPI-Key': apiKey,
@@ -33,18 +35,20 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
 
         if (!res.ok) {
             const err = await res.text();
-            console.error(`🔥 API HATASI (${res.status}):`, err);
+            console.error(`🔥 SKY-SCRAPPER HATA (${res.status}):`, err.substring(0, 500));
             return [];
         }
 
         const data = await res.json();
-        const status = data.data?.context?.status;
-        console.log(`📊 API DURUMU: ${status}`);
+        console.log(`📊 RAW KEYS: ${JSON.stringify(Object.keys(data || {}))}`);
 
-        const itineraries = data.data?.itineraries || [];
-        console.log(`✅ BAŞARILI: ${itineraries.length} uçuş geldi.`);
+        // Sky Scrapper response: data.itineraries veya data.data.itineraries
+        const itineraries = data?.data?.itineraries || data?.itineraries || [];
+        const items = Array.isArray(itineraries) ? itineraries : [];
 
-        return itineraries.map((item: any) => {
+        console.log(`✅ SKY-SCRAPPER: ${items.length} uçuş bulundu!`);
+
+        return items.map((item: any) => {
             const leg = item.legs?.[0] || {};
             const carrier = leg.carriers?.marketing?.[0] || {};
             const durationMins = leg.durationInMinutes || 0;
@@ -72,7 +76,7 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             };
         });
     } catch (error: any) {
-        console.error("🔥 FETCH HATASI:", error.message);
+        console.error("🔥 SKY-SCRAPPER FETCH HATASI:", error.message);
         return [];
     }
 }
