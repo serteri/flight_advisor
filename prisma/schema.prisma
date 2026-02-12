@@ -431,3 +431,32 @@ enum TripStatus {
   ARCHIVED
 }
 
+// 🔥 OPENCLAW SEARCH CACHE
+model FlightOption {
+  id              String   @id @default(uuid())
+  origin          String
+  destination     String
+  date            DateTime
+
+  // Temel Bilgiler
+  airline         String
+  flightNumber    String
+  departureTime   DateTime
+  arrivalTime     DateTime
+  durationMinutes Int
+  stops           Int
+
+  // Para İşleri
+  price           Float
+  currency        String   @default("USD")
+
+  // 🔥 YENİ EKLENEN RAFLAR (OpenClaw buraya veri koyacak)
+  score           Float?   @default(0) // 8.9 Puan
+  scoreReason     String?  // "Yemek sıcak diye puan verdim"
+
+  // JSON formatında her şeyi saklayan sihirli kutular
+  amenities       Json?    // { wifi: true, food: "Hot Meal", seatPitch: "81cm" }
+  policies        Json?    // { refundable: true, baggageKg: 30 }
+
+  createdAt       DateTime @default(now())
+}
