@@ -1,29 +1,27 @@
 export async function searchSkyScrapper(params: { origin: string; destination: string; date: string }) {
-    // 🔑 HARDCODED TEST — Vercel env var hatasını ekarte etmek için
+    // 🔑 Hardcoded test key
     const apiKey = 'a5019e6badmsh72c554c174620e5p18995ajsn5606f30e000';
     const host = 'flights-sky.p.rapidapi.com';
 
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
-    // BNE -> BNE.AIRPORT
-    const originEntity = params.origin.includes('.') ? params.origin : `${params.origin}.AIRPORT`;
-    const destEntity = params.destination.includes('.') ? params.destination : `${params.destination}.AIRPORT`;
+    // 🔥 /web/flights/ endpoint + placeIdFrom/placeIdTo (dokümantasyona göre)
+    const url = `https://${host}/web/flights/search-one-way`;
 
-    console.log(`📡 TEST OPERASYONU (HARDCODED KEY): ${originEntity} -> ${destEntity} [${departDate}]`);
+    console.log(`📡 FLIGHTS SKY (WEB) BAĞLANIYOR: ${params.origin} -> ${params.destination}`);
+
+    const queryParams = new URLSearchParams({
+        placeIdFrom: params.origin,
+        placeIdTo: params.destination,
+        departDate,
+        adults: '1',
+        currency: 'USD',
+        market: 'US',
+        locale: 'en-US',
+    });
 
     try {
-        const url = `https://${host}/flights/search-one-way`;
-        const q = new URLSearchParams({
-            fromEntityId: originEntity,
-            toEntityId: destEntity,
-            departDate,
-            adults: '1',
-            currency: 'USD',
-            market: 'US',
-            locale: 'en-US',
-        });
-
-        const res = await fetch(`${url}?${q}`, {
+        const res = await fetch(`${url}?${queryParams}`, {
             method: 'GET',
             headers: {
                 'X-RapidAPI-Key': apiKey,
@@ -35,15 +33,18 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
 
         if (!res.ok) {
             const err = await res.text();
-            console.error(`🔥 KRİTİK HATA DETAYI:`, err);
+            console.error(`🔥 API HATASI (${res.status}):`, err);
             return [];
         }
 
         const data = await res.json();
-        const items = data.data?.itineraries || [];
-        console.log(`✅ BAŞARILI: ${items.length} uçuş bulundu.`);
+        const status = data.data?.context?.status;
+        console.log(`📊 API DURUMU: ${status}`);
 
-        return items.map((item: any) => {
+        const itineraries = data.data?.itineraries || [];
+        console.log(`✅ BAŞARILI: ${itineraries.length} uçuş geldi.`);
+
+        return itineraries.map((item: any) => {
             const leg = item.legs?.[0] || {};
             const carrier = leg.carriers?.marketing?.[0] || {};
             const durationMins = leg.durationInMinutes || 0;
