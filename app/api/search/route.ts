@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
             // A) DUFFEL
             duffel.offerRequests.create({
-                slices: [{ origin, destination, departure_date: date }],
+                slices: [{ origin, destination, departure_date: date }] as any,
                 passengers: [{ type: 'adult' }],
                 cabin_class: 'economy',
             }).then(res => res.data.offers.map(mapDuffelToPremiumAgent)).catch(err => {
