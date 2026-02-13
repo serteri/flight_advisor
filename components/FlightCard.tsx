@@ -54,16 +54,13 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const isCheapest = bestPrice && flight.price <= bestPrice * 1.05;
     const isFastest = bestDuration && flight.duration <= bestDuration * 1.05;
 
-    // --- MOCK PROVIDERS (Simulating Skyscanner-like options) ---
-    const providers = flight.bookingProviders?.length ? flight.bookingProviders : [
-        { name: flight.carrierName, price: flight.price, currency: flight.currency, link: (flight as any).deepLink || "#", type: 'airline' },
-        { name: 'Trip.com', price: Math.round(flight.price * 0.98), currency: flight.currency, link: '#', type: 'agency' },
-        { name: 'Expedia', price: Math.round(flight.price * 1.02), currency: flight.currency, link: '#', type: 'agency' },
-        { name: 'Booking.com', price: Math.round(flight.price * 1.01), currency: flight.currency, link: '#', type: 'agency' },
-    ];
-
-    const sortedProviders = providers.sort((a, b) => a.price - b.price);
-    const bestDeal = sortedProviders[0];
+    // --- PROVIDER LOGIC ---
+    const providers = flight.bookingProviders || [];
+    const hasMultipleProviders = providers.length > 1;
+    const isDuffel = flight.source === 'duffel' || flight.source === 'DUFFEL';
+    
+    // Duffel için özel link (Aviasales)
+    const actionLink = flight.deepLink || flight.bookingLink || "#";
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
@@ -171,7 +168,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             </div>
                         )}
                         <div className="text-xl md:text-2xl font-bold text-slate-900 leading-none">
-                            {Math.round(bestDeal.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{bestDeal.currency}</span>
+                            {Math.round(flight.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{flight.currency}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
                             {flight.baggageIncluded ? (
@@ -194,42 +191,61 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
                         
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2">
-                                    Select <ChevronDown className="w-3 h-3 opacity-70" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72 p-0" align="end">
-                                <div className="p-3 border-b border-slate-100 bg-slate-50">
-                                    <h4 className="font-semibold text-sm text-slate-700">Booking Options</h4>
-                                </div>
-                                <div className="max-h-64 overflow-y-auto">
-                                    {sortedProviders.map((provider, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors">
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-sm text-slate-900">{provider.name}</span>
-                                                <span className="text-xs text-slate-500 capitalize">{provider.type}</span>
+                        {/* --- DUFFEL: Check Availability (No Booking) --- */}
+                        {isDuffel ? (
+                             <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <a href={actionLink} target="_blank" rel="noopener noreferrer">
+                                    Check Availability <ExternalLink className="w-3 h-3 opacity-70" />
+                                </a>
+                            </Button>
+                        ) : hasMultipleProviders ? (
+                            /* --- SKY SCRAPPER: Select Provider Dropdown --- */
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                        Select Deal <ChevronDown className="w-3 h-3 opacity-70" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-0 shadow-xl border-slate-200" align="end">
+                                    <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                                        <h4 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+                                            <span className="bg-blue-100 text-blue-700 p-1 rounded">👇</span> Select Provider
+                                        </h4>
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto">
+                                        {providers.sort((a,b) => a.price - b.price).map((provider, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 hover:bg-blue-50/50 border-b border-slate-100 last:border-0 transition-colors group/provider">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm text-slate-900">{provider.name}</span>
+                                                    <span className="text-[10px] text-slate-500 capitalize bg-slate-100 px-1.5 py-0.5 rounded w-fit mt-0.5">{provider.type}</span>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className="font-bold text-slate-900 text-sm">{Math.round(provider.price).toLocaleString()} {provider.currency}</span>
+                                                    <a 
+                                                        href={provider.link} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10px] font-bold text-blue-600 flex items-center hover:underline bg-blue-50 px-2 py-1 rounded-full group-hover/provider:bg-blue-100 transition-colors"
+                                                    >
+                                                        Book <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                                                    </a>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col items-end gap-1">
-                                                <span className="font-bold text-slate-900">{Math.round(provider.price).toLocaleString()} {provider.currency}</span>
-                                                <a 
-                                                    href={provider.link} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    className="text-[10px] font-bold text-blue-600 flex items-center hover:underline"
-                                                >
-                                                    View Deal <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
-                                                </a>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="p-2 bg-slate-50 text-[10px] text-center text-slate-400">
-                                    Prices may vary based on availability
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                                        ))}
+                                    </div>
+                                    <div className="p-2 bg-slate-50 text-[10px] text-center text-slate-400 border-t border-slate-100">
+                                        Prices include taxes and fees
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        ) : (
+                            /* --- FALLBACK: Single View Deal Button --- */
+                            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <a href={actionLink} target="_blank" rel="noopener noreferrer">
+                                    View Deal <ExternalLink className="w-3 h-3 opacity-70" />
+                                </a>
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
