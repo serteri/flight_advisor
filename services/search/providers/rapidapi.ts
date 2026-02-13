@@ -1,24 +1,28 @@
 export async function searchSkyScrapper(params: { origin: string; destination: string; date: string }) {
-    // 🔑 DOĞRU ANAHTAR (d harfi dahil!)
+    // 🔑 DOĞRU ANAHTAR (d harfi var!)
     const apiKey = 'a5019e6badmsh72c554c174620e5p18995ajsnd5606f30e000';
-    // ✅ Flights Scraper Sky host
-    const host = 'flights-sky.p.rapidapi.com';
+    // ✅ Sky Scrapper host
+    const host = 'sky-scrapper.p.rapidapi.com';
 
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
-    // /web/flights/search-one-way + placeIdFrom/placeIdTo
-    const url = `https://${host}/web/flights/search-one-way`;
+    // Sky Scrapper V1 endpoint
+    const url = `https://${host}/api/v1/flights/searchOneWay`;
 
-    console.log(`📡 FLIGHTS SKY (KANITLANMIŞ): ${params.origin} -> ${params.destination}`);
+    console.log(`📡 SKY SCRAPPER (DOĞRU KEY): ${params.origin} -> ${params.destination} [${departDate}]`);
 
     const queryParams = new URLSearchParams({
-        placeIdFrom: params.origin,
-        placeIdTo: params.destination,
-        departDate,
+        originSkyId: params.origin,
+        destinationSkyId: params.destination,
+        originEntityId: params.origin,
+        destinationEntityId: params.destination,
+        date: departDate,
+        cabinClass: 'economy',
         adults: '1',
+        sortBy: 'best',
         currency: 'USD',
-        market: 'US',
-        locale: 'en-US',
+        market: 'en-US',
+        countryCode: 'US',
     });
 
     try {
@@ -39,11 +43,8 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
         }
 
         const data = await res.json();
-        const status = data.data?.context?.status;
-        console.log(`📊 API STATUS: ${status}`);
-
         const items = data.data?.itineraries || [];
-        console.log(`✅ BAŞARILI: ${items.length} uçuş geldi!`);
+        console.log(`✅ SONUNDA: ${items.length} uçuş bulundu!`);
 
         return items.map((item: any) => {
             const leg = item.legs?.[0] || {};
