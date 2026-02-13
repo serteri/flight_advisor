@@ -19,6 +19,7 @@ export default function Navbar() {
     const navLinks = [
         { name: t('home'), href: "/" },
         { name: t('search'), href: "/flight-search" },
+        { name: t('blog'), href: "/blog" },
         { name: t('features'), href: "/#features" },
     ];
 
