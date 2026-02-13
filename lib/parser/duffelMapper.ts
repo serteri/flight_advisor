@@ -35,10 +35,15 @@ export function mapDuffelToPremiumAgent(offer: any) {
         durationText = `${h}s ${m}dk`;
     } catch (e) { console.error(e); }
 
-    // 4. GOOGLE FLIGHTS LINK OLUŞTURMA 🔗
-    // Örn: https://www.google.com/travel/flights?q=Flights%20to%20IST%20from%20BNE%20on%202026-03-09
-    const depDateOnly = departureDate.split('T')[0]; // 2026-03-09
-    const googleLink = `https://www.google.com/travel/flights?q=Flights+to+${destinationCode}+from+${originCode}+on+${depDateOnly}+${airlineCode}`;
+    // 4. AVIASALES LİNK OLUŞTURMA 🔗 (Para Kazandıran Link)
+    // Format: https://www.aviasales.com/search/[ORIGIN][DD][MM][DEST]1?marker=701049
+    const d = new Date(departureDate);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const shortDate = `${day}${month}`;
+    const marker = process.env.TRAVELPAYOUTS_MARKER || '701049';
+
+    const aviasalesLink = `https://www.aviasales.com/search/${originCode}${shortDate}${destinationCode}1?marker=${marker}&currency=AUD`;
 
     return {
         id: offer.id,
@@ -66,7 +71,7 @@ export function mapDuffelToPremiumAgent(offer: any) {
             baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
         },
         segments: firstSlice.segments,
-        deepLink: googleLink, // 👈 ARTIK Google Flights'a gidecek!
-        bookingLink: googleLink // Yedek olarak buraya da koyalım
+        deepLink: aviasalesLink, // 👈 ARTIK Aviasales'e gidecek ve komisyon kazandıracak!
+        bookingLink: aviasalesLink // Yedek olarak buraya da koyalım
     };
 }
