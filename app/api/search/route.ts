@@ -3,6 +3,7 @@ import { duffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
 import { searchSkyScrapper } from '@/services/search/providers/rapidapi';
 import { searchOpenClaw } from '@/services/search/providers/openClaw';
+import { searchKiwi } from '@/services/search/providers/kiwi';
 
 // Vercel Pro Ayarları
 export const maxDuration = 300;
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
     console.log(`🚀 YARIŞ BAŞLADI: ${origin} -> ${destination} [${date}]`);
 
     try {
-        // 1. Grup: Hızlı API'ler (Duffel & Sky)
+        // 1. Grup: Hızlı API'ler (Duffel & Sky & Kiwi)
         const fastSearchPromise = Promise.all([
             // @ts-ignore
             duffel.offerRequests.create({
@@ -30,7 +31,9 @@ export async function GET(request: Request) {
                 cabin_class: 'economy',
             }).then((res: any) => res.data.offers.map(mapDuffelToPremiumAgent)).catch(() => []),
 
-            searchSkyScrapper({ origin, destination, date }).catch(() => [])
+            searchSkyScrapper({ origin, destination, date }).catch(() => []),
+
+            searchKiwi({ origin, destination, date }).catch(() => [])
         ]);
 
         // 2. Grup: Yavaş ama Kaliteli Ajan (OpenClaw) + Zaman Aşımı (15 Saniye)
@@ -47,19 +50,19 @@ export async function GET(request: Request) {
             return [];
         });
 
-        // Her iki grubu da bekliyoruz ama OpenClaw'ın üst limiti 15 saniye!
+        // Her iki grubu da bekliyoruz
         const [fastResults, clawResults] = await Promise.all([
             fastSearchPromise,
             openClawPromise
         ]);
 
-        const [f1, f2] = fastResults; // f1: Duffel, f2: Sky
+        const [f1, f2, f4] = fastResults; // f1: Duffel, f2: Sky, f4: Kiwi
         const f3 = (clawResults as any[]) || []; // f3: OpenClaw
 
-        console.log(`📊 BİTİŞ RAPORU: Duffel(${f1.length}) + Sky(${f2.length}) + OpenClaw(${f3.length})`);
+        console.log(`📊 BİTİŞ RAPORU: Duffel(${f1.length}) + Sky(${f2.length}) + Kiwi(${f4.length}) + OpenClaw(${f3.length})`);
 
         // Sonuçları harmanla (Ajan sonuçları varsa en üstte görünsün)
-        let allFlights = [...f3, ...f2, ...f1];
+        let allFlights = [...f3, ...f2, ...f4, ...f1];
 
         if (allFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
