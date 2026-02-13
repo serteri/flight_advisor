@@ -156,36 +156,72 @@ async function resolveLocation(query: string, apiKey: string): Promise<string | 
   try {
     // Doğru endpoint: /web/flights/auto-complete (not /flights/auto-complete)
     const url = `https://${RAPID_API_HOST}/web/flights/auto-complete`;
-    const q = new URLSearchParams({ query: query });
     
-    const res = await fetch(`${url}?${q}`, { 
+    // İlk denemesi: query parametresi
+    let q = new URLSearchParams({ query: query });
+    
+    console.log(`🔍 Konum çözümleniyor: ${query} -> ${url}?${q}`);
+
+    let res = await fetch(`${url}?${q}`, { 
       headers: { 
         'X-RapidAPI-Key': apiKey, 
         'X-RapidAPI-Host': RAPID_API_HOST 
       } 
     });
     
+    // 400 hatası alırsa alternatif parametreleri dene
+    if (res.status === 400) {
+      console.warn(`⚠️ 'query' parametresi başarısız (400), 'searchTerm' deneniyor...`);
+      q = new URLSearchParams({ 
+        searchTerm: query,
+        market: 'en-US',
+        locale: 'en-US'
+      });
+      
+      res = await fetch(`${url}?${q}`, { 
+        headers: { 
+          'X-RapidAPI-Key': apiKey, 
+          'X-RapidAPI-Host': RAPID_API_HOST 
+        } 
+      });
+    }
+    
     if (!res.ok) {
-      console.warn(`Konum çözümleme başarısız: ${query} (${res.status})`);
+      const errText = await res.text();
+      console.warn(`❌ Konum çözümleme başarısız: ${query} (${res.status})`);
+      console.error(`   Yanıt: ${errText.substring(0, 200)}`);
       // Fallback: IATA kodu direkt kullan
       return query;
     }
+    
     const json = await res.json();
+    console.log(`📡 API Yanıtı yapısı:`, JSON.stringify(json).substring(0, 300));
     
-    // İlk eşleşmeyi al - PlaceId döndürülecek
-    const results = json.data || json;
-    const bestMatch = Array.isArray(results) ? results[0] : results[0];
+    // Farklı response yapıları dene
+    const results = json.data || json.results || json;
+    const resultArray = Array.isArray(results) ? results : (results[0] ? [results] : []);
     
-    if (bestMatch?.PlaceId) {
-      console.log(`✅ Konum çözüldü: ${query} -> ${bestMatch.PlaceId}`);
-      return bestMatch.PlaceId;
+    if (resultArray.length === 0) {
+      console.warn(`⚠️ Boş sonuç, fallback: ${query}`);
+      return query;
     }
     
-    // Fallback: sorgu parametresini direkt kullan (IATA kodu olarak)
-    console.warn(`Fallback to query: ${query}`);
+    const bestMatch = resultArray[0];
+    console.log(`✅ Konum çözüldü:`, bestMatch);
+    
+    // PlaceId almayı dene
+    const placeId = bestMatch?.PlaceId || bestMatch?.placeId || bestMatch?.id || bestMatch?.code;
+    
+    if (placeId) {
+      console.log(`✅ PlaceId bulundu: ${query} -> ${placeId}`);
+      return placeId;
+    }
+    
+    // Fallback: sorgu parametresini direkt kullan
+    console.warn(`⚠️ PlaceId bulunamadı, fallback: ${query}`);
     return query;
   } catch(e) { 
-    console.error("Konum çözümleme hatası:", e);
+    console.error(`🔥 Konum çözümleme hatası:`, e);
     // Fallback: sorgu parametresini direkt kullan
     return query;
   }
