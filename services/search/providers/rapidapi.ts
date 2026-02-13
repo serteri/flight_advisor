@@ -103,6 +103,13 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             const h = Math.floor(durationMins / 60);
             const m = durationMins % 60;
 
+            const aviasalesLink = generateAviasalesDeepLink(
+                params.origin,
+                params.destination,
+                departDate,
+                process.env.TRAVELPAYOUTS_MARKER || '701049'
+            );
+
             return {
                 id: `SKY_${item.id || Math.random()}`,
                 source: 'SKY_RAPID' as const,
@@ -120,12 +127,29 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
                 durationLabel: `${h}h ${m}m`,
                 stops: leg.stopCount || 0,
                 amenities: { hasWifi: false, hasMeal: false },
-                deepLink: item.pricingOptions?.[0]?.agents?.[0]?.url || 'https://www.skyscanner.net',
+                deepLink: aviasalesLink, // 🔥 Aviasales Deep Link
+                bookingLink: aviasalesLink
             };
         });
     } catch (error: any) {
         console.error("🔥 SKY FETCH HATASI:", error.message);
         return [];
+    }
+}
+
+// 🔗 AVIASALES İÇİN AKILLI LİNK OLUŞTURUCU
+function generateAviasalesDeepLink(origin: string, destination: string, date: string, marker: string) {
+    try {
+        const d = new Date(date);
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+
+        // Link Yapısı: Origin + GünAy + Destination + YolcuSayısı (1)
+        const searchParams = `${origin}${day}${month}${destination}1`;
+
+        return `https://www.aviasales.com/search/${searchParams}?marker=${marker}&currency=AUD`;
+    } catch (e) {
+        return `https://www.aviasales.com/?marker=${marker}`;
     }
 }
 
