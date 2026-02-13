@@ -19,14 +19,18 @@ export async function GET(request: Request) {
     console.log(`🚀 YARIŞ BAŞLADI: ${origin} -> ${destination} [${date}]`);
 
     try {
-        const searchParams: HybridSearchParams = {
+        const queryParams: HybridSearchParams = {
             origin,
             destination,
             date,
-            // Opsiyonel parametreler eklenebilir
+            adults: parseInt(searchParams.get('adults') || '1'),
+            children: parseInt(searchParams.get('children') || '0'),
+            infants: parseInt(searchParams.get('infants') || '0'),
+            cabin: (searchParams.get('cabin') || 'economy') as "economy" | "business" | "first",
+            currency: searchParams.get('currency') || 'USD'
         };
 
-        const allFlights = await searchAllProviders(searchParams);
+        const allFlights = await searchAllProviders(queryParams);
 
         if (allFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
