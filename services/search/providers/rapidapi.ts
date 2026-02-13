@@ -98,7 +98,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
              name: a.name,
              price: a.price,
              currency: currency,
-             link: a.url, // Direkt linki kullanıyoruz artık
+             link: a.url || "", // Eğer link yoksa boş bırak, Aviasales yok!
              type: 'agency',
              logo: a.image,
              rating: a.rating,
@@ -107,8 +107,9 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
         })),
 
         // Eğer listeden seçim yapmazsa gideceği ana link (En ucuzun linki)
-        deepLink: agents[0]?.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID'),
-        bookingLink: agents[0]?.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID')
+        // Eğer link yoksa, boş string bırakıyoruz. Aviasales'e ZORLA YÖNLENDİRME İPTAL.
+        deepLink: agents[0]?.url || "",
+        bookingLink: agents[0]?.url || ""
       };
     });
 
