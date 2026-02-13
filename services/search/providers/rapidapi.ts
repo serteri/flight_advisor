@@ -36,7 +36,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       date: targetDate, 
       cabinClass: 'economy', 
       adults: '1', 
-      sortBy: 'price_high_to_low', // 🔥 DİKKAT: Ucuzları (Low Cost) kaçırmamak için 'best' yerine 'price' sıralaması denenebilir.
+      sortBy: 'best',
       currency: currency, 
       market: 'en-US', 
       countryCode: 'AU'
@@ -52,53 +52,51 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     const data = await res.json();
     const items = data.data?.itineraries || [];
 
-    console.log(`✅ SKY SCRAPPER: ${items.length} uçuş (Low-Cost dahil).`);
-
     return items.map((item: any) => {
       
-      // 🕵️‍♂️ "SATICI LİSTESİ" OLUŞTURUYORUZ (Skyscanner Modeli)
+      // 🔥 İŞTE SKYSCANNER LİSTESİ BURADA 🔥
+      // Para kazanmayı düşünmeden, API'nin verdiği tüm satıcıları ve linkleri alıyoruz.
       const agents = item.pricingOptions?.map((opt: any) => ({
-        name: opt.agent?.name || "Provider", // Trip.com, Expedia, Mytrip
-        price: opt.price?.amount,            // $510
-        image: opt.agent?.imageUrl,          // Logo
-        rating: opt.agent?.rating,           // Güven puanı (Örn: 4.5/5)
-        reviewCount: opt.agent?.reviewCount, // 5455 yorum
-        isOfficial: opt.agent?.isOp || false,// Havayolunun kendi sitesi mi?
-        url: opt.items?.[0]?.url             // Satış linki (Varsa)
+        name: opt.agent?.name,           // Örn: "Aunt Betty", "Gotogate"
+        price: opt.price?.amount,        // Örn: 1139.50
+        image: opt.agent?.imageUrl,      // Acente Logosu
+        rating: opt.agent?.rating,       // Puanı (4.5/5)
+        reviewCount: opt.agent?.reviewCount, // Yorum Sayısı (5438)
+        
+        // 🔗 KRİTİK NOKTA: DİREKT LİNK
+        // Sky Scrapper bize kullanıcıyı direkt ödeme sayfasına götüren linki burada verir.
+        // Bunu olduğu gibi alıyoruz, değiştirmiyoruz.
+        url: opt.items?.[0]?.url 
       })) || [];
 
-      // En ucuz fiyat
-      const bestPrice = item.price?.raw || agents[0]?.price || 0;
-
-      // Havayolu Bilgisi
-      const mainCarrier = item.legs?.[0]?.carriers?.marketing?.[0];
+      // Listeyi ucuzdan pahalıya sıralayalım ki en tepede en ucuz olsun
+      agents.sort((a: any, b: any) => a.price - b.price);
 
       return {
         id: `SKY_${item.id}`,
-        source: 'SKY_SCRAPPER' as FlightSource, // Kaynak
-        airline: mainCarrier?.name || "Airline",
-        airlineLogo: mainCarrier?.logoUrl,
+        source: 'SKY_SCRAPPER' as FlightSource,
+        airline: item.legs?.[0]?.carriers?.marketing?.[0]?.name,
+        airlineLogo: item.legs?.[0]?.carriers?.marketing?.[0]?.logoUrl,
         
-        // Low-Cost Kontrolü (Genelde bagaj yoksa veya belirli firmalarsa Low Cost'tur)
-        isLowCost: bestPrice < 600, // Basit bir mantık, bunu geliştirebiliriz
-
-        price: bestPrice,
+        // Ana ekranda en ucuz fiyatı gösterelim
+        price: agents[0]?.price || item.price?.raw,
         currency: currency,
+        
         departTime: item.legs?.[0]?.departure,
         arriveTime: item.legs?.[0]?.arrival,
         duration: item.legs?.[0]?.durationInMinutes,
         stops: item.legs?.[0]?.stopCount,
-        flightNumber: mainCarrier?.alternateId || "FLIGHT",
+        flightNumber: item.legs?.[0]?.carriers?.marketing?.[0]?.alternateId || "FLIGHT",
         from: params.origin,
         to: params.destination,
         cabinClass: 'economy',
         
-        // 🔥 FRONTEND İÇİN KRİTİK VERİ: SATICILAR LİSTESİ 🔥
+        // Frontend'in kullanacağı "Deals" listesi
         bookingProviders: agents.map((a: any) => ({
              name: a.name,
              price: a.price,
              currency: currency,
-             link: a.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID'),
+             link: a.url, // Direkt linki kullanıyoruz artık
              type: 'agency',
              logo: a.image,
              rating: a.rating,
@@ -106,9 +104,9 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
              isOfficial: a.isOfficial
         })),
 
-        // Yedek Link (Eğer listeden seçim yapmazsa genel arama)
-        deepLink: generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID'),
-        bookingLink: generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID')
+        // Eğer listeden seçim yapmazsa gideceği ana link (En ucuzun linki)
+        deepLink: agents[0]?.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID'),
+        bookingLink: agents[0]?.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID')
       };
     });
 
