@@ -22,17 +22,19 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
   let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
-  // Konum ID'lerini bul (resolveLocation fonksiyonunu aşağıda tanımlamayı unutma)
+  // Konum ID'lerini bul (resolveLocation artık daha güvenli)
   const originLoc = await resolveLocation(params.origin, apiKey, host);
   const destLoc = await resolveLocation(params.destination, apiKey, host);
 
-  if (!originLoc || !destLoc) return [];
+  // Fallback: Eğer API'den ID bulamazsak, direkt IATA kodunu kullanırız.
+  const originEntity = originLoc || { skyId: params.origin, entityId: params.origin };
+  const destEntity = destLoc || { skyId: params.destination, entityId: params.destination };
 
   try {
     const url = `https://${host}/api/v1/flights/searchFlights`;
     const queryParams = new URLSearchParams({
-      originSkyId: originLoc.skyId, originEntityId: originLoc.entityId,
-      destinationSkyId: destLoc.skyId, destinationEntityId: destLoc.entityId,
+      originSkyId: originEntity.skyId, originEntityId: originEntity.entityId,
+      destinationSkyId: destEntity.skyId, destinationEntityId: destEntity.entityId,
       date: targetDate, 
       cabinClass: 'economy', 
       adults: '1', 

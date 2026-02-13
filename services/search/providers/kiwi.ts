@@ -3,8 +3,13 @@ import { FlightResult } from "@/types/hybridFlight";
 
 export async function searchKiwi(params: { origin: string, destination: string, date: string }): Promise<FlightResult[]> {
     // Travelpayouts'tan aldığın Kiwi (Tequila) API Key'in buraya gelecek.
-    // Eğer yoksa Tequila.kiwi.com'dan ücretsiz alabilirsin.
-    const apiKey = process.env.KIWI_API_KEY || 'SENIN_TEQUILA_API_KEYIN';
+    const apiKey = process.env.KIWI_API_KEY;
+    
+    // Eğer API Key yoksa hiç deneme yapma (Hata fırlatma)
+    if (!apiKey || apiKey === 'SENIN_TEQUILA_API_KEYIN') {
+        console.warn("⚠️ KIWI API KEY EKSİK: Arama atlanıyor.");
+        return [];
+    }
 
     // Tarih Formatı: DD/MM/YYYY (Kiwi bunu ister)
     const dateObj = new Date(params.date);
