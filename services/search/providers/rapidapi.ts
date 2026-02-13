@@ -7,7 +7,7 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
     const departDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
 
     // Sky Scrapper V1 endpoint
-    const url = `https://${host}/api/v1/flights/searchOneWay`;
+    const url = `https://${host}/api/v2/flights/searchFlights`;
 
     console.log(`📡 SKY SCRAPPER (DOĞRU KEY): ${params.origin} -> ${params.destination} [${departDate}]`);
 
