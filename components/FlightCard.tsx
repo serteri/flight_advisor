@@ -131,11 +131,11 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
                         <div className={`text-xs mt-1 font-medium text-center ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
                             {flight.stops === 0 ? 'Direct' :
-                                (flight.layovers?.length > 0 ? 
+                                ((flight.layovers?.length ?? 0) > 0 ? 
                                     <span className="flex flex-col">
                                         <span>{flight.stops} Stop{flight.stops > 1 ? 's' : ''}</span>
                                         <span className="text-[10px] text-slate-400">
-                                            {flight.layovers.map(l => `${l.airport} ${formatDuration(l.duration)}`).join(', ')}
+                                            {flight.layovers!.map(l => `${l.airport} ${formatDuration(l.duration)}`).join(', ')}
                                         </span>
                                     </span>
                                     : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`
