@@ -1,5 +1,5 @@
 // test-search.ts
-import { searchOpenClaw } from './services/search/providers/openClaw.ts';
+import { searchOpenClaw } from './services/search/providers/openClaw';
 import { prisma } from './lib/prisma';
 import * as dotenv from 'dotenv';
 
@@ -23,7 +23,7 @@ async function runTest() {
     console.log(`\n✈️ İlk Uçuş: ${firstFlight.airline} (${firstFlight.flightNumber})`);
     console.log(`💰 Fiyat: ${firstFlight.price} ${firstFlight.currency}`);
     console.log(`🌟 Skor: ${firstFlight.score}/10`);
-    
+
     // Veritabanı Kontrolü
     const dbRecord = await prisma.flightOption.findFirst({
       where: { id: firstFlight.id }
