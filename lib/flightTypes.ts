@@ -1,4 +1,3 @@
-
 import { AirlineTier } from './airlineDB';
 
 // ----------------------------
@@ -100,6 +99,15 @@ export interface FlightForScoring {
         scenario?: string;
         socialProof?: string[]; // e.g. "62% of users avoided this layover"
     };
+
+    bookingProviders?: {
+        name: string;
+        price: number;
+        currency: string;
+        logo?: string;
+        link: string;
+        type: 'airline' | 'agency';
+    }[];
 
     // UI Compatibility
     score?: number;

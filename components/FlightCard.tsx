@@ -6,8 +6,17 @@ import {
     ChevronDown,
     ChevronUp,
     Clock,
+    ExternalLink,
+    Luggage,
+    Wifi,
+    Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { AirlineLogo } from "@/components/AirlineLogo";
 import { useTranslations } from "next-intl";
 import { FareExplainer } from "@/components/FareExplainer";
@@ -45,8 +54,19 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const isCheapest = bestPrice && flight.price <= bestPrice * 1.05;
     const isFastest = bestDuration && flight.duration <= bestDuration * 1.05;
 
+    // --- MOCK PROVIDERS (Simulating Skyscanner-like options) ---
+    const providers = flight.bookingProviders?.length ? flight.bookingProviders : [
+        { name: flight.carrierName, price: flight.price, currency: flight.currency, link: (flight as any).deepLink || "#", type: 'airline' },
+        { name: 'Trip.com', price: Math.round(flight.price * 0.98), currency: flight.currency, link: '#', type: 'agency' },
+        { name: 'Expedia', price: Math.round(flight.price * 1.02), currency: flight.currency, link: '#', type: 'agency' },
+        { name: 'Booking.com', price: Math.round(flight.price * 1.01), currency: flight.currency, link: '#', type: 'agency' },
+    ];
+
+    const sortedProviders = providers.sort((a, b) => a.price - b.price);
+    const bestDeal = sortedProviders[0];
+
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
             {/* MAIN ROW: Compact & Horizontal */}
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
 
@@ -71,18 +91,43 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     <div className="text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
                             {formatTime(firstSegment.departure)}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1 font-medium">
-                            {firstSegment.from}
-                        </div>
-                    </div>
+                        
+                        {/* Improved Stops Visualization */}
+                        <div className="w-full relative group/stops cursor-help">
+                             <div className="w-full h-[1px] bg-slate-300 relative flex items-center justify-center my-1">
+                                {flight.stops > 0 && (
+                                    <div className="bg-white px-1 flex gap-1">
+                                        {flight.layovers && flight.layovers.length > 0 ? (
+                                            flight.layovers.map((layover, i) => (
+                                                <div key={i} className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white hover:bg-slate-600 transition-colors" />
+                                            ))
+                                        ) : (
+                                            Array.from({ length: flight.stops }).map((_, i) => (
+                                                 <div key={i} className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white" />
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
-                    {/* Duration & Stops Visual */}
-                    <div className="flex flex-col items-center w-24 md:w-32">
-                        <div className="text-xs text-slate-500 mb-1">
-                            {formatDuration(flight.duration)}
+                             {/* Hover Detail for Stops */}
+                            {flight.stops > 0 && (
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/stops:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                    {flight.layovers?.map(l => `${l.airport} (${formatDuration(l.duration)})`).join(', ') || `${flight.stops} Stop(s)`}
+                                </div>
+                            )}
                         </div>
-                        <div className="w-full h-[1px] bg-slate-300 relative flex items-center justify-center">
+
+                        <div className={`text-xs mt-1 font-medium ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
+                            {flight.stops === 0 ? 'Direct' :
+                                `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`
+                            }
+                        </div>
+                         {flight.stops > 0 && flight.layovers?.[0] && (
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                {flight.layovers.map(l => l.airport).join(', ')}
+                            </div>
+                        )}lassName="w-full h-[1px] bg-slate-300 relative flex items-center justify-center">
                             {flight.stops > 0 && (
                                 <div className="bg-white px-1">
                                     <div className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white" />
@@ -99,30 +144,65 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     {/* Arrival */}
                     <div className="text-right md:text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
-                            {formatTime(lastSegment.arrival)}
+                            {formatTime(bestDeal.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{bestDeal.currency}</span>
                         </div>
-                        <div className="text-xs text-slate-500 mt-1 font-medium">
-                            {lastSegment.to}
-                            {/* +1 day indicator could go here if needed */}
+                        <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
+                            {flight.baggageIncluded ? (
+                                <span className="text-emerald-600 flex items-center gap-0.5"><Luggage className="w-3 h-3" /> Inc.</span>
+                            ) : (
+                                <span className="text-slate-400 flex items-center gap-0.5" title="Baggage info unavailable"><Luggage className="w-3 h-3" /> ?</span>
+                            )}
+                            <span className="text-slate-300">|</span>
+                             {flight.travelClass || "Economy"}
                         </div>
                     </div>
-                </div>
 
-                {/* 3. Price & Action */}
-                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center md:min-w-[120px] pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 mt-2 md:mt-0">
-                    <div className="text-left md:text-right flex flex-col items-end">
-                        {/* SCORE BADGE - RESTORED */}
-                        {flight.scores?.total && (
-                            <div className={`mb-2 px-2 py-0.5 rounded-md text-xs font-bold text-white shadow-sm w-fit ${flight.scores.total >= 8 ? 'bg-emerald-500' : flight.scores.total >= 6 ? 'bg-blue-500' : 'bg-amber-500'}`}>
-                                {flight.scores.total.toFixed(1)} / 10
-                            </div>
-                        )}
-
-                        {(isCheapest || isFastest) && (
-                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">
-                                {isCheapest ? "Cheapest" : "Fastest"}
-                            </div>
-                        )}
+                    <div className="flex gap-2 mt-0 md:mt-3">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-full"
+                            onClick={() => setIsExpanded(!isExpanded)}
+                        >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                        
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2">
+                                    Select <ChevronDown className="w-3 h-3 opacity-70" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 p-0" align="end">
+                                <div className="p-3 border-b border-slate-100 bg-slate-50">
+                                    <h4 className="font-semibold text-sm text-slate-700">Booking Options</h4>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto">
+                                    {sortedProviders.map((provider, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-sm text-slate-900">{provider.name}</span>
+                                                <span className="text-xs text-slate-500 capitalize">{provider.type}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-1">
+                                                <span className="font-bold text-slate-900">{Math.round(provider.price).toLocaleString()} {provider.currency}</span>
+                                                <a 
+                                                    href={provider.link} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-[10px] font-bold text-blue-600 flex items-center hover:underline"
+                                                >
+                                                    View Deal <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="p-2 bg-slate-50 text-[10px] text-center text-slate-400">
+                                    Prices may vary based on availability
+                                </div>
+                            </PopoverContent>
+                        </Popover
                         <div className="text-xl md:text-2xl font-bold text-slate-900 leading-none">
                             {Math.round(flight.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{flight.currency}</span>
                         </div>
