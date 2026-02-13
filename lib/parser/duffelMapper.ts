@@ -1,4 +1,6 @@
-export function mapDuffelToPremiumAgent(offer: any) {
+import { FlightResult, FlightSource } from '@/types/hybridFlight';
+
+export function mapDuffelToPremiumAgent(offer: any): FlightResult {
     const firstSlice = offer.slices[0];
     const firstSegment = firstSlice.segments[0];
     const lastSegment = firstSlice.segments[firstSlice.segments.length - 1];
@@ -47,7 +49,7 @@ export function mapDuffelToPremiumAgent(offer: any) {
 
     return {
         id: offer.id,
-        source: 'DUFFEL',
+        source: 'DUFFEL' as FlightSource,
         airline: firstSegment.operating_carrier?.name || "Airline",
         airlineLogo: firstSegment.operating_carrier?.logo_symbol_url || "",
         flightNumber: fullFlightNumber,

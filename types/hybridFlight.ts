@@ -34,6 +34,7 @@ export type FlightResult = {
     duration: number; // minutes or whatever format you use
     durationLabel?: string;
     stops: number;
+    segments?: any[];
     price: number;
     currency: string;
     cabinClass: CabinClass;
