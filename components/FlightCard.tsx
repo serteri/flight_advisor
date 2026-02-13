@@ -91,6 +91,17 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     <div className="text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
                             {formatTime(firstSegment.departure)}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1 font-medium">
+                            {firstSegment.from}
+                        </div>
+                    </div>
+
+                    {/* Duration & Stops Visual */}
+                    <div className="flex flex-col items-center w-32 md:w-40">
+                        <div className="text-xs text-slate-500 mb-1">
+                            {formatDuration(flight.duration)}
+                        </div>
                         
                         {/* Improved Stops Visualization */}
                         <div className="w-full relative group/stops cursor-help">
@@ -112,28 +123,55 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
                              {/* Hover Detail for Stops */}
                             {flight.stops > 0 && (
-                                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/stops:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/stops:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg border border-slate-200">
                                     {flight.layovers?.map(l => `${l.airport} (${formatDuration(l.duration)})`).join(', ') || `${flight.stops} Stop(s)`}
                                 </div>
                             )}
                         </div>
 
-                        <div className={`text-xs mt-1 font-medium ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
+                        <div className={`text-xs mt-1 font-medium text-center ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
                             {flight.stops === 0 ? 'Direct' :
-                                `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`
+                                (flight.layovers?.length > 0 ? 
+                                    <span className="flex flex-col">
+                                        <span>{flight.stops} Stop{flight.stops > 1 ? 's' : ''}</span>
+                                        <span className="text-[10px] text-slate-400">
+                                            {flight.layovers.map(l => `${l.airport} ${formatDuration(l.duration)}`).join(', ')}
+                                        </span>
+                                    </span>
+                                    : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`
+                                )
                             }
                         </div>
-                         {flight.stops > 0 && flight.layovers?.[0] && (
-                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                {flight.layovers.map(l => l.airport).join(', ')}
-                            </div>
-                        )}
                     </div>
 
                     {/* Arrival */}
                     <div className="text-right md:text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
-                            {formatTime(bestDeal.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{bestDeal.currency}</span>
+                            {formatTime(lastSegment.arrival)}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1 font-medium">
+                            {lastSegment.to}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Price & Action */}
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center md:min-w-[120px] pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 mt-2 md:mt-0">
+                    <div className="text-left md:text-right flex flex-col items-end">
+                        {/* SCORE BADGE */}
+                        {flight.scores?.total && (
+                            <div className={`mb-2 px-2 py-0.5 rounded-md text-xs font-bold text-white shadow-sm w-fit ${flight.scores.total >= 8 ? 'bg-emerald-500' : flight.scores.total >= 6 ? 'bg-blue-500' : 'bg-amber-500'}`}>
+                                {flight.scores.total.toFixed(1)} / 10
+                            </div>
+                        )}
+
+                        {(isCheapest || isFastest) && (
+                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">
+                                {isCheapest ? "Cheapest" : "Fastest"}
+                            </div>
+                        )}
+                        <div className="text-xl md:text-2xl font-bold text-slate-900 leading-none">
+                            {Math.round(bestDeal.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{bestDeal.currency}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
                             {flight.baggageIncluded ? (
@@ -191,32 +229,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                     Prices may vary based on availability
                                 </div>
                             </PopoverContent>
-                        </Popover
-                        <div className="text-xl md:text-2xl font-bold text-slate-900 leading-none">
-                            {Math.round(flight.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{flight.currency}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-1">
-                            {flight.travelClass || "Economy"}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 mt-0 md:mt-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 rounded-full"
-                            onClick={() => setIsExpanded(!isExpanded)}
-                        >
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </Button>
-                        <a
-                            href={(flight as any).deepLink || "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-lg transition-colors"
-                        >
-                            Select
-                        </a>
+                        </Popover>
                     </div>
                 </div>
             </div>
