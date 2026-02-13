@@ -65,6 +65,7 @@ export function mapDuffelToPremiumAgent(offer: any) {
         stops: firstSlice.segments.length - 1,
         price: parseFloat(offer.total_amount),
         currency: offer.total_currency,
+        cabinClass: 'economy',
         amenities: {
             hasWifi: false,
             hasMeal: true,
