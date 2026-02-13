@@ -1,18 +1,18 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
 import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
-import { searchOpenClaw } from "./providers/openClaw"; 
+// import { searchOpenClaw } from "./providers/openClaw"; 
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
 
-    // 🔥 4'LÜ PARALEL ARAMA (ARTIK OPENCLAW DA VAR)
-    const [duffelResults, skyResults, airResults, openClawResults] = await Promise.all([
+    // 🔥 4'LÜ PARALEL ARAMA (OPENCLAW DEVRE DISI)
+    const [duffelResults, skyResults, airResults] = await Promise.all([
         searchDuffel(params),
         searchSkyScrapper(params),
         searchAirScraper(params),
-        searchOpenClaw(params) 
+        // searchOpenClaw(params) // DEVRE DISI 
     ]);
 
     // Hepsini birleştiriyoruz ama tiplerin uyuşmadığı durumlar olabilir.
@@ -21,7 +21,7 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
         ...duffelResults, 
         ...skyResults, 
         ...airResults, 
-        ...openClawResults 
+        // ...openClawResults // DEVRE DISI
     ];
 
     // 2. Market Analysis (En ucuz fiyatı bul)
