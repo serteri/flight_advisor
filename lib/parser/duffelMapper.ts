@@ -55,8 +55,6 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         flightNumber: fullFlightNumber,
 
         // 🔥 Artık "undefined" olamaz:
-        origin: originCode,
-        destination: destinationCode,
         from: originCode,
         to: destinationCode,
 
