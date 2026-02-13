@@ -58,18 +58,32 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       
       // 🔥 İŞTE SKYSCANNER LİSTESİ BURADA 🔥
       // Para kazanmayı düşünmeden, API'nin verdiği tüm satıcıları ve linkleri alıyoruz.
-      const agents = item.pricingOptions?.map((opt: any) => ({
-        name: opt.agent?.name,           // Örn: "Aunt Betty", "Gotogate"
-        price: opt.price?.amount,        // Örn: 1139.50
-        image: opt.agent?.imageUrl,      // Acente Logosu
-        rating: opt.agent?.rating,       // Puanı (4.5/5)
-        reviewCount: opt.agent?.reviewCount, // Yorum Sayısı (5438)
+      const agents = item.pricingOptions?.map((opt: any) => {
+        // URL'yi çeşitli yerlerden almayı dene (API yapısı değişkenlik gösterebilir)
+        const bookingUrl = 
+          opt.items?.[0]?.url ||           // Standart path
+          opt.url ||                        // Alternatif 1
+          opt.agent?.link ||                // Alternatif 2
+          opt.deepLink ||                   // Alternatif 3
+          undefined;
         
-        // 🔗 KRİTİK NOKTA: DİREKT LİNK
-        // Sky Scrapper bize kullanıcıyı direkt ödeme sayfasına götüren linki burada verir.
-        // Bunu olduğu gibi alıyoruz, değiştirmiyoruz.
-        url: opt.items?.[0]?.url 
-      })) || [];
+        return {
+          name: opt.agent?.name,           // Örn: "Aunt Betty", "Gotogate"
+          price: opt.price?.amount,        // Örn: 1139.50
+          image: opt.agent?.imageUrl,      // Acente Logosu
+          rating: opt.agent?.rating,       // Puanı (4.5/5)
+          reviewCount: opt.agent?.reviewCount, // Yorum Sayısı (5438)
+          
+          // 🔗 KRİTİK NOKTA: DİREKT LİNK
+          // Sky Scrapper'dan gelen direktURLleri kullanıyoruz
+          url: bookingUrl
+        }
+      }) || [];
+      
+      // 📊 DEBUG: İlk birkaç agent'ı logla
+      if (agents.length > 0) {
+        console.log(`✅ SKY: ${agents.length} agent, cheapest: ${agents[0].name} @ ${agents[0].price}, URL: ${agents[0].url ? '✓' : '✗'}`);
+      }
 
       // Listeyi ucuzdan pahalıya sıralayalım ki en tepede en ucuz olsun
       agents.sort((a: any, b: any) => a.price - b.price);

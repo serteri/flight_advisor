@@ -249,19 +249,23 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                                 <div className="flex flex-col items-end gap-1">
                                                     <span className="font-bold text-slate-900">{Math.round(provider.price).toLocaleString()} {provider.currency}</span>
                                                     <a 
-                                                        href={provider.link} 
+                                                        href={provider.link || '#'} 
                                                         target="_blank" 
                                                         rel="noopener noreferrer"
                                                         onClick={(e) => {
-                                                            // Affiliate Override Logic
-                                                            if (["Trip.com", "Kiwi.com", "Mytrip", "Gotogate"].some(n => provider.name.includes(n))) {
+                                                            // Eğer link boşsa, tıklama işlemini engelle
+                                                            if (!provider.link) {
                                                                 e.preventDefault();
-                                                                window.open(flight.deepLink || flight.bookingLink, '_blank');
+                                                                console.warn(`No booking link for ${provider.name}`);
                                                             }
                                                         }}
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm"
+                                                        className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm ${
+                                                            provider.link 
+                                                                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' 
+                                                                : 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-50'
+                                                        }`}
                                                     >
-                                                        Select <ChevronDown className="w-2.5 h-2.5 ml-1 -rotate-90" />
+                                                        {provider.link ? 'Select' : 'No Link'} <ChevronDown className="w-2.5 h-2.5 ml-1 -rotate-90" />
                                                     </a>
                                                 </div>
                                             </div>
