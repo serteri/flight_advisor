@@ -12,6 +12,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     return [];
   }
 
+  console.log(`⏱️ [${new Date().toISOString()}] Sky Scrapper başladı: ${params.origin} -> ${params.destination}`);
+
   const currency = params.currency || 'AUD';
   
   // Tarih düzeltmesi (2025 -> 2026)
@@ -19,11 +21,15 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
   // Konum ID'lerini bul (PlaceId olarak dönecek)
+  console.log(`🔍 Konum çözümleme başlıyor...`);
   const originPlaceId = await resolveLocation(params.origin, apiKey);
+  console.log(`   Origin sonuç: ${params.origin} -> ${originPlaceId}`);
+  
   const destPlaceId = await resolveLocation(params.destination, apiKey);
+  console.log(`   Dest sonuç: ${params.destination} -> ${destPlaceId}`);
 
   if (!originPlaceId || !destPlaceId) {
-    console.error("❌ Konum bulunamadı:", params.origin, params.destination);
+    console.error("❌ Konum bulunamadı:", { origin: params.origin, originResolved: originPlaceId, dest: params.destination, destResolved: destPlaceId });
     return [];
   }
 
@@ -42,23 +48,37 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       locale: 'en-US'
     });
 
-    console.log("🚀 Flights Sky API İsteği:", `${url}?placeIdFrom=${originPlaceId}&placeIdTo=${destPlaceId}&...`);
+    const fullUrl = `${url}?${queryParams.toString()}`;
+    console.log("🚀 Flights Sky Arama API işlemi:", fullUrl.substring(0, 100) + "...");
 
-    const res = await fetch(`${url}?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: { 
-        'X-RapidAPI-Key': apiKey, 
-        'X-RapidAPI-Host': RAPID_API_HOST 
-      }
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye timeout
+
+    let res;
+    try {
+      res = await fetch(fullUrl, {
+        method: 'GET',
+        headers: { 
+          'X-RapidAPI-Key': apiKey, 
+          'X-RapidAPI-Host': RAPID_API_HOST 
+        },
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    console.log(`📍 API Yanıt status: ${res.status}`);
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("🔥 Flights Sky Hatası:", res.status, err.substring(0, 200));
+      console.error("🔥 Flights Sky API Hatası:", res.status, err.substring(0, 300));
       return [];
     }
 
     const data = await res.json();
+    
+    console.log(`📊 Response yapısı kontrol: data.data?.context?.status = ${data.data?.context?.status}`);
     
     // Incomplete handling (dokümanda belirtildiği gibi)
     if (data.data?.context?.status === 'incomplete') {
@@ -66,10 +86,16 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       // TODO: Polling implementasyonu gerekli olabilir
     }
 
-    return processFlights(data, params.origin, params.destination, currency);
+    console.log(`⏱️ [${new Date().toISOString()}] Sky Scrapper verilerini işliyor...`);
+    const results = processFlights(data, params.origin, params.destination, currency);
+    console.log(`✅ [${new Date().toISOString()}] Sky Scrapper tamamlandı: ${results.length} uçuş`);
+    return results;
 
   } catch (error: any) {
-    console.error("🔥 API CATCH HATASI:", error.message);
+    console.error("🔥 API CATCH HATASI:", error.name, error.message);
+    if (error.name === 'AbortError') {
+      console.error("   -> Timeout hatası (15 saniye aşıldı)");
+    }
     return [];
   }
 }
@@ -154,74 +180,97 @@ function processFlights(data: any, origin: string, destination: string, currency
 // 📍 KONUM ÇÖZÜCÜ (Flights Sky için)
 async function resolveLocation(query: string, apiKey: string): Promise<string | null> {
   try {
+    const startTime = Date.now();
     // Doğru endpoint: /web/flights/auto-complete (not /flights/auto-complete)
     const url = `https://${RAPID_API_HOST}/web/flights/auto-complete`;
     
     // İlk denemesi: query parametresi
     let q = new URLSearchParams({ query: query });
     
-    console.log(`🔍 Konum çözümleniyor: ${query} -> ${url}?${q}`);
+    console.log(`  🔍 Konum çözümleniyor: ${query}`);
 
-    let res = await fetch(`${url}?${q}`, { 
-      headers: { 
-        'X-RapidAPI-Key': apiKey, 
-        'X-RapidAPI-Host': RAPID_API_HOST 
-      } 
-    });
+    // Timeout ile fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 saniye timeout
+
+    let res;
+    try {
+      res = await fetch(`${url}?${q}`, { 
+        headers: { 
+          'X-RapidAPI-Key': apiKey, 
+          'X-RapidAPI-Host': RAPID_API_HOST 
+        },
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    
+    console.log(`  📍 API status: ${res.status}`);
     
     // 400 hatası alırsa alternatif parametreleri dene
     if (res.status === 400) {
-      console.warn(`⚠️ 'query' parametresi başarısız (400), 'searchTerm' deneniyor...`);
+      console.warn(`  ⚠️ 'query' başarısız (400), 'searchTerm' deneniyor...`);
       q = new URLSearchParams({ 
         searchTerm: query,
         market: 'en-US',
         locale: 'en-US'
       });
       
-      res = await fetch(`${url}?${q}`, { 
-        headers: { 
-          'X-RapidAPI-Key': apiKey, 
-          'X-RapidAPI-Host': RAPID_API_HOST 
-        } 
-      });
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => controller2.abort(), 10000);
+      
+      try {
+        res = await fetch(`${url}?${q}`, { 
+          headers: { 
+            'X-RapidAPI-Key': apiKey, 
+            'X-RapidAPI-Host': RAPID_API_HOST 
+          },
+          signal: controller2.signal
+        });
+      } finally {
+        clearTimeout(timeoutId2);
+      }
+      
+      console.log(`  📍 Retry status: ${res.status}`);
     }
     
     if (!res.ok) {
-      const errText = await res.text();
-      console.warn(`❌ Konum çözümleme başarısız: ${query} (${res.status})`);
-      console.error(`   Yanıt: ${errText.substring(0, 200)}`);
+      const errText = await res.text().catch(() => "");
+      console.warn(`  ❌ Konum çözümleme başarısız: ${query} (${res.status})`);
+      if (errText) console.error(`     Yanıt: ${errText.substring(0, 150)}`);
       // Fallback: IATA kodu direkt kullan
       return query;
     }
     
     const json = await res.json();
-    console.log(`📡 API Yanıtı yapısı:`, JSON.stringify(json).substring(0, 300));
+    console.log(`  📡 API yanıtı: ${Object.keys(json).join(', ')}`);
     
     // Farklı response yapıları dene
     const results = json.data || json.results || json;
     const resultArray = Array.isArray(results) ? results : (results[0] ? [results] : []);
     
     if (resultArray.length === 0) {
-      console.warn(`⚠️ Boş sonuç, fallback: ${query}`);
+      console.warn(`  ⚠️ Boş sonuç, fallback: ${query}`);
       return query;
     }
     
     const bestMatch = resultArray[0];
-    console.log(`✅ Konum çözüldü:`, bestMatch);
     
     // PlaceId almayı dene
     const placeId = bestMatch?.PlaceId || bestMatch?.placeId || bestMatch?.id || bestMatch?.code;
     
     if (placeId) {
-      console.log(`✅ PlaceId bulundu: ${query} -> ${placeId}`);
+      const elapsed = Date.now() - startTime;
+      console.log(`  ✅ Bulundu: ${query} -> ${placeId} (${elapsed}ms)`);
       return placeId;
     }
     
     // Fallback: sorgu parametresini direkt kullan
-    console.warn(`⚠️ PlaceId bulunamadı, fallback: ${query}`);
+    console.warn(`  ⚠️ PlaceId yok, fallback: ${query}`);
     return query;
-  } catch(e) { 
-    console.error(`🔥 Konum çözümleme hatası:`, e);
+  } catch(e: any) { 
+    console.error(`  🔥 Konum çözümleme error:`, e.name, e.message);
     // Fallback: sorgu parametresini direkt kullan
     return query;
   }
