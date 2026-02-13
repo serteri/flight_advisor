@@ -7,10 +7,10 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
   console.log(`🔎 Arama Başladı: ${params.origin} -> ${params.destination}`);
 
   // Promise.allSettled ile tüm sağlayıcıları paralel çalıştırıyoruz
-  const [duffelRes, skyRes, kiwiRes] = await Promise.allSettled([
+  const [duffelRes, skyRes] = await Promise.allSettled([
     searchDuffel(params),       // ✅ Duffel (Aktif)
     searchSkyScrapper(params),  // ✅ Sky Scrapper (Aktif)
-    searchKiwi(params),         // ✅ Kiwi (Aktif - Affiliate)
+    // searchKiwi(params),         // ❌ Kiwi (Geçici Olarak Kapalı)
     
     // ❌ BU SATIRI KESİNLİKLE SİL VEYA YORUM YAP:
     // searchOpenClaw(params) 
@@ -18,7 +18,8 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
 
   const duffelFlights = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
   const skyFlights = skyRes.status === 'fulfilled' ? skyRes.value : [];
-  const kiwiFlights = kiwiRes.status === 'fulfilled' ? kiwiRes.value : [];
+  // const kiwiFlights = kiwiRes.status === 'fulfilled' ? kiwiRes.value : [];
+  const kiwiFlights: FlightResult[] = [];
 
   console.log(`📊 Provider Stats: Duffel(${duffelFlights.length}) Sky(${skyFlights.length}) Kiwi(${kiwiFlights.length})`);
 
