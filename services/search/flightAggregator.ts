@@ -1,26 +1,30 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
 import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
+import { searchKiwi } from "./providers/kiwi"; // Kiwi eklendi
 // import { searchOpenClaw } from "./providers/openClaw"; 
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
 
-    // 🔥 4'LÜ PARALEL ARAMA (OPENCLAW DEVRE DISI)
-    const [duffelResults, skyResults, airResults] = await Promise.all([
+    // 🔥 4'LÜ PARALEL ARAMA (OPENCLAW KAPALI, KIWI EKLENDİ)
+    const [duffelResults, skyResults, airResults, kiwiResults] = await Promise.all([
         searchDuffel(params),
         searchSkyScrapper(params),
         searchAirScraper(params),
+        searchKiwi(params)
         // searchOpenClaw(params) // DEVRE DISI 
     ]);
 
-    // Hepsini birleştiriyoruz ama tiplerin uyuşmadığı durumlar olabilir.
-    // Bu yüzden 'any' dizisi olarak birleştirip sonra FlightResult'a zorlayacağız.
+    console.log(`[HybridSearch] Results count -> Duffel: ${duffelResults.length}, Sky: ${skyResults.length}, Air: ${airResults.length}, Kiwi: ${kiwiResults.length}`);
+
+    // Hepsini birleştiriyoruz
     let rawFlights: any[] = [
         ...duffelResults, 
         ...skyResults, 
         ...airResults, 
+        ...kiwiResults
         // ...openClawResults // DEVRE DISI
     ];
 
