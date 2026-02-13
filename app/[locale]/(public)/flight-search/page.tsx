@@ -297,7 +297,7 @@ function SearchPageContent() {
                                     onClick={showMore}
                                     className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-slate-50 hover:border-slate-400 transition shadow-sm"
                                 >
-                                    Daha Fazla Göster ({results.length - visibleCount} uçuş kaldı)
+                                    {t('showMore', { count: results.length - visibleCount })}
                                 </button>
                             </div>
                         )}

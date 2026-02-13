@@ -238,6 +238,7 @@
         "noInfo": "Bilgi yok"
     },
     "FlightSearch": {
+        "showMore": "Daha Fazla Göster ({count} uçuş kaldı)",
         "title": "Uçuş Ara & Takip Et",
         "subtitle": "Uçuş bilgilerinizi girin. Fiyatları takip edip en uygun zamanda satın almanız için sizi uyaracağız.",
         "heroTitle": "Nereye Uçuyoruz?",

@@ -110,6 +110,11 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
                 process.env.TRAVELPAYOUTS_MARKER || '701049'
             );
 
+            const agentLink = item.pricingOptions?.[0]?.agents?.[0]?.url;
+            // EĞER API'den gelen direkt link varsa onu kullan (Skyscanner mantığı)
+            // Yoksa bizim oluşturduğumuz Aviasales linkini kullan (Yedek/Monetization)
+            const finalLink = agentLink || aviasalesLink;
+
             return {
                 id: `SKY_${item.id || Math.random()}`,
                 source: 'SKY_RAPID' as const,
@@ -127,8 +132,8 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
                 durationLabel: `${h}h ${m}m`,
                 stops: leg.stopCount || 0,
                 amenities: { hasWifi: false, hasMeal: false },
-                deepLink: aviasalesLink, // 🔥 Aviasales Deep Link
-                bookingLink: aviasalesLink
+                deepLink: finalLink,
+                bookingLink: finalLink
             };
         });
     } catch (error: any) {

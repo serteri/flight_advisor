@@ -237,6 +237,7 @@
     "noInfo": "No info"
   },
   "FlightSearch": {
+    "showMore": "Show More ({count} flights remaining)",
     "title": "Search & Track Flights",
     "subtitle": "Enter your flight details. We'll track the prices and alert you when it's time to buy.",
     "heroTitle": "Where are we flying?",
