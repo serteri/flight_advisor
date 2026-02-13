@@ -18,32 +18,31 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
   let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
-  // Konum ID'lerini bul
-  const originLoc = await resolveLocation(params.origin, apiKey);
-  const destLoc = await resolveLocation(params.destination, apiKey);
+  // Konum ID'lerini bul (PlaceId olarak dönecek)
+  const originPlaceId = await resolveLocation(params.origin, apiKey);
+  const destPlaceId = await resolveLocation(params.destination, apiKey);
 
-  if (!originLoc || !destLoc) {
+  if (!originPlaceId || !destPlaceId) {
     console.error("❌ Konum bulunamadı:", params.origin, params.destination);
     return [];
   }
 
   try {
-    // 📢 Flights Sky Endpoint
-    const url = `https://${RAPID_API_HOST}/flights/search-one-way`;
+    // 📢 Doğru Flights Sky Endpoint (WEB prefix LAZIM!)
+    const url = `https://${RAPID_API_HOST}/web/flights/search-one-way`;
     
-    // İlk denemesi: fromId/toId parametreleri
-    let queryParams = new URLSearchParams({
-      fromId: originLoc.entityId,
-      toId: destLoc.entityId,
-      date: targetDate, 
-      cabinClass: 'ECONOMY', 
+    // Doğru parametre isimleri: placeIdFrom, placeIdTo
+    const queryParams = new URLSearchParams({
+      placeIdFrom: originPlaceId,
+      placeIdTo: destPlaceId,
+      departDate: targetDate,
       adults: '1', 
       currency: currency, 
       market: 'en-US', 
-      countryCode: 'AU'
+      locale: 'en-US'
     });
 
-    console.log("🚀 Flights Sky API İsteği:", `${url}?${queryParams.toString().substring(0, 100)}`);
+    console.log("🚀 Flights Sky API İsteği:", `${url}?placeIdFrom=${originPlaceId}&placeIdTo=${destPlaceId}&...`);
 
     const res = await fetch(`${url}?${queryParams.toString()}`, {
       method: 'GET',
@@ -55,36 +54,18 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("🔥 Flights Sky Hatası:", err);
-      
-      // Alternatif parametre denemesi
-      console.log("🔄 Alternatif parametre yapısı deneniyor...");
-      queryParams = new URLSearchParams({
-        placeIdFrom: params.origin,
-        placeIdTo: params.destination,
-        departDate: targetDate,
-        currency: currency,
-        market: 'en-US'
-      });
-
-      const retryRes = await fetch(`${url}?${queryParams.toString()}`, {
-        method: 'GET',
-        headers: { 
-          'X-RapidAPI-Key': apiKey, 
-          'X-RapidAPI-Host': RAPID_API_HOST 
-        }
-      });
-
-      if (!retryRes.ok) {
-        console.error("🔥 Alternatif parametre de başarısız");
-        return [];
-      }
-
-      const retryData = await retryRes.json();
-      return processFlights(retryData, params.origin, params.destination, currency);
+      console.error("🔥 Flights Sky Hatası:", res.status, err.substring(0, 200));
+      return [];
     }
 
     const data = await res.json();
+    
+    // Incomplete handling (dokümanda belirtildiği gibi)
+    if (data.data?.context?.status === 'incomplete') {
+      console.log("⏳ Incomplete status, polling için wait needed (şimdilik skip)");
+      // TODO: Polling implementasyonu gerekli olabilir
+    }
+
     return processFlights(data, params.origin, params.destination, currency);
 
   } catch (error: any) {
@@ -95,7 +76,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
 
 // Uçuş verilerini işle
 function processFlights(data: any, origin: string, destination: string, currency: string): FlightResult[] {
-  const items = data.data?.itineraries || data.itineraries || [];
+  // Doğru path: data.itineraries.results (not just data.itineraries)
+  const items = data.data?.itineraries?.results || data.itineraries?.results || [];
 
   console.log(`✅ FLIGHTS SKY SONUÇ: ${items.length} uçuş bulundu.`);
 
@@ -170,10 +152,10 @@ function processFlights(data: any, origin: string, destination: string, currency
 }
 
 // 📍 KONUM ÇÖZÜCÜ (Flights Sky için)
-async function resolveLocation(query: string, apiKey: string) {
+async function resolveLocation(query: string, apiKey: string): Promise<string | null> {
   try {
-    const RAPID_API_HOST = 'flights-sky.p.rapidapi.com';
-    const url = `https://${RAPID_API_HOST}/flights/auto-complete`;
+    // Doğru endpoint: /web/flights/auto-complete (not /flights/auto-complete)
+    const url = `https://${RAPID_API_HOST}/web/flights/auto-complete`;
     const q = new URLSearchParams({ query: query });
     
     const res = await fetch(`${url}?${q}`, { 
@@ -183,21 +165,29 @@ async function resolveLocation(query: string, apiKey: string) {
       } 
     });
     
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`Konum çözümleme başarısız: ${query} (${res.status})`);
+      // Fallback: IATA kodu direkt kullan
+      return query;
+    }
     const json = await res.json();
     
-    // İlk eşleşmeyi al
-    const bestMatch = json.data?.[0] || json[0]; 
-    if (bestMatch) {
-      return { 
-        skyId: bestMatch.skyId || bestMatch.PlaceId || query, 
-        entityId: bestMatch.entityId || bestMatch.PlaceId || query
-      };
+    // İlk eşleşmeyi al - PlaceId döndürülecek
+    const results = json.data || json;
+    const bestMatch = Array.isArray(results) ? results[0] : results[0];
+    
+    if (bestMatch?.PlaceId) {
+      console.log(`✅ Konum çözüldü: ${query} -> ${bestMatch.PlaceId}`);
+      return bestMatch.PlaceId;
     }
-    return null;
+    
+    // Fallback: sorgu parametresini direkt kullan (IATA kodu olarak)
+    console.warn(`Fallback to query: ${query}`);
+    return query;
   } catch(e) { 
     console.error("Konum çözümleme hatası:", e);
-    return null; 
+    // Fallback: sorgu parametresini direkt kullan
+    return query;
   }
 }
 
