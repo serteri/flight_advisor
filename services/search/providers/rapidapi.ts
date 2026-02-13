@@ -46,7 +46,7 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             getEntityId(params.destination),
         ]);
 
-        const url = `https://${HOST}/api/v2/flights/searchFlights`;
+        const url = `https://${HOST}/api/v1/flights/searchFlights`;
         const q = new URLSearchParams({
             originSkyId: originInfo.skyId,
             destinationSkyId: destInfo.skyId,
@@ -61,7 +61,7 @@ export async function searchSkyScrapper(params: { origin: string; destination: s
             countryCode: 'US',
         });
 
-        console.log(`📡 SKY UÇUŞ ARANIYOR: skyId=${originInfo.skyId}→${destInfo.skyId}, entityId=${originInfo.entityId}→${destInfo.entityId}`);
+        console.log(`📡 SKY UÇUŞ ARANIYOR (V1): skyId=${originInfo.skyId}→${destInfo.skyId}, entityId=${originInfo.entityId}→${destInfo.entityId}, date=${departDate}`);
 
         const res = await fetch(`${url}?${q}`, {
             headers: { 'X-RapidAPI-Key': API_KEY, 'X-RapidAPI-Host': HOST },
