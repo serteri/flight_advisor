@@ -127,18 +127,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                                 {flight.layovers.map(l => l.airport).join(', ')}
                             </div>
-                        )}lassName="w-full h-[1px] bg-slate-300 relative flex items-center justify-center">
-                            {flight.stops > 0 && (
-                                <div className="bg-white px-1">
-                                    <div className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white" />
-                                </div>
-                            )}
-                        </div>
-                        <div className={`text-xs mt-1 font-medium ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
-                            {flight.stops === 0 ? 'Direct' :
-                                `${flight.stops} stop${flight.stops > 1 ? 's' : ''} ${flight.layovers?.[0] ? `• ${flight.layovers[0].airport}` : ''}`
-                            }
-                        </div>
+                        )}
                     </div>
 
                     {/* Arrival */}
