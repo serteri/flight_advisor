@@ -66,7 +66,7 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
             baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
         },
         segments: firstSlice.segments,
-        deepLink: null, // Duffel'den doğrudan satın alma linki yok, Aviasales'e yönlendirme KALDIRILDI
-        bookingLink: null // Duffel kullanıcıyı kendi sitesine yönlendirir
+        deepLink: undefined, // Duffel'den doğrudan satın alma linki yok, Aviasales'e yönlendirme KALDIRILDI
+        bookingLink: undefined // Duffel kullanıcıyı kendi sitesine yönlendirir
     };
 }
