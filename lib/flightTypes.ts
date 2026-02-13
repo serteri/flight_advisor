@@ -107,6 +107,9 @@ export interface FlightForScoring {
         logo?: string;
         link: string;
         type: 'airline' | 'agency';
+        rating?: number;       // New: Agent rating (e.g., 4.2)
+        reviewCount?: number;  // New: Number of reviews
+        isOfficial?: boolean;  // New: Official airline site?
     }[];
 
     // UI Compatibility

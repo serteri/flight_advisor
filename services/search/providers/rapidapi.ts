@@ -62,6 +62,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
         price: opt.price?.amount,            // $510
         image: opt.agent?.imageUrl,          // Logo
         rating: opt.agent?.rating,           // Güven puanı (Örn: 4.5/5)
+        reviewCount: opt.agent?.reviewCount, // 5455 yorum
         isOfficial: opt.agent?.isOp || false,// Havayolunun kendi sitesi mi?
         url: opt.items?.[0]?.url             // Satış linki (Varsa)
       })) || [];
@@ -93,13 +94,16 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
         cabinClass: 'economy',
         
         // 🔥 FRONTEND İÇİN KRİTİK VERİ: SATICILAR LİSTESİ 🔥
-        // agents: agents, 
         bookingProviders: agents.map((a: any) => ({
              name: a.name,
              price: a.price,
              currency: currency,
              link: a.url || generateAviasalesSearchLink(params.origin, params.destination, params.date, 'SENIN_TRAVELPAYOUTS_ID'),
-             type: 'agency'
+             type: 'agency',
+             logo: a.image,
+             rating: a.rating,
+             reviewCount: a.reviewCount,
+             isOfficial: a.isOfficial
         })),
 
         // Yedek Link (Eğer listeden seçim yapmazsa genel arama)
