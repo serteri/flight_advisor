@@ -29,11 +29,30 @@ export async function GET(request: Request) {
                 slices: [{ origin, destination, departure_date: date }] as any,
                 passengers: [{ type: 'adult' }],
                 cabin_class: 'economy',
-            }).then((res: any) => res.data.offers.map(mapDuffelToPremiumAgent)).catch(() => []),
+            }).then((res: any) => {
+                const arr = res.data.offers.map(mapDuffelToPremiumAgent);
+                console.log(`🛫 DUFFEL returned ${arr.length} offers`);
+                return arr;
+            }).catch((err: any) => {
+                console.error('🔥 DUFFEL ERROR:', err?.message || err);
+                return [];
+            }),
 
-            searchSkyScrapper({ origin, destination, date }).catch(() => []),
+            searchSkyScrapper({ origin, destination, date }).then(r => {
+                console.log(`💡 SKY result count: ${r.length}`);
+                return r;
+            }).catch(err => {
+                console.error('🔥 SKY SCRAPPER ERROR:', err?.message || err);
+                return [];
+            }),
 
-            searchKiwi({ origin, destination, date }).catch(() => [])
+            searchKiwi({ origin, destination, date }).then(r => {
+                console.log(`🥝 KIWI result count: ${r.length}`);
+                return r;
+            }).catch(err => {
+                console.error('🔥 KIWI ERROR:', err?.message || err);
+                return [];
+            })
         ]);
 
         // 2. Grup: Yavaş ama Kaliteli Ajan (OpenClaw) + Zaman Aşımı (15 Saniye)
