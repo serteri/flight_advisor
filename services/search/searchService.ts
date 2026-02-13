@@ -8,7 +8,8 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
 
   // Promise.allSettled ile tüm sağlayıcıları paralel çalıştırıyoruz
   const [duffelRes, skyRes] = await Promise.allSettled([
-    searchDuffel(params),       // ✅ Duffel (Aktif)
+    // searchDuffel(params),       // ❌ DUFFEL KAPALI (Sky'ı görebilmek için)
+    [] as any, 
     searchSkyScrapper(params),  // ✅ Sky Scrapper (Aktif)
     // searchKiwi(params),         // ❌ Kiwi (Geçici Olarak Kapalı)
     
@@ -16,7 +17,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     // searchOpenClaw(params) 
   ]);
 
-  const duffelFlights = duffelRes.status === 'fulfilled' ? duffelRes.value : [];
+  const duffelFlights: FlightResult[] = []; 
   const skyFlights = skyRes.status === 'fulfilled' ? skyRes.value : [];
   // const kiwiFlights = kiwiRes.status === 'fulfilled' ? kiwiRes.value : [];
   const kiwiFlights: FlightResult[] = [];
