@@ -1,15 +1,14 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
 import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
-import { searchKiwi } from "./providers/kiwi"; // Kiwi eklendi
 // import { searchOpenClaw } from "./providers/openClaw"; 
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
 
-    // 🔥 4'LÜ PARALEL ARAMA (OPENCLAW KAPALI, KIWI EKLENDİ)
-    const [duffelResults, skyResults, airResults, kiwiResults] = await Promise.all([
+    // Parallel search across enabled providers (Kiwi removed)
+    const [duffelResults, skyResults, airResults] = await Promise.all([
         searchDuffel(params),
         searchSkyScrapper({
             origin: params.origin,
@@ -20,19 +19,16 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
             adults: params.adults
         }),
         searchAirScraper(params),
-        searchKiwi(params)
-        // searchOpenClaw(params) // DEVRE DISI 
+        // searchOpenClaw(params) // DEVRE DISI
     ]);
 
-    console.log(`[HybridSearch] Results count -> Duffel: ${duffelResults.length}, Sky: ${skyResults.length}, Air: ${airResults.length}, Kiwi: ${kiwiResults.length}`);
+    console.log(`[HybridSearch] Results count -> Duffel: ${duffelResults.length}, Sky: ${skyResults.length}, Air: ${airResults.length}`);
 
     // Hepsini birleştiriyoruz
     let rawFlights: any[] = [
-        ...duffelResults, 
-        ...skyResults, 
-        ...airResults, 
-        ...kiwiResults
-        // ...openClawResults // DEVRE DISI
+        ...duffelResults,
+        ...skyResults,
+        ...airResults
     ];
 
     // 2. Market Analysis (En ucuz fiyatı bul)
