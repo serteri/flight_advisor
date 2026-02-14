@@ -1,7 +1,7 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
 import { searchSkyScrapper } from './providers/rapidapi'; // Sky Scrapper (RapidAPI)
-import { searchKiwi } from './providers/kiwi'; // Kiwi (Yeni Ekledik)
+// Kiwi provider removed (not used)
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
@@ -29,17 +29,13 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     console.warn('⚠️ Skipping SkyScrapper: RAPID_API_KEY_SKY not set');
   }
 
-  if (process.env.KIWI_API_KEY) {
-    providerPromises.push({ name: 'kiwi', promise: searchKiwi(params) });
-  } else {
-    console.warn('⚠️ Skipping Kiwi: KIWI_API_KEY not set');
-  }
+  // Kiwi intentionally removed; no kiwi provider used.
 
   const settled = await Promise.allSettled(providerPromises.map(p => p.promise));
 
   const elapsed = Date.now() - startTime;
 
-  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [], kiwi: [] };
+  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [] };
 
   settled.forEach((res, idx) => {
     const name = providerPromises[idx].name;
@@ -51,9 +47,9 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     }
   });
 
-  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) Kiwi(${resultsByName.kiwi.length}) - Total: ${elapsed}ms`);
+  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) - Total: ${elapsed}ms`);
 
-  const allFlights = [...resultsByName.duffel, ...resultsByName.sky, ...resultsByName.kiwi];
+  const allFlights = [...resultsByName.duffel, ...resultsByName.sky];
 
   console.log(`📊 TOTAL FOUND: ${allFlights.length} flights`);
 

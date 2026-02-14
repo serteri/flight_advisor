@@ -5,7 +5,6 @@ dotenv.config({ path: '.env' });
 import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper';
 import { searchDuffel } from '../services/search/providers/duffel';
 import { searchSkyScrapper, searchAirScraper } from '../services/search/providers/rapidapi';
-import { searchKiwi } from '../services/search/providers/kiwi';
 
 async function testSearch() {
     const origin = 'BNE';
@@ -49,15 +48,7 @@ async function testSearch() {
         console.error('Air Error:', error.message || error);
     }
 
-    try {
-        console.log('\n--- KIWI (Tequila) CHECK ---');
-        const kiwiStart = Date.now();
-        const kiwiRes = await searchKiwi({ origin, destination, date });
-        console.log(`Kiwi Offers: ${kiwiRes.length}`);
-        console.log(`Kiwi Time: ${Date.now() - kiwiStart}ms`);
-    } catch (error: any) {
-        console.error('Kiwi Error:', error.message || error);
-    }
+    // Kiwi provider removed — skipping
 }
 
 testSearch();

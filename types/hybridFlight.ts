@@ -35,6 +35,11 @@ export type FlightResult = {
     durationLabel?: string;
     stops: number;
     segments?: any[];
+    layovers?: {
+        duration: number;
+        city?: string;
+        airport?: string;
+    }[];
     price: number;
     currency: string;
     cabinClass: CabinClass;
