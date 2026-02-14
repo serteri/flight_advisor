@@ -63,16 +63,40 @@ export async function searchSkyScrapper(params: {
     const json = await res.json();
     
     console.log(`[SKY] 📡 Response Keys: ${Object.keys(json).join(', ')}`);
+    console.log(`[SKY] 📋 Response Structure:`, JSON.stringify(json).substring(0, 500));
     
-    let items = json.data?.itineraries || [];
-    console.log(`[SKY] ✓ Found ${items.length} itineraries`);
+    let items: any[] = [];
+    
+    // Try multiple paths to find itineraries
+    if (Array.isArray(json.data?.itineraries)) {
+      items = json.data.itineraries;
+      console.log(`[SKY] ✓ Found data.itineraries (array): ${items.length}`);
+    } else if (json.data?.itineraries && typeof json.data.itineraries === 'object') {
+      // If it's an object with a results property
+      if (Array.isArray(json.data.itineraries.results)) {
+        items = json.data.itineraries.results;
+        console.log(`[SKY] ✓ Found data.itineraries.results (array): ${items.length}`);
+      } else {
+        // If it's just an object with multiple properties, get values
+        const objs = Object.values(json.data.itineraries).filter(Array.isArray);
+        if (objs.length > 0) {
+          items = objs[0] as any[];
+          console.log(`[SKY] ✓ Found nested array in itineraries object: ${items.length}`);
+        }
+      }
+    }
     
     if (items.length === 0) {
-      console.warn(`[SKY] ⚠️ Response Dump:`, JSON.stringify(json).substring(0, 1000));
+      console.warn(`[SKY] ⚠️ No flights found. Full Response:`, JSON.stringify(json).substring(0, 1500));
       return [];
     }
 
     console.log(`[SKY] ✅ SONUÇ: ${items.length} uçuş bulundu.`);
+
+    if (!Array.isArray(items)) {
+      console.error(`[SKY] 🔥 Items is not an array! Type:`, typeof items, 'Value:', items);
+      return [];
+    }
 
     return items.map((item: any, idx: number) => {
       
