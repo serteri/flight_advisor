@@ -18,8 +18,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       placeIdFrom: params.origin,      // Direkt 'BNE'
       placeIdTo: params.destination,   // Direkt 'IST'
       departDate: targetDate, 
-      market: 'en-US',       
-      locale: 'en-US',
+      market: 'AU',       
+      locale: 'en-AU',
       currency: params.currency || 'AUD', 
       adults: '1', 
       cabinClass: 'ECONOMY'
