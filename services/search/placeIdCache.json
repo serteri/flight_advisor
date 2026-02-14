@@ -1,0 +1,6 @@
+{
+  "BNE->SYD": {
+    "from": "BNE",
+    "to": "SYD"
+  }
+}
