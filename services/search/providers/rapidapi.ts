@@ -11,90 +11,85 @@ export async function searchSkyScrapper(params: {
   const apiKey = process.env.RAPID_API_KEY_SKY || 'a5019e6badmsh72c554c174620e5p18995ajsnd5606f30e000';
   const apiHost = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
   
-  // Tarih Düzeltmesi
   let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
-  const url = `https://${apiHost}/web/flights/search-one-way`;
+  const searchUrl = `https://${apiHost}/web/flights/search-one-way`;
+  const incompleteUrl = `https://${apiHost}/web/flights/search-incomplete`;
 
   try {
-    // 1. KABİN SINIFI AYARI (API Büyük Harf İster)
     const cabin = (params.cabinClass || 'ECONOMY').toUpperCase();
-
-    // 2. YOLCU SAYISI AYARI
     const adultCount = (params.adults || 1).toString();
-
-    // 3. MARKET AYARI (Para birimine göre otomatik)
     const currency = params.currency || 'AUD';
     const market = currency === 'AUD' ? 'AU' : 'US';
 
-    console.log(`🚀 [SKY] UÇUŞ ARAMA: ${params.origin} -> ${params.destination} (${targetDate}) | ${cabin}, ${adultCount} yolcu`);
-
     const queryParams = new URLSearchParams({
-      placeIdFrom: params.origin,
-      placeIdTo: params.destination,
+      placeIdFrom: params.origin,      
+      placeIdTo: params.destination,   
       departDate: targetDate, 
-      market: market,
-      locale: 'en-US',
-      currency: currency,
-      adults: adultCount,
-      cabinClass: cabin
+      market: market,        
+      locale: 'en-US',     
+      currency: currency, 
+      adults: adultCount,    
+      cabinClass: cabin      
     });
 
-    const fullUrl = `${url}?${queryParams.toString()}`;
-    console.log(`[SKY] 📍 API URL: ${fullUrl}`);
+    console.log(`🚀 API İsteği (İlk Parti): ${searchUrl}?${queryParams.toString()}`);
 
-    const res = await fetch(fullUrl, {
+    // 1. İLK İSTEK
+    let res = await fetch(`${searchUrl}?${queryParams.toString()}`, {
       method: 'GET',
-      headers: { 
-        'X-RapidAPI-Key': apiKey, 
-        'X-RapidAPI-Host': apiHost 
-      }
+      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
     });
 
-    console.log(`[SKY] 📊 Response Status: ${res.status}`);
+    if (!res.ok) return [];
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[SKY] 🔥 HATA (${res.status}):`, errText.substring(0, 500));
-      return [];
-    }
-
-    const json = await res.json();
+    let json = await res.json();
+    let allItems: any[] = extractFlights(json);
     
-    // 🕵️‍♂️ VERİ MADENCİLİĞİ: Uçuşlar nerede saklanıyor?
-    let items: any[] = [];
-    const itineraries = json.data?.itineraries || json.itineraries;
+    // Durum kontrolü
+    let status = json.data?.context?.status || 'complete';
+    let sessionId = json.data?.context?.sessionId;
+    let loopCount = 0;
 
-    if (itineraries) {
-        // DURUM 1: 'buckets' yapısı (Web API genelde bunu kullanır)
-        if (itineraries.buckets && Array.isArray(itineraries.buckets)) {
-            console.log("📦 'Buckets' yapısı bulundu, uçuşlar toplanıyor...");
-            itineraries.buckets.forEach((bucket: any) => {
-                if (bucket.items && Array.isArray(bucket.items)) {
-                    items.push(...bucket.items);
-                }
-            });
-        } 
-        // DURUM 2: Direkt 'results' listesi
-        else if (itineraries.results && Array.isArray(itineraries.results)) {
-            console.log("📄 'Results' listesi bulundu...");
-            items = itineraries.results;
-        } 
-        // DURUM 3: Direkt kendisi bir liste
-        else if (Array.isArray(itineraries)) {
-            console.log("📋 Direct array found...");
-            items = itineraries;
+    console.log(`📊 İlk tur: ${allItems.length} uçuş, Status: ${status}`);
+
+    // 2. DÖNGÜ: "incomplete" olduğu sürece devam et (Max 5 kere dene)
+    while (status === 'incomplete' && sessionId && loopCount < 5) {
+        loopCount++;
+        console.log(`⏳ Yükleniyor... Tur: ${loopCount} (Şu anki: ${allItems.length} uçuş)`);
+        
+        // 1.5 saniye bekle (API'yi boğmamak için)
+        await new Promise(r => setTimeout(r, 1500));
+
+        const nextParams = new URLSearchParams({ sessionId: sessionId });
+        
+        res = await fetch(`${incompleteUrl}?${nextParams.toString()}`, {
+            method: 'GET',
+            headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+        });
+
+        if (!res.ok) break;
+
+        json = await res.json();
+        
+        // Yeni gelenleri ekle
+        const newItems = extractFlights(json);
+        if (newItems.length > 0) {
+            allItems = [...allItems, ...newItems];
+            console.log(`✅ Tur ${loopCount}: +${newItems.length} uçuş (Toplam: ${allItems.length})`);
         }
+
+        // Durumu güncelle
+        status = json.data?.context?.status || 'complete';
     }
 
-    // Çift kayıtları temizle
-    const uniqueItems = Array.from(new Map(items.map(item => [item.id, item])).values());
+    // 3. ÇİFT KAYITLARI TEMİZLE
+    const uniqueItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
 
-    console.log(`✅ SONUÇ: ${uniqueItems.length} benzersiz uçuş bulundu.`);
+    console.log(`✅ TOPLAM SONUÇ: ${uniqueItems.length} benzersiz uçuş bulundu! 🎉`);
 
     return uniqueItems.map((item: any) => {
-      // Satıcıları Topla
       const agents = item.pricingOptions?.map((opt: any) => ({
         name: opt.agent?.name,           
         price: opt.price?.amount,        
@@ -124,7 +119,6 @@ export async function searchSkyScrapper(params: {
         currency: currency,
         cabinClass: cabin.toLowerCase() as any,
         
-        // Frontend listesi için booking providers
         bookingProviders: agents.map((a: any) => ({
           name: a.name || 'Unknown',
           price: a.price || 0,
@@ -134,7 +128,6 @@ export async function searchSkyScrapper(params: {
           type: 'agency' as const
         })),
         
-        // Link varsa koy, yoksa undefined
         deepLink: bestAgentWithUrl ? bestAgentWithUrl.url : undefined,
         bookingLink: bestAgentWithUrl ? bestAgentWithUrl.url : undefined
       };
@@ -144,6 +137,32 @@ export async function searchSkyScrapper(params: {
     console.error("🔥 CATCH HATASI:", error.message);
     return [];
   }
+}
+
+// 🕵️‍♂️ YARDIMCI FONKSİYON: JSON'dan Uçuşları Çıkarır
+function extractFlights(json: any) {
+    let items: any[] = [];
+    const itineraries = json.data?.itineraries || json.itineraries;
+
+    if (itineraries) {
+        // Bucket yapısı
+        if (itineraries.buckets && Array.isArray(itineraries.buckets)) {
+            itineraries.buckets.forEach((bucket: any) => {
+                if (bucket.items && Array.isArray(bucket.items)) {
+                    items.push(...bucket.items);
+                }
+            });
+        } 
+        // Results Listesi
+        else if (itineraries.results && Array.isArray(itineraries.results)) {
+            items = itineraries.results;
+        } 
+        // Direkt Liste
+        else if (Array.isArray(itineraries)) {
+            items = itineraries;
+        }
+    }
+    return items;
 }
 
 export async function searchAirScraper(params: any) {
