@@ -9,8 +9,15 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
   // Promise.allSettled ile tüm sağlayıcıları paralel çalıştırıyoruz
   const startTime = Date.now();
   const [duffelRes, skyRes] = await Promise.allSettled([
-    searchDuffel(params),       // ✅ DUFFEL YENİDEN AKTİF
-    searchSkyScrapper(params),  // ✅ Sky Scrapper (Aktif)
+    searchDuffel(params),
+    searchSkyScrapper({
+      origin: params.origin,
+      destination: params.destination,
+      date: params.date,
+      currency: params.currency,
+      cabinClass: params.cabin,
+      adults: params.adults
+    }),
     // searchKiwi(params),         // ❌ Kiwi (Geçici Olarak Kapalı - 401 Hatası)
     
     // ❌ BU SATIRI KESİNLİKLE SİL VEYA YORUM YAP:

@@ -1,7 +1,13 @@
 import { FlightResult, FlightSource } from "@/types/hybridFlight";
 
-export async function searchSkyScrapper(params: { origin: string, destination: string, date: string, currency?: string }): Promise<FlightResult[]> {
-  // 1. AYARLAR
+export async function searchSkyScrapper(params: { 
+  origin: string, 
+  destination: string, 
+  date: string, 
+  currency?: string,
+  cabinClass?: string,
+  adults?: number
+}): Promise<FlightResult[]> {
   const apiKey = process.env.RAPID_API_KEY_SKY || 'a5019e6badmsh72c554c174620e5p18995ajsnd5606f30e000';
   const apiHost = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
   
@@ -9,24 +15,34 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
   let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
-  console.log(`🚀 [SKY] DİREKT UÇUŞ ARAMA: ${params.origin} -> ${params.destination} (${targetDate})`);
-
   const url = `https://${apiHost}/web/flights/search-one-way`;
 
   try {
+    // 1. KABİN SINIFI AYARI (API Büyük Harf İster)
+    const cabin = (params.cabinClass || 'ECONOMY').toUpperCase();
+
+    // 2. YOLCU SAYISI AYARI
+    const adultCount = (params.adults || 1).toString();
+
+    // 3. MARKET AYARI (Para birimine göre otomatik)
+    const currency = params.currency || 'AUD';
+    const market = currency === 'AUD' ? 'AU' : 'US';
+
+    console.log(`🚀 [SKY] UÇUŞ ARAMA: ${params.origin} -> ${params.destination} (${targetDate}) | ${cabin}, ${adultCount} yolcu`);
+
     const queryParams = new URLSearchParams({
-      placeIdFrom: params.origin,      // Direkt 'BNE'
-      placeIdTo: params.destination,   // Direkt 'IST'
+      placeIdFrom: params.origin,
+      placeIdTo: params.destination,
       departDate: targetDate, 
-      market: 'AU',       
-      locale: 'en-AU',
-      currency: params.currency || 'AUD', 
-      adults: '1', 
-      cabinClass: 'ECONOMY'
+      market: market,
+      locale: 'en-US',
+      currency: currency,
+      adults: adultCount,
+      cabinClass: cabin
     });
 
     const fullUrl = `${url}?${queryParams.toString()}`;
-    console.log(`[SKY] 📍 Full URL: ${fullUrl}`);
+    console.log(`[SKY] 📍 API URL: ${fullUrl}`);
 
     const res = await fetch(fullUrl, {
       method: 'GET',
@@ -46,32 +62,17 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
 
     const json = await res.json();
     
-    // ✅ VERİ YAPISINI LOGLAYALIM
     console.log(`[SKY] 📡 Response Keys: ${Object.keys(json).join(', ')}`);
-    console.log(`[SKY] 📡 data keys: ${Object.keys(json.data || {}).join(', ')}`);
     
-    // Path 1'i dene
     let items = json.data?.itineraries || [];
-    console.log(`[SKY] ✓ data.itineraries: ${items.length} items`);
+    console.log(`[SKY] ✓ Found ${items.length} itineraries`);
     
-    // Path 2'yi dene (eğer ilki boş ise)
-    if (items.length === 0) {
-      items = json.itineraries || [];
-      console.log(`[SKY] ✓ itineraries (direct): ${items.length} items`);
-    }
-    
-    // Path 3'ü dene: results
-    if (items.length === 0) {
-      items = json.data?.itineraries?.results || [];
-      console.log(`[SKY] ✓ data.itineraries.results: ${items.length} items`);
-    }
-
-    console.log(`[SKY] ✅ SONUÇ: ${items.length} uçuş bulundu.`);
-
     if (items.length === 0) {
       console.warn(`[SKY] ⚠️ Response Dump:`, JSON.stringify(json).substring(0, 1000));
       return [];
     }
+
+    console.log(`[SKY] ✅ SONUÇ: ${items.length} uçuş bulundu.`);
 
     return items.map((item: any, idx: number) => {
       
@@ -109,8 +110,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
         stops: firstLeg?.stopCount || 0,
         
         price: agents[0]?.price || item.price?.raw || 0,
-        currency: params.currency || 'AUD',
-        cabinClass: 'economy' as const,
+        currency: currency,
+        cabinClass: cabin.toLowerCase() as any,
         
         // Frontend listesi için booking providers
         bookingProviders: agents.map((a: any) => ({

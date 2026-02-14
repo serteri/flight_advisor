@@ -11,7 +11,14 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
     // 🔥 4'LÜ PARALEL ARAMA (OPENCLAW KAPALI, KIWI EKLENDİ)
     const [duffelResults, skyResults, airResults, kiwiResults] = await Promise.all([
         searchDuffel(params),
-        searchSkyScrapper(params),
+        searchSkyScrapper({
+            origin: params.origin,
+            destination: params.destination,
+            date: params.date,
+            currency: params.currency,
+            cabinClass: params.cabin,
+            adults: params.adults
+        }),
         searchAirScraper(params),
         searchKiwi(params)
         // searchOpenClaw(params) // DEVRE DISI 
