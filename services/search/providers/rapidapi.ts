@@ -1,4 +1,5 @@
 import { FlightResult, FlightSource } from "@/types/hybridFlight";
+import { resolveSkyPlaceIds } from "../skyPlaceResolver";
 
 export async function searchSkyScrapper(params: { 
   origin: string, 
@@ -11,8 +12,13 @@ export async function searchSkyScrapper(params: {
   const apiKey = process.env.RAPID_API_KEY_SKY || 'a5019e6badmsh72c554c174620e5p18995ajsnd5606f30e000';
   const apiHost = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
   
-  let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
-  if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
+    let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
+    if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
+
+    // Resolve place-id variants using a probe resolver which tries common formats
+    const resolved = await resolveSkyPlaceIds(params.origin, params.destination, targetDate, apiKey, apiHost);
+    const placeIdFrom = resolved.from;
+    const placeIdTo = resolved.to;
 
   const searchUrl = `https://${apiHost}/web/flights/search-one-way`;
   const incompleteUrl = `https://${apiHost}/web/flights/search-incomplete`;
@@ -24,8 +30,8 @@ export async function searchSkyScrapper(params: {
     const market = currency === 'AUD' ? 'AU' : 'US';
 
     const queryParams = new URLSearchParams({
-      placeIdFrom: params.origin,      
-      placeIdTo: params.destination,   
+      placeIdFrom: placeIdFrom,      
+      placeIdTo: placeIdTo,   
       departDate: targetDate, 
       market: market,        
       locale: 'en-US',     
@@ -34,6 +40,8 @@ export async function searchSkyScrapper(params: {
       cabinClass: cabin      
     });
 
+    // Debug: show the normalized place ids (safe, does not print API keys)
+    console.log(`🚀 SkyScrapper Request -> from=${placeIdFrom} to=${placeIdTo} date=${targetDate}`);
     console.log(`🚀 API İsteği (İlk Parti): ${searchUrl}?${queryParams.toString()}`);
 
     // 1. İLK İSTEK
@@ -45,6 +53,42 @@ export async function searchSkyScrapper(params: {
     if (!res.ok) return [];
 
     let json = await res.json();
+    // Debug: log a trimmed version of the raw response to help diagnose empty results
+    try {
+      const raw = JSON.stringify(json);
+      console.log(`🔍 Raw Sky response (trimmed 2k): ${raw.slice(0, 2000)}`);
+    } catch (e) {
+      console.warn('Could not stringify Sky response for debug');
+    }
+
+    // If provider complains about invalid placeId, retry using raw IATA codes (no -sky)
+    if (json && json.errors && (json.errors.placeIdFrom || json.errors.placeIdTo)) {
+      console.warn('⚠️ Sky API reported invalid placeId, retrying with plain IATA codes');
+      const retryParams = new URLSearchParams({
+        placeIdFrom: params.origin,
+        placeIdTo: params.destination,
+        departDate: targetDate,
+        market: market,
+        locale: 'en-US',
+        currency: currency,
+        adults: adultCount,
+        cabinClass: cabin
+      });
+
+      console.log(`🚀 Retry API İsteği (plain IATA): ${searchUrl}?${retryParams.toString()}`);
+      const retryRes = await fetch(`${searchUrl}?${retryParams.toString()}`, {
+        method: 'GET',
+        headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+      });
+
+      if (retryRes.ok) {
+        json = await retryRes.json();
+        try { console.log(`🔍 Raw Sky retry response (trimmed 2k): ${JSON.stringify(json).slice(0,2000)}`); } catch(e){}
+      } else {
+        console.warn('Sky retry failed with status', retryRes.status);
+      }
+    }
+
     let allItems: any[] = extractFlights(json);
     
     // Durum kontrolü
@@ -54,13 +98,13 @@ export async function searchSkyScrapper(params: {
 
     console.log(`📊 İlk tur: ${allItems.length} uçuş, Status: ${status}`);
 
-    // 2. DÖNGÜ: "incomplete" olduğu sürece devam et (Max 5 kere dene)
-    while (status === 'incomplete' && sessionId && loopCount < 5) {
+    // 2. DÖNGÜ: "incomplete" olduğu sürece devam et (Max 3 kere dene, timeout'tan kaçınmak için)
+    while (status === 'incomplete' && sessionId && loopCount < 3) {
         loopCount++;
         console.log(`⏳ Yükleniyor... Tur: ${loopCount} (Şu anki: ${allItems.length} uçuş)`);
         
-        // 1.5 saniye bekle (API'yi boğmamak için)
-        await new Promise(r => setTimeout(r, 1500));
+        // 500ms bekle (API'yi boğmamak için ama timeout'dan kaçınmak için kısaltılmış)
+        await new Promise(r => setTimeout(r, 500));
 
         const nextParams = new URLSearchParams({ sessionId: sessionId });
         

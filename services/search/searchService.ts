@@ -6,51 +6,55 @@ import { searchKiwi } from './providers/kiwi'; // Kiwi (Yeni Ekledik)
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
 
-  // Promise.allSettled ile tüm sağlayıcıları paralel çalıştırıyoruz
   const startTime = Date.now();
-  const [duffelRes, skyRes] = await Promise.allSettled([
-    searchDuffel(params),
-    searchSkyScrapper({
+
+  const providerPromises: { name: string; promise: Promise<any> }[] = [];
+
+  if (process.env.DUFFEL_ACCESS_TOKEN) {
+    providerPromises.push({ name: 'duffel', promise: searchDuffel(params) });
+  } else {
+    console.warn('⚠️ Skipping Duffel: DUFFEL_ACCESS_TOKEN not set');
+  }
+
+  if (process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY) {
+    providerPromises.push({ name: 'sky', promise: searchSkyScrapper({
       origin: params.origin,
       destination: params.destination,
       date: params.date,
       currency: params.currency,
       cabinClass: params.cabin,
       adults: params.adults
-    }),
-    // searchKiwi(params),         // ❌ Kiwi (Geçici Olarak Kapalı - 401 Hatası)
-    
-    // ❌ BU SATIRI KESİNLİKLE SİL VEYA YORUM YAP:
-    // searchOpenClaw(params) 
-  ]);
+    })});
+  } else {
+    console.warn('⚠️ Skipping SkyScrapper: RAPID_API_KEY_SKY not set');
+  }
+
+  if (process.env.KIWI_API_KEY) {
+    providerPromises.push({ name: 'kiwi', promise: searchKiwi(params) });
+  } else {
+    console.warn('⚠️ Skipping Kiwi: KIWI_API_KEY not set');
+  }
+
+  const settled = await Promise.allSettled(providerPromises.map(p => p.promise));
 
   const elapsed = Date.now() - startTime;
 
-  // Sonuçları al
-  let duffelFlights: FlightResult[] = [];
-  let skyFlights: FlightResult[] = [];
-  
-  if (duffelRes.status === 'fulfilled') {
-    duffelFlights = duffelRes.value;
-    console.log(`✅ Duffel: ${duffelFlights.length} flights (${elapsed}ms)`);
-  } else {
-    console.error(`❌ Duffel Error:`, duffelRes.reason?.message || duffelRes.reason);
-  }
+  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [], kiwi: [] };
 
-  if (skyRes.status === 'fulfilled') {
-    skyFlights = skyRes.value;
-    console.log(`✅ Sky Scrapper: ${skyFlights.length} flights (${elapsed}ms)`);
-  } else {
-    console.error(`❌ Sky Scrapper Error:`, skyRes.reason?.message || skyRes.reason);
-  }
-  
-  const kiwiFlights: FlightResult[] = [];
+  settled.forEach((res, idx) => {
+    const name = providerPromises[idx].name;
+    if (res.status === 'fulfilled') {
+      resultsByName[name] = res.value || [];
+      console.log(`✅ ${name}: ${resultsByName[name].length} flights (${elapsed}ms)`);
+    } else {
+      console.error(`❌ ${name} Error:`, res.reason?.message || res.reason);
+    }
+  });
 
-  console.log(`📊 Provider Stats: Duffel(${duffelFlights.length}) Sky(${skyFlights.length}) Kiwi(${kiwiFlights.length}) - Total: ${elapsed}ms`);
+  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) Kiwi(${resultsByName.kiwi.length}) - Total: ${elapsed}ms`);
 
-  // Sonuçları birleştirme mantığı...
-  const allFlights = [...duffelFlights, ...skyFlights, ...kiwiFlights];
-    
+  const allFlights = [...resultsByName.duffel, ...resultsByName.sky, ...resultsByName.kiwi];
+
   console.log(`📊 TOTAL FOUND: ${allFlights.length} flights`);
 
   return allFlights;

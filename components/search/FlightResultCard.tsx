@@ -157,7 +157,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                     {/* BUTON */}
                     <BookButton
                         flight={flight}
-                        label={flight.source === 'DUFFEL' ? t('book_aviasales') : t('book_site')}
+                        label={t('bookButton')}
                     />
                     <p className="text-[8px] text-center text-slate-400 mt-1">
                         {flight.source === 'DUFFEL' ? t('safeRedirect') : t('official_site')}

@@ -3,6 +3,14 @@ export function generateBookingLink(flight: any): string {
   if (flight.deepLink) return flight.deepLink;
   if (flight.bookingLink) return flight.bookingLink;
 
+  // If this is a Duffel result, prefer the Duffel offer URL (if we have an id)
+  const src = (flight.source || '').toString().toUpperCase();
+  if (src === 'DUFFEL') {
+    if (flight.id) return `https://app.duffel.com/offers/${flight.id}`;
+    // If no id, avoid forcing Aviasales — fallback to a safe blank link
+    return '#';
+  }
+
   // 2. Link yoksa Aviasales Arama Linki oluştur (Fallback)
   const origin = flight.origin || flight.from;
   const destination = flight.destination || flight.to;

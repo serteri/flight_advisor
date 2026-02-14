@@ -1,10 +1,11 @@
 
 import dotenv from 'dotenv';
-import { duffel } from '../lib/duffel';
-import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper';
-import { searchSkyScrapper, searchAirScraper } from '../services/search/providers/rapidapi';
-
 dotenv.config({ path: '.env' });
+
+import { mapDuffelToPremiumAgent } from '../lib/parser/duffelMapper';
+import { searchDuffel } from '../services/search/providers/duffel';
+import { searchSkyScrapper, searchAirScraper } from '../services/search/providers/rapidapi';
+import { searchKiwi } from '../services/search/providers/kiwi';
 
 async function testSearch() {
     const origin = 'BNE';
@@ -15,19 +16,15 @@ async function testSearch() {
 
     try {
         console.log('--- DUFFEL CHECK ---');
-        const duffelStart = Date.now();
-        const duffelRes = await duffel.offerRequests.create({
-            slices: [{
-                origin,
-                destination,
-                departure_date: date
-            }],
-            passengers: [{ type: "adult" }],
-            cabin_class: "economy"
-        } as any) as any;
-        console.log(`Duffel Status: ${duffelRes.status}`);
-        console.log(`Duffel Offers: ${duffelRes.data.offers.length}`);
-        console.log(`Duffel Time: ${Date.now() - duffelStart}ms`);
+        const token = process.env.DUFFEL_ACCESS_TOKEN;
+        if (!token) {
+            console.warn('⚠️ DUFFEL_ACCESS_TOKEN missing — skipping Duffel test');
+        } else {
+            const duffelStart = Date.now();
+            const duffelRes = await searchDuffel({ origin, destination, date } as any);
+            console.log(`Duffel Offers: ${duffelRes.length}`);
+            console.log(`Duffel Time: ${Date.now() - duffelStart}ms`);
+        }
     } catch (error: any) {
         console.error('Duffel Error:', error.message || error);
     }
@@ -50,6 +47,16 @@ async function testSearch() {
         console.log(`Air Time: ${Date.now() - airStart}ms`);
     } catch (error: any) {
         console.error('Air Error:', error.message || error);
+    }
+
+    try {
+        console.log('\n--- KIWI (Tequila) CHECK ---');
+        const kiwiStart = Date.now();
+        const kiwiRes = await searchKiwi({ origin, destination, date });
+        console.log(`Kiwi Offers: ${kiwiRes.length}`);
+        console.log(`Kiwi Time: ${Date.now() - kiwiStart}ms`);
+    } catch (error: any) {
+        console.error('Kiwi Error:', error.message || error);
     }
 }
 
