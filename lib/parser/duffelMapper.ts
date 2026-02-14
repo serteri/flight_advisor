@@ -41,6 +41,30 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
     // Artık Aviasales'e zorlama yönlendirmesi yapılmıyor
     // Kullanıcılar doğrudan booking provider'ları seçebilecek
 
+    // Compute layovers between segments
+    const layovers: any[] = [];
+    const segs = firstSlice.segments || [];
+    for (let i = 0; i < segs.length - 1; i++) {
+        const cur = segs[i];
+        const next = segs[i + 1];
+        try {
+            const arrive = new Date(cur.arriving_at).getTime();
+            const departNext = new Date(next.departing_at).getTime();
+            const diffMins = Math.max(0, Math.floor((departNext - arrive) / 60000));
+            layovers.push({ duration: diffMins, city: cur.destination?.city || getIata(cur.destination), airport: getIata(cur.destination) });
+        } catch (e) {
+            layovers.push({ duration: 0, city: getIata(cur.destination), airport: getIata(cur.destination) });
+        }
+    }
+
+    // Improve baggage display: try multiple fields
+    let baggageLabel = 'Kontrol Et';
+    try {
+        const pax = offer.passengers?.[0];
+        if (pax?.baggages && pax.baggages.length > 0) baggageLabel = 'Dahil';
+        else if (offer.includes && offer.includes.baggage) baggageLabel = 'Dahil';
+    } catch (e) { }
+
     return {
         id: offer.id,
         source: 'DUFFEL' as FlightSource,
@@ -56,17 +80,18 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         arriveTime: arrivalDate,
         duration: durationMins,
         durationLabel: durationText,
-        stops: firstSlice.segments.length - 1,
+        stops: segs.length - 1,
         price: parseFloat(offer.total_amount),
         currency: offer.total_currency,
         cabinClass: 'economy',
         amenities: {
             hasWifi: false,
             hasMeal: true,
-            baggage: offer.passengers?.[0]?.baggages?.length > 0 ? "Dahil" : "Kontrol Et"
+            baggage: baggageLabel
         },
-        segments: firstSlice.segments,
-        deepLink: undefined, // Duffel'den doğrudan satın alma linki yok, Aviasales'e yönlendirme KALDIRILDI
-        bookingLink: undefined // Duffel kullanıcıyı kendi sitesine yönlendirir
+        segments: segs,
+        layovers,
+        deepLink: undefined,
+        bookingLink: undefined
     };
 }

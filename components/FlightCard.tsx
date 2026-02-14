@@ -21,6 +21,7 @@ import {
 import { AirlineLogo } from "@/components/AirlineLogo";
 import { useTranslations } from "next-intl";
 import { FareExplainer } from "@/components/FareExplainer";
+import { generateBookingLink } from '@/lib/booking/linkGenerator';
 import WatchButton from "@/components/flights/WatchButton";
 import { FlightForScoring } from "@/lib/flightTypes";
 
@@ -61,8 +62,8 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const hasMultipleProviders = providers.length > 1;
     const isDuffel = flight.source === 'duffel' || flight.source === 'DUFFEL';
     
-    // Duffel için özel link (Aviasales)
-    const actionLink = flight.deepLink || flight.bookingLink || "#";
+    // Compute the external booking link using generator (handles Duffel and others)
+    const actionLink = generateBookingLink(flight as any);
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
