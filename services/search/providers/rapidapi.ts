@@ -63,31 +63,47 @@ export async function searchSkyScrapper(params: {
     const json = await res.json();
     
     console.log(`[SKY] 📡 Response Keys: ${Object.keys(json).join(', ')}`);
-    console.log(`[SKY] 📋 Response Structure:`, JSON.stringify(json).substring(0, 500));
+    console.log(`[SKY] � data Keys: ${Object.keys(json.data || {}).join(', ')}`);
+    console.log(`[SKY] 📡 itineraries Keys: ${Object.keys(json.data?.itineraries || {}).join(', ')}`);
     
     let items: any[] = [];
     
-    // Try multiple paths to find itineraries
-    if (Array.isArray(json.data?.itineraries)) {
-      items = json.data.itineraries;
-      console.log(`[SKY] ✓ Found data.itineraries (array): ${items.length}`);
-    } else if (json.data?.itineraries && typeof json.data.itineraries === 'object') {
-      // If it's an object with a results property
-      if (Array.isArray(json.data.itineraries.results)) {
-        items = json.data.itineraries.results;
+    // The API returns itineraries as an object, not array
+    // Look for individual flight items in different locations
+    if (json.data?.itineraries) {
+      const iter = json.data.itineraries;
+      
+      // Try common paths for flight arrays
+      if (Array.isArray(iter.itineraries)) {
+        items = iter.itineraries;
+        console.log(`[SKY] ✓ Found data.itineraries.itineraries (array): ${items.length}`);
+      } else if (Array.isArray(iter.results)) {
+        items = iter.results;
         console.log(`[SKY] ✓ Found data.itineraries.results (array): ${items.length}`);
-      } else {
-        // If it's just an object with multiple properties, get values
-        const objs = Object.values(json.data.itineraries).filter(Array.isArray);
-        if (objs.length > 0) {
-          items = objs[0] as any[];
-          console.log(`[SKY] ✓ Found nested array in itineraries object: ${items.length}`);
+      } else if (iter.filterStats?.total) {
+        console.log(`[SKY] 📊 API says ${iter.filterStats.total} flights exist but they're not in expected structure`);
+        console.log(`[SKY] 📋 Available keys:`, Object.keys(iter).slice(0, 10).join(', '));
+    
+        // Look for any array in the object
+        const allArrays = Object.entries(iter)
+          .filter(([_, v]) => Array.isArray(v) && (v as any[]).length > 0)
+          .map(([k, v]) => ({ key: k, count: (v as any[]).length }));
+        
+        if (allArrays.length > 0) {
+          console.log(`[SKY] 🔍 Found arrays:`, allArrays.map(a => `${a.key}(${a.count})`).join(', '));
+          items = iter[allArrays[0].key as keyof typeof iter] as any[];
+          console.log(`[SKY] ✓ Using ${allArrays[0].key}: ${items.length} items`);
         }
       }
     }
     
     if (items.length === 0) {
-      console.warn(`[SKY] ⚠️ No flights found. Full Response:`, JSON.stringify(json).substring(0, 1500));
+      console.warn(`[SKY] ⚠️ No flights found. Response structure:`, JSON.stringify({
+        hasData: !!json.data,
+        iterKeys: Object.keys(json.data?.itineraries || {}),
+        total: json.data?.itineraries?.filterStats?.total,
+        firstItems: JSON.stringify(json.data?.itineraries).substring(0, 800)
+      }));
       return [];
     }
 
