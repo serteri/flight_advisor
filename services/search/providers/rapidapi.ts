@@ -9,12 +9,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
   let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
 
-  console.log(`🚀 DİREKT UÇUŞ ARAMA: ${params.origin} -> ${params.destination} (${targetDate})`);
+  console.log(`🚀 [SKY] DİREKT UÇUŞ ARAMA: ${params.origin} -> ${params.destination} (${targetDate})`);
 
-  // 🚨 DEĞİŞİKLİK: Konum çözme (resolveLocation) YOK! 
-  // Dokümanda "Ex: EWR" diyor, yani IATA kodunu direkt kabul ediyor.
-  // BNE ve IST kodlarını doğrudan kullanıyoruz.
-  
   const url = `https://${apiHost}/web/flights/search-one-way`;
 
   try {
@@ -30,7 +26,7 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     });
 
     const fullUrl = `${url}?${queryParams.toString()}`;
-    console.log(`📍 URL: ${fullUrl.substring(0, 120)}...`);
+    console.log(`[SKY] 📍 Full URL: ${fullUrl}`);
 
     const res = await fetch(fullUrl, {
       method: 'GET',
@@ -40,19 +36,42 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       }
     });
 
+    console.log(`[SKY] 📊 Response Status: ${res.status}`);
+
     if (!res.ok) {
-      // Hata detayını görelim
       const errText = await res.text();
-      console.error(`🔥 API HATASI (${res.status}):`, errText.substring(0, 300));
+      console.error(`[SKY] 🔥 HATA (${res.status}):`, errText.substring(0, 500));
       return [];
     }
 
     const json = await res.json();
     
-    // Veri yolu kontrolü
-    const items = json.data?.itineraries || [];
+    // ✅ VERİ YAPISINI LOGLAYALIM
+    console.log(`[SKY] 📡 Response Keys: ${Object.keys(json).join(', ')}`);
+    console.log(`[SKY] 📡 data keys: ${Object.keys(json.data || {}).join(', ')}`);
+    
+    // Path 1'i dene
+    let items = json.data?.itineraries || [];
+    console.log(`[SKY] ✓ data.itineraries: ${items.length} items`);
+    
+    // Path 2'yi dene (eğer ilki boş ise)
+    if (items.length === 0) {
+      items = json.itineraries || [];
+      console.log(`[SKY] ✓ itineraries (direct): ${items.length} items`);
+    }
+    
+    // Path 3'ü dene: results
+    if (items.length === 0) {
+      items = json.data?.itineraries?.results || [];
+      console.log(`[SKY] ✓ data.itineraries.results: ${items.length} items`);
+    }
 
-    console.log(`✅ SONUÇ: ${items.length} uçuş bulundu.`);
+    console.log(`[SKY] ✅ SONUÇ: ${items.length} uçuş bulundu.`);
+
+    if (items.length === 0) {
+      console.warn(`[SKY] ⚠️ Response Dump:`, JSON.stringify(json).substring(0, 1000));
+      return [];
+    }
 
     return items.map((item: any, idx: number) => {
       
@@ -70,6 +89,10 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
       const bestAgentWithUrl = agents.find((a: any) => a.url && a.url.startsWith('http'));
 
       const firstLeg = item.legs?.[0];
+
+      if (idx === 0) {
+        console.log(`[SKY] 📍 Sample item - Agents: ${agents.length}, Legs: ${item.legs?.length}`);
+      }
 
       return {
         id: `SKY_${item.id || idx}`,
@@ -106,7 +129,8 @@ export async function searchSkyScrapper(params: { origin: string, destination: s
     });
 
   } catch (error: any) {
-    console.error("🔥 KRİTİK HATA:", error.name, error.message);
+    console.error("[SKY] 🔥 KRİTİK HATA:", error.name, error.message);
+    console.error("[SKY] Stack:", error.stack?.substring(0, 300));
     return [];
   }
 }
