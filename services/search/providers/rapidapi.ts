@@ -62,81 +62,52 @@ export async function searchSkyScrapper(params: {
 
     const json = await res.json();
     
-    console.log(`[SKY] 📡 Response Keys: ${Object.keys(json).join(', ')}`);
-    console.log(`[SKY] � data Keys: ${Object.keys(json.data || {}).join(', ')}`);
-    console.log(`[SKY] 📡 itineraries Keys: ${Object.keys(json.data?.itineraries || {}).join(', ')}`);
-    
+    // 🕵️‍♂️ VERİ MADENCİLİĞİ: Uçuşlar nerede saklanıyor?
     let items: any[] = [];
-    
-    // The API returns itineraries as an object, not array
-    // Look for individual flight items in different locations
-    if (json.data?.itineraries) {
-      const iter = json.data.itineraries;
-      
-      // Try common paths for flight arrays
-      if (Array.isArray(iter.itineraries)) {
-        items = iter.itineraries;
-        console.log(`[SKY] ✓ Found data.itineraries.itineraries (array): ${items.length}`);
-      } else if (Array.isArray(iter.results)) {
-        items = iter.results;
-        console.log(`[SKY] ✓ Found data.itineraries.results (array): ${items.length}`);
-      } else if (iter.filterStats?.total) {
-        console.log(`[SKY] 📊 API says ${iter.filterStats.total} flights exist but they're not in expected structure`);
-        console.log(`[SKY] 📋 Available keys:`, Object.keys(iter).slice(0, 10).join(', '));
-    
-        // Look for any array in the object
-        const allArrays = Object.entries(iter)
-          .filter(([_, v]) => Array.isArray(v) && (v as any[]).length > 0)
-          .map(([k, v]) => ({ key: k, count: (v as any[]).length }));
-        
-        if (allArrays.length > 0) {
-          console.log(`[SKY] 🔍 Found arrays:`, allArrays.map(a => `${a.key}(${a.count})`).join(', '));
-          items = iter[allArrays[0].key as keyof typeof iter] as any[];
-          console.log(`[SKY] ✓ Using ${allArrays[0].key}: ${items.length} items`);
+    const itineraries = json.data?.itineraries || json.itineraries;
+
+    if (itineraries) {
+        // DURUM 1: 'buckets' yapısı (Web API genelde bunu kullanır)
+        if (itineraries.buckets && Array.isArray(itineraries.buckets)) {
+            console.log("📦 'Buckets' yapısı bulundu, uçuşlar toplanıyor...");
+            itineraries.buckets.forEach((bucket: any) => {
+                if (bucket.items && Array.isArray(bucket.items)) {
+                    items.push(...bucket.items);
+                }
+            });
+        } 
+        // DURUM 2: Direkt 'results' listesi
+        else if (itineraries.results && Array.isArray(itineraries.results)) {
+            console.log("📄 'Results' listesi bulundu...");
+            items = itineraries.results;
+        } 
+        // DURUM 3: Direkt kendisi bir liste
+        else if (Array.isArray(itineraries)) {
+            console.log("📋 Direct array found...");
+            items = itineraries;
         }
-      }
-    }
-    
-    if (items.length === 0) {
-      console.warn(`[SKY] ⚠️ No flights found. Response structure:`, JSON.stringify({
-        hasData: !!json.data,
-        iterKeys: Object.keys(json.data?.itineraries || {}),
-        total: json.data?.itineraries?.filterStats?.total,
-        firstItems: JSON.stringify(json.data?.itineraries).substring(0, 800)
-      }));
-      return [];
     }
 
-    console.log(`[SKY] ✅ SONUÇ: ${items.length} uçuş bulundu.`);
+    // Çift kayıtları temizle
+    const uniqueItems = Array.from(new Map(items.map(item => [item.id, item])).values());
 
-    if (!Array.isArray(items)) {
-      console.error(`[SKY] 🔥 Items is not an array! Type:`, typeof items, 'Value:', items);
-      return [];
-    }
+    console.log(`✅ SONUÇ: ${uniqueItems.length} benzersiz uçuş bulundu.`);
 
-    return items.map((item: any, idx: number) => {
-      
-      // Satıcıları Topla (Trip.com, Aunt Betty, Gotogate, vb.)
+    return uniqueItems.map((item: any) => {
+      // Satıcıları Topla
       const agents = item.pricingOptions?.map((opt: any) => ({
-        name: opt.agent?.name || "Provider",
+        name: opt.agent?.name,           
         price: opt.price?.amount,        
         image: opt.agent?.imageUrl,      
         url: opt.items?.[0]?.url 
       })) || [];
 
       agents.sort((a: any, b: any) => (a.price || 0) - (b.price || 0));
-      
-      // Linki olan en ucuz satıcıyı bul
       const bestAgentWithUrl = agents.find((a: any) => a.url && a.url.startsWith('http'));
-
       const firstLeg = item.legs?.[0];
 
-      if (idx === 0) {
-        console.log(`[SKY] 📍 Sample item - Agents: ${agents.length}, Legs: ${item.legs?.length}`);
-      }
-
       return {
-        id: `SKY_${item.id || idx}`,
+        id: `SKY_${item.id || Math.random()}`,
         source: 'SKY_SCANNER_PRO' as FlightSource,
         airline: firstLeg?.carriers?.marketing?.[0]?.name || "Airline",
         airlineLogo: firstLeg?.carriers?.marketing?.[0]?.logoUrl,
@@ -157,7 +128,7 @@ export async function searchSkyScrapper(params: {
         bookingProviders: agents.map((a: any) => ({
           name: a.name || 'Unknown',
           price: a.price || 0,
-          currency: params.currency || 'AUD',
+          currency: currency,
           link: a.url || '',
           logo: a.image,
           type: 'agency' as const
@@ -170,8 +141,7 @@ export async function searchSkyScrapper(params: {
     });
 
   } catch (error: any) {
-    console.error("[SKY] 🔥 KRİTİK HATA:", error.name, error.message);
-    console.error("[SKY] Stack:", error.stack?.substring(0, 300));
+    console.error("🔥 CATCH HATASI:", error.message);
     return [];
   }
 }
