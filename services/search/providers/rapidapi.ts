@@ -59,8 +59,7 @@ export async function searchSkyScrapper(params: {
     console.log(`✅ Intelligence Provider found ${items.length} options.`);
 
     return items.map((item: any) => {
-      // Map based on the structure provided in the prompt/doc
-      // Adjust property access if the actual JSON differs
+      // Map Kiwi response to FlightResult
       const segment = item.sector?.sectorSegments?.[0]?.segment; 
       const price = parseFloat(item.price?.amount || "0");
       const relativeUrl = item.bookingOptions?.edges?.[0]?.node?.bookingUrl;
@@ -75,15 +74,16 @@ export async function searchSkyScrapper(params: {
       const durationSeconds = item.duration || 0;
       if (durationSeconds < 15 * 3600) { tags.push("Fastest"); score += 0.5; } 
       
-      const marketingCarrier = segment?.marketingCarrier?.name || "Airline";
-      if (marketingCarrier.includes("Turkish")) { tags.push("Top Rated Airline"); score += 0.5; }
+      // Use operatingCarrier instead of marketingCarrier (that one doesn't exist)
+      const carrierName = segment?.operatingCarrier?.name || "Airline";
+      if (carrierName.includes("Turkish")) { tags.push("Top Rated Airline"); score += 0.5; }
 
       return {
         id: `RAPID_${item.id || Math.random()}`,
         source: 'SKY_SCANNER_PRO' as FlightSource, // Keeping internal ID for consistency
-        airline: marketingCarrier,
-        airlineLogo: segment?.marketingCarrier?.logoUrl,
-        flightNumber: segment?.marketingCarrier?.alternateId || "FLT",
+        airline: carrierName,
+        airlineLogo: segment?.operatingCarrier?.logoUrl,
+        flightNumber: segment?.operatingCarrier?.code || segment?.code || "FLT",
         
         from: originCode,
         to: destCode,
@@ -100,7 +100,7 @@ export async function searchSkyScrapper(params: {
         tags: tags,
         bookingProviders: [
           {
-            name: "Kiwi.com",
+            name: item.provider?.[0]?.name || "Kiwi.com",
             price: price,
             currency: params.currency || 'USD',
             link: deepLink || '',
