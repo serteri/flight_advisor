@@ -79,8 +79,18 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             className="w-full h-full object-contain"
                         />
                     </div>
-                    <div className="text-sm font-semibold text-slate-700 truncate">
-                        {flight.carrierName}
+                    <div className="flex flex-col gap-1">
+                        <div className="text-sm font-semibold text-slate-700 truncate">
+                            {flight.carrierName}
+                        </div>
+                        {/* Provider Badge */}
+                        <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                            isDuffel 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-blue-100 text-blue-700'
+                        }`}>
+                            {isDuffel ? '🏛️ Duffel' : '🌐 Kiwi'}
+                        </div>
                     </div>
                 </div>
 
