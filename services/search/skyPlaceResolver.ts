@@ -24,7 +24,7 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
     if (cached) {
       console.log(`🔒 Sky resolver file cache hit for ${orig}->${dest}: ${cached.from} -> ${cached.to}`);
       // populate memory cache for quicker subsequent hits
-      try { setMemoryCachedPlaceIds(orig, dest, cached.from, cached.to); } catch {}
+      try { setMemoryCachedPlaceIds(orig, dest, cached.from, cached.to); } catch { }
       return { from: cached.from, to: cached.to };
     }
   } catch (e) {
@@ -35,74 +35,30 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
   if (process.env.NODE_ENV === 'production') {
     console.log(`🔒 Sky resolver production mode: preferring plain IATA for ${orig}->${dest}`);
     // populate both caches for subsequent runs
-    try { setCachedPlaceIds(orig, dest, orig, dest); } catch {}
-    try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch {}
+    try { setCachedPlaceIds(orig, dest, orig, dest); } catch { }
+    try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch { }
     return { from: orig, to: dest };
   }
 
-  // Quick resolver: try only 2 formats (plain IATA then -sky)
-  const formats = [
-    { from: orig, to: dest },
-    { from: `${orig}-sky`, to: `${dest}-sky` }
-  ];
+  // Optimization: Skip probing broken /web endpoint. 
+  // Trust IATA codes as they work with the API (verified via test script).
+  // If we really need SkyID resolution for cities, we should use /flights/auto-complete in the future.
 
-  for (const fmt of formats) {
-    try {
-      const from = fmt.from;
-      const to = fmt.to;
+  // Try 2 formats quickly without network probe if possible, or just return IATA.
+  // Since we verified LHR (IATA) works, we can just return the input.
 
-      const params = new URLSearchParams({
-        placeIdFrom: from,
-        placeIdTo: to,
-        departDate: date,
-        market: 'AU',
-        locale: 'en-US',
-        currency: 'AUD',
-        adults: '1',
-        cabinClass: 'ECONOMY'
-      });
+  // return { from: orig, to: dest };
 
-      const url = `${searchUrl}?${params.toString()}`;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost },
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
+  // However, keeping the cache logic if it was populated by other means might be useful.
+  // But strictly, the probe below is BROKEN (404). So we remove it.
 
-      if (!res.ok) continue;
-      const json = await res.json();
-
-      if (json && json.errors && (json.errors.placeIdFrom || json.errors.placeIdTo)) {
-        continue;
-      }
-
-      if (json && (json.data?.itineraries || json.itineraries || json.itineraries?.results)) {
-        console.log(`🔎 Sky resolver selected placeIds: ${from} -> ${to}`);
-        try { setCachedPlaceIds(orig, dest, from, to); } catch {}
-        try { setMemoryCachedPlaceIds(orig, dest, from, to); } catch {}
-        return { from, to };
-      }
-
-      if (!json || (typeof json === 'object' && Object.keys(json).length > 0 && !json.errors)) {
-        console.log(`🔎 Sky resolver accepted placeIds (no errors): ${from} -> ${to}`);
-        try { setCachedPlaceIds(orig, dest, from, to); } catch {}
-        try { setMemoryCachedPlaceIds(orig, dest, from, to); } catch {}
-        return { from, to };
-      }
-
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
-        console.warn(`🔎 Sky resolver timeout for ${fmt.from} -> ${fmt.to}, trying next`);
-      }
-      continue;
-    }
-  }
+  console.log(`🔒 Sky resolver: defaulting to IATA for ${orig}->${dest}`);
+  try { setCachedPlaceIds(orig, dest, orig, dest); } catch { }
+  try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch { }
+  return { from: orig, to: dest };
 
   // Fallback: plain IATA
-  try { setCachedPlaceIds(orig, dest, orig, dest); } catch {}
-  try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch {}
+  try { setCachedPlaceIds(orig, dest, orig, dest); } catch { }
+  try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch { }
   return { from: orig, to: dest };
 }
