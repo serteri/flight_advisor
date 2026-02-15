@@ -37,7 +37,7 @@ async function testBlueFinal() {
     console.log(`📡 İstek Gönderiliyor: ${url}?${params.toString()}`);
     
     const res = await fetch(`${url}?${params.toString()}`, {
-        headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+        headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost }
     });
 
     if (!res.ok) {

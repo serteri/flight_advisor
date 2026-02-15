@@ -21,7 +21,7 @@ async function inspectJson() {
     });
 
     const res = await fetch(`${url}?${params.toString()}`, {
-      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+      headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost }
     });
 
     const json = await res.json();

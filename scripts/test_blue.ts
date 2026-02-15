@@ -31,7 +31,7 @@ async function testBlueV2() {
 
     for (const ep of geoEndpoints) {
         const url = `https://${apiHost}${ep}?query=Brisbane`;
-        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost } });
+        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost } });
         if (res.ok) {
             const json = await res.json();
             const data = json.data?.[0] || json[0];

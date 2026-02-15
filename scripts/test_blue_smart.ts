@@ -24,7 +24,7 @@ async function testBlueSmart() {
     
     for (const path of geoPaths) {
         const url = `https://${apiHost}${path}?query=Brisbane`;
-        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost } });
+        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost } });
         
         if (res.ok) {
             const json = await res.json();

@@ -31,7 +31,7 @@ async function testRealTimeFinal() {
     const res = await fetch(`${url}?${params.toString()}`, {
       method: 'GET', // Dokümanda method yazmasa da search genelde GET'tir.
       headers: { 
-        'X-RapidAPI-Key': apiKey, 
+        'X-RapidAPI-Key': apiKey!, 
         'X-RapidAPI-Host': apiHost 
       }
     });

@@ -37,7 +37,7 @@ async function testRealTimeFix() {
     const res = await fetch(`${searchUrl}?${params.toString()}`, {
       method: 'GET',
       headers: { 
-        'X-RapidAPI-Key': apiKey, 
+        'X-RapidAPI-Key': apiKey!, 
         'X-RapidAPI-Host': apiHost 
       }
     });
