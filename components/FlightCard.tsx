@@ -278,12 +278,10 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                 </PopoverContent>
                             </Popover>
                         ) : (
-                            /* --- FALLBACK: Single View Deal Button --- */
-                            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-                                <a href={actionLink} target="_blank" rel="noopener noreferrer">
-                                    View Deal <ExternalLink className="w-3 h-3 opacity-70" />
-                                </a>
-                            </Button>
+                            /* --- NO BOOKING PROVIDERS: Show price only --- */
+                            <div className="bg-slate-100 text-slate-700 h-10 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm justify-center">
+                                <span className="text-sm font-bold">Price unavailable</span>
+                            </div>
                         )}
                     </div>
                 </div>

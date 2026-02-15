@@ -16,7 +16,8 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
 
-    console.log(`🚀 YARIŞ BAŞLADI: ${origin} -> ${destination} [${date}]`);
+    console.log(`🚀 SEARCH API: ${origin} -> ${destination} [${date}]`);
+    console.log(`📋 ENV CHECK: RAPID_API_KEY=${process.env.RAPID_API_KEY ? 'SET' : 'MISSING'}, RAPID_API_HOST_FLIGHT=${process.env.RAPID_API_HOST_FLIGHT || 'MISSING'}`);
 
     try {
         const queryParams: HybridSearchParams = {
