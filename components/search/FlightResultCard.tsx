@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import BookButton from './BookButton';
 import { Lock, Wifi, Utensils, Luggage, Eye, BellRing } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,15 +24,15 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
     };
 
     return (
-        <div className="bg-white rounded-[16px] p-5 border border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
+        <div className="bg-white rounded-[16px] p-5 border-2 border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
+            {/* DEBUG INDICATOR - REMOVE LATER */}
+            <div className="hidden">DEBUG: FlightResultCard Active</div>
 
             {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
-                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-slate-600' :
-                    flight.source === 'SKY_RAPID' ? 'bg-blue-500' :
-                        flight.source === 'AIR_RAPID' ? 'bg-green-500' : 'bg-orange-500'
+                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
                     }`}>
-                    {flight.source === 'SKY_RAPID' ? 'SKYSCANNER' : flight.source === 'AIR_RAPID' ? 'AIR SCRAPER' : flight.source}
+                    {flight.source === 'DUFFEL' ? 'DUFFEL' : 'KIWI'}
                 </span>
             </div>
 
@@ -55,7 +54,14 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         <img src={flight.airlineLogo} alt={flight.airline} className="w-12 h-12 object-contain" />
                         <div>
                             <h4 className="font-bold text-lg text-slate-900 leading-tight">{flight.airline}</h4>
-                            <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flight.flightNumber}</span>
+                            <div className="flex gap-2 items-center mt-1">
+                                <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flight.flightNumber}</span>
+                                {/* Provider Source Badge */}
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flight.source === 'DUFFEL' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                    }`}>
+                                    {flight.source === 'DUFFEL' ? '🏛️ Duffel' : '🌐 Kiwi'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -67,15 +73,38 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                             <p className="text-xs font-bold text-slate-400">{flight.origin || flight.from}</p>
                         </div>
 
-                        {/* SÜRE VE AKTARMA */}
+                        {/* SÜRE VE AKTARMA DETAYLI */}
                         <div className="flex-1 flex flex-col items-center">
-                            <span className="text-xs font-bold text-slate-600 mb-1">{flight.durationLabel || `${Math.floor(flight.duration / 60)}s ${flight.duration % 60}dk`}</span>
-                            <div className="w-full h-[2px] bg-slate-200 relative my-1">
-                                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white px-1 text-[10px]">✈️</div>
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flight.stops === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                {flight.stops === 0 ? t('direct') : `${flight.stops} ${t('stops')}`}
+                            <span className="text-xs font-bold text-slate-600 mb-1">
+                                {Math.floor(flight.duration / 60)}h {flight.duration % 60}m
                             </span>
+
+                            <div className="w-full h-[2px] bg-slate-200 relative my-1">
+                                {/* Plane Icon */}
+                                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white px-1 text-[10px]">✈️</div>
+
+                                {/* Layover Dots */}
+                                {flight.layovers && flight.layovers.length > 0 && (
+                                    <div className="absolute top-[-3px] left-0 w-full flex justify-between px-2">
+                                        {flight.layovers.map((_, i) => (
+                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-white" style={{ left: `${(i + 1) * (100 / (flight.layovers!.length + 1))}%` }} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col items-center">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flight.stops === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                    {flight.stops === 0 ? t('direct') : `${flight.stops} ${t('stops')}`}
+                                </span>
+
+                                {/* Layover Details */}
+                                {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
+                                    <span className="text-[9px] text-slate-500 mt-0.5 text-center">
+                                        {flight.layovers.map(l => `${l.airport} (${Math.floor(l.duration / 60)}h ${l.duration % 60}m)`).join(', ')}
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="text-right">
@@ -154,14 +183,18 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         </div>
                     )}
 
-                    {/* BUTON */}
-                    <BookButton
-                        flight={flight}
-                        label={t('bookButton')}
-                    />
-                    <p className="text-[8px] text-center text-slate-400 mt-1">
-                        {flight.source === 'DUFFEL' ? t('safeRedirect') : t('official_site')}
-                    </p>
+                    {/* FİYAT - SADECE FİYAT GÖZÜKSÜN */}
+                    <div className="flex flex-col items-center mt-2">
+                        <span className="text-sm font-bold text-slate-400 line-through">
+                            ${Math.floor(flight.price * 1.15)}
+                        </span>
+                        <span className="text-2xl font-black text-blue-600 leading-none">
+                            ${Math.floor(flight.price)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                            {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
