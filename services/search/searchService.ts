@@ -43,7 +43,8 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
       resultsByName[name] = res.value || [];
       console.log(`✅ ${name}: ${resultsByName[name].length} flights (${elapsed}ms)`);
     } else {
-      console.error(`❌ ${name} Error:`, res.reason?.message || res.reason);
+      const errorMsg = res.reason?.message || res.reason?.toString?.() || JSON.stringify(res.reason);
+      console.error(`❌ ${name} Error (${elapsed}ms):`, errorMsg);
     }
   });
 

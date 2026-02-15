@@ -17,7 +17,12 @@ export async function searchSkyScrapper(params: {
   const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
   const apiHost = process.env.RAPID_API_HOST_FLIGHT || 'flights-scraper-real-time.p.rapidapi.com';
 
-  if (!apiKey) return [];
+  console.log(`🔑 Kiwi Provider Check: Key=${apiKey ? '✅' : '❌'}, Host=${apiHost}`);
+
+  if (!apiKey) {
+    console.error('❌ RAPID_API_KEY not set - Kiwi provider disabled');
+    return [];
+  }
 
   // Tarih Formatı (yyyy-mm-dd)
   const targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
