@@ -59,7 +59,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     // --- PROVIDER LOGIC ---
     const providers = flight.bookingProviders || [];
     const sortedProviders = [...providers].sort((a, b) => a.price - b.price);
-    const hasMultipleProviders = providers.length > 1;
+    const hasBookingProviders = providers.length > 0; // Changed from > 1 to > 0
     const isDuffel = flight.source === 'duffel' || flight.source === 'DUFFEL';
     
     // Compute the external booking link using generator (handles Duffel and others)
@@ -201,14 +201,14 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                     Check Availability <ExternalLink className="w-3 h-3 opacity-70" />
                                 </a>
                             </Button>
-                        ) : hasMultipleProviders ? (
+                        ) : hasBookingProviders ? (
                             /* --- SKY SCRAPPER: Select Provider Dropdown (Skyscanner Style) --- */
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white h-10 px-3 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                                         <div className="flex flex-col items-start leading-none">
-                                            <span className="text-[10px] opacity-80 font-medium">{providers.length} deals from</span>
-                                            <span className="text-sm font-bold">{Math.round(sortedProviders[0].price).toLocaleString()} {sortedProviders[0].currency}</span>
+                                            <span className="text-[10px] opacity-80 font-medium">{providers.length === 1 ? 'Booked via' : `${providers.length} deals from`}</span>
+                                            <span className="text-sm font-bold">${Math.round(sortedProviders[0].price).toLocaleString()} {sortedProviders[0].currency}</span>
                                         </div>
                                         <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
                                     </Button>
