@@ -54,7 +54,7 @@ async function tryGet(host: string, ep: string) {
   const url = `https://${host}${ep}`;
   const params = new URLSearchParams({ placeIdFrom: origin, placeIdTo: dest, departDate: date, market: 'AU', locale: 'en-US', currency: 'AUD', adults: '1', cabinClass: 'ECONOMY' });
   try {
-    const res = await fetch(`${url}?${params.toString()}`, { method: 'GET', headers: { 'X-RapidAPI-Key': KEY, 'X-RapidAPI-Host': host } });
+    const res = await fetch(`${url}?${params.toString()}`, { method: 'GET', headers: { 'X-RapidAPI-Key': KEY!, 'X-RapidAPI-Host': host } });
     const text = await res.text();
     const fname = path.join(outDir, `${host.replace(/\W+/g,'_')}${ep.replace(/\W+/g,'_')}_get_${res.status}.json`);
     fs.writeFileSync(fname, text);
@@ -68,7 +68,7 @@ async function tryPost(host: string, ep: string) {
   const url = `https://${host}${ep}`;
   const body = { originSkyId: origin, destinationSkyId: dest, date, adults: 1, cabinClass: 'ECONOMY', currency: 'AUD', market: 'AU' };
   try {
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-RapidAPI-Key': KEY, 'X-RapidAPI-Host': host }, body: JSON.stringify(body) });
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-RapidAPI-Key': KEY!, 'X-RapidAPI-Host': host }, body: JSON.stringify(body) });
     const text = await res.text();
     const fname = path.join(outDir, `${host.replace(/\W+/g,'_')}${ep.replace(/\W+/g,'_')}_post_${res.status}.json`);
     fs.writeFileSync(fname, text);

@@ -36,7 +36,7 @@ const dest = 'IST';
 const date = '2026-03-15';
 
 async function probe() {
-  console.log(`Probing POST ${HOST} with key ...${KEY.slice(-4)}`);
+  console.log(`Probing POST ${HOST} with key ...${KEY!.slice(-4)}`);
   
   for (const p of paths) {
     const body = {
@@ -54,7 +54,7 @@ async function probe() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-RapidAPI-Key': KEY,
+          'X-RapidAPI-Key': KEY!,
           'X-RapidAPI-Host': HOST
         },
         body: JSON.stringify(body)

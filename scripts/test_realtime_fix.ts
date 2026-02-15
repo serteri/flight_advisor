@@ -45,7 +45,7 @@ async function testRealTimeFix() {
     if (res.status === 404) {
       console.log("❌ '/flights/search' bulunamadı. Başka bir yol deneyelim...");
       // B Planı: Belki endpoint '/api/v1/flights/search' şeklindedir?
-      await tryBackupEndpoint(apiHost, apiKey);
+      await tryBackupEndpoint(apiHost, apiKey!);
       return;
     }
 
@@ -85,7 +85,7 @@ async function tryBackupEndpoint(host: string, key: string) {
     for (const path of endpoints) {
         const url = `https://${host}${path}?originSkyId=BNE&destinationSkyId=IST&date=2026-03-15`;
         console.log(`   👉 Deneniyor: ${path}`);
-        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': host } });
+        const res = await fetch(url, { headers: { 'X-RapidAPI-Key': key!, 'X-RapidAPI-Host': host } });
         
         if (res.ok) {
             console.log(`   ✅ BULUNDU! Doğru adres: ${path}`);

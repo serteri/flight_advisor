@@ -68,7 +68,7 @@ async function testBlueSmart() {
         console.log(`   👉 Deneniyor: ${url}`);
         
         const res = await fetch(`${url}?${searchParams.toString()}`, {
-            headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+            headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost }
         });
 
         if (!res.ok) {

@@ -76,7 +76,7 @@ async function testBlueV2() {
         console.log(`   👉 Deneniyor: ${ep}`);
         
         const res = await fetch(`${url}?${params.toString()}`, {
-            headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
+            headers: { 'X-RapidAPI-Key': apiKey!, 'X-RapidAPI-Host': apiHost }
         });
 
         if (res.ok) {
