@@ -49,11 +49,15 @@ export async function searchSkyScrapper(params: {
     });
 
     const fullUrl = `${url}?${query.toString()}`;
-    console.log(`📡 Kiwi API request: ${fullUrl.slice(0, 100)}...`);
+    console.log(`📡 Kiwi API: ${originCode}->${destCode} on ${targetDate}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
     const res = await fetch(fullUrl, {
-      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
-    });
+      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost },
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
 
     console.log(`📊 Kiwi API response: ${res.status} ${res.statusText}`);
 
