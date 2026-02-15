@@ -56,6 +56,16 @@ export type FlightResult = {
     delayRisk?: DelayRisk;
     rarityScore?: number;
     score?: number;
+    tags?: string[]; // "Best Value", "Trusted Seller"
+    bookingProviders?: {
+        name: string;
+        price: number;
+        currency: string;
+        link: string;
+        logo?: string;
+        type: 'airline' | 'agency';
+        rating?: number; // 0-5
+    }[];
     insights?: string[];
     analysis?: {
         pros: string[];

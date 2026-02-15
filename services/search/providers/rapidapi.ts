@@ -1,6 +1,11 @@
 import { FlightResult, FlightSource } from "@/types/hybridFlight";
 import { resolveSkyPlaceIds } from "../skyPlaceResolver";
 
+// "Flight Intelligence Platform" Provider - RapidAPI (Real-Time Scraper)
+// Configured to use ONLY flights-scraper-real-time.p.rapidapi.com
+// This provider fetches prices to mirror OTA availability (Skyscanner parity)
+// and enriches them with "Smart" data (score, rating).
+
 export async function searchSkyScrapper(params: { 
   origin: string, 
   destination: string, 
@@ -9,206 +14,111 @@ export async function searchSkyScrapper(params: {
   cabinClass?: string,
   adults?: number
 }): Promise<FlightResult[]> {
-  const apiKey = process.env.RAPID_API_KEY_SKY || 'a5019e6badmsh72c554c174620e5p18995ajsnd5606f30e000';
-  const apiHost = process.env.RAPID_API_HOST_SKY || 'flights-sky.p.rapidapi.com';
+  const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
+  const apiHost = process.env.RAPID_API_HOST_FLIGHT || 'flights-scraper-real-time.p.rapidapi.com';
+
+  if (!apiKey) return [];
+
+  // Tarih Formatı (yyyy-mm-dd)
+  const targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
   
-    let targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
-    if (targetDate.startsWith('2025')) targetDate = targetDate.replace('2025', '2026');
+  // Resolve Place IDs (use existing resolver to get IATA or SkyID as needed)
+  // For now assuming the endpoint accepts IATA or SkyID. 
+  // We use the resolver which handles this.
+  const resolved = await resolveSkyPlaceIds(params.origin, params.destination, targetDate, apiKey, apiHost);
+  const originCode = resolved.from;
+  const destCode = resolved.to;
 
-    // Resolve place-id variants using a probe resolver which tries common formats
-    const resolved = await resolveSkyPlaceIds(params.origin, params.destination, targetDate, apiKey, apiHost);
-    const placeIdFrom = resolved.from;
-    const placeIdTo = resolved.to;
-
-  const searchUrl = `https://${apiHost}/web/flights/search-one-way`;
-  const incompleteUrl = `https://${apiHost}/web/flights/search-incomplete`;
+  console.log(`📡 Intelligence Engine: Kiwi Real-Time üzerinden veriler toplanıyor (${originCode}->${destCode})...`);
 
   try {
-    const cabin = (params.cabinClass || 'ECONOMY').toUpperCase();
-    const adultCount = (params.adults || 1).toString();
-    const currency = params.currency || 'AUD';
-    const market = currency === 'AUD' ? 'AU' : 'US';
-
-    const queryParams = new URLSearchParams({
-      placeIdFrom: placeIdFrom,      
-      placeIdTo: placeIdTo,   
-      departDate: targetDate, 
-      market: market,        
-      locale: 'en-US',     
-      currency: currency, 
-      adults: adultCount,    
-      cabinClass: cabin      
+    // SENİN ONAYLADIĞIN KESİN ENDPOINT:
+    const url = `https://${apiHost}/flights/search-oneway`;
+    const query = new URLSearchParams({
+      originSkyId: originCode,
+      destinationSkyId: destCode,
+      departureDate: targetDate,
+      cabinClass: (params.cabinClass || 'ECONOMY').toUpperCase(),
+      adults: (params.adults || 1).toString(),
+      currency: params.currency || 'USD'
     });
 
-    // Debug: show the normalized place ids (safe, does not print API keys)
-    console.log(`🚀 SkyScrapper Request -> from=${placeIdFrom} to=${placeIdTo} date=${targetDate}`);
-    console.log(`🚀 API İsteği (İlk Parti): ${searchUrl}?${queryParams.toString()}`);
-
-    // 1. İLK İSTEK
-    let res = await fetch(`${searchUrl}?${queryParams.toString()}`, {
-      method: 'GET',
+    const res = await fetch(`${url}?${query.toString()}`, {
       headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
     });
 
-    if (!res.ok) return [];
-
-    let json = await res.json();
-    // Debug: log a trimmed version of the raw response to help diagnose empty results
-    try {
-      const raw = JSON.stringify(json);
-      console.log(`🔍 Raw Sky response (trimmed 2k): ${raw.slice(0, 2000)}`);
-    } catch (e) {
-      console.warn('Could not stringify Sky response for debug');
+    if (!res.ok) {
+        console.warn(`⚠️ Intelligence Provider (${apiHost}) returned ${res.status}: ${res.statusText}`);
+        // Log generic error but don't crash
+        return [];
     }
 
-    // If provider complains about invalid placeId, retry using raw IATA codes (no -sky)
-    if (json && json.errors && (json.errors.placeIdFrom || json.errors.placeIdTo)) {
-      console.warn('⚠️ Sky API reported invalid placeId, retrying with plain IATA codes');
-      const retryParams = new URLSearchParams({
-        placeIdFrom: params.origin,
-        placeIdTo: params.destination,
-        departDate: targetDate,
-        market: market,
-        locale: 'en-US',
-        currency: currency,
-        adults: adultCount,
-        cabinClass: cabin
-      });
+    const json = await res.json();
+    const items = json.data?.itineraries || json.data || [];
 
-      console.log(`🚀 Retry API İsteği (plain IATA): ${searchUrl}?${retryParams.toString()}`);
-      const retryRes = await fetch(`${searchUrl}?${retryParams.toString()}`, {
-        method: 'GET',
-        headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
-      });
+    console.log(`✅ Intelligence Provider found ${items.length} options.`);
 
-      if (retryRes.ok) {
-        json = await retryRes.json();
-        try { console.log(`🔍 Raw Sky retry response (trimmed 2k): ${JSON.stringify(json).slice(0,2000)}`); } catch(e){}
-      } else {
-        console.warn('Sky retry failed with status', retryRes.status);
-      }
-    }
+    return items.map((item: any) => {
+      // Map based on the structure provided in the prompt/doc
+      // Adjust property access if the actual JSON differs
+      const segment = item.sector?.sectorSegments?.[0]?.segment; 
+      const price = parseFloat(item.price?.amount || "0");
+      const relativeUrl = item.bookingOptions?.edges?.[0]?.node?.bookingUrl;
+      const deepLink = relativeUrl ? `https://www.kiwi.com${relativeUrl}` : null;
 
-    let allItems: any[] = extractFlights(json);
-    
-    // Durum kontrolü
-    let status = json.data?.context?.status || 'complete';
-    let sessionId = json.data?.context?.sessionId;
-    let loopCount = 0;
+      // --- INTELLIGENCE LAYER (Zeka Katmanı) ---
+      let score = 7.5; // Taban puan
+      let tags: string[] = [];
 
-    console.log(`📊 İlk tur: ${allItems.length} uçuş, Status: ${status}`);
-
-    // 2. DÖNGÜ: "incomplete" olduğu sürece devam et (Max 3 kere dene, timeout'tan kaçınmak için)
-    while (status === 'incomplete' && sessionId && loopCount < 3) {
-        loopCount++;
-        console.log(`⏳ Yükleniyor... Tur: ${loopCount} (Şu anki: ${allItems.length} uçuş)`);
-        
-        // 500ms bekle (API'yi boğmamak için ama timeout'dan kaçınmak için kısaltılmış)
-        await new Promise(r => setTimeout(r, 500));
-
-        const nextParams = new URLSearchParams({ sessionId: sessionId });
-        
-        res = await fetch(`${incompleteUrl}?${nextParams.toString()}`, {
-            method: 'GET',
-            headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': apiHost }
-        });
-
-        if (!res.ok) break;
-
-        json = await res.json();
-        
-        // Yeni gelenleri ekle
-        const newItems = extractFlights(json);
-        if (newItems.length > 0) {
-            allItems = [...allItems, ...newItems];
-            console.log(`✅ Tur ${loopCount}: +${newItems.length} uçuş (Toplam: ${allItems.length})`);
-        }
-
-        // Durumu güncelle
-        status = json.data?.context?.status || 'complete';
-    }
-
-    // 3. ÇİFT KAYITLARI TEMİZLE
-    const uniqueItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
-
-    console.log(`✅ TOPLAM SONUÇ: ${uniqueItems.length} benzersiz uçuş bulundu! 🎉`);
-
-    return uniqueItems.map((item: any) => {
-      const agents = item.pricingOptions?.map((opt: any) => ({
-        name: opt.agent?.name,           
-        price: opt.price?.amount,        
-        image: opt.agent?.imageUrl,      
-        url: opt.items?.[0]?.url 
-      })) || [];
-
-      agents.sort((a: any, b: any) => (a.price || 0) - (b.price || 0));
-      const bestAgentWithUrl = agents.find((a: any) => a.url && a.url.startsWith('http'));
-      const firstLeg = item.legs?.[0];
+      // Akıllı Etiketleme Mantığı
+      if (price > 0 && price < 600) { tags.push("Best Price"); score += 1.5; }
+      const durationSeconds = item.duration || 0;
+      if (durationSeconds < 15 * 3600) { tags.push("Fastest"); score += 0.5; } 
+      
+      const marketingCarrier = segment?.marketingCarrier?.name || "Airline";
+      if (marketingCarrier.includes("Turkish")) { tags.push("Top Rated Airline"); score += 0.5; }
 
       return {
-        id: `SKY_${item.id || Math.random()}`,
-        source: 'SKY_SCANNER_PRO' as FlightSource,
-        airline: firstLeg?.carriers?.marketing?.[0]?.name || "Airline",
-        airlineLogo: firstLeg?.carriers?.marketing?.[0]?.logoUrl,
-        flightNumber: firstLeg?.carriers?.marketing?.[0]?.alternateId || "FLY",
+        id: `RAPID_${item.id || Math.random()}`,
+        source: 'SKY_SCANNER_PRO' as FlightSource, // Keeping internal ID for consistency
+        airline: marketingCarrier,
+        airlineLogo: segment?.marketingCarrier?.logoUrl,
+        flightNumber: segment?.marketingCarrier?.alternateId || "FLT",
         
-        from: params.origin,
-        to: params.destination,
-        departTime: firstLeg?.departure,
-        arriveTime: firstLeg?.arrival,
-        duration: firstLeg?.durationInMinutes || 0,
-        stops: firstLeg?.stopCount || 0,
-        
-        price: agents[0]?.price || item.price?.raw || 0,
-        currency: currency,
-        cabinClass: cabin.toLowerCase() as any,
-        
-        bookingProviders: agents.map((a: any) => ({
-          name: a.name || 'Unknown',
-          price: a.price || 0,
-          currency: currency,
-          link: a.url || '',
-          logo: a.image,
-          type: 'agency' as const
-        })),
-        
-        deepLink: bestAgentWithUrl ? bestAgentWithUrl.url : undefined,
-        bookingLink: bestAgentWithUrl ? bestAgentWithUrl.url : undefined
-      };
+        from: originCode,
+        to: destCode,
+        departTime: segment?.source?.localTime,
+        arriveTime: item.sector?.sectorSegments?.at(-1)?.segment?.destination?.localTime,
+        duration: Math.floor((durationSeconds || 0) / 60), // minutes
+        stops: (item.sector?.sectorSegments?.length || 1) - 1,
+
+        price: price,
+        currency: params.currency || 'USD',
+        cabinClass: (params.cabinClass || 'economy').toLowerCase(),
+
+        score: parseFloat(score.toFixed(1)),
+        tags: tags,
+        bookingProviders: [
+          {
+            name: "Kiwi.com",
+            price: price,
+            currency: params.currency || 'USD',
+            link: deepLink || '',
+            type: 'agency',
+            rating: 4.2 // Kiwi için sabit rating
+          }
+        ],
+        deepLink: deepLink
+      } as any; // Cast to FlightResult
     });
 
   } catch (error: any) {
-    console.error("🔥 CATCH HATASI:", error.message);
+    console.error(`🔥 Intelligence Provider Error: ${error.message}`);
     return [];
   }
 }
 
-// 🕵️‍♂️ YARDIMCI FONKSİYON: JSON'dan Uçuşları Çıkarır
-function extractFlights(json: any) {
-    let items: any[] = [];
-    const itineraries = json.data?.itineraries || json.itineraries;
-
-    if (itineraries) {
-        // Bucket yapısı
-        if (itineraries.buckets && Array.isArray(itineraries.buckets)) {
-            itineraries.buckets.forEach((bucket: any) => {
-                if (bucket.items && Array.isArray(bucket.items)) {
-                    items.push(...bucket.items);
-                }
-            });
-        } 
-        // Results Listesi
-        else if (itineraries.results && Array.isArray(itineraries.results)) {
-            items = itineraries.results;
-        } 
-        // Direkt Liste
-        else if (Array.isArray(itineraries)) {
-            items = itineraries;
-        }
-    }
-    return items;
-}
-
-export async function searchAirScraper(params: any) {
-    return []; // Placeholder
+// Dummy implementation for AirScraper to satisfy imports in aggregator
+export async function searchAirScraper(params: any): Promise<FlightResult[]> {
+  return []; 
 }

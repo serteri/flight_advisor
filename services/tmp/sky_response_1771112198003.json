@@ -1,0 +1,17 @@
+{
+  "data": {
+    "data": null,
+    "errors": {
+      "message": "HTTPSConnectionPool(host='www.skyscanner.com', port=443): Max retries exceeded with url: /g/radar/api/v2/web-unified-search/KLUv_WAMAP0FADIOKyLApwP_e7l_Tu5UU6WUMqnE_JEyyZSSlEYtUQdsa6WHyC0CCYRCYL28DGF7ttIx-1zUm499S8Qepo-qWCwYhkZhdn8lV40pt3L1fqLlm52SJ3qJEfyXmsDCbJN6LzpckWVU7Bnj22zunR-fJlcQsDRE7-vt3p3962uj1YeOWqtW_AancA6NsuhJBAqJOB4NJmGaUu7tTetpsvOWzL6p-pyLRdjIxcIxHG2SpU8FAAb5uLI0gb84DDNiTpkB (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Proxy Error')))"
+    },
+    "message": "HTTPSConnectionPool(host='www.skyscanner.com', port=443): Max retries exceeded with url: /g/radar/api/v2/web-unified-search/KLUv_WAMAP0FADIOKyLApwP_e7l_Tu5UU6WUMqnE_JEyyZSSlEYtUQdsa6WHyC0CCYRCYL28DGF7ttIx-1zUm499S8Qepo-qWCwYhkZhdn8lV40pt3L1fqLlm52SJ3qJEfyXmsDCbJN6LzpckWVU7Bnj22zunR-fJlcQsDRE7-vt3p3962uj1YeOWqtW_AancA6NsuhJBAqJOB4NJmGaUu7tTetpsvOWzL6p-pyLRdjIxcIxHG2SpU8FAAb5uLI0gb84DDNiTpkB (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Proxy Error')))",
+    "status": false
+  },
+  "status": true,
+  "message": "Successful",
+  "meta": {
+    "status": null,
+    "state": null,
+    "totalRecords": null
+  }
+}

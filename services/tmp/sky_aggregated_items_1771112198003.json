@@ -1,0 +1,4138 @@
+[
+  {
+    "id": "10041-2603081435--31734-1-12585-2603090605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "vo_JtDFGLGCg"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081435--31734-1-12585-2603090605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1350,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T14:35:00",
+        "arrival": "2026-03-09T06:05:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603081435-2603082025--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T14:35:00",
+            "arrival": "2026-03-08T20:25:00",
+            "durationInMinutes": 470,
+            "flightNumber": "9331",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603082325-2603090605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.999
+  },
+  {
+    "id": "10041-2603081110--32442-1-12585-2603090810",
+    "price": {
+      "raw": 628.55,
+      "formatted": "$629",
+      "pricingOptionId": "nB0vc6YWu6lC"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081110--32442-1-12585-2603090810",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1680,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T11:10:00",
+        "arrival": "2026-03-09T08:10:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32442,
+              "alternateId": "MU",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/MU.png",
+              "name": "China Eastern"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-15641-2603081110-2603081930--32442",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "PVG",
+              "displayCode": "PVG",
+              "parent": {
+                "flightPlaceId": "CSHA",
+                "displayCode": "SHA",
+                "name": "Shanghai",
+                "type": "City"
+              },
+              "name": "Shanghai Pudong",
+              "type": "Airport",
+              "country": "China"
+            },
+            "departure": "2026-03-08T11:10:00",
+            "arrival": "2026-03-08T19:30:00",
+            "durationInMinutes": 620,
+            "flightNumber": "716",
+            "marketingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            },
+            "operatingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            }
+          },
+          {
+            "id": "15641-12585-2603090055-2603090810--32442",
+            "origin": {
+              "flightPlaceId": "PVG",
+              "displayCode": "PVG",
+              "parent": {
+                "flightPlaceId": "CSHA",
+                "displayCode": "SHA",
+                "name": "Shanghai",
+                "type": "City"
+              },
+              "name": "Shanghai Pudong",
+              "type": "Airport",
+              "country": "China"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T00:55:00",
+            "arrival": "2026-03-09T08:10:00",
+            "durationInMinutes": 735,
+            "flightNumber": "703",
+            "marketingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            },
+            "operatingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 7.714057
+    },
+    "fareAttributes": {},
+    "tags": [
+      "cheapest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.650003
+  },
+  {
+    "id": "10041-2603082155--31939-1-12585-2603091220",
+    "price": {
+      "raw": 972.81,
+      "formatted": "$973",
+      "pricingOptionId": "q4BgPxskLKXV"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082155--31939-1-12585-2603091220",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1285,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T21:55:00",
+        "arrival": "2026-03-09T12:20:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31939,
+              "alternateId": "QR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QR.png",
+              "name": "Qatar Airways"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11089-2603082155-2603090530--31939",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "departure": "2026-03-08T21:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "899",
+            "marketingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          },
+          {
+            "id": "11089-12585-2603090745-2603091220--31939",
+            "origin": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T07:45:00",
+            "arrival": "2026-03-09T12:20:00",
+            "durationInMinutes": 275,
+            "flightNumber": "239",
+            "marketingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "tags": [
+      "shortest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.603089
+  },
+  {
+    "id": "10041-2603080910--31734-1-12585-2603090605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "xZ2hzayz4sdx"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080910--31734-1-12585-2603090605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1675,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T09:10:00",
+        "arrival": "2026-03-09T06:05:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603080910-2603081510--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T09:10:00",
+            "arrival": "2026-03-08T15:10:00",
+            "durationInMinutes": 480,
+            "flightNumber": "9323",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603082325-2603090605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.553948
+  },
+  {
+    "id": "10041-2603082325--31734-1-12585-2603100605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "Gz7m1H2TnapR"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082325--31734-1-12585-2603100605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 2260,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T23:25:00",
+        "arrival": "2026-03-10T06:05:00",
+        "timeDeltaInDays": 2,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603082325-2603090505--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T05:05:00",
+            "durationInMinutes": 460,
+            "flightNumber": "9329",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603092325-2603100605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T23:25:00",
+            "arrival": "2026-03-10T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.525604
+  },
+  {
+    "id": "10041-2603081015--32439-1-12585-2603090710",
+    "price": {
+      "raw": 712.89,
+      "formatted": "$713",
+      "pricingOptionId": "yCxu_Jk6zutP"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081015--32439-1-12585-2603090710",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1675,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T10:15:00",
+        "arrival": "2026-03-09T07:10:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32439,
+              "alternateId": "CZ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/CZ.png",
+              "name": "China Southern"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-10342-2603081015-2603081720--32439",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "CAN",
+              "displayCode": "CAN",
+              "parent": {
+                "flightPlaceId": "CCAN",
+                "displayCode": "CAN",
+                "name": "Guangzhou",
+                "type": "City"
+              },
+              "name": "Guangzhou",
+              "type": "Airport",
+              "country": "China"
+            },
+            "departure": "2026-03-08T10:15:00",
+            "arrival": "2026-03-08T17:20:00",
+            "durationInMinutes": 545,
+            "flightNumber": "382",
+            "marketingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            },
+            "operatingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            }
+          },
+          {
+            "id": "10342-12585-2603090050-2603090710--32439",
+            "origin": {
+              "flightPlaceId": "CAN",
+              "displayCode": "CAN",
+              "parent": {
+                "flightPlaceId": "CCAN",
+                "displayCode": "CAN",
+                "name": "Guangzhou",
+                "type": "City"
+              },
+              "name": "Guangzhou",
+              "type": "Airport",
+              "country": "China"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T00:50:00",
+            "arrival": "2026-03-09T07:10:00",
+            "durationInMinutes": 680,
+            "flightNumber": "8065",
+            "marketingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            },
+            "operatingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 7.9559684
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.520533
+  },
+  {
+    "id": "10041-2603082155--31694-1-12585-2603091220",
+    "price": {
+      "raw": 1053.1,
+      "formatted": "$1,054",
+      "pricingOptionId": "ZjPfcrAHOA9L"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082155--31694-1-12585-2603091220",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1285,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T21:55:00",
+        "arrival": "2026-03-09T12:20:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31694,
+              "alternateId": "V1",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/V1.png",
+              "name": "Virgin Australia"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31939,
+              "alternateId": "QR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QR.png",
+              "name": "Qatar Airways"
+            }
+          ],
+          "operationType": "not_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11089-2603082155-2603090530--31694",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "departure": "2026-03-08T21:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "6133",
+            "marketingCarrier": {
+              "id": -31694,
+              "name": "Virgin Australia",
+              "alternateId": "V1",
+              "allianceId": 0,
+              "displayCode": "VA"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          },
+          {
+            "id": "11089-12585-2603090745-2603091220--31694",
+            "origin": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T07:45:00",
+            "arrival": "2026-03-09T12:20:00",
+            "durationInMinutes": 275,
+            "flightNumber": "6093",
+            "marketingCarrier": {
+              "id": -31694,
+              "name": "Virgin Australia",
+              "alternateId": "V1",
+              "allianceId": 0,
+              "displayCode": "VA"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "tags": [
+      "second_shortest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.518252
+  },
+  {
+    "id": "10041-2603080155--32348-1-12585-2603081740",
+    "price": {
+      "raw": 1284.66,
+      "formatted": "$1,285",
+      "pricingOptionId": "U3K_kU_61Hmp"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080155--32348-1-12585-2603081740",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1365,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T01:55:00",
+        "arrival": "2026-03-08T17:40:00",
+        "timeDeltaInDays": 0,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32348,
+              "alternateId": "EK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/EK.png",
+              "name": "Emirates"
+            }
+          ],
+          "operating": [
+            {
+              "id": -32301,
+              "alternateId": "FZ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/FZ.png",
+              "name": "flydubai"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11182-2603080155-2603081030--32348",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T01:55:00",
+            "arrival": "2026-03-08T10:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "431",
+            "marketingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            },
+            "operatingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            }
+          },
+          {
+            "id": "11182-12585-2603081330-2603081740--32348",
+            "origin": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T13:30:00",
+            "arrival": "2026-03-08T17:40:00",
+            "durationInMinutes": 310,
+            "flightNumber": "2094",
+            "marketingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            },
+            "operatingCarrier": {
+              "id": -32301,
+              "name": "flydubai",
+              "alternateId": "FZ",
+              "allianceId": 0,
+              "displayCode": "FZ"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.492245
+  },
+  {
+    "id": "10041-2603081110--32442-1-12585-2603090810",
+    "price": {
+      "raw": 628.55,
+      "formatted": "$629",
+      "pricingOptionId": "nB0vc6YWu6lC"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081110--32442-1-12585-2603090810",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1680,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T11:10:00",
+        "arrival": "2026-03-09T08:10:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32442,
+              "alternateId": "MU",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/MU.png",
+              "name": "China Eastern"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-15641-2603081110-2603081930--32442",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "PVG",
+              "displayCode": "PVG",
+              "parent": {
+                "flightPlaceId": "CSHA",
+                "displayCode": "SHA",
+                "name": "Shanghai",
+                "type": "City"
+              },
+              "name": "Shanghai Pudong",
+              "type": "Airport",
+              "country": "China"
+            },
+            "departure": "2026-03-08T11:10:00",
+            "arrival": "2026-03-08T19:30:00",
+            "durationInMinutes": 620,
+            "flightNumber": "716",
+            "marketingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            },
+            "operatingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            }
+          },
+          {
+            "id": "15641-12585-2603090055-2603090810--32442",
+            "origin": {
+              "flightPlaceId": "PVG",
+              "displayCode": "PVG",
+              "parent": {
+                "flightPlaceId": "CSHA",
+                "displayCode": "SHA",
+                "name": "Shanghai",
+                "type": "City"
+              },
+              "name": "Shanghai Pudong",
+              "type": "Airport",
+              "country": "China"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T00:55:00",
+            "arrival": "2026-03-09T08:10:00",
+            "durationInMinutes": 735,
+            "flightNumber": "703",
+            "marketingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            },
+            "operatingCarrier": {
+              "id": -32442,
+              "name": "China Eastern",
+              "alternateId": "MU",
+              "allianceId": -31998,
+              "displayCode": "MU"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 7.714057
+    },
+    "fareAttributes": {},
+    "tags": [
+      "cheapest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9998361
+  },
+  {
+    "id": "10041-2603081015--32439-1-12585-2603090710",
+    "price": {
+      "raw": 712.89,
+      "formatted": "$713",
+      "pricingOptionId": "yCxu_Jk6zutP"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081015--32439-1-12585-2603090710",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1675,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T10:15:00",
+        "arrival": "2026-03-09T07:10:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32439,
+              "alternateId": "CZ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/CZ.png",
+              "name": "China Southern"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-10342-2603081015-2603081720--32439",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "CAN",
+              "displayCode": "CAN",
+              "parent": {
+                "flightPlaceId": "CCAN",
+                "displayCode": "CAN",
+                "name": "Guangzhou",
+                "type": "City"
+              },
+              "name": "Guangzhou",
+              "type": "Airport",
+              "country": "China"
+            },
+            "departure": "2026-03-08T10:15:00",
+            "arrival": "2026-03-08T17:20:00",
+            "durationInMinutes": 545,
+            "flightNumber": "382",
+            "marketingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            },
+            "operatingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            }
+          },
+          {
+            "id": "10342-12585-2603090050-2603090710--32439",
+            "origin": {
+              "flightPlaceId": "CAN",
+              "displayCode": "CAN",
+              "parent": {
+                "flightPlaceId": "CCAN",
+                "displayCode": "CAN",
+                "name": "Guangzhou",
+                "type": "City"
+              },
+              "name": "Guangzhou",
+              "type": "Airport",
+              "country": "China"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T00:50:00",
+            "arrival": "2026-03-09T07:10:00",
+            "durationInMinutes": 680,
+            "flightNumber": "8065",
+            "marketingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            },
+            "operatingCarrier": {
+              "id": -32439,
+              "name": "China Southern",
+              "alternateId": "CZ",
+              "allianceId": 0,
+              "displayCode": "CZ"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 7.9559684
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.99125504
+  },
+  {
+    "id": "10041-2603080715--32076,-32211,-32339-3-12585-2603091255",
+    "price": {
+      "raw": 735,
+      "formatted": "$735",
+      "pricingOptionId": "0aUuZpTq_Ap-"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080715--32076,-32211,-32339-3-12585-2603091255",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 2200,
+        "stopCount": 3,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T07:15:00",
+        "arrival": "2026-03-09T12:55:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32076,
+              "alternateId": "MR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/MR.png",
+              "name": "BatikAir Malaysia"
+            },
+            {
+              "id": -32211,
+              "alternateId": "QZ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QZ.png",
+              "name": "Indonesia AirAsia"
+            },
+            {
+              "id": -32339,
+              "alternateId": "60",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/60.png",
+              "name": "Etihad Airways"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11109-2603080715-2603081130--32076",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "departure": "2026-03-08T07:15:00",
+            "arrival": "2026-03-08T11:30:00",
+            "durationInMinutes": 375,
+            "flightNumber": "158",
+            "marketingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            },
+            "operatingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            }
+          },
+          {
+            "id": "11109-10485-2603081340-2603081430--32211",
+            "origin": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "destination": {
+              "flightPlaceId": "CGK",
+              "displayCode": "CGK",
+              "parent": {
+                "flightPlaceId": "CGKI",
+                "displayCode": "JKT",
+                "name": "Jakarta",
+                "type": "City"
+              },
+              "name": "Soekarno-Hatta",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "departure": "2026-03-08T13:40:00",
+            "arrival": "2026-03-08T14:30:00",
+            "durationInMinutes": 110,
+            "flightNumber": "811",
+            "marketingCarrier": {
+              "id": -32211,
+              "name": "Indonesia AirAsia",
+              "alternateId": "QZ",
+              "allianceId": 0,
+              "displayCode": "QZ"
+            },
+            "operatingCarrier": {
+              "id": -32211,
+              "name": "Indonesia AirAsia",
+              "alternateId": "QZ",
+              "allianceId": 0,
+              "displayCode": "QZ"
+            }
+          },
+          {
+            "id": "10485-9618-2603081800-2603082305--32339",
+            "origin": {
+              "flightPlaceId": "CGK",
+              "displayCode": "CGK",
+              "parent": {
+                "flightPlaceId": "CGKI",
+                "displayCode": "JKT",
+                "name": "Jakarta",
+                "type": "City"
+              },
+              "name": "Soekarno-Hatta",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "destination": {
+              "flightPlaceId": "AUH",
+              "displayCode": "AUH",
+              "parent": {
+                "flightPlaceId": "AUHA",
+                "displayCode": "AUH",
+                "name": "Abu Dhabi",
+                "type": "City"
+              },
+              "name": "Zayed International",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T18:00:00",
+            "arrival": "2026-03-08T23:05:00",
+            "durationInMinutes": 485,
+            "flightNumber": "475",
+            "marketingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            },
+            "operatingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            }
+          },
+          {
+            "id": "9618-12585-2603090845-2603091255--32339",
+            "origin": {
+              "flightPlaceId": "AUH",
+              "displayCode": "AUH",
+              "parent": {
+                "flightPlaceId": "AUHA",
+                "displayCode": "AUH",
+                "name": "Abu Dhabi",
+                "type": "City"
+              },
+              "name": "Zayed International",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T08:45:00",
+            "arrival": "2026-03-09T12:55:00",
+            "durationInMinutes": 310,
+            "flightNumber": "541",
+            "marketingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            },
+            "operatingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": true,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9887872
+  },
+  {
+    "id": "10041-2603081435--31734-1-12585-2603090605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "vo_JtDFGLGCg"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081435--31734-1-12585-2603090605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1350,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T14:35:00",
+        "arrival": "2026-03-09T06:05:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603081435-2603082025--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T14:35:00",
+            "arrival": "2026-03-08T20:25:00",
+            "durationInMinutes": 470,
+            "flightNumber": "9331",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603082325-2603090605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.988343
+  },
+  {
+    "id": "10041-2603080910--31734-1-12585-2603090605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "xZ2hzayz4sdx"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080910--31734-1-12585-2603090605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1675,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T09:10:00",
+        "arrival": "2026-03-09T06:05:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603080910-2603081510--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T09:10:00",
+            "arrival": "2026-03-08T15:10:00",
+            "durationInMinutes": 480,
+            "flightNumber": "9323",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603082325-2603090605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9882081
+  },
+  {
+    "id": "10041-2603082325--31734-1-12585-2603100605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "Gz7m1H2TnapR"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082325--31734-1-12585-2603100605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 2260,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T23:25:00",
+        "arrival": "2026-03-10T06:05:00",
+        "timeDeltaInDays": 2,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603082325-2603090505--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T05:05:00",
+            "durationInMinutes": 460,
+            "flightNumber": "9329",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603092325-2603100605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T23:25:00",
+            "arrival": "2026-03-10T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9879654
+  },
+  {
+    "id": "10041-2603080715--32076,-32339-3-12585-2603091255",
+    "price": {
+      "raw": 751,
+      "formatted": "$751",
+      "pricingOptionId": "FTpTZ8xmF9IJ"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080715--32076,-32339-3-12585-2603091255",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 2200,
+        "stopCount": 3,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T07:15:00",
+        "arrival": "2026-03-09T12:55:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32076,
+              "alternateId": "MR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/MR.png",
+              "name": "BatikAir Malaysia"
+            },
+            {
+              "id": -32339,
+              "alternateId": "60",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/60.png",
+              "name": "Etihad Airways"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11109-2603080715-2603081130--32076",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "departure": "2026-03-08T07:15:00",
+            "arrival": "2026-03-08T11:30:00",
+            "durationInMinutes": 375,
+            "flightNumber": "158",
+            "marketingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            },
+            "operatingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            }
+          },
+          {
+            "id": "11109-13311-2603081450-2603081755--32076",
+            "origin": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "destination": {
+              "flightPlaceId": "KUL",
+              "displayCode": "KUL",
+              "parent": {
+                "flightPlaceId": "KULM",
+                "displayCode": "KUL",
+                "name": "Kuala Lumpur",
+                "type": "City"
+              },
+              "name": "Kuala Lumpur International",
+              "type": "Airport",
+              "country": "Malaysia"
+            },
+            "departure": "2026-03-08T14:50:00",
+            "arrival": "2026-03-08T17:55:00",
+            "durationInMinutes": 185,
+            "flightNumber": "307",
+            "marketingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            },
+            "operatingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            }
+          },
+          {
+            "id": "13311-9618-2603082140-2603090050--32339",
+            "origin": {
+              "flightPlaceId": "KUL",
+              "displayCode": "KUL",
+              "parent": {
+                "flightPlaceId": "KULM",
+                "displayCode": "KUL",
+                "name": "Kuala Lumpur",
+                "type": "City"
+              },
+              "name": "Kuala Lumpur International",
+              "type": "Airport",
+              "country": "Malaysia"
+            },
+            "destination": {
+              "flightPlaceId": "AUH",
+              "displayCode": "AUH",
+              "parent": {
+                "flightPlaceId": "AUHA",
+                "displayCode": "AUH",
+                "name": "Abu Dhabi",
+                "type": "City"
+              },
+              "name": "Zayed International",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T21:40:00",
+            "arrival": "2026-03-09T00:50:00",
+            "durationInMinutes": 430,
+            "flightNumber": "487",
+            "marketingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            },
+            "operatingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            }
+          },
+          {
+            "id": "9618-12585-2603090845-2603091255--32339",
+            "origin": {
+              "flightPlaceId": "AUH",
+              "displayCode": "AUH",
+              "parent": {
+                "flightPlaceId": "AUHA",
+                "displayCode": "AUH",
+                "name": "Abu Dhabi",
+                "type": "City"
+              },
+              "name": "Zayed International",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T08:45:00",
+            "arrival": "2026-03-09T12:55:00",
+            "durationInMinutes": 310,
+            "flightNumber": "541",
+            "marketingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            },
+            "operatingCarrier": {
+              "id": -32339,
+              "name": "Etihad Airways",
+              "alternateId": "60",
+              "allianceId": 0,
+              "displayCode": "EY"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": true,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9871588
+  },
+  {
+    "id": "10041-2603080715--32076,-31734-1-12585-2603090540",
+    "price": {
+      "raw": 791.33,
+      "formatted": "$792",
+      "pricingOptionId": "spf29Am968QT"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080715--32076,-31734-1-12585-2603090540",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1765,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T07:15:00",
+        "arrival": "2026-03-09T05:40:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32076,
+              "alternateId": "MR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/MR.png",
+              "name": "BatikAir Malaysia"
+            },
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11109-2603080715-2603081130--32076",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "departure": "2026-03-08T07:15:00",
+            "arrival": "2026-03-08T11:30:00",
+            "durationInMinutes": 375,
+            "flightNumber": "158",
+            "marketingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            },
+            "operatingCarrier": {
+              "id": -32076,
+              "name": "BatikAir Malaysia",
+              "alternateId": "MR",
+              "allianceId": 0,
+              "displayCode": "OD"
+            }
+          },
+          {
+            "id": "11109-12585-2603082110-2603090540--31734",
+            "origin": {
+              "flightPlaceId": "DPS",
+              "displayCode": "DPS",
+              "parent": {
+                "flightPlaceId": "DPSI",
+                "displayCode": "DPS",
+                "name": "Denpasar",
+                "type": "City"
+              },
+              "name": "Bali (Denpasar)",
+              "type": "Airport",
+              "country": "Indonesia"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T21:10:00",
+            "arrival": "2026-03-09T05:40:00",
+            "durationInMinutes": 810,
+            "flightNumber": "67",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 15.153855
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.983235
+  },
+  {
+    "id": "10041-2603082155--31939-1-12585-2603091220",
+    "price": {
+      "raw": 972.81,
+      "formatted": "$973",
+      "pricingOptionId": "q4BgPxskLKXV"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082155--31939-1-12585-2603091220",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1285,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T21:55:00",
+        "arrival": "2026-03-09T12:20:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31939,
+              "alternateId": "QR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QR.png",
+              "name": "Qatar Airways"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11089-2603082155-2603090530--31939",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "departure": "2026-03-08T21:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "899",
+            "marketingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          },
+          {
+            "id": "11089-12585-2603090745-2603091220--31939",
+            "origin": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T07:45:00",
+            "arrival": "2026-03-09T12:20:00",
+            "durationInMinutes": 275,
+            "flightNumber": "239",
+            "marketingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "tags": [
+      "shortest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.99996495
+  },
+  {
+    "id": "10041-2603082155--31694-1-12585-2603091220",
+    "price": {
+      "raw": 1053.1,
+      "formatted": "$1,054",
+      "pricingOptionId": "ZjPfcrAHOA9L"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082155--31694-1-12585-2603091220",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1285,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T21:55:00",
+        "arrival": "2026-03-09T12:20:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31694,
+              "alternateId": "V1",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/V1.png",
+              "name": "Virgin Australia"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31939,
+              "alternateId": "QR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QR.png",
+              "name": "Qatar Airways"
+            }
+          ],
+          "operationType": "not_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11089-2603082155-2603090530--31694",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "departure": "2026-03-08T21:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "6133",
+            "marketingCarrier": {
+              "id": -31694,
+              "name": "Virgin Australia",
+              "alternateId": "V1",
+              "allianceId": 0,
+              "displayCode": "VA"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          },
+          {
+            "id": "11089-12585-2603090745-2603091220--31694",
+            "origin": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T07:45:00",
+            "arrival": "2026-03-09T12:20:00",
+            "durationInMinutes": 275,
+            "flightNumber": "6093",
+            "marketingCarrier": {
+              "id": -31694,
+              "name": "Virgin Australia",
+              "alternateId": "V1",
+              "allianceId": 0,
+              "displayCode": "VA"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "tags": [
+      "second_shortest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9999568
+  },
+  {
+    "id": "10041-2603082155--31694,-31939-1-12585-2603091220",
+    "price": {
+      "raw": 1365.6,
+      "formatted": "$1,366",
+      "pricingOptionId": "l32wZDY5UPs-"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082155--31694,-31939-1-12585-2603091220",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1285,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T21:55:00",
+        "arrival": "2026-03-09T12:20:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31694,
+              "alternateId": "V1",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/V1.png",
+              "name": "Virgin Australia"
+            },
+            {
+              "id": -31939,
+              "alternateId": "QR",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QR.png",
+              "name": "Qatar Airways"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11089-2603082155-2603090530--31694",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "departure": "2026-03-08T21:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "6133",
+            "marketingCarrier": {
+              "id": -31694,
+              "name": "Virgin Australia",
+              "alternateId": "V1",
+              "allianceId": 0,
+              "displayCode": "VA"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          },
+          {
+            "id": "11089-12585-2603090745-2603091220--31939",
+            "origin": {
+              "flightPlaceId": "DOH",
+              "displayCode": "DOH",
+              "parent": {
+                "flightPlaceId": "DOHA",
+                "displayCode": "DOH",
+                "name": "Doha",
+                "type": "City"
+              },
+              "name": "Hamad International",
+              "type": "Airport",
+              "country": "Qatar"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T07:45:00",
+            "arrival": "2026-03-09T12:20:00",
+            "durationInMinutes": 275,
+            "flightNumber": "239",
+            "marketingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            },
+            "operatingCarrier": {
+              "id": -31939,
+              "name": "Qatar Airways",
+              "alternateId": "QR",
+              "allianceId": -32000,
+              "displayCode": "QR"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "tags": [
+      "third_shortest"
+    ],
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.99992496
+  },
+  {
+    "id": "10041-2603081810--31876-1-12585-2603090845",
+    "price": {
+      "raw": 1568,
+      "formatted": "$1,568",
+      "pricingOptionId": "aszZEpaXEG7k"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081810--31876-1-12585-2603090845",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1295,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T18:10:00",
+        "arrival": "2026-03-09T08:45:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603081810-2603090005--31876",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T18:10:00",
+            "arrival": "2026-03-09T00:05:00",
+            "durationInMinutes": 475,
+            "flightNumber": "266",
+            "marketingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603090150-2603090845--31876",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T01:50:00",
+            "arrival": "2026-03-09T08:45:00",
+            "durationInMinutes": 715,
+            "flightNumber": "392",
+            "marketingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": true,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 11.988253
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9957591
+  },
+  {
+    "id": "10041-2603081435--31734-1-12585-2603090605",
+    "price": {
+      "raw": 742.83,
+      "formatted": "$743",
+      "pricingOptionId": "vo_JtDFGLGCg"
+    },
+    "legs": [
+      {
+        "id": "10041-2603081435--31734-1-12585-2603090605",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1350,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T14:35:00",
+        "arrival": "2026-03-09T06:05:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operating": [
+            {
+              "id": -31876,
+              "alternateId": "SQ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/SQ.png",
+              "name": "Singapore Airlines"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-16292-2603081435-2603082025--31734",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "departure": "2026-03-08T14:35:00",
+            "arrival": "2026-03-08T20:25:00",
+            "durationInMinutes": 470,
+            "flightNumber": "9331",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31876,
+              "name": "Singapore Airlines",
+              "alternateId": "SQ",
+              "allianceId": -31999,
+              "displayCode": "SQ"
+            }
+          },
+          {
+            "id": "16292-12585-2603082325-2603090605--31734",
+            "origin": {
+              "flightPlaceId": "SIN",
+              "displayCode": "SIN",
+              "parent": {
+                "flightPlaceId": "SINS",
+                "displayCode": "SIN",
+                "name": "Singapore",
+                "type": "City"
+              },
+              "name": "Singapore Changi",
+              "type": "Airport",
+              "country": "Singapore"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T23:25:00",
+            "arrival": "2026-03-09T06:05:00",
+            "durationInMinutes": 700,
+            "flightNumber": "55",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "eco": {
+      "ecoContenderDelta": 20.041073
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.97304434
+  },
+  {
+    "id": "10041-2603082055--32348,-31734-1-12585-2603091235",
+    "price": {
+      "raw": 2616,
+      "formatted": "$2,616",
+      "pricingOptionId": "C1EEcXfWSlNc"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082055--32348,-31734-1-12585-2603091235",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1360,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T20:55:00",
+        "arrival": "2026-03-09T12:35:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32348,
+              "alternateId": "EK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/EK.png",
+              "name": "Emirates"
+            },
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operationType": "fully_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11182-2603082055-2603090530--32348",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T20:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "435",
+            "marketingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            },
+            "operatingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            }
+          },
+          {
+            "id": "11182-12585-2603090830-2603091235--31734",
+            "origin": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T08:30:00",
+            "arrival": "2026-03-09T12:35:00",
+            "durationInMinutes": 305,
+            "flightNumber": "763",
+            "marketingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9687082
+  },
+  {
+    "id": "10041-2603082055--31940,-31924-1-12585-2603091235",
+    "price": {
+      "raw": 2616,
+      "formatted": "$2,616",
+      "pricingOptionId": "V8ecrLRtBNHx"
+    },
+    "legs": [
+      {
+        "id": "10041-2603082055--31940,-31924-1-12585-2603091235",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1360,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T20:55:00",
+        "arrival": "2026-03-09T12:35:00",
+        "timeDeltaInDays": 1,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -31940,
+              "alternateId": "QF",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/QF.png",
+              "name": "Qantas"
+            },
+            {
+              "id": -31924,
+              "alternateId": "BI",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/BI.png",
+              "name": "Royal Brunei "
+            }
+          ],
+          "operating": [
+            {
+              "id": -32348,
+              "alternateId": "EK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/EK.png",
+              "name": "Emirates"
+            },
+            {
+              "id": -31734,
+              "alternateId": "TK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/TK.png",
+              "name": "Turkish Airlines"
+            }
+          ],
+          "operationType": "not_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11182-2603082055-2603090530--31940",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T20:55:00",
+            "arrival": "2026-03-09T05:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "8435",
+            "marketingCarrier": {
+              "id": -31940,
+              "name": "Qantas",
+              "alternateId": "QF",
+              "allianceId": -32000,
+              "displayCode": "QF"
+            },
+            "operatingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            }
+          },
+          {
+            "id": "11182-12585-2603090830-2603091235--31924",
+            "origin": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-09T08:30:00",
+            "arrival": "2026-03-09T12:35:00",
+            "durationInMinutes": 305,
+            "flightNumber": "3604",
+            "marketingCarrier": {
+              "id": -31924,
+              "name": "Royal Brunei ",
+              "alternateId": "BI",
+              "allianceId": 0,
+              "displayCode": "BI"
+            },
+            "operatingCarrier": {
+              "id": -31734,
+              "name": "Turkish Airlines",
+              "alternateId": "TK",
+              "allianceId": -31999,
+              "displayCode": "TK"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.9687082
+  },
+  {
+    "id": "10041-2603080155--32348-1-12585-2603081740",
+    "price": {
+      "raw": 1284.66,
+      "formatted": "$1,285",
+      "pricingOptionId": "U3K_kU_61Hmp"
+    },
+    "legs": [
+      {
+        "id": "10041-2603080155--32348-1-12585-2603081740",
+        "origin": {
+          "id": "BNE",
+          "entityId": "95673551",
+          "name": "Brisbane",
+          "displayCode": "BNE",
+          "city": "Brisbane",
+          "country": "Australia",
+          "isHighlighted": false
+        },
+        "destination": {
+          "id": "IST",
+          "entityId": "95673323",
+          "name": "Istanbul",
+          "displayCode": "IST",
+          "city": "Istanbul",
+          "country": "Türkiye (Turkey)",
+          "isHighlighted": false
+        },
+        "durationInMinutes": 1365,
+        "stopCount": 1,
+        "isSmallestStops": false,
+        "departure": "2026-03-08T01:55:00",
+        "arrival": "2026-03-08T17:40:00",
+        "timeDeltaInDays": 0,
+        "carriers": {
+          "marketing": [
+            {
+              "id": -32348,
+              "alternateId": "EK",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/EK.png",
+              "name": "Emirates"
+            }
+          ],
+          "operating": [
+            {
+              "id": -32301,
+              "alternateId": "FZ",
+              "logoUrl": "https://logos.skyscnr.com/images/airlines/favicon/FZ.png",
+              "name": "flydubai"
+            }
+          ],
+          "operationType": "partially_operated"
+        },
+        "segments": [
+          {
+            "id": "10041-11182-2603080155-2603081030--32348",
+            "origin": {
+              "flightPlaceId": "BNE",
+              "displayCode": "BNE",
+              "parent": {
+                "flightPlaceId": "BNEA",
+                "displayCode": "BNE",
+                "name": "Brisbane",
+                "type": "City"
+              },
+              "name": "Brisbane",
+              "type": "Airport",
+              "country": "Australia"
+            },
+            "destination": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "departure": "2026-03-08T01:55:00",
+            "arrival": "2026-03-08T10:30:00",
+            "durationInMinutes": 875,
+            "flightNumber": "431",
+            "marketingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            },
+            "operatingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            }
+          },
+          {
+            "id": "11182-12585-2603081330-2603081740--32348",
+            "origin": {
+              "flightPlaceId": "DXB",
+              "displayCode": "DXB",
+              "parent": {
+                "flightPlaceId": "DXBA",
+                "displayCode": "DXB",
+                "name": "Dubai",
+                "type": "City"
+              },
+              "name": "Dubai",
+              "type": "Airport",
+              "country": "United Arab Emirates"
+            },
+            "destination": {
+              "flightPlaceId": "IST",
+              "displayCode": "IST",
+              "parent": {
+                "flightPlaceId": "ISTA",
+                "displayCode": "IST",
+                "name": "Istanbul",
+                "type": "City"
+              },
+              "name": "Istanbul",
+              "type": "Airport",
+              "country": "Türkiye (Turkey)"
+            },
+            "departure": "2026-03-08T13:30:00",
+            "arrival": "2026-03-08T17:40:00",
+            "durationInMinutes": 310,
+            "flightNumber": "2094",
+            "marketingCarrier": {
+              "id": -32348,
+              "name": "Emirates",
+              "alternateId": "EK",
+              "allianceId": 0,
+              "displayCode": "EK"
+            },
+            "operatingCarrier": {
+              "id": -32301,
+              "name": "flydubai",
+              "alternateId": "FZ",
+              "allianceId": 0,
+              "displayCode": "FZ"
+            }
+          }
+        ]
+      }
+    ],
+    "isSelfTransfer": false,
+    "isProtectedSelfTransfer": false,
+    "farePolicy": {
+      "isChangeAllowed": false,
+      "isPartiallyChangeable": false,
+      "isCancellationAllowed": false,
+      "isPartiallyRefundable": false
+    },
+    "fareAttributes": {},
+    "isMashUp": false,
+    "hasFlexibleOptions": false,
+    "score": 0.96677136
+  }
+]

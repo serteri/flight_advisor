@@ -1,4 +1,5 @@
 import { getCachedPlaceIds, setCachedPlaceIds } from './placeIdCache';
+import { getMemoryCachedPlaceIds, setMemoryCachedPlaceIds } from './memoryPlaceCache';
 
 export async function resolveSkyPlaceIds(origin: string, destination: string, date: string, apiKey: string, apiHost: string) {
   const searchUrl = `https://${apiHost}/web/flights/search-one-way`;
@@ -6,11 +7,24 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
   const orig = origin.toUpperCase();
   const dest = destination.toUpperCase();
 
-  // Check cache first
+  // Check in-memory cache first (fast)
+  try {
+    const mem = getMemoryCachedPlaceIds(orig, dest);
+    if (mem) {
+      console.log(`🔒 Sky resolver memory cache hit for ${orig}->${dest}: ${mem.from} -> ${mem.to}`);
+      return { from: mem.from, to: mem.to };
+    }
+  } catch (e) {
+    // ignore memory cache errors
+  }
+
+  // Then check persistent file-backed cache
   try {
     const cached = getCachedPlaceIds(orig, dest);
     if (cached) {
-      console.log(`🔒 Sky resolver cache hit for ${orig}->${dest}: ${cached.from} -> ${cached.to}`);
+      console.log(`🔒 Sky resolver file cache hit for ${orig}->${dest}: ${cached.from} -> ${cached.to}`);
+      // populate memory cache for quicker subsequent hits
+      try { setMemoryCachedPlaceIds(orig, dest, cached.from, cached.to); } catch {}
       return { from: cached.from, to: cached.to };
     }
   } catch (e) {
@@ -20,8 +34,9 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
   // In production prefer plain IATA without probing to avoid network timeouts
   if (process.env.NODE_ENV === 'production') {
     console.log(`🔒 Sky resolver production mode: preferring plain IATA for ${orig}->${dest}`);
-    // still store to cache for subsequent runs
+    // populate both caches for subsequent runs
     try { setCachedPlaceIds(orig, dest, orig, dest); } catch {}
+    try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch {}
     return { from: orig, to: dest };
   }
 
@@ -67,12 +82,14 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
       if (json && (json.data?.itineraries || json.itineraries || json.itineraries?.results)) {
         console.log(`🔎 Sky resolver selected placeIds: ${from} -> ${to}`);
         try { setCachedPlaceIds(orig, dest, from, to); } catch {}
+        try { setMemoryCachedPlaceIds(orig, dest, from, to); } catch {}
         return { from, to };
       }
 
       if (!json || (typeof json === 'object' && Object.keys(json).length > 0 && !json.errors)) {
         console.log(`🔎 Sky resolver accepted placeIds (no errors): ${from} -> ${to}`);
         try { setCachedPlaceIds(orig, dest, from, to); } catch {}
+        try { setMemoryCachedPlaceIds(orig, dest, from, to); } catch {}
         return { from, to };
       }
 
@@ -86,5 +103,6 @@ export async function resolveSkyPlaceIds(origin: string, destination: string, da
 
   // Fallback: plain IATA
   try { setCachedPlaceIds(orig, dest, orig, dest); } catch {}
+  try { setMemoryCachedPlaceIds(orig, dest, orig, dest); } catch {}
   return { from: orig, to: dest };
 }

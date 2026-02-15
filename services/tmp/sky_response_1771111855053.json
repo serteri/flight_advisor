@@ -1,0 +1,83 @@
+{
+  "data": {
+    "context": {
+      "status": "complete",
+      "sessionId": "KLUv_WAQAM0FAJJNKSGwqQNAkixgkiS1aGeTTEHvNECZ5E4pyVgvZQfVMunX7BCMBeCwFNK7Yt1MM_2p_b5P19uFe6ss_SfWeDwgCUInIitEa1GfI-tDVr1vVh1ibqZG4Ip2uTUOdT7Ucl1qOtU6pIjbCjCKGXd-W-vf_d2IWVVjZussua7hII6CAGDyLIWUUCqTyGAZNImLvPH1yc6V8bWF9NAjHjJi-myIkzhJWBh1AgYAA-ZBdnElMwA-DsSMmFNm"
+    },
+    "itineraries": {
+      "destinationImageUrl": "https://content.skyscnr.com/m/3719e8f4a5daf43d/original/Flights-Placeholder.jpg",
+      "filterStats": null,
+      "creatives": null,
+      "agents": null,
+      "alliances": null,
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "d3e21181-11e0-409d-8b4c-b3e9c6c05136",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": []
+    },
+    "carHire": {
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "d39d8040-973a-4062-93d0-8c4f6d85504c",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": []
+    },
+    "accommodations": {
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "54c2bc5b88d74880aaeaaec59de3a8b8",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": []
+    },
+    "packages": {
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "d3e21181-11e0-409d-8b4c-b3e9c6c05136",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": null
+    },
+    "brandCarousel": {
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "d3e21181-11e0-409d-8b4c-b3e9c6c05136",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": null
+    },
+    "brandInlines": {
+      "context": {
+        "status": "complete_not_modified",
+        "sessionId": "d3e21181-11e0-409d-8b4c-b3e9c6c05136",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": null
+    },
+    "flightAlternatives": {
+      "context": {
+        "status": "complete",
+        "sessionId": "d6235311-756e-4481-ab1c-a0590178113a",
+        "totalResults": 0
+      },
+      "results": [],
+      "buckets": []
+    }
+  },
+  "status": true,
+  "message": "Successful",
+  "meta": {
+    "status": "complete_not_modified",
+    "state": "d3e21181-11e0-409d-8b4c-b3e9c6c05136",
+    "totalRecords": 0
+  }
+}
