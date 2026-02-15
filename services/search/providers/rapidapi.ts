@@ -6,10 +6,10 @@ import { resolveSkyPlaceIds } from "../skyPlaceResolver";
 // This provider fetches prices to mirror OTA availability (Skyscanner parity)
 // and enriches them with "Smart" data (score, rating).
 
-export async function searchSkyScrapper(params: { 
-  origin: string, 
-  destination: string, 
-  date: string, 
+export async function searchSkyScrapper(params: {
+  origin: string,
+  destination: string,
+  date: string,
   currency?: string,
   cabinClass?: string,
   adults?: number
@@ -17,7 +17,7 @@ export async function searchSkyScrapper(params: {
   const apiKey = process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY;
   const apiHost = process.env.RAPID_API_HOST_FLIGHT || 'flights-scraper-real-time.p.rapidapi.com';
 
-  console.log(`🔑 Kiwi Provider Check: Key=${apiKey ? '✅' : '❌'}, Host=${apiHost}`);
+  console.log(`🔑 Kiwi Provider Check: Key=${apiKey ? apiKey.substring(0, 4) + '...' : 'MISSING'}, Host=${apiHost}`);
 
   if (!apiKey) {
     console.error('❌ RAPID_API_KEY not set - Kiwi provider disabled');
@@ -26,7 +26,7 @@ export async function searchSkyScrapper(params: {
 
   // Tarih Formatı (yyyy-mm-dd)
   const targetDate = params.date.includes('T') ? params.date.split('T')[0] : params.date;
-  
+
   // Resolve Place IDs (use existing resolver to get IATA or SkyID as needed)
   // For now assuming the endpoint accepts IATA or SkyID. 
   // We use the resolver which handles this.
@@ -62,9 +62,9 @@ export async function searchSkyScrapper(params: {
     console.log(`📊 Kiwi API response: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`❌ Kiwi API error (${res.status}):`, errorText.slice(0, 200));
-        return [];
+      const errorText = await res.text();
+      console.error(`❌ Kiwi API error (${res.status}):`, errorText.slice(0, 200));
+      return [];
     }
 
     const json = await res.json();
@@ -75,7 +75,7 @@ export async function searchSkyScrapper(params: {
     return items.map((item: any) => {
       try {
         // Map Kiwi response to FlightResult
-        const segment = item.sector?.sectorSegments?.[0]?.segment; 
+        const segment = item.sector?.sectorSegments?.[0]?.segment;
         const price = parseFloat(item.price?.amount || "0");
         const relativeUrl = item.bookingOptions?.edges?.[0]?.node?.bookingUrl;
         const deepLink = relativeUrl ? `https://www.kiwi.com${relativeUrl}` : null;
@@ -87,8 +87,8 @@ export async function searchSkyScrapper(params: {
         // Akıllı Etiketleme Mantığı
         if (price > 0 && price < 600) { tags.push("Best Price"); score += 1.5; }
         const durationSeconds = item.duration || 0;
-        if (durationSeconds < 15 * 3600) { tags.push("Fastest"); score += 0.5; } 
-        
+        if (durationSeconds < 15 * 3600) { tags.push("Fastest"); score += 0.5; }
+
         // Use operatingCarrier instead of marketingCarrier (that one doesn't exist)
         const carrierName = segment?.operatingCarrier?.name || "Airline";
         if (carrierName.includes("Turkish")) { tags.push("Top Rated Airline"); score += 0.5; }
@@ -99,7 +99,7 @@ export async function searchSkyScrapper(params: {
           airline: carrierName,
           airlineLogo: segment?.operatingCarrier?.logoUrl,
           flightNumber: segment?.operatingCarrier?.code || segment?.code || "FLT",
-          
+
           from: originCode,
           to: destCode,
           departTime: segment?.source?.localTime,
@@ -140,5 +140,5 @@ export async function searchSkyScrapper(params: {
 
 // Dummy implementation for AirScraper to satisfy imports in aggregator
 export async function searchAirScraper(params: any): Promise<FlightResult[]> {
-  return []; 
+  return [];
 }
