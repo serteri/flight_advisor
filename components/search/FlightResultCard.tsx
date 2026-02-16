@@ -103,7 +103,12 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                 {/* Layover Details */}
                                 {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
                                     <span className="text-[9px] text-slate-500 mt-0.5 text-center">
-                                        {flight.layovers.map((l: any) => `${l.airport} (${Math.floor(l.duration / 60)}h ${l.duration % 60}m)`).join(', ')}
+                                        {flight.layovers.map((l: any, idx: number) => {
+                                            const airportCode = typeof l.airport === 'string' ? l.airport : (l.airport?.iataCode || l.airport?.code || 'XXX');
+                                            const hrs = Math.floor((l.duration || 0) / 60);
+                                            const mins = (l.duration || 0) % 60;
+                                            return `${airportCode} (${hrs}h ${mins}m)`;
+                                        }).join(', ')}
                                     </span>
                                 )}
                             </div>
@@ -199,13 +204,6 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                     {con}
                                 </span>
                             ))}
-
-            {/* DETAY DİALOĞU */}
-            <FlightDetailDialog 
-                flight={flight} 
-                open={showDetails} 
-                onClose={() => setShowDetails(false)} 
-            />
                         </div>
                     )}
 
@@ -223,6 +221,13 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                     </div>
                 </div>
             </div>
+
+            {/* DETAY DİALOĞU */}
+            <FlightDetailDialog 
+                flight={flight} 
+                open={showDetails} 
+                onClose={() => setShowDetails(false)} 
+            />
         </div>
     );
 }

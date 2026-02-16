@@ -35,16 +35,10 @@ export function DataSourceIndicator({ flights }: { flights: any[] }) {
                 color: 'blue'
             },
             {
-                name: 'KIWI',
-                status: sourceCounts['KIWI'] > 0 ? 'active' : 'inactive',
-                count: sourceCounts['KIWI'] || 0,
+                name: 'AMADEUS',
+                status: sourceCounts['AMADEUS'] > 0 ? 'active' : 'inactive',
+                count: sourceCounts['AMADEUS'] || 0,
                 color: 'violet'
-            },
-            {
-                name: 'RAPIDAPI',
-                status: sourceCounts['RAPIDAPI'] > 0 ? 'active' : 'inactive',
-                count: sourceCounts['RAPIDAPI'] || 0,
-                color: 'amber'
             }
         ];
 
@@ -68,7 +62,7 @@ export function DataSourceIndicator({ flights }: { flights: any[] }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {sources.map((source) => (
                     <div
                         key={source.name}
