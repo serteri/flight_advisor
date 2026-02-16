@@ -1,4 +1,5 @@
 import { FlightResult, FlightSource } from "@/types/hybridFlight";
+import * as crypto from 'crypto'; // MD5 signature için
 
 const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN || '31769c19fe387c3aebfcc0bbb5aadcdb';
 const TP_MARKER = process.env.TRAVELPAYOUTS_MARKER || '701049';
@@ -16,17 +17,29 @@ export async function searchAviasales(params: {
   try {
     const dateStr = params.date.includes('T') ? params.date.split('T')[0] : params.date;
     
-    // 1. ARAMAYI BAŞLAT
+    const adults = parseInt(String(params.adults || '1'));
+    const children = 0;
+    const infants = 0;
+    
+    // 1. MD5 İMZA OLUŞTURMA (Zorunlu!)
+    // Format: token:marker:adults:children:infants:date:dest:origin:trip_class:ip
+    const signatureStr = `${TP_TOKEN}:${TP_MARKER}:${adults}:${children}:${infants}:${dateStr}:${params.destination.toUpperCase()}:${params.origin.toUpperCase()}:Y:127.0.0.1`;
+    const signature = crypto.createHash('md5').update(signatureStr).digest('hex');
+    
+    console.log(`🔐 Aviasales Signature created for ${params.origin} → ${params.destination}`);
+    
+    // 2. ARAMAYI BAŞLAT
     const requestBody = {
+      signature: signature, // ← İşte eksik olan!
       marker: TP_MARKER,
       host: "flightagent.io",
       user_ip: "127.0.0.1",
       locale: "en",
       trip_class: "Y", // Economy
       passengers: {
-        adults: parseInt(String(params.adults || '1')),
-        children: 0,
-        infants: 0
+        adults: adults,
+        children: children,
+        infants: infants
       },
       segments: [
         {
@@ -68,16 +81,18 @@ export async function searchAviasales(params: {
     console.log(`⏳ Aviasales Search Started. ID: ${searchId}`);
 
     // 2. SONUÇLARI BEKLE (POLLING)
-    for (let attempt = 0; attempt < 5; attempt++) {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
-      
+    // İlk sonuçların toplanması 3-4 saniye sürer
+    await new Promise(resolve => setTimeout(resolve, 4000)); // 4 saniye bekle
+    
+    for (let attempt = 0; attempt < 3; attempt++) {
       const resultsUrl = `https://api.travelpayouts.com/v1/flight_search_results?search_id=${searchId}`;
-      console.log(`🔍 Aviasales Polling attempt ${attempt + 1}/5...`);
+      console.log(`🔍 Aviasales Polling attempt ${attempt + 1}/3...`);
       
       const resultsResponse = await fetch(resultsUrl);
       
       if (!resultsResponse.ok) {
         console.warn(`⚠️ Aviasales results poll failed (${resultsResponse.status})`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Tekrar denemeden önce bekle
         continue;
       }
       
@@ -85,6 +100,7 @@ export async function searchAviasales(params: {
       
       if (!resultsJson || !Array.isArray(resultsJson) || resultsJson.length === 0) {
         console.log(`⏳ Aviasales: No results yet (attempt ${attempt + 1})`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Tekrar denemeden önce bekle
         continue;
       }
 
