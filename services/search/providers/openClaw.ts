@@ -2,39 +2,41 @@ import { prisma } from '@/lib/prisma';
 
 // Tip tanımı
 interface FlightResult {
-    id: string;
-    source: string;
-    airline: string;
-    airlineLogo: string;
-    flightNumber: string;
-    origin: string;
-    destination: string;
-    price: number;
-    currency: string;
-    departureTime: Date;
-    arrivalTime: Date;
-    durationMinutes: number;
-    stops: number;
-    from: string;
-    to: string;
-    departTime: string;
-    arriveTime: string;
-    duration: string;
-    cabinClass: string;
-    score?: number;
-    scoreReason?: string;
-    amenities?: any;
-    policies?: any;
-    deepLink?: string;
+  id: string;
+  source: string;
+  airline: string;
+  airlineLogo: string;
+  flightNumber: string;
+  origin: string;
+  destination: string;
+  price: number;
+  currency: string;
+  departureTime: Date;
+  arrivalTime: Date;
+  durationMinutes: number;
+  stops: number;
+  from: string;
+  to: string;
+  departTime: string;
+  arriveTime: string;
+  duration: string;
+  cabinClass: string;
+  score?: number;
+  scoreReason?: string;
+  amenities?: any;
+  policies?: any;
+  deepLink?: string;
 }
 
 export async function searchOpenClaw(params: { origin: string, destination: string, date: string }) {
   const agentBaseUrl = process.env.OPENCLAW_API_URL;
 
   if (!agentBaseUrl) return [];
+  // DISABLED: Returning empty array to stop pollution of results with dummy data
+  return [];
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); 
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   const prompt = `
     ROL: Sen "Elite Flight Architect"sin. Sadece Premium müşteriler için çalışan, dünyanın en detaycı uçuş analistisin.
@@ -64,9 +66,9 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-        const errText = await response.text();
-        console.error(`🔥 OPENCLAW HATA: ${response.status} - ${errText.substring(0, 100)}`);
-        return [];
+      const errText = await response.text();
+      console.error(`🔥 OPENCLAW HATA: ${response.status} - ${errText.substring(0, 100)}`);
+      return [];
     }
 
     const data = await response.json();
@@ -100,8 +102,8 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
           currency: flight.currency || "USD",
           score: parseFloat(flight.score),
           scoreReason: flight.scoreReason,
-          amenities: flight.amenities, 
-          policies: flight.policies    
+          amenities: flight.amenities,
+          policies: flight.policies
         }
       });
       savedFlights.push(saved);
@@ -112,7 +114,7 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
       id: f.id,
       source: 'OPENCLAW',
       airline: f.airline,
-      airlineLogo: "", 
+      airlineLogo: "",
       flightNumber: f.flightNumber,
       origin: f.origin,
       destination: f.destination,
@@ -125,7 +127,7 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
       departTime: f.departureTime.toISOString(),
       arriveTime: f.arrivalTime.toISOString(),
       durationMinutes: f.durationMinutes,
-      duration: `${Math.floor(f.durationMinutes/60)}s ${f.durationMinutes%60}dk`,
+      duration: `${Math.floor(f.durationMinutes / 60)}s ${f.durationMinutes % 60}dk`,
       stops: f.stops,
       cabinClass: "economy",
       score: f.score || 0,
