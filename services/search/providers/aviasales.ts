@@ -39,7 +39,7 @@ export async function searchAviasales(params: {
 
     console.log(`📡 Aviasales Init Request for ${params.origin} → ${params.destination}`);
 
-    const initResponse = await fetch('http://api.travelpayouts.com/v1/flight_search', {
+    const initResponse = await fetch('https://api.travelpayouts.com/v1/flight_search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ export async function searchAviasales(params: {
     for (let attempt = 0; attempt < 5; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
       
-      const resultsUrl = `http://api.travelpayouts.com/v1/flight_search_results?search_id=${searchId}`;
+      const resultsUrl = `https://api.travelpayouts.com/v1/flight_search_results?search_id=${searchId}`;
       console.log(`🔍 Aviasales Polling attempt ${attempt + 1}/5...`);
       
       const resultsResponse = await fetch(resultsUrl);
