@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
+import { DataSourceIndicator } from "@/components/DataSourceIndicator";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
@@ -280,6 +281,10 @@ function SearchPageContent() {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold text-slate-900">{results.length} {t('resultsFound')}</h2>
                         </div>
+                        
+                        {/* Veri Kaynağı Göstergesi */}
+                        <DataSourceIndicator flights={results} />
+                        
                         <div className="space-y-4">
                             {results.slice(0, visibleCount).map((flight) => (
                                 <FlightResultCard

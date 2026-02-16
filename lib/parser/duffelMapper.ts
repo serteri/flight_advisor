@@ -57,13 +57,50 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         }
     }
 
-    // Improve baggage display: try multiple fields
+    // Improve baggage display: try multiple fields and extract actual kg/piece data
     let baggageLabel = 'Kontrol Et';
+    let baggageKg: number | undefined;
+    let cabinBagKg: number | undefined;
+    let checkedBaggage = 'Kontrol Et';
+    let cabinBaggage = '1 Parça';
+    
     try {
         const pax = offer.passengers?.[0];
-        if (pax?.baggages && pax.baggages.length > 0) baggageLabel = 'Dahil';
-        else if (offer.includes && offer.includes.baggage) baggageLabel = 'Dahil';
-    } catch (e) { }
+        
+        // Check for baggage allowances
+        if (pax?.baggages && pax.baggages.length > 0) {
+            const checkedBag = pax.baggages.find((b: any) => b.type === 'checked');
+            const cabinBag = pax.baggages.find((b: any) => b.type === 'carry_on');
+            
+            if (checkedBag) {
+                baggageLabel = 'Dahil';
+                // Extract quantity and weight
+                const qty = checkedBag.quantity || 1;
+                if (checkedBag.weight_value && checkedBag.weight_unit) {
+                    baggageKg = checkedBag.weight_value;
+                    checkedBaggage = `${qty} x ${checkedBag.weight_value}${checkedBag.weight_unit}`;
+                } else {
+                    checkedBaggage = `${qty} Parça`;
+                }
+            }
+            
+            if (cabinBag) {
+                const qty = cabinBag.quantity || 1;
+                if (cabinBag.weight_value && cabinBag.weight_unit) {
+                    cabinBagKg = cabinBag.weight_value;
+                    cabinBaggage = `${qty} x ${cabinBag.weight_value}${cabinBag.weight_unit}`;
+                } else {
+                    cabinBaggage = `${qty} Parça`;
+                }
+            }
+        } else if (offer.includes && offer.includes.baggage) {
+            baggageLabel = 'Dahil';
+            baggageKg = 20; // Default assumption
+            checkedBaggage = '20kg (Standart)';
+        }
+    } catch (e) {
+        console.warn('Baggage parsing error:', e);
+    }
 
     return {
         id: offer.id,
@@ -92,6 +129,17 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         segments: segs,
         layovers,
         deepLink: undefined,
-        bookingLink: undefined
+        bookingLink: undefined,
+        policies: {
+            baggageKg,
+            cabinBagKg,
+            refundable: false,
+            changeAllowed: false
+        },
+        baggageSummary: {
+            checked: checkedBaggage,
+            cabin: cabinBaggage,
+            totalWeight: baggageKg ? `${baggageKg}kg` : 'Kontrol Et'
+        }
     };
 }

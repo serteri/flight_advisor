@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import FlightResultCard from '@/components/search/FlightResultCard';
+import { DataSourceIndicator } from '@/components/DataSourceIndicator';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { Search } from 'lucide-react';
 
@@ -101,28 +102,33 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
 
                 {/* Results */}
                 {!loading && !error && (
-                    <div className="grid gap-6">
-                        {flights.length > 0 ? (
-                            flights.map((flight, index) => (
-                                <FlightResultCard
-                                    key={flight.id || index}
-                                    flight={flight}
-                                />
-                            ))
-                        ) : (
-                            <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-xl bg-white">
-                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Search className="w-8 h-8 text-slate-400" />
+                    <>
+                        {/* Veri Kaynağı Göstergesi */}
+                        {flights.length > 0 && <DataSourceIndicator flights={flights} />}
+                        
+                        <div className="grid gap-6">
+                            {flights.length > 0 ? (
+                                flights.map((flight, index) => (
+                                    <FlightResultCard
+                                        key={flight.id || index}
+                                        flight={flight}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-xl bg-white">
+                                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Search className="w-8 h-8 text-slate-400" />
+                                    </div>
+                                    <p className="text-lg font-bold text-slate-400 mb-2">
+                                        Aradığın kriterlerde uçuş bulunamadı
+                                    </p>
+                                    <p className="text-sm text-slate-500">
+                                        Farklı tarihler veya havaalanları deneyin
+                                    </p>
                                 </div>
-                                <p className="text-lg font-bold text-slate-400 mb-2">
-                                    Aradığın kriterlerde uçuş bulunamadı
-                                </p>
-                                <p className="text-sm text-slate-500">
-                                    Farklı tarihler veya havaalanları deneyin
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
         </div>

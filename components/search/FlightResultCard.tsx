@@ -1,12 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Lock, Wifi, Utensils, Luggage, Eye, BellRing } from 'lucide-react';
+import { Lock, Wifi, Utensils, Luggage, Eye, BellRing, Info } from 'lucide-react';
 import { useState } from 'react';
+import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 
 export default function FlightResultCard({ flight, isPremium = false }: { flight: any, isPremium?: boolean }) {
     const t = useTranslations('Results');
     const [showScore, setShowScore] = useState(isPremium);
+    const [showDetails, setShowDetails] = useState(false);
 
     const handleLockClick = () => {
         if (!isPremium) {
@@ -132,9 +134,26 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         <div className="flex items-center gap-1.5">
                             <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
                             <span className="text-[11px] font-medium text-slate-600">
-                                {flight.amenities?.baggage || `${t('baggage')}: ?`}
+                                {flight.policies?.baggageKg 
+                                    ? `${flight.policies.baggageKg}kg` 
+                                    : flight.baggageSummary?.checked 
+                                        ? flight.baggageSummary.checked 
+                                        : flight.amenities?.baggage === 'Dahil' 
+                                            ? '20kg Dahil' 
+                                            : 'Kontrol Et'}
                             </span>
                         </div>
+                    </div>
+
+                    {/* KONTROL ET BUTONU */}
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                        <button
+                            onClick={() => setShowDetails(true)}
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Info className="w-4 h-4" />
+                            Kontrol Et
+                        </button>
                     </div>
                 </div>
 
@@ -180,6 +199,13 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                     {con}
                                 </span>
                             ))}
+
+            {/* DETAY DİALOĞU */}
+            <FlightDetailDialog 
+                flight={flight} 
+                open={showDetails} 
+                onClose={() => setShowDetails(false)} 
+            />
                         </div>
                     )}
 
