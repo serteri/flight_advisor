@@ -86,7 +86,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                 {/* Layover Dots */}
                                 {flight.layovers && flight.layovers.length > 0 && (
                                     <div className="absolute top-[-3px] left-0 w-full flex justify-between px-2">
-                                        {flight.layovers.map((_, i) => (
+                                        {flight.layovers.map((_: any, i: number) => (
                                             <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-white" style={{ left: `${(i + 1) * (100 / (flight.layovers!.length + 1))}%` }} />
                                         ))}
                                     </div>
