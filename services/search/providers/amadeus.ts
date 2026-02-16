@@ -1,5 +1,5 @@
 import { FlightResult, HybridSearchParams, FlightSource } from '@/types/hybridFlight';
-import { getAmadeusClient } from '@/lib/amadeus';
+import { searchFlights } from '@/lib/amadeus';
 
 export async function searchAmadeus(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`[Amadeus] Searching for ${params.origin} -> ${params.destination} on ${params.date}`);
@@ -10,16 +10,13 @@ export async function searchAmadeus(params: HybridSearchParams): Promise<FlightR
             return [];
         }
 
-        const client = getAmadeusClient();
-        
-        const response = await client.shopping.flightOffersSearch.get({
-            originLocationCode: params.origin,
-            destinationLocationCode: params.destination,
+        const response = await searchFlights({
+            origin: params.origin,
+            destination: params.destination,
             departureDate: params.date,
             adults: params.adults || 1,
-            travelClass: params.cabin?.toUpperCase() || 'ECONOMY',
-            currencyCode: params.currency || 'USD',
-            max: 50 // Get up to 50 results
+            travelClass: (params.cabin?.toUpperCase() as any) || 'ECONOMY',
+            currency: params.currency || 'USD'
         });
 
         const offers = response.data || [];
@@ -129,7 +126,7 @@ export async function searchAmadeus(params: HybridSearchParams): Promise<FlightR
                 console.warn('[Amadeus] Error mapping offer:', err.message);
                 return null;
             }
-        }).filter((f): f is FlightResult => f !== null);
+        }).filter((f: FlightResult | null): f is FlightResult => f !== null);
 
         return mappedFlights;
 
