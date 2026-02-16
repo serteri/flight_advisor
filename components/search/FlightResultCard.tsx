@@ -77,9 +77,19 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
 
                         {/* SÜRE VE AKTARMA DETAYLI */}
                         <div className="flex-1 flex flex-col items-center">
-                            <span className="text-xs font-bold text-slate-600 mb-1">
-                                {Math.floor(flight.duration / 60)}h {flight.duration % 60}m
-                            </span>
+                            {/* Toplam Seyahat Süresini Doğru Hesapla */}
+                            {(() => {
+                                const deptTime = new Date(flight.departureTime || flight.departTime).getTime();
+                                const arrTime = new Date(flight.arrivalTime || flight.arriveTime).getTime();
+                                const totalMinutes = Math.max(0, (arrTime - deptTime) / (1000 * 60));
+                                const hours = Math.floor(totalMinutes / 60);
+                                const mins = Math.round(totalMinutes % 60);
+                                return (
+                                    <span className="text-xs font-bold text-slate-600 mb-1">
+                                        {hours}h {mins}m
+                                    </span>
+                                );
+                            })()}
 
                             <div className="w-full h-[2px] bg-slate-200 relative my-1">
                                 {/* Plane Icon */}

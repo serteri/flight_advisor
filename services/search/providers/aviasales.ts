@@ -1,7 +1,7 @@
 import { FlightResult, FlightSource } from "@/types/hybridFlight";
 
-// Travelpayouts (Aviasales) - Price Mirror Engine
-// API Docs: https://www.travelpayouts.com/developers/api
+const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN || '31769c19fe387c3aebfcc0bbb5aadcdb';
+const TP_MARKER = process.env.TRAVELPAYOUTS_MARKER || '701049';
 
 export async function searchAviasales(params: {
   origin: string;
@@ -9,151 +9,248 @@ export async function searchAviasales(params: {
   date: string;
   currency?: string;
   adults?: number;
+  cabin?: string;
 }): Promise<FlightResult[]> {
-  const token = process.env.TRAVELPAYOUTS_TOKEN;
-  const marker = process.env.TRAVELPAYOUTS_MARKER || '701049';
-
-  console.log(`🦁 Aviasales: Searching ${params.origin} → ${params.destination}`);
-
-  if (!token) {
-    console.warn('❌ TRAVELPAYOUTS_TOKEN missing');
-    return [];
-  }
-
-  const originCode = params.origin.toUpperCase();
-  const destCode = params.destination.toUpperCase();
-  const dateStr = params.date.includes('T') ? params.date.split('T')[0] : params.date;
+  console.log(`🦁 Aviasales LIVE Search: ${params.origin} → ${params.destination}`);
 
   try {
-    // Travelpayouts v2 API - Latest Prices
-    const url = new URL('https://api.travelpayouts.com/v2/prices/latest');
-    url.searchParams.append('token', token);
-    url.searchParams.append('origin', originCode);
-    url.searchParams.append('destination', destCode);
-    url.searchParams.append('beginning_of_period', dateStr);
-    url.searchParams.append('period_type', 'day');
-    url.searchParams.append('one_way', 'true');
-    url.searchParams.append('limit', '50');
-    url.searchParams.append('sorting', 'price');
+    const dateStr = params.date.includes('T') ? params.date.split('T')[0] : params.date;
+    
+    // 1. ARAMAYI BAŞLAT
+    const requestBody = {
+      marker: TP_MARKER,
+      host: "flightagent.io",
+      user_ip: "127.0.0.1",
+      locale: "en",
+      trip_class: "Y", // Economy
+      passengers: {
+        adults: parseInt(String(params.adults || '1')),
+        children: 0,
+        infants: 0
+      },
+      segments: [
+        {
+          origin: params.origin.toUpperCase(),
+          destination: params.destination.toUpperCase(),
+          date: dateStr
+        }
+      ]
+    };
 
-    console.log(`📡 Aviasales Request: ${url.toString().substring(0, 120)}...`);
+    console.log(`📡 Aviasales Init Request for ${params.origin} → ${params.destination}`);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const initResponse = await fetch('http://api.travelpayouts.com/v1/flight_search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Token': TP_TOKEN
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-    const res = await fetch(url.toString(), {
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeout));
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`❌ Aviasales Error (${res.status}):`, text.substring(0, 200));
+    if (!initResponse.ok) {
+      const errText = await initResponse.text();
+      console.error(`❌ Aviasales Init Failed (${initResponse.status}):`, errText.substring(0, 300));
       return [];
     }
 
-    const json = await res.json();
-    const data = Array.isArray(json.data) ? json.data : [];
-
-    console.log(`✅ Aviasales: Found ${data.length} flights`);
-
-    if (data.length === 0) return [];
-
-    return data.map((item: any, idx: number) => {
-      try {
-        const price = item.price || item.value || 0;
-        const mainAirline = item.main_airline || item.airline || 'Multi-Airline';
-        const stops = item.number_of_changes || 0;
-        const departDate = item.depart_date || dateStr;
-        const returnDate = item.return_date || dateStr;
-
-        // Deep link for affiliate tracking
-        const deepLink = `https://search.aviasales.com/flights/?origin_iata=${originCode}&destination_iata=${destCode}&depart_date=${dateStr}&marker=${marker}&with_request=true`;
-
-        // Pricing  
-        let duration = 0;
-        if (item.duration && typeof item.duration === 'object') {
-          duration = (item.duration.hours || 0) * 60 + (item.duration.minutes || 0);
-        } else if (typeof item.duration === 'number') {
-          duration = item.duration;
-        }
-
-        // Score calculation
-        let score = 7.0;
-        const pros: string[] = [];
-        const cons: string[] = [];
-
-        if (price < 400) {
-          score += 2;
-          pros.push('Дешевле');
-        }
-        if (stops === 0) {
-          score += 1;
-          pros.push('Директ');
-        } else {
-          cons.push(`${stops} остановок`);
-        }
-
-        return {
-          id: `aviasales_${item.flight_number || idx}`,
-          source: 'TRAVELPAYOUTS' as FlightSource,
-          airline: mainAirline,
-          airlineLogo: mainAirline ? `https://pics.avs.io/200/200/${mainAirline}.png` : '',
-          flightNumber: item.flight_number || `AV${Math.floor(Math.random() * 9999)}`,
-          from: originCode,
-          to: destCode,
-          departTime: new Date(departDate).toISOString(),
-          arriveTime: new Date(returnDate).toISOString(),
-          duration: duration,
-          stops: stops,
-          price: Math.round(price),
-          currency: 'USD',
-          cabinClass: 'economy',
-          amenities: {
-            hasWifi: false,
-            hasMeal: stops === 0 ? false : true,
-            baggage: 'Dahil'
-          },
-          policies: {
-            baggageKg: 20,
-            cabinBagKg: 7,
-            refundable: false,
-            changeAllowed: false
-          },
-          baggageSummary: {
-            checked: '1 x 20kg',
-            cabin: '1 x 7kg',
-            totalWeight: '20kg'
-          },
-          segments: [],
-          layovers: [],
-          deepLink: deepLink,
-          bookingLink: deepLink,
-          agentScore: score,
-          scorePros: pros,
-          scoreCons: cons,
-          bookingProviders: [
-            {
-              name: item.gate || 'Aviasales',
-              price: Math.round(price),
-              currency: params.currency || 'USD',
-              link: deepLink,
-              type: 'agency' as const,
-              rating: 4.5
-            }
-          ]
-        } as FlightResult;
-      } catch (err: any) {
-        console.warn('[Aviasales] Mapping error:', err.message);
-        return null;
-      }
-    }).filter((f: any): f is FlightResult => f !== null);
-
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      console.error('❌ Aviasales: Timeout');
-    } else {
-      console.error('❌ Aviasales error:', err.message);
+    const initData = await initResponse.json();
+    const searchId = initData.search_id;
+    
+    if (!searchId) {
+      console.error('❌ No search_id returned:', initData);
+      return [];
     }
+    
+    console.log(`⏳ Aviasales Search Started. ID: ${searchId}`);
+
+    // 2. SONUÇLARI BEKLE (POLLING)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
+      
+      const resultsUrl = `http://api.travelpayouts.com/v1/flight_search_results?search_id=${searchId}`;
+      console.log(`🔍 Aviasales Polling attempt ${attempt + 1}/5...`);
+      
+      const resultsResponse = await fetch(resultsUrl);
+      
+      if (!resultsResponse.ok) {
+        console.warn(`⚠️ Aviasales results poll failed (${resultsResponse.status})`);
+        continue;
+      }
+      
+      const resultsJson = await resultsResponse.json();
+      
+      if (!resultsJson || !Array.isArray(resultsJson) || resultsJson.length === 0) {
+        console.log(`⏳ Aviasales: No results yet (attempt ${attempt + 1})`);
+        continue;
+      }
+
+      // 3. VERİYİ İŞLE
+      const flights: FlightResult[] = [];
+      
+      try {
+        const proposals = resultsJson[0]?.proposals || [];
+        
+        if (proposals.length === 0) {
+          console.warn('⚠️ Aviasales: No proposals in search results');
+          return [];
+        }
+
+        console.log(`📦 Aviasales: Processing ${proposals.length} proposals...`);
+
+        proposals.forEach((offer: any) => {
+          try {
+            const segment = offer.segment?.[0];
+            if (!segment) return;
+            
+            const flightLegs = segment.flight || [];
+            if (flightLegs.length === 0) return;
+
+            const firstLeg = flightLegs[0];
+            const lastLeg = flightLegs[flightLegs.length - 1];
+            
+            const stops = Math.max(0, flightLegs.length - 1);
+            const airlineCode = firstLeg?.operating_carrier || 'XX';
+            const airlineName = getAirlineName(airlineCode);
+            
+            // Tarih-Saat birleştir
+            const departTime = `${firstLeg?.departure_date}T${firstLeg?.departure_time}`;
+            const arriveTime = `${lastLeg?.arrival_date}T${lastLeg?.arrival_time}`;
+            
+            const deepLink = `https://search.aviasales.com/${searchId}/${offer.sign}?marker=${TP_MARKER}`;
+            
+            // Toplam süre (dakika cinsinden)
+            const totalDurationMins = segment.duration || 0;
+            
+            // Layover'ları hesapla
+            const layovers: any[] = [];
+            for (let i = 0; i < flightLegs.length - 1; i++) {
+              const current = flightLegs[i];
+              const next = flightLegs[i + 1];
+              
+              const arrivalTime = new Date(`${current?.arrival_date}T${current?.arrival_time}`).getTime();
+              const departureTime = new Date(`${next?.departure_date}T${next?.departure_time}`).getTime();
+              const layoverMins = Math.floor((departureTime - arrivalTime) / 60000);
+              
+              layovers.push({
+                airport: current?.destination || 'XXX',
+                duration: layoverMins,
+                city: current?.destination_name || ''
+              });
+            }
+
+            flights.push({
+              id: `TP_${offer.sign}`,
+              source: 'TRAVELPAYOUTS' as FlightSource,
+              airline: airlineName,
+              airlineLogo: `https://pics.avs.io/200/200/${airlineCode}.png`,
+              flightNumber: `${airlineCode}${Math.floor(Math.random() * 9999)}`,
+              
+              from: params.origin.toUpperCase(),
+              to: params.destination.toUpperCase(),
+              departTime: departTime,
+              arriveTime: arriveTime,
+              duration: totalDurationMins,
+              stops: stops,
+              
+              price: parseFloat(offer.total_price || '0'),
+              currency: offer.currency || params.currency || 'USD',
+              cabinClass: 'economy',
+              
+              segments: flightLegs.map((leg: any) => ({
+                from: leg.origin || 'XXX',
+                to: leg.destination || 'XXX',
+                departure: `${leg.departure_date}T${leg.departure_time}`,
+                arrival: `${leg.arrival_date}T${leg.arrival_time}`,
+                duration: leg.duration || 0,
+                carrier: leg.operating_carrier || 'XX',
+                carrierName: getAirlineName(leg.operating_carrier || 'XX'),
+                flightNumber: leg.flight_number || 'FLT',
+                aircraft: leg.aircraft_type || ''
+              })),
+              
+              layovers: layovers,
+              
+              amenities: {
+                hasWifi: false,
+                hasMeal: stops === 0,
+                baggage: '20kg'
+              },
+              
+              policies: {
+                baggageKg: 20,
+                cabinBagKg: 7,
+                refundable: false,
+                changeAllowed: false
+              },
+              
+              baggageSummary: {
+                checked: '1 x 20kg',
+                cabin: '1 x 7kg',
+                totalWeight: '20kg'
+              },
+              
+              deepLink: deepLink,
+              bookingLink: deepLink,
+              
+              tags: stops === 0 ? ['Direkt'] : [`${stops} Aktarma`],
+              score: stops === 0 ? 9.0 : 7.5,
+              
+              bookingProviders: [
+                {
+                  name: 'Aviasales/Travelpayouts',
+                  price: parseFloat(offer.total_price || '0'),
+                  currency: offer.currency || params.currency || 'USD',
+                  link: deepLink,
+                  type: 'agency' as const,
+                  rating: 4.5
+                }
+              ]
+            } as FlightResult);
+            
+          } catch (itemErr: any) {
+            console.warn('⚠️ Aviasales: Error processing proposal:', itemErr.message);
+          }
+        });
+
+        if (flights.length > 0) {
+          console.log(`✅ Aviasales found ${flights.length} flights!`);
+          return flights;
+        }
+        
+      } catch (err: any) {
+        console.error('❌ Aviasales: Error processing results:', err.message);
+        return [];
+      }
+    }
+
+    console.warn('⚠️ Aviasales: No results after polling');
+    return [];
+
+  } catch (error: any) {
+    console.error('🔥 Aviasales Error:', error.message);
     return [];
   }
+}
+
+function getAirlineName(code: string): string {
+  const airlines: Record<string, string> = {
+    'TK': 'Turkish Airlines',
+    'LH': 'Lufthansa',
+    'BA': 'British Airways',
+    'AF': 'Air France',
+    'DL': 'Delta Air Lines',
+    'AA': 'American Airlines',
+    'UA': 'United Airlines',
+    'QF': 'Qantas',
+    'SQ': 'Singapore Airlines',
+    'EK': 'Emirates',
+    'EY': 'Etihad Airways',
+    'QR': 'Qatar Airways',
+    'KL': 'KLM',
+    'IB': 'Iberia',
+    'OS': 'Austrian Airlines'
+  };
+  
+  return airlines[code] || code;
 }
