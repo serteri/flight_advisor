@@ -101,7 +101,7 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                                 {/* Layover Details */}
                                 {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
                                     <span className="text-[9px] text-slate-500 mt-0.5 text-center">
-                                        {flight.layovers.map(l => `${l.airport} (${Math.floor(l.duration / 60)}h ${l.duration % 60}m)`).join(', ')}
+                                        {flight.layovers.map((l: any) => `${l.airport} (${Math.floor(l.duration / 60)}h ${l.duration % 60}m)`).join(', ')}
                                     </span>
                                 )}
                             </div>
