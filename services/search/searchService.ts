@@ -1,8 +1,7 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
-import { searchAmadeus } from './providers/amadeus'; // Amadeus
-import { searchAviasales } from './providers/aviasales'; // Travelpayouts/Aviasales v2
-// RapidAPI provider removed - deprecated
+import { searchOxylabs } from './providers/oxylabs'; // Google Flights via Oxylabs proxy
+// RapidAPI, Travelpayouts, Amadeus - deprecated (unreliable/no live data)
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
@@ -17,33 +16,17 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     console.warn('⚠️ Skipping Duffel: DUFFEL_ACCESS_TOKEN not set');
   }
 
-  // RapidAPI provider removed - using Travelpayouts instead
-
-  if (process.env.AMADEUS_API_KEY && process.env.AMADEUS_API_SECRET) {
-    providerPromises.push({ name: 'amadeus', promise: searchAmadeus(params) });
+  if (process.env.OXYLABS_USERNAME && process.env.OXYLABS_PASSWORD) {
+    providerPromises.push({ name: 'oxylabs', promise: searchOxylabs(params) });
   } else {
-    console.warn('⚠️ Skipping Amadeus: AMADEUS credentials not set');
+    console.warn('⚠️ Skipping Oxylabs: OXYLABS credentials not set');
   }
-
-  if (process.env.TRAVELPAYOUTS_TOKEN) {
-    providerPromises.push({ name: 'aviasales', promise: searchAviasales({
-      origin: params.origin,
-      destination: params.destination,
-      date: params.date,
-      currency: params.currency,
-      adults: params.adults
-    })});
-  } else {
-    console.warn('⚠️ Skipping Aviasales: TRAVELPAYOUTS_TOKEN not set');
-  }
-
-  // Kiwi intentionally removed; no kiwi provider used.
 
   const settled = await Promise.allSettled(providerPromises.map(p => p.promise));
 
   const elapsed = Date.now() - startTime;
 
-  const resultsByName: Record<string, FlightResult[]> = { duffel: [], amadeus: [], aviasales: [] };
+  const resultsByName: Record<string, FlightResult[]> = { duffel: [], oxylabs: [] };
 
   settled.forEach((res, idx) => {
     const name = providerPromises[idx].name;
@@ -56,9 +39,9 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     }
   });
 
-  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Amadeus(${resultsByName.amadeus.length}) Aviasales(${resultsByName.aviasales.length}) - Total: ${elapsed}ms`);
+  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Oxylabs(${resultsByName.oxylabs.length}) - Total: ${elapsed}ms`);
 
-  const allFlights = [...resultsByName.duffel, ...resultsByName.amadeus, ...resultsByName.aviasales];
+  const allFlights = [...resultsByName.duffel, ...resultsByName.oxylabs];
 
   console.log(`📊 TOTAL FOUND: ${allFlights.length} flights`);
 
