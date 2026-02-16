@@ -16,8 +16,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
 
-    console.log(`🚀 SEARCH API: ${origin} -> ${destination} [${date}]`);
-    console.log(`📋 ENV CHECK: RAPID_API_KEY=${process.env.RAPID_API_KEY ? 'SET' : 'MISSING'}, RAPID_API_HOST_FLIGHT=${process.env.RAPID_API_HOST_FLIGHT || 'MISSING'}`);
+    console.log(`🚀 SEARCH API (GET): ${origin} -> ${destination} [${date}]`);
 
     try {
         const queryParams: HybridSearchParams = {
@@ -44,3 +43,40 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Search failed' }, { status: 500 });
     }
 }
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const { origin, destination, date, adults = 1, children = 0, infants = 0, cabin = 'economy', currency = 'USD' } = body;
+
+        if (!origin || !destination || !date) {
+            return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
+        }
+
+        console.log(`🚀 SEARCH API (POST): ${origin} -> ${destination} [${date}]`);
+
+        const queryParams: HybridSearchParams = {
+            origin,
+            destination,
+            date,
+            adults,
+            children,
+            infants,
+            cabin,
+            currency
+        };
+
+        const allFlights = await searchAllProviders(queryParams);
+
+        if (allFlights.length === 0) {
+            return NextResponse.json([], { status: 200 });
+        }
+
+        return NextResponse.json(allFlights);
+
+    } catch (error) {
+        console.error("🔥 SEARCH API POST HATASI:", error);
+        return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+    }
+}
+
