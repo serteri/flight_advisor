@@ -1,9 +1,8 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
-import { searchSkyScrapper } from './providers/rapidapi'; // Sky Scrapper (RapidAPI)
 import { searchAmadeus } from './providers/amadeus'; // Amadeus
 import { searchTravelpayouts } from './providers/travelpayouts'; // Travelpayouts/Aviasales
-// Kiwi provider removed (not used)
+// RapidAPI provider removed - deprecated
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
@@ -18,18 +17,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     console.warn('⚠️ Skipping Duffel: DUFFEL_ACCESS_TOKEN not set');
   }
 
-  if (process.env.RAPID_API_KEY_SKY || process.env.RAPID_API_KEY) {
-    providerPromises.push({ name: 'sky', promise: searchSkyScrapper({
-      origin: params.origin,
-      destination: params.destination,
-      date: params.date,
-      currency: params.currency,
-      cabinClass: params.cabin,
-      adults: params.adults
-    })});
-  } else {
-    console.warn('⚠️ Skipping SkyScrapper: RAPID_API_KEY_SKY not set');
-  }
+  // RapidAPI provider removed - using Travelpayouts instead
 
   if (process.env.AMADEUS_API_KEY && process.env.AMADEUS_API_SECRET) {
     providerPromises.push({ name: 'amadeus', promise: searchAmadeus(params) });
@@ -55,7 +43,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
 
   const elapsed = Date.now() - startTime;
 
-  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [], amadeus: [], travelpayouts: [] };
+  const resultsByName: Record<string, FlightResult[]> = { duffel: [], amadeus: [], travelpayouts: [] };
 
   settled.forEach((res, idx) => {
     const name = providerPromises[idx].name;
@@ -68,9 +56,9 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     }
   });
 
-  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) Amadeus(${resultsByName.amadeus.length}) Travelpayouts(${resultsByName.travelpayouts.length}) - Total: ${elapsed}ms`);
+  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Amadeus(${resultsByName.amadeus.length}) Travelpayouts(${resultsByName.travelpayouts.length}) - Total: ${elapsed}ms`);
 
-  const allFlights = [...resultsByName.duffel, ...resultsByName.sky, ...resultsByName.amadeus, ...resultsByName.travelpayouts];
+  const allFlights = [...resultsByName.duffel, ...resultsByName.amadeus, ...resultsByName.travelpayouts];
 
   console.log(`📊 TOTAL FOUND: ${allFlights.length} flights`);
 
