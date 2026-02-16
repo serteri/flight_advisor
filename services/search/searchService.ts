@@ -2,6 +2,7 @@ import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
 import { searchSkyScrapper } from './providers/rapidapi'; // Sky Scrapper (RapidAPI)
 import { searchAmadeus } from './providers/amadeus'; // Amadeus
+import { searchTravelpayouts } from './providers/travelpayouts'; // Travelpayouts/Aviasales
 // Kiwi provider removed (not used)
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
@@ -36,13 +37,25 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     console.warn('⚠️ Skipping Amadeus: AMADEUS credentials not set');
   }
 
+  if (process.env.TRAVELPAYOUTS_TOKEN) {
+    providerPromises.push({ name: 'travelpayouts', promise: searchTravelpayouts({
+      origin: params.origin,
+      destination: params.destination,
+      date: params.date,
+      currency: params.currency,
+      adults: params.adults
+    })});
+  } else {
+    console.warn('⚠️ Skipping Travelpayouts: TRAVELPAYOUTS_TOKEN not set');
+  }
+
   // Kiwi intentionally removed; no kiwi provider used.
 
   const settled = await Promise.allSettled(providerPromises.map(p => p.promise));
 
   const elapsed = Date.now() - startTime;
 
-  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [], amadeus: [] };
+  const resultsByName: Record<string, FlightResult[]> = { duffel: [], sky: [], amadeus: [], travelpayouts: [] };
 
   settled.forEach((res, idx) => {
     const name = providerPromises[idx].name;
@@ -55,9 +68,9 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     }
   });
 
-  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) Amadeus(${resultsByName.amadeus.length}) - Total: ${elapsed}ms`);
+  console.log(`📊 Provider Stats: Duffel(${resultsByName.duffel.length}) Sky(${resultsByName.sky.length}) Amadeus(${resultsByName.amadeus.length}) Travelpayouts(${resultsByName.travelpayouts.length}) - Total: ${elapsed}ms`);
 
-  const allFlights = [...resultsByName.duffel, ...resultsByName.sky, ...resultsByName.amadeus];
+  const allFlights = [...resultsByName.duffel, ...resultsByName.sky, ...resultsByName.amadeus, ...resultsByName.travelpayouts];
 
   console.log(`📊 TOTAL FOUND: ${allFlights.length} flights`);
 
