@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FlightResult } from "@/types/hybridFlight";
 import { Plane, Clock, Luggage, Utensils, Wifi, MapPin, Info, Calendar, Users, AlertCircle } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
@@ -31,7 +31,7 @@ export function FlightDetailDialog({ flight, open, onClose }: FlightDetailDialog
                             <span className="text-sm font-normal text-slate-500 ml-3">{flight.flightNumber}</span>
                         </div>
                     </DialogTitle>
-                    <DialogDescription className="flex items-center gap-4 pt-2">
+                    <div className="text-sm text-slate-500 flex items-center gap-4 pt-2">
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-slate-500" />
                             <span className="text-sm font-medium text-slate-700">
@@ -55,7 +55,7 @@ export function FlightDetailDialog({ flight, open, onClose }: FlightDetailDialog
                         }`}>
                             📡 {flight.source}
                         </div>
-                    </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6 mt-6">
