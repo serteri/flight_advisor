@@ -63,6 +63,7 @@ export async function searchTravelpayouts(params: {
 
     const json = await res.json();
     console.log(`📦 Travelpayouts JSON structure:`, Object.keys(json).join(', '));
+    console.log(`📦 Travelpayouts Full Response:`, JSON.stringify(json).substring(0, 500));
 
     const data = json.data || json.results || [];
     
