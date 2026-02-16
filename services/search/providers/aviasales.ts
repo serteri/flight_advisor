@@ -51,14 +51,17 @@ export async function searchAviasales(params: {
     if (!initResponse.ok) {
       const errText = await initResponse.text();
       console.error(`❌ Aviasales Init Failed (${initResponse.status}):`, errText.substring(0, 300));
+      console.error(`❌ Aviasales Init Headers:`, Object.fromEntries(initResponse.headers));
       return [];
     }
 
     const initData = await initResponse.json();
-    const searchId = initData.search_id;
+    console.log(`📦 Aviasales Init Response:`, JSON.stringify(initData).substring(0, 200));
+    
+    const searchId = initData.search_id || initData.searchId;
     
     if (!searchId) {
-      console.error('❌ No search_id returned:', initData);
+      console.error('❌ No search_id returned:', JSON.stringify(initData).substring(0, 200));
       return [];
     }
     
