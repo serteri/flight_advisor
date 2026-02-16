@@ -132,7 +132,10 @@ export async function searchSkyScrapper(params: {
 
 function mapRapidApiToFlightResult(item: any, params: any, idx: number): FlightResult {
   // Map Kiwi/RapidAPI response to FlightResult
-  const segment = item.sector?.sectorSegments?.[0]?.segment || item.segments?.[0] || item;
+  const segments = item.sector?.sectorSegments || item.segments || [];
+  const firstSegment = segments[0]?.segment || segments[0] || item;
+  const lastSegment = segments[segments.length - 1]?.segment || segments[segments.length - 1] || item;
+  
   const price = parseFloat(item.price?.amount || item.price || item.totalPrice || "0");
   const relativeUrl = item.bookingOptions?.edges?.[0]?.node?.bookingUrl || item.bookingUrl || item.deepLink;
   const deepLink = relativeUrl && !relativeUrl.startsWith('http') 
@@ -149,9 +152,9 @@ function mapRapidApiToFlightResult(item: any, params: any, idx: number): FlightR
   if (durationSeconds < 15 * 3600) { tags.push("Fastest"); score += 0.5; }
 
   // Carrier name
-  const carrierName = segment?.operatingCarrier?.name 
-    || segment?.carrier?.name 
-    || segment?.airline 
+  const carrierName = firstSegment?.operatingCarrier?.name 
+    || firstSegment?.carrier?.name 
+    || firstSegment?.airline 
     || item.airline
     || "Airline";
     
@@ -161,21 +164,83 @@ function mapRapidApiToFlightResult(item: any, params: any, idx: number): FlightR
   }
 
   const durationMins = Math.floor((durationSeconds || 0) / 60);
-  const stops = (item.sector?.sectorSegments?.length || item.segments?.length || 1) - 1;
+  const stops = Math.max(0, segments.length - 1);
+
+  // Extract layovers between segments
+  const layovers: any[] = [];
+  for (let i = 0; i < segments.length - 1; i++) {
+    const current = segments[i]?.segment || segments[i];
+    const next = segments[i + 1]?.segment || segments[i + 1];
+    
+    try {
+      const arriveTime = new Date(current.destination?.localTime || current.arrivalTime || current.arrival).getTime();
+      const departTime = new Date(next.source?.localTime || next.departureTime || next.departure).getTime();
+      const layoverMins = Math.floor((departTime - arriveTime) / 60000);
+      
+      layovers.push({
+        duration: layoverMins,
+        airport: current.destination?.iataCode || current.destination || current.to || 'XXX',
+        city: current.destination?.city || current.destination?.name || ''
+      });
+    } catch (e) {
+      console.warn('Error calculating layover:', e);
+    }
+  }
+
+  // Map segments to proper format
+  const mappedSegments = segments.map((seg: any) => {
+    const segment = seg.segment || seg;
+    return {
+      from: segment.source?.iataCode || segment.origin?.iataCode || segment.from || 'XXX',
+      to: segment.destination?.iataCode || segment.destination || segment.to || 'XXX',
+      departure: segment.source?.localTime || segment.departureTime || segment.departure,
+      arrival: segment.destination?.localTime || segment.arrivalTime || segment.arrival,
+      duration: segment.duration || 0,
+      carrier: segment.operatingCarrier?.iataCode || segment.carrier?.code || segment.airline || 'XX',
+      carrierName: segment.operatingCarrier?.name || segment.carrier?.name || segment.airlineName || 'Airline',
+      flightNumber: segment.operatingCarrier?.code || segment.flightNumber || 'FLT',
+      aircraft: segment.aircraft?.name || segment.equipmentName || '',
+      departing_at: segment.source?.localTime || segment.departureTime || segment.departure,
+      arriving_at: segment.destination?.localTime || segment.arrivalTime || segment.arrival,
+      operating_carrier: {
+        name: segment.operatingCarrier?.name || segment.carrier?.name || 'Airline',
+        iata_code: segment.operatingCarrier?.iataCode || segment.carrier?.code || 'XX',
+        logo_url: segment.operatingCarrier?.logoUrl || segment.carrier?.logo || ''
+      },
+      origin: {
+        iata_code: segment.source?.iataCode || segment.origin?.iataCode || segment.from || 'XXX',
+        city_name: segment.source?.city || segment.origin?.city || ''
+      },
+      destination: {
+        iata_code: segment.destination?.iataCode || segment.destination || segment.to || 'XXX',
+        city_name: segment.destination?.city || segment.destination?.name || ''
+      }
+    };
+  });
+
+  // Try to extract real baggage info from item
+  let baggageKg = 20; // default
+  let cabinBagKg = 7; // default
+  
+  if (item.baggageOptions) {
+    const checked = item.baggageOptions.find((b: any) => b.type === 'checked' || b.category === 'hold');
+    const cabin = item.baggageOptions.find((b: any) => b.type === 'cabin' || b.category === 'cabin');
+    
+    if (checked?.weight) baggageKg = parseInt(checked.weight) || 20;
+    if (cabin?.weight) cabinBagKg = parseInt(cabin.weight) || 7;
+  }
 
   return {
     id: `RAPID_${item.id || idx}`,
     source: 'SKY_SCANNER_PRO' as FlightSource,
     airline: carrierName,
-    airlineLogo: segment?.operatingCarrier?.logoUrl || segment?.carrier?.logo,
-    flightNumber: segment?.operatingCarrier?.code || segment?.flightNumber || "FLT",
+    airlineLogo: firstSegment?.operatingCarrier?.logoUrl || firstSegment?.carrier?.logo,
+    flightNumber: firstSegment?.operatingCarrier?.code || firstSegment?.flightNumber || "FLT",
 
     from: params.origin.toUpperCase(),
     to: params.destination.toUpperCase(),
-    departTime: segment?.source?.localTime || item.departTime || new Date().toISOString(),
-    arriveTime: item.sector?.sectorSegments?.at(-1)?.segment?.destination?.localTime 
-      || item.arriveTime 
-      || new Date().toISOString(),
+    departTime: firstSegment?.source?.localTime || firstSegment?.departure || new Date().toISOString(),
+    arriveTime: lastSegment?.destination?.localTime || lastSegment?.arrival || new Date().toISOString(),
     duration: durationMins,
     stops: stops,
 
@@ -189,18 +254,18 @@ function mapRapidApiToFlightResult(item: any, params: any, idx: number): FlightR
     amenities: {
       hasWifi: false,
       hasMeal: true,
-      baggage: 'Dahil'
+      baggage: `${baggageKg}kg`
     },
     
     policies: {
-      baggageKg: 20, // Default for RapidAPI
-      cabinBagKg: 7
+      baggageKg: baggageKg,
+      cabinBagKg: cabinBagKg
     },
     
     baggageSummary: {
-      checked: '20kg',
-      cabin: '7kg',
-      totalWeight: '20kg'
+      checked: `${baggageKg}kg`,
+      cabin: `${cabinBagKg}kg`,
+      totalWeight: `${baggageKg}kg`
     },
     
     bookingProviders: [
@@ -214,8 +279,8 @@ function mapRapidApiToFlightResult(item: any, params: any, idx: number): FlightR
       }
     ],
     deepLink: deepLink,
-    segments: item.segments || item.sector?.sectorSegments || [],
-    layovers: []
+    segments: mappedSegments,
+    layovers: layovers
   } as FlightResult;
 }
 

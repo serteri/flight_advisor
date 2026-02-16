@@ -16,6 +16,7 @@ import {
 import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
 import { DataSourceIndicator } from "@/components/DataSourceIndicator";
+import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
@@ -48,6 +49,8 @@ function SearchPageContent() {
     const [loading, setLoading] = useState(false);
     const [tripType, setTripType] = useState<"oneWay" | "roundTrip">("oneWay");
     const [results, setResults] = useState<FlightResult[]>([]);
+    const [sortedResults, setSortedResults] = useState<FlightResult[]>([]);
+    const [currentSort, setCurrentSort] = useState<SortOption>("best");
     const [error, setError] = useState<string | null>(null);
 
     // Form state
@@ -199,6 +202,37 @@ function SearchPageContent() {
         setToIata(dest.iata);
     };
 
+    const sortFlights = (flights: FlightResult[], sortBy: SortOption): FlightResult[] => {
+        const sorted = [...flights];
+        
+        switch (sortBy) {
+            case "cheapest":
+                return sorted.sort((a, b) => a.price - b.price);
+            case "fastest":
+                return sorted.sort((a, b) => a.duration - b.duration);
+            case "best":
+            default:
+                // Best = combination of price and duration with agent score
+                return sorted.sort((a, b) => {
+                    const scoreA = (a.agentScore || a.score || 7) + (1000 / a.price) * 10 + (1000 / a.duration) * 5;
+                    const scoreB = (b.agentScore || b.score || 7) + (1000 / b.price) * 10 + (1000 / b.duration) * 5;
+                    return scoreB - scoreA;
+                });
+        }
+    };
+
+    const handleSortChange = (sortBy: SortOption) => {
+        setCurrentSort(sortBy);
+        setSortedResults(sortFlights(results, sortBy));
+    };
+
+    // Auto-sort when results change
+    useEffect(() => {
+        if (results.length > 0) {
+            setSortedResults(sortFlights(results, currentSort));
+        }
+    }, [results, currentSort]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* Hero Section with Search */}
@@ -285,8 +319,15 @@ function SearchPageContent() {
                         {/* Veri Kaynağı Göstergesi */}
                         <DataSourceIndicator flights={results} />
                         
+                        {/* Sıralama Çubuğu */}
+                        <FlightSortBar 
+                            currentSort={currentSort}
+                            onSortChange={handleSortChange}
+                            resultCount={results.length}
+                        />
+                        
                         <div className="space-y-4">
-                            {results.slice(0, visibleCount).map((flight) => (
+                            {sortedResults.slice(0, visibleCount).map((flight) => (
                                 <FlightResultCard
                                     key={flight.id}
                                     flight={flight}
