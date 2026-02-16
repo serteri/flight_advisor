@@ -26,7 +26,8 @@ export async function searchAviasales(params: {
     const signatureStr = `${TP_TOKEN}:${TP_MARKER}:${adults}:${children}:${infants}:${dateStr}:${params.destination.toUpperCase()}:${params.origin.toUpperCase()}:Y:127.0.0.1`;
     const signature = crypto.createHash('md5').update(signatureStr).digest('hex');
     
-    console.log(`🔐 Aviasales Signature created for ${params.origin} → ${params.destination}`);
+    console.log(`🔐 Aviasales Signature String: ${signatureStr}`);
+    console.log(`🔐 Aviasales MD5 Hash: ${signature}`);
     
     // 2. ARAMAYI BAŞLAT
     const requestBody = {
@@ -63,13 +64,13 @@ export async function searchAviasales(params: {
 
     if (!initResponse.ok) {
       const errText = await initResponse.text();
-      console.error(`❌ Aviasales Init Failed (${initResponse.status}):`, errText.substring(0, 300));
-      console.error(`❌ Aviasales Init Headers:`, Object.fromEntries(initResponse.headers));
+      console.error(`❌ Aviasales Init Failed (${initResponse.status}):`, errText);
+      console.error(`❌ Aviasales Request Body:`, JSON.stringify(requestBody, null, 2));
       return [];
     }
 
     const initData = await initResponse.json();
-    console.log(`📦 Aviasales Init Response:`, JSON.stringify(initData).substring(0, 200));
+    console.log(`📦 Aviasales Init Response:`, JSON.stringify(initData, null, 2));
     
     const searchId = initData.search_id || initData.searchId;
     
