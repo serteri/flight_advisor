@@ -37,6 +37,8 @@
     "official_site": "Official Site Redirect",
     "currency_aud": "A$",
     "check": "Check",
+    "select": "Select",
+    "safeRedirect": "Safe Redirect (OBSOLETE)",
     "track": "Track",
     "premiumLock": "Login for Analysis"
   },

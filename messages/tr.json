@@ -32,13 +32,15 @@
         "view_analysis": "Analizi Gör",
         "premium_upgrade": "Premium Ol",
         "book_aviasales": "Aviasales ile Al",
-        "book_site": "Siteye Git",
+        "book_site": "Siteden Al",
         "partnerRedirect": "Partner sitesine yönlendirileceksiniz",
-        "official_site": "Resmi siteye yönlendirilir",
+        "official_site": "Resmi Siteye Git",
         "currency_aud": "A$",
         "check": "Kontrol Et",
+        "select": "Seç",
+        "safeRedirect": "Güvenli Yönlendirme (ESKİ)",
         "track": "Takip Et",
-        "premiumLock": "Analiz İçin Giriş Yap"
+        "premiumLock": "Analiz için Giriş Yap"
     },
     "SearchForm": {
         "origin_placeholder": "Nereden?",
