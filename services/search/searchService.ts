@@ -4,26 +4,29 @@ import { searchOxylabs } from './providers/oxylabs'; // Google Flights via Oxyla
 // RapidAPI, Travelpayouts, Amadeus - deprecated (unreliable/no live data)
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
-  console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
-  console.log(`DEBUG: OXYLABS_USERNAME = ${process.env.OXYLABS_USERNAME ? 'SET' : 'NOT SET'}`);
-  console.log(`DEBUG: OXYLABS_PASSWORD = ${process.env.OXYLABS_PASSWORD ? 'SET' : 'NOT SET'}`);
+  console.log(`\n🔎 searchAllProviders STARTED`);
+  console.log(`  Origin: ${params.origin}`);
+  console.log(`  Destination: ${params.destination}`);
 
   const startTime = Date.now();
 
   const providerPromises: { name: string; promise: Promise<any> }[] = [];
 
   if (process.env.DUFFEL_ACCESS_TOKEN) {
+    console.log(`✅ Adding Duffel provider`);
     providerPromises.push({ name: 'duffel', promise: searchDuffel(params) });
   } else {
     console.warn('⚠️ Skipping Duffel: DUFFEL_ACCESS_TOKEN not set');
   }
 
   if (process.env.OXYLABS_USERNAME && process.env.OXYLABS_PASSWORD) {
-    console.log(`✅ ADDING OXYLABS TO PROVIDERS`);
+    console.log(`✅ Adding Oxylabs provider (USERNAME=${process.env.OXYLABS_USERNAME ? 'SET' : 'NOTSET'})`);
     providerPromises.push({ name: 'oxylabs', promise: searchOxylabs(params) });
   } else {
-    console.warn('⚠️ Skipping Oxylabs: OXYLABS credentials not set');
+    console.warn(`⚠️ Skipping Oxylabs: USERNAME=${process.env.OXYLABS_USERNAME} PASSWORD=${process.env.OXYLABS_PASSWORD}`);
   }
+
+  console.log(`🚀 Starting ${providerPromises.length} providers...`);
 
   const settled = await Promise.allSettled(providerPromises.map(p => p.promise));
 

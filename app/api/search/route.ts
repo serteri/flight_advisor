@@ -12,11 +12,16 @@ export async function GET(request: Request) {
     const destination = searchParams.get('destination');
     const date = searchParams.get('date');
 
+    console.log(`\n=====================================`);
+    console.log(`🚀 GET /api/search CALLED`);
+    console.log(`  origin: ${origin}`);
+    console.log(`  destination: ${destination}`);
+    console.log(`  date: ${date}`);
+    console.log(`=====================================\n`);
+
     if (!origin || !destination || !date) {
         return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });
     }
-
-    console.log(`🚀 SEARCH API (GET): ${origin} -> ${destination} [${date}]`);
 
     try {
         const queryParams: HybridSearchParams = {
@@ -30,7 +35,9 @@ export async function GET(request: Request) {
             currency: searchParams.get('currency') || 'USD'
         };
 
+        console.log(`📡 Calling searchAllProviders...`);
         const allFlights = await searchAllProviders(queryParams);
+        console.log(`✅ searchAllProviders returned ${allFlights.length} flights`);
 
         if (allFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
