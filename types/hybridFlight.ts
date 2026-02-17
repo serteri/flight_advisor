@@ -1,4 +1,4 @@
-export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "SKY_RAPID" | "AIR_RAPID" | "OPENCLAW" | "SKY_SCANNER_PRO" | "AMADEUS" | "TRAVELPAYOUTS" | "OXYLABS";
+export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "KIWI" | "SKY_RAPID" | "AIR_RAPID" | "OPENCLAW" | "SKY_SCANNER_PRO" | "AMADEUS" | "TRAVELPAYOUTS" | "OXYLABS";
 
 export type CabinClass = "economy" | "premium" | "business" | "first";
 
