@@ -43,11 +43,22 @@ export async function GET(request: Request) {
             return NextResponse.json([], { status: 200 });
         }
 
-        return NextResponse.json(allFlights);
+        // DEBUG: Response'a debug info ekle
+        const debugInfo = {
+            _DEBUG: {
+                endpoint: '/api/search',
+                timestamp: new Date().toISOString(),
+                oxylabsUsername: process.env.OXYLABS_USERNAME ? 'SET' : 'NOT_SET',
+                oxylabsPassword: process.env.OXYLABS_PASSWORD ? 'SET' : 'NOT_SET',
+                totalFlights: allFlights.length
+            }
+        };
+
+        return NextResponse.json([...allFlights, debugInfo]);
 
     } catch (error) {
         console.error("🔥 GENEL ARAMA HATASI:", error);
-        return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+        return NextResponse.json({ error: 'Search failed', details: String(error) }, { status: 500 });
     }
 }
 
