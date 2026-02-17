@@ -102,11 +102,12 @@ export async function searchOxylabs(params: any): Promise<FlightResult[]> {
   try {
     const dateStr = params.date.split('T')[0];
 
-    // Oxylabs API Request - Using google_flights source (NOT google_search)
+    // Oxylabs API Request - google_search source (google_flights unsupported on this account)
+    // NOTE: This returns web search results, NOT actual flight prices
     const body = {
-      source: 'google_flights',  // 🔥 CORRECTED: google_flights, not google_search
+      source: 'google_search',  // google_flights = 400 Unsupported, using google_search
       domain: 'com',
-      query: `${params.origin} to ${params.destination} ${dateStr}`,
+      query: `flights from ${params.origin} to ${params.destination} ${dateStr}`,
       parse: true,
       geo_location: context.location,
       context: [
