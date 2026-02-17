@@ -7,6 +7,14 @@ const AUTH = OXY_USER && OXY_PASS ? Buffer.from(`${OXY_USER}:${OXY_PASS}`).toStr
 
 console.log(`[oxylabs.ts INIT] OXY_USER: ${OXY_USER ? 'SET' : 'NOT SET'}, OXY_PASS: ${OXY_PASS ? 'SET' : 'NOT SET'}`);
 
+// Helper functions
+function formatDuration(minutes: number): string {
+  if (minutes <= 0) return '0h';
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
 // --- GLOBAL AKILLI KONUM VE PARA BİRİMİ MOTORU ---
 function getSmartContext(origin: string) {
   const code = origin.toUpperCase();
@@ -125,17 +133,97 @@ export async function searchOxylabs(params: any): Promise<FlightResult[]> {
 
     const json = await response.json();
 
-    // --- DEBUG: Gelen veriyi analiz et ---
+    // --- Oxylabs response parsing ---
     const results = json.results?.[0] || {};
     const content = results.content || {};
 
-    console.log("\n--------------------------------------------------");
-    console.log("📦 OXYLABS HAM VERİ ANALİZİ:");
-    console.log("  Anahtarlar:", Object.keys(content));
-    console.log("  JSON Özeti:", JSON.stringify(content).substring(0, 500));
-    console.log("--------------------------------------------------\n");
+    console.log("\n📦 OXYLABS PARSING:");
+    console.log("  Keys:", Object.keys(content));
 
-    return [];
+    // Parse Google Flights results
+    const flights: FlightResult[] = [];
+    
+    // Oxylabs returns parsed Google Flights data in content
+    // Structure: content.flights or content.results or similar based on parse:true
+    const parsedFlights = content.flights || content.results || content.result || [];
+    
+    console.log(`  Found ${parsedFlights?.length || 0} flights in parsed data`);
+
+    if (Array.isArray(parsedFlights)) {
+      for (const flight of parsedFlights) {
+        try {
+          // Parse Oxylabs flight structure
+          const segments = flight.legs || flight.segments || [];
+          
+          if (segments.length === 0) continue;
+
+          // Build departure & arrival from segments
+          const outbound = segments[0];
+          const inbound = segments[segments.length - 1];
+
+          if (!outbound) continue;
+
+          const departureTime = outbound.departure_time || outbound.departureTime || outbound.depart_time || '';
+          const arrivalTime = inbound?.arrival_time || inbound?.arrivalTime || outbound.arrival_time || outbound.arriveTime || '';
+          
+          // Extract airlines
+          const airlines = new Set<string>();
+          const airlineNames = new Set<string>();
+          segments.forEach((seg: any) => {
+            const airlineCode = seg.airline_icao || seg.airline || seg.operating_carrier || '';
+            const airlineName = seg.airline_name || airlineCode;
+            if (airlineCode) airlines.add(airlineCode);
+            if (airlineName) airlineNames.add(airlineName);
+          });
+
+          // Price extraction
+          const priceStr = flight.price || flight.price_raw || flight.total_price || '0';
+          const price = parseFloat(String(priceStr).replace(/[^0-9.]/g, '')) || 0;
+
+          // Duration in minutes
+          let durationMins = 0;
+          try {
+            if (departureTime && arrivalTime) {
+              const dep = new Date(departureTime).getTime();
+              const arr = new Date(arrivalTime).getTime();
+              durationMins = Math.floor((arr - dep) / 60000);
+            }
+          } catch (e) {
+            durationMins = 0;
+          }
+
+          const flightResult: FlightResult = {
+            id: `oxy_${Math.random().toString(36).substr(2, 9)}`,
+            source: 'OXYLABS',
+            airline: Array.from(airlineNames)[0] || 'Multiple Airlines',
+            flightNumber: segments[0].flight_number || 'OXY',
+            from: params.origin,
+            to: params.destination,
+            departTime: departureTime,
+            arriveTime: arrivalTime,
+            duration: durationMins,
+            durationLabel: formatDuration(durationMins),
+            stops: Math.max(0, segments.length - 1),
+            price,
+            currency: context.currency,
+            cabinClass: (flight.cabin_class || 'economy') as any,
+            layovers: segments.length > 1 ? segments.slice(0, -1).map((seg: any) => ({
+              city: seg.arrival_city || '',
+              airport: seg.arrival_airport || seg.destination || '',
+              duration: seg.layover_duration || '0'
+            })) : undefined,
+            segments: segments
+          };
+
+          flights.push(flightResult);
+        } catch (flightError) {
+          console.log(`  ⚠️ Skipped 1 flight: ${flightError}`);
+        }
+      }
+    }
+
+    console.log(`  ✅ Parsed ${flights.length} valid flights\n`);
+    return flights;
 
   } catch (error) {
     console.error("🔥 Oxylabs Fail:", error);
