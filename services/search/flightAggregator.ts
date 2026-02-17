@@ -1,35 +1,33 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
-import { searchSkyScrapper, searchAirScraper } from "./providers/rapidapi";
-// import { searchOpenClaw } from "./providers/openClaw"; 
+import { searchOxylabs } from "./providers/oxylabs"; // ✅ OXYLABS MOTORU
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
-    console.log(`[HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
+    console.log(`\n🚀 [HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
+    console.log(`   Date: ${params.date}`);
 
-    // Parallel search across enabled providers (Kiwi removed)
-    const [duffelResults, skyResults, airResults] = await Promise.all([
+    // ✅ DUFFEL + OXYLABS (Parallel execution)
+    const results = await Promise.allSettled([
         searchDuffel(params),
-        searchSkyScrapper({
-            origin: params.origin,
-            destination: params.destination,
-            date: params.date,
-            currency: params.currency,
-            cabinClass: params.cabin,
-            adults: params.adults
-        }),
-        searchAirScraper(params),
-        // searchOpenClaw(params) // DEVRE DISI
+        searchOxylabs(params)
     ]);
 
-    console.log(`[HybridSearch] Results count -> Duffel: ${duffelResults.length}, Sky: ${skyResults.length}, Air: ${airResults.length}`);
+    const duffelResults = results[0].status === 'fulfilled' ? results[0].value : [];
+    const oxylabsResults = results[1].status === 'fulfilled' ? results[1].value : [];
 
-    // Hepsini birleştiriyoruz
+    console.log(`✅ [HybridSearch] Results -> Duffel: ${duffelResults.length}, Oxylabs: ${oxylabsResults.length}`);
+
+    // Hepsini birleştir
     let rawFlights: any[] = [
         ...duffelResults,
-        ...skyResults,
-        ...airResults
+        ...oxylabsResults
     ];
+
+    if (rawFlights.length === 0) {
+        console.log(`⚠️ [HybridSearch] No flights found from any provider`);
+        return [];
+    }
 
     // 2. Market Analysis (En ucuz fiyatı bul)
     const prices = rawFlights.map(f => f.price).filter(p => p > 0);
@@ -37,12 +35,7 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
     const hasChild = (params.children || 0) > 0 || (params.infants || 0) > 0;
 
     // 3. Scoring & Sorting (V3)
-    // Sonuçları FlightResult[] tipine dönüştürüyoruz
     const scoredFlights: FlightResult[] = rawFlights.map(flight => {
-        /* 
-           TypeScript Hatasını Önlemek İçin:
-           flight nesnesini 'any' olarak geçiriyoruz.
-        */
         const scoreResult = scoreFlightV3(flight, {
             minPrice: minPrice > 0 ? minPrice : flight.price,
             hasChild
