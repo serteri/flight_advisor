@@ -138,47 +138,95 @@ export async function searchOxylabs(params: any): Promise<FlightResult[]> {
     const content = results.content || {};
 
     console.log("\n📦 OXYLABS PARSING:");
-    console.log("  Keys:", Object.keys(content));
+    console.log("  Response keys:", Object.keys(json));
+    console.log("  Results[0] keys:", Object.keys(results));
+    console.log("  Content keys:", Object.keys(content).slice(0, 20));
 
-    // Parse Google Flights results
+    // Declare flights array early
     const flights: FlightResult[] = [];
+
+    // Try to find flights in different possible locations
+    let parsedFlights: any[] = [];
     
-    // Oxylabs returns parsed Google Flights data in content
-    // Structure: content.flights or content.results or similar based on parse:true
-    const parsedFlights = content.flights || content.results || content.result || [];
+    if (content.flights) {
+      parsedFlights = content.flights;
+      console.log("  ✅ Found flights in content.flights");
+    } else if (content.results) {
+      parsedFlights = content.results;
+      console.log("  ✅ Found flights in content.results");
+    } else if (Array.isArray(content.trip_options)) {
+      parsedFlights = content.trip_options;
+      console.log("  ✅ Found flights in content.trip_options");
+    } else if (Array.isArray(content)) {
+      parsedFlights = content;
+      console.log("  ✅ Found flights in content (array)");
+    } else {
+      // Log first flight sample to understand structure
+      console.log("  ⚠️ Could not find standard flight array");
+      console.log("  Sample content:", JSON.stringify(content).substring(0, 500));
+      parsedFlights = [];
+    }
     
     console.log(`  Found ${parsedFlights?.length || 0} flights in parsed data`);
 
     if (Array.isArray(parsedFlights)) {
       for (const flight of parsedFlights) {
         try {
-          // Parse Oxylabs flight structure
-          const segments = flight.legs || flight.segments || [];
+          // Parse Oxylabs flight structure - handle various field name possibilities
+          const segments = flight.legs || flight.segments || flight.itineraries?.[0]?.legs || [];
           
-          if (segments.length === 0) continue;
+          if (segments.length === 0) {
+            console.log("  ℹ️ Skipped flight with no segments");
+            continue;
+          }
 
           // Build departure & arrival from segments
           const outbound = segments[0];
           const inbound = segments[segments.length - 1];
 
-          if (!outbound) continue;
+          if (!outbound) {
+            console.log("  ℹ️ Skipped - no outbound segment");
+            continue;
+          }
 
-          const departureTime = outbound.departure_time || outbound.departureTime || outbound.depart_time || '';
-          const arrivalTime = inbound?.arrival_time || inbound?.arrivalTime || outbound.arrival_time || outbound.arriveTime || '';
+          // Handle various time field formats from Google Flights API
+          const departureTime = 
+            outbound.departure_time || 
+            outbound.departureTime || 
+            outbound.depart_time || 
+            outbound.departure || 
+            '';
+          const arrivalTime = 
+            inbound?.arrival_time || 
+            inbound?.arrivalTime || 
+            inbound?.arrive_time ||
+            inbound?.arrival ||
+            outbound.arrival_time || 
+            outbound.arriveTime || 
+            '';
           
-          // Extract airlines
+          // Extract airlines with multiple field possibilities
           const airlines = new Set<string>();
           const airlineNames = new Set<string>();
           segments.forEach((seg: any) => {
-            const airlineCode = seg.airline_icao || seg.airline || seg.operating_carrier || '';
-            const airlineName = seg.airline_name || airlineCode;
+            const airlineCode = seg.airline_icao || seg.airline_iata || seg.airline_code || seg.airline || seg.operating_carrier || '';
+            const airlineName = seg.airline_name || seg.name || airlineCode;
             if (airlineCode) airlines.add(airlineCode);
             if (airlineName) airlineNames.add(airlineName);
           });
 
-          // Price extraction
-          const priceStr = flight.price || flight.price_raw || flight.total_price || '0';
+          if (airlineNames.size === 0) {
+            airlineNames.add('Unknown Airline');
+          }
+
+          // Price extraction - try multiple field names
+          const priceStr = flight.price || flight.price_raw || flight.total_price || flight.price_value || '0';
           const price = parseFloat(String(priceStr).replace(/[^0-9.]/g, '')) || 0;
+
+          if (price <= 0) {
+            console.log("  ℹ️ Skipped - no valid price");
+            continue;
+          }
 
           // Duration in minutes
           let durationMins = 0;
@@ -186,17 +234,20 @@ export async function searchOxylabs(params: any): Promise<FlightResult[]> {
             if (departureTime && arrivalTime) {
               const dep = new Date(departureTime).getTime();
               const arr = new Date(arrivalTime).getTime();
-              durationMins = Math.floor((arr - dep) / 60000);
+              if (!isNaN(dep) && !isNaN(arr)) {
+                durationMins = Math.floor((arr - dep) / 60000);
+              }
             }
           } catch (e) {
+            console.log(`  ⚠️ Duration calc error: ${e}`);
             durationMins = 0;
           }
 
           const flightResult: FlightResult = {
             id: `oxy_${Math.random().toString(36).substr(2, 9)}`,
             source: 'OXYLABS',
-            airline: Array.from(airlineNames)[0] || 'Multiple Airlines',
-            flightNumber: segments[0].flight_number || 'OXY',
+            airline: Array.from(airlineNames)[0] || 'Unknown',
+            flightNumber: segments[0].flight_number || segments[0].flight || 'OXY',
             from: params.origin,
             to: params.destination,
             departTime: departureTime,
@@ -206,16 +257,17 @@ export async function searchOxylabs(params: any): Promise<FlightResult[]> {
             stops: Math.max(0, segments.length - 1),
             price,
             currency: context.currency,
-            cabinClass: (flight.cabin_class || 'economy') as any,
+            cabinClass: (flight.cabin_class || flight.cabin || 'economy') as any,
             layovers: segments.length > 1 ? segments.slice(0, -1).map((seg: any) => ({
-              city: seg.arrival_city || '',
-              airport: seg.arrival_airport || seg.destination || '',
-              duration: seg.layover_duration || '0'
+              city: seg.arrival_city || seg.city || '',
+              airport: seg.arrival_airport || seg.destination || seg.destination_airport || '',
+              duration: seg.layover_duration || seg.layover || '0'
             })) : undefined,
             segments: segments
           };
 
           flights.push(flightResult);
+          console.log(`  ✅ Parsed flight: ${flightResult.airline} ${flightResult.from}->${flightResult.to} $${price}`);
         } catch (flightError) {
           console.log(`  ⚠️ Skipped 1 flight: ${flightError}`);
         }
