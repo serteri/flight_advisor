@@ -1,6 +1,6 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
-import { searchOxylabs } from './providers/oxylabs'; // Google Flights proxy via Oxylabs
+import { searchSerpApi } from './providers/serpapi';
 // Kiwi (auth required), Travelpayouts (unreliable), RapidAPI (removed)
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
@@ -17,10 +17,10 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     promises.push(searchDuffel(params));
   }
 
-  // Oxylabs - secondary source
-  if (process.env.OXYLABS_USERNAME && process.env.OXYLABS_PASSWORD) {
-    console.log(`✅ Adding Oxylabs provider`);
-    promises.push(searchOxylabs(params));
+  // SERPAPI - Google Flights via SerpApi
+  if (process.env.SERPAPI_KEY) {
+    console.log(`✅ Adding SERPAPI provider`);
+    promises.push(searchSerpApi(params));
   }
 
   console.log(`🚀 Starting ${promises.length} providers...\n`);
@@ -31,7 +31,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
 
     let allFlights: FlightResult[] = [];
     let duffelCount = 0;
-    let oxylabsCount = 0;
+    let serpApiCount = 0;
 
     results.forEach((result, idx) => {
       if (result.status === 'fulfilled') {
@@ -41,9 +41,9 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
         if (idx === 0 && process.env.DUFFEL_ACCESS_TOKEN) {
           duffelCount = flights.length;
           console.log(`✅ Duffel: ${duffelCount} flights`);
-        } else if (process.env.OXYLABS_USERNAME) {
-          oxylabsCount = flights.length;
-          console.log(`✅ Oxylabs: ${oxylabsCount} flights`);
+        } else if (process.env.SERPAPI_KEY) {
+          serpApiCount = flights.length;
+          console.log(`✅ SERPAPI: ${serpApiCount} flights`);
         }
       } else {
         console.error(`❌ Provider ${idx} failed:`, result.reason?.message);
@@ -51,7 +51,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
-    console.log(`   Duffel: ${duffelCount} | Oxylabs: ${oxylabsCount}\n`);
+    console.log(`   Duffel: ${duffelCount} | SERPAPI: ${serpApiCount}\n`);
     
     // Sort by price
     return allFlights.sort((a, b) => a.price - b.price);

@@ -1,27 +1,27 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
-import { searchOxylabs } from "./providers/oxylabs"; // ✅ OXYLABS MOTORU
+import { searchSerpApi } from "./providers/serpapi";
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 
 export async function getHybridFlights(params: HybridSearchParams): Promise<FlightResult[]> {
     console.log(`\n🚀 [HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
     console.log(`   Date: ${params.date}`);
 
-    // ✅ DUFFEL + OXYLABS (Parallel execution)
+    // ✅ DUFFEL + SERPAPI (Parallel execution)
     const results = await Promise.allSettled([
         searchDuffel(params),
-        searchOxylabs(params)
+        searchSerpApi(params)
     ]);
 
     const duffelResults = results[0].status === 'fulfilled' ? results[0].value : [];
-    const oxylabsResults = results[1].status === 'fulfilled' ? results[1].value : [];
+    const serpApiResults = results[1].status === 'fulfilled' ? results[1].value : [];
 
-    console.log(`✅ [HybridSearch] Results -> Duffel: ${duffelResults.length}, Oxylabs: ${oxylabsResults.length}`);
+    console.log(`✅ [HybridSearch] Results -> Duffel: ${duffelResults.length}, SERPAPI: ${serpApiResults.length}`);
 
     // Hepsini birleştir
     let rawFlights: any[] = [
         ...duffelResults,
-        ...oxylabsResults
+        ...serpApiResults
     ];
 
     if (rawFlights.length === 0) {
