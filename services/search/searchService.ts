@@ -5,6 +5,8 @@ import { searchOxylabs } from './providers/oxylabs'; // Google Flights via Oxyla
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`🔎 [${new Date().toISOString()}] Arama Başladı: ${params.origin} -> ${params.destination}`);
+  console.log(`DEBUG: OXYLABS_USERNAME = ${process.env.OXYLABS_USERNAME ? 'SET' : 'NOT SET'}`);
+  console.log(`DEBUG: OXYLABS_PASSWORD = ${process.env.OXYLABS_PASSWORD ? 'SET' : 'NOT SET'}`);
 
   const startTime = Date.now();
 
@@ -17,6 +19,7 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
   }
 
   if (process.env.OXYLABS_USERNAME && process.env.OXYLABS_PASSWORD) {
+    console.log(`✅ ADDING OXYLABS TO PROVIDERS`);
     providerPromises.push({ name: 'oxylabs', promise: searchOxylabs(params) });
   } else {
     console.warn('⚠️ Skipping Oxylabs: OXYLABS credentials not set');
