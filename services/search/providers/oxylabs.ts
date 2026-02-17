@@ -5,7 +5,10 @@ const OXY_USER = process.env.OXYLABS_USERNAME;
 const OXY_PASS = process.env.OXYLABS_PASSWORD;
 const AUTH = OXY_USER && OXY_PASS ? Buffer.from(`${OXY_USER}:${OXY_PASS}`).toString('base64') : '';
 
-console.log(`[oxylabs.ts INIT] OXY_USER: ${OXY_USER ? 'SET' : 'NOT SET'}, OXY_PASS: ${OXY_PASS ? 'SET' : 'NOT SET'}`);
+console.log(`\n[oxylabs.ts RUNTIME INIT]`);
+console.log(`  OXY_USER: ${OXY_USER ? 'SET (' + OXY_USER + ')' : 'NOT SET'}`);
+console.log(`  OXY_PASS: ${OXY_PASS ? 'SET (length=' + OXY_PASS.length + ')' : 'NOT SET'}`);
+console.log(`  AUTH token generated: ${AUTH ? 'YES' : 'NO'}\n`);
 
 // Helper functions
 function formatDuration(minutes: number): string {

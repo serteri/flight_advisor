@@ -19,11 +19,21 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     console.warn('⚠️ Skipping Duffel: DUFFEL_ACCESS_TOKEN not set');
   }
 
-  if (process.env.OXYLABS_USERNAME && process.env.OXYLABS_PASSWORD) {
-    console.log(`✅ Adding Oxylabs provider (USERNAME=${process.env.OXYLABS_USERNAME ? 'SET' : 'NOTSET'})`);
-    providerPromises.push({ name: 'oxylabs', promise: searchOxylabs(params) });
+  const oxyUser = process.env.OXYLABS_USERNAME;
+  const oxyPass = process.env.OXYLABS_PASSWORD;
+  
+  if (oxyUser && oxyPass) {
+    console.log(`✅ Adding Oxylabs provider (USERNAME=SET, PASSWORD=SET)`);
+    try {
+      providerPromises.push({ name: 'oxylabs', promise: searchOxylabs(params) });
+      console.log(`   ✅ Oxylabs promise added to queue`);
+    } catch (e) {
+      console.error(`❌ Failed to add Oxylabs to queue:`, e);
+    }
   } else {
-    console.warn(`⚠️ Skipping Oxylabs: USERNAME=${process.env.OXYLABS_USERNAME} PASSWORD=${process.env.OXYLABS_PASSWORD}`);
+    console.error(`❌ CRITICAL: Oxylabs credentials missing in searchAllProviders!`);
+    console.error(`    USERNAME: ${oxyUser ? 'SET' : 'NOT SET'}`);
+    console.error(`    PASSWORD: ${oxyPass ? 'SET' : 'NOT SET'}`);
   }
 
   console.log(`🚀 Starting ${providerPromises.length} providers...`);
@@ -41,7 +51,8 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
       console.log(`✅ ${name}: ${resultsByName[name].length} flights (${elapsed}ms)`);
     } else {
       const errorMsg = res.reason?.message || res.reason?.toString?.() || JSON.stringify(res.reason);
-      console.error(`❌ ${name} Error (${elapsed}ms):`, errorMsg);
+      console.error(`❌ ${name} REJECTED (${elapsed}ms): ${errorMsg}`);
+      console.error(`   Stack:`, res.reason?.stack);
     }
   });
 
