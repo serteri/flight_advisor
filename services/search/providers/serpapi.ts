@@ -3,48 +3,59 @@ import { getAirportSettings } from "@/lib/airportDb";
 
 const API_KEY = process.env.SERPAPI_KEY;
 
-async function fetchSerpApi(params: HybridSearchParams, sortType: string): Promise<any[]> {
-  const settings = getAirportSettings(params.origin);
-  const dateStr = params.date.split('T')[0];
+// 🛠️ YARDIMCI FONKSİYON: "NAKED" SEARCH
+async function fetchSerpApi(
+  params: HybridSearchParams,
+  overrideGl?: string,
+  overrideCur?: string
+): Promise<any[]> {
+  const defaultSettings = getAirportSettings(params.origin);
+  const targetGl = overrideGl || defaultSettings.country;
+  const targetCur = overrideCur || defaultSettings.currency;
+
+  const dateStr = params.date.split("T")[0];
 
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.append("engine", "google_flights");
   url.searchParams.append("departure_id", params.origin);
   url.searchParams.append("arrival_id", params.destination);
   url.searchParams.append("outbound_date", dateStr);
-  url.searchParams.append("currency", settings.currency);
+
+  // 🌍 KONUM VE PARA BİRİMİ
+  url.searchParams.append("currency", targetCur);
+  url.searchParams.append("gl", targetGl);
   url.searchParams.append("hl", "en");
-  url.searchParams.append("gl", settings.country);
   url.searchParams.append("api_key", API_KEY || "");
 
-  url.searchParams.append("type", "2");
-  url.searchParams.append("travel_class", "1");
+  // 🔥 "NAKED" MOD: FİLTRELERİ KALDIRDIK 🔥
+  // type / travel_class / adults SİLİNDİ
   url.searchParams.append("deep_search", "true");
   url.searchParams.append("show_hidden", "true");
   url.searchParams.append("stops", "0");
-  url.searchParams.append("adults", "1");
-
-  if (sortType === "PRICE") url.searchParams.append("sort_by", "2");
-  if (sortType === "DEPARTURE") url.searchParams.append("sort_by", "3");
-  if (sortType === "ARRIVAL") url.searchParams.append("sort_by", "4");
-  if (sortType === "DURATION") url.searchParams.append("sort_by", "5");
 
   try {
     const response = await fetch(url.toString());
     const json = await response.json();
 
     if (json.error) {
-      console.warn(`⚠️ SerpApi Error (${sortType}):`, json.error);
+      console.warn(`⚠️ SerpApi Error [GL:${targetGl}]:`, json.error);
       return [];
     }
 
-    const best = json.best_flights || [];
-    const other = json.other_flights || [];
-    const main = json.flights || [];
+    const results = [
+      ...(json.best_flights || []),
+      ...(json.other_flights || []),
+      ...(json.flights || [])
+    ].map((item: any) => ({
+      ...item,
+      __currency: targetCur,
+      __gl: targetGl
+    }));
 
-    return [...best, ...other, ...main];
+    console.log(`📊 SerpApi [GL: ${targetGl.toUpperCase()}] fetched: ${results.length} flights`);
+    return results;
   } catch (error) {
-    console.error(`🔥 SerpApi Request Failed (${sortType}):`, error);
+    console.error(`🔥 SerpApi Request Failed [GL:${targetGl}]:`, error);
     return [];
   }
 }
@@ -55,28 +66,40 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
     return [];
   }
 
-  const settings = getAirportSettings(params.origin);
-  console.log(`\n🦁 SerpApi: QUADRANT ATTACK via ${settings.country.toUpperCase()}...`);
+  const localSettings = getAirportSettings(params.origin);
+  console.log(
+    `🦁 SerpApi: NAKED DOUBLE AGENT (No Filters) via ${localSettings.country.toUpperCase()} & US...`
+  );
 
   try {
-    const [priceResults, durationResults, departureResults, arrivalResults] = await Promise.all([
-      fetchSerpApi(params, "PRICE"),
-      fetchSerpApi(params, "DURATION"),
-      fetchSerpApi(params, "DEPARTURE"),
-      fetchSerpApi(params, "ARRIVAL")
+    const [localResults, usResults] = await Promise.all([
+      fetchSerpApi(params),
+      fetchSerpApi(params, "us", "USD")
     ]);
 
-    const rawList = [...priceResults, ...durationResults, ...departureResults, ...arrivalResults];
+    const rawList = [...localResults, ...usResults];
+    console.log(`📦 SerpApi TOTAL RAW: ${rawList.length} flights`);
 
-    const uniqueFlights = rawList.filter((flight, index, self) =>
-      index === self.findIndex((t) => (
-        t.flights?.[0]?.flight_number === flight.flights?.[0]?.flight_number &&
-        t.flights?.[0]?.departure_airport?.time === flight.flights?.[0]?.departure_airport?.time &&
-        t.flights?.[0]?.airline === flight.flights?.[0]?.airline
-      ))
-    );
+    const uniqueMap = new Map<string, any>();
 
-    console.log(`✅ SerpApi MERGED Results: Found ${rawList.length}, Unique: ${uniqueFlights.length} flights!`);
+    rawList.forEach((item) => {
+      const flightNo = item.flights?.[0]?.flight_number || "";
+      const departTime = item.flights?.[0]?.departure_airport?.time || "";
+      const key = `${flightNo}_${departTime}`;
+
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+        return;
+      }
+
+      const currentCurrency = item.__currency || "USD";
+      if (currentCurrency === localSettings.currency) {
+        uniqueMap.set(key, item);
+      }
+    });
+
+    const uniqueFlights = Array.from(uniqueMap.values());
+    console.log(`✅ SerpApi FINAL UNIQUE: ${uniqueFlights.length} flights!`);
 
     return uniqueFlights
       .map((item: any, index: number): FlightResult | null => {
@@ -92,6 +115,7 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
         const airlineLogo = firstSegment.airline_logo || undefined;
         const durationMins = item.total_duration || item.duration || 0;
         const stopCount = (item.layovers || []).length;
+        const currencyCode = item.__currency || localSettings.currency;
 
         const uniqueId = item.booking_token
           ? `GF_${item.booking_token.substring(0, 15)}`
@@ -110,8 +134,8 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
           duration: durationMins,
           durationLabel: formatDuration(durationMins),
           stops: stopCount,
-          price: item.price || 0,
-          currency: settings.currency,
+          price: typeof item.price === "number" ? item.price : Number(item.price) || 0,
+          currency: currencyCode,
           cabinClass: params.cabin || "economy",
           layovers: (item.layovers || []).map((layover: any) => ({
             city: layover.name || "",

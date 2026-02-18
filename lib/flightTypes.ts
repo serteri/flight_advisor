@@ -1,8 +1,50 @@
 import { AirlineTier } from './airlineDB';
 
 // ----------------------------
-// INTERFACES
+// MASTER SCORE TYPES (Imported from masterFlightScore)
 // ----------------------------
+export interface ScorePenalty {
+    reason: string;
+    points: number;
+    category: 'RISK' | 'COMFORT' | 'TIME' | 'PRICE';
+}
+
+export interface ScoreBonus {
+    reason: string;
+    points: number;
+    category: 'VALUE' | 'EXPERIENCE' | 'TIMING';
+}
+
+export interface MasterScoreBreakdown {
+    total: number; // 0-100
+    
+    // CORE FACTORS (60 points max)
+    priceScore: number;      // 0-25
+    durationScore: number;   // 0-15
+    stopsScore: number;      // 0-10
+    layoverScore: number;    // 0-10
+    
+    // QUALITY FACTORS (25 points max)
+    airlineScore: number;    // 0-8
+    baggageScore: number;    // 0-5
+    mealScore: number;       // 0-3
+    entertainmentScore: number; // 0-3
+    aircraftScore: number;   // 0-6
+    
+    // SMART FACTORS (15 points max)
+    priceStabilityScore: number; // 0-5
+    reliabilityScore: number;    // 0-5
+    flexibilityScore: number;    // 0-5
+    
+    // PENALTIES (Unlimited negative)
+    penalties: ScorePenalty[];
+    totalPenalties: number;
+    
+    // BONUS (Capped at +5)
+    bonuses: ScoreBonus[];
+    totalBonuses: number;
+}
+
 // ----------------------------
 // INTERFACES
 // ----------------------------
@@ -16,6 +58,7 @@ export interface FlightSegment {
     departure: string;
     arrival: string;
     duration: number;
+    aircraft?: string; // Aircraft type (e.g., "A350", "B787")
     cabin?: string;
     baggageWeight?: number;
     baggageQuantity?: number;
@@ -60,6 +103,8 @@ export interface FlightForScoring {
     };
 
     // --- SCORING ENGINE OUTPUTS ---
+    masterScore?: MasterScoreBreakdown; // NEW: 100-point Master Score breakdown
+    
     scores?: {
         total: number;      // 0.0 - 10.0 (Final)
         price: number;      // 0-100
