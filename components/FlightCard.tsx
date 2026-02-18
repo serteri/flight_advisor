@@ -25,6 +25,11 @@ import { generateBookingLink } from '@/lib/booking/linkGenerator';
 import WatchButton from "@/components/flights/WatchButton";
 import { FlightForScoring } from "@/lib/flightTypes";
 
+import { MasterScoreBadge } from "@/components/flights/MasterScoreBadge";
+import { MasterScoreCard } from "@/components/flights/MasterScoreCard";
+import { Switch } from "@/components/ui/switch"; // For demo toggle
+import { Label } from "@/components/ui/label"; // For demo label
+
 interface FlightCardProps {
     flight: FlightForScoring;
     searchParams?: any;
@@ -35,7 +40,15 @@ interface FlightCardProps {
 export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps) {
     if (!flight) return null;
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isProDemo, setIsProDemo] = useState(false); // DEMO STATE
     const t = useTranslations("FlightSearch");
+
+    // Master Score Data Access
+    const masterScore = flight.scoreDetails?.masterBreakdown || flight.masterScore;
+    const scoreTotal = masterScore?.total || flight.scores?.total || 0;
+    // Normalize score to 100 if it's 0-10
+    const normalizedScore = scoreTotal <= 10 ? scoreTotal * 10 : scoreTotal;
+
 
     const formatTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -67,6 +80,19 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
+            {/* DEMO PRO TOGGLE (Remove in Production) */}
+            <div className="absolute top-2 right-2 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 p-1 rounded-full border shadow-sm">
+                <Switch 
+                    id={`pro-mode-${flight.id}`} 
+                    checked={isProDemo} 
+                    onCheckedChange={setIsProDemo}
+                    className="scale-75"
+                />
+                <Label htmlFor={`pro-mode-${flight.id}`} className="text-[10px] cursor-pointer font-bold text-indigo-600">
+                    {isProDemo ? "PRO ON" : "PRO OFF"}
+                </Label>
+            </div>
+
             {/* MAIN ROW: Compact & Horizontal */}
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
 
@@ -169,14 +195,16 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                 <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center md:min-w-[120px] pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 mt-2 md:mt-0">
                     <div className="text-left md:text-right flex flex-col items-end">
                         {/* SCORE BADGE */}
-                        {flight.scores?.total && (
-                            <div className={`mb-2 px-2 py-0.5 rounded-md text-xs font-bold text-white shadow-sm w-fit ${flight.scores.total >= 8 ? 'bg-emerald-500' : flight.scores.total >= 6 ? 'bg-blue-500' : 'bg-amber-500'}`}>
-                                {flight.scores.total.toFixed(1)} / 10
-                            </div>
-                        )}
+                        <div className="mb-2 w-fit">
+                            <MasterScoreBadge 
+                                score={normalizedScore} 
+                                isPro={isProDemo} 
+                                compact 
+                            />
+                        </div>
 
                         {(isCheapest || isFastest) && (
-                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">
+                            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5 mt-1">
                                 {isCheapest ? "Cheapest" : "Fastest"}
                             </div>
                         )}
@@ -300,6 +328,24 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
             {/* EXPANDED DETAILS */}
             {isExpanded && (
                 <div className="border-t border-slate-100 bg-slate-50/50 p-6 animate-in slide-in-from-top-1">
+                    
+                    {/* 🧠 MASTER SCORE TEASER SECTION */}
+                    <div className="mb-8">
+                        <MasterScoreCard 
+                            scoreData={masterScore || {
+                                total: normalizedScore,
+                                priceScore: Math.min(25, normalizedScore / 4), 
+                                durationScore: Math.min(15, normalizedScore / 6), 
+                                stopsScore: 5, layoverScore: 5,
+                                airlineScore: 4, aircraftScore: 3, baggageScore: 3, mealScore: 1, entertainmentScore: 1,
+                                priceStabilityScore: 2, reliabilityScore: 2, flexibilityScore: 2,
+                                penalties: [], bonuses: [], totalPenalties: 0, totalBonuses: 0
+                            }} 
+                            isPro={isProDemo}
+                            onUpgrade={() => setIsProDemo(true)}
+                        />
+                    </div>
+
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="font-bold text-sm text-slate-900">Flight Details</h4>
                         <WatchButton flightId={flight.id} />
