@@ -28,7 +28,7 @@ export class EmailChannel {
     private fromEmail: string;
 
     private constructor() {
-        this.fromEmail = 'notifications@flightguardian.io';
+        this.fromEmail = 'onboarding@resend.dev';
     }
 
     public static getInstance(): EmailChannel {
