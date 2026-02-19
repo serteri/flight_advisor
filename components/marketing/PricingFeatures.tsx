@@ -1,97 +1,140 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus, AlertCircle } from 'lucide-react';
 
 export function PricingFeatures() {
     const t = useTranslations('Pricing');
-    // State removed - using simple table display instead
 
     const features = [
-        { key: 'search_score', free: 'unlimited', guardian: 'unlimited', elite: 'unlimited' },
-        { key: 'scenario_sim', free: 'limited_3', guardian: 'unlimited', elite: 'unlimited' },
-        { key: 'disruption_hunter', free: 'link_only', guardian: 'auto_track', elite: 'priority' },
-        { key: 'inbox_parser', free: 'none', guardian: 'tickets_2', elite: 'unlimited' },
-        { key: 'schedule_guardian', free: 'none', guardian: 'watch_247', elite: 'watch_247' },
-        { key: 'junior_guardian', free: 'none', guardian: 'none', elite: 'full_protection' },
-        { key: 'backup_generator', free: 'none', guardian: 'none', elite: 'crisis_mgmt' },
-        { key: 'lounge_intel', free: 'none', guardian: 'list_only', elite: 'full_analysis' },
+        // SEARCH & SCORING
+        { key: 'search_score', category: 'Search & Analysis', free: true, guardian: true, elite: true },
+        { key: 'scenario_sim', category: 'Search & Analysis', free: 'limited', guardian: true, elite: true },
+        { key: 'disruption_hunter', category: 'Search & Analysis', free: 'limited', guardian: true, elite: true },
+        
+        // MONITORING
+        { key: 'schedule_guardian', category: 'Monitoring (24/7)', free: false, guardian: true, elite: true },
+        
+        // NOTIFICATIONS
+        { key: 'email_notifications', category: 'Notifications', free: 'limited', guardian: true, elite: true },
+        { key: 'sms_notifications', category: 'Notifications', free: false, guardian: 'limited', elite: true },
+        { key: 'push_notifications', category: 'Notifications', free: false, guardian: true, elite: true },
+        
+        // AUTOMATION
+        { key: 'inbox_parser', category: 'Automation', free: false, guardian: 'limited', elite: true },
+        
+        // PREMIUM FEATURES
+        { key: 'junior_guardian', category: 'Premium Features', free: false, guardian: false, elite: true },
+        { key: 'lounge_intel', category: 'Premium Features', free: false, guardian: 'limited', elite: true },
+        { key: 'backup_generator', category: 'Premium Features', free: false, guardian: false, elite: true },
     ];
 
-    const getIcon = (valKey: string) => {
-        if (valKey === 'none') return <Minus className="w-4 h-4 text-slate-300" />;
-        if (valKey === 'unlimited') return <Check className="w-4 h-4 text-emerald-500" />;
-        if (valKey.includes('limited')) return <span className="text-amber-500 font-semibold text-xs">⚠️</span>;
-        return <Check className="w-4 h-4 text-blue-500" />;
+    const categories = [...new Set(features.map(f => f.category))];
+
+    const getIcon = (value: boolean | string) => {
+        if (value === true) return <Check className="w-5 h-5 text-emerald-500" />;
+        if (value === false) return <Minus className="w-5 h-5 text-slate-300" />;
+        if (value === 'limited') return <AlertCircle className="w-5 h-5 text-amber-500" />;
+        return <Minus className="w-5 h-5 text-slate-300" />;
     };
 
-    const getValueText = (valKey: string) => {
-        if (valKey === 'unlimited') return t('values.unlimited');
-        if (valKey === 'none') return '-';
-        return t(`values.${valKey}`);
+    const getLabel = (value: boolean | string) => {
+        if (value === true) return 'Included';
+        if (value === false) return '-';
+        if (value === 'limited') return 'Limited';
+        return '-';
     };
 
     return (
-        <section className="py-16 bg-slate-50">
+        <section className="py-16 bg-gradient-to-b from-slate-50 to-white border-t border-slate-200">
             <div className="container mx-auto px-4 md:px-6">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
+                    <h2 className="text-3xl font-bold text-slate-900 mb-2">
                         Feature Comparison
                     </h2>
-                    <p className="text-lg text-slate-600">
-                        See what&apos;s included in each plan
+                    <p className="text-slate-600">
+                        See exactly what you get in each plan
                     </p>
                 </div>
 
-                {/* Table Version */}
-                <div className="max-w-5xl mx-auto overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-white border-b-2 border-slate-200">
-                                <th className="p-4 text-left font-bold text-slate-900">Feature</th>
-                                <th className="p-4 text-center font-bold text-slate-600">Free</th>
-                                <th className="p-4 text-center font-bold text-blue-600">Guardian</th>
-                                <th className="p-4 text-center font-bold text-amber-600">Elite</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {features.map((feat, idx) => (
-                                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                                    <td className="p-4 font-medium text-slate-700">
-                                        {t(`features.${feat.key}`)}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center">{getIcon(feat.free)}</div>
-                                        <div className="text-xs text-slate-500 mt-1">{getValueText(feat.free)}</div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center">{getIcon(feat.guardian)}</div>
-                                        <div className="text-xs text-slate-600 mt-1">{getValueText(feat.guardian)}</div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center">{getIcon(feat.elite)}</div>
-                                        <div className="text-xs text-slate-600 mt-1">{getValueText(feat.elite)}</div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {/* Feature Table by Category */}
+                {categories.map((category, catIdx) => {
+                    const categoryFeatures = features.filter(f => f.category === category);
+                    
+                    return (
+                        <div key={category} className="mb-8">
+                            <div className="max-w-5xl mx-auto">
+                                {/* Category Header */}
+                                <h3 className="text-lg font-bold text-slate-900 mb-3 px-4 py-2 bg-slate-100 rounded-lg">
+                                    {category}
+                                </h3>
+
+                                {/* Table */}
+                                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200">
+                                                <th className="p-4 text-left font-bold text-slate-900">Feature</th>
+                                                <th className="p-4 text-center font-bold text-slate-600 min-w-[100px]">Free</th>
+                                                <th className="p-4 text-center font-bold text-blue-600 min-w-[100px]">Guardian</th>
+                                                <th className="p-4 text-center font-bold text-amber-600 min-w-[100px]">Elite</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {categoryFeatures.map((feat, idx) => (
+                                                <tr 
+                                                    key={idx} 
+                                                    className={`border-b border-slate-100 ${
+                                                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                                                    } hover:bg-blue-50/30 transition-colors`}
+                                                >
+                                                    <td className="p-4 font-medium text-slate-900">
+                                                        {t(`features.${feat.key}`)}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            {getIcon(feat.free)}
+                                                            <span className="text-xs text-slate-600">{getLabel(feat.free)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-center bg-blue-50/20">
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            {getIcon(feat.guardian)}
+                                                            <span className="text-xs text-slate-700 font-semibold">{getLabel(feat.guardian)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-center bg-amber-50/20">
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            {getIcon(feat.elite)}
+                                                            <span className="text-xs text-slate-700 font-semibold">{getLabel(feat.elite)}</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
 
                 {/* Legend */}
-                <div className="max-w-5xl mx-auto mt-8 flex justify-center gap-6 flex-wrap text-sm">
-                    <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-500" />
-                        <span className="text-slate-600">Included</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-amber-500 font-semibold">⚠️</span>
-                        <span className="text-slate-600">Limited</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Minus className="w-4 h-4 text-slate-300" />
-                        <span className="text-slate-600">Not included</span>
+                <div className="max-w-5xl mx-auto mt-12 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-semibold text-slate-900 mb-3">Legend:</p>
+                    <div className="flex flex-wrap gap-6">
+                        <div className="flex items-center gap-2">
+                            <Check className="w-4 h-4 text-emerald-500" />
+                            <span className="text-sm text-slate-600">Included</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm text-slate-600">Limited</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Minus className="w-4 h-4 text-slate-300" />
+                            <span className="text-sm text-slate-600">Not Included</span>
+                        </div>
                     </div>
                 </div>
             </div>

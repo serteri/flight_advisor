@@ -1,7 +1,7 @@
 import { Link } from "@/i18n/routing";
 import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, TrendingDown, ShieldCheck, Globe2, BrainCircuit, Zap, Search } from "lucide-react";
+import { ArrowRight, TrendingDown, ShieldCheck, Globe2, BrainCircuit, Zap, Search, Bell, Clock } from "lucide-react";
 import { SearchForm } from "@/components/search/SearchForm";
 import { PricingTable } from "@/components/marketing/PricingTable";
 
@@ -55,45 +55,106 @@ export default function HomePage() {
             </section>
 
             {/* Features Section - "The Agent Advantage" */}
-            <section id="features" className="py-24 bg-slate-50 relative z-10">
+            <section id="features" className="py-24 bg-gradient-to-b from-white to-slate-50 relative z-10">
                 <div className="container mx-auto px-4 md:px-6">
                     <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">The Flight Agent Advantage</h2>
-                        <p className="text-xl text-slate-500">Why travelers switch to our Hybrid Engine</p>
+                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">The Flight Guardian Advantage</h2>
+                        <p className="text-xl text-slate-500">Complete protection for your travel with AI-powered monitoring</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
-                        {/* Feature 1: Hybrid Engine */}
-                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-blue-100 transition-all duration-300 hover:shadow-xl hover:shadow-blue-900/5">
+                        {/* Feature 1: Hybrid Search Engine */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-blue-200 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-900/10">
                             <div className="w-14 h-14 rounded-2xl bg-blue-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <Globe2 className="w-7 h-7 text-blue-600" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">Hybrid Search Engine</h3>
-                            <p className="text-slate-500 leading-relaxed">
-                                We combine <strong>RapidAPI Scrapers</strong> with <strong>Amadeus GDS</strong> precision. Get the low-cost fares others miss, with the reliability of a global system.
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Hybrid Search Engine (4 Sources)</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                Compare prices across <strong>RapidAPI Scrapers</strong>, <strong>Amadeus GDS</strong>, <strong>Travelpayouts</strong>, and <strong>Duffel</strong>. Find flights others miss with institutional-grade accuracy.
                             </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">400+ Airlines</span>
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">Real-time</span>
+                            </div>
                         </div>
 
-                        {/* Feature 2: Agent Score */}
-                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-indigo-100 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-900/5">
+                        {/* Feature 2: Master Flight Score */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-indigo-200 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-900/10">
                             <div className="w-14 h-14 rounded-2xl bg-indigo-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <BrainCircuit className="w-7 h-7 text-indigo-600" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">Agent Score IQ</h3>
-                            <p className="text-slate-500 leading-relaxed">
-                                Not just price. We calculate value using our custom formula: <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">Price vs Comfort vs Hidden Fees</code>.
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Master Flight Score (0-100)</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                12-factor AI scoring: <strong>Price</strong> (24%), <strong>Duration</strong> (20%), <strong>Airline</strong> (15%), <strong>Aircraft</strong> (10%), and more. Not just cheap—smart.
                             </p>
+                            <div className="mt-4">
+                                <div className="text-xs text-slate-500">Score Breakdown:</div>
+                                <div className="text-xs text-slate-600 mt-1 space-y-1">
+                                    <div>• CORE: 60% (price, duration, stops)</div>
+                                    <div>• QUALITY: 25% (airline, baggage, meals)</div>
+                                    <div>• SMART: 15% (stability, reliability)</div>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Feature 3: Disruption Hunter */}
-                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-teal-100 transition-all duration-300 hover:shadow-xl hover:shadow-teal-900/5">
-                            <div className="w-14 h-14 rounded-2xl bg-teal-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                                <ShieldCheck className="w-7 h-7 text-teal-600" />
+                        {/* Feature 3: Disruption Hunter + Compensation */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-emerald-200 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-900/10">
+                            <div className="w-14 h-14 rounded-2xl bg-emerald-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <ShieldCheck className="w-7 h-7 text-emerald-600" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">Disruption Hunter</h3>
-                            <p className="text-slate-500 leading-relaxed">
-                                Automatic monitoring for delays over 180 mins. We flag compensatable flights so you can claim up to <strong>€600</strong> properly.
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Disruption Hunter + EU261</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                24/7 automated monitoring detects delays &gt;180 mins. We identify your compensation rights (up to <strong>€600</strong>) and guide you through the claim process automatically.
                             </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded">CRITICAL alerts</span>
+                                <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded">Auto-monitoring</span>
+                            </div>
+                        </div>
+
+                        {/* Feature 4: Smart Notifications */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-rose-200 transition-all duration-300 hover:shadow-2xl hover:shadow-rose-900/10">
+                            <div className="w-14 h-14 rounded-2xl bg-rose-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <Bell className="w-7 h-7 text-rose-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Smart Notifications (Multi-Channel)</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                Receive alerts via <strong>Email</strong> (Resend), <strong>SMS</strong> (Twilio), or <strong>Push</strong> notifications. Personalize by tier: Standard mode or Junior Guardian (friendly AI voice).
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="text-xs bg-rose-50 text-rose-700 px-2 py-1 rounded">Email</span>
+                                <span className="text-xs bg-rose-50 text-rose-700 px-2 py-1 rounded">SMS</span>
+                                <span className="text-xs bg-rose-50 text-rose-700 px-2 py-1 rounded">Push</span>
+                            </div>
+                        </div>
+
+                        {/* Feature 5: Guardian Worker (24/7) */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-amber-200 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-900/10">
+                            <div className="w-14 h-14 rounded-2xl bg-amber-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <Clock className="w-7 h-7 text-amber-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Guardian Worker (24/7 Monitoring)</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                Every 15 minutes, our Vercel Cron worker checks every tracked flight for status changes. Delays, cancellations, gate changes—you're alerted instantly.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded">Every 15 min</span>
+                                <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded">Never sleeps</span>
+                            </div>
+                        </div>
+
+                        {/* Feature 6: Multi-Language + Inbox Parser */}
+                        <div className="group p-8 rounded-3xl bg-white border border-slate-200 hover:border-purple-200 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/10">
+                            <div className="w-14 h-14 rounded-2xl bg-purple-50 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <Zap className="w-7 h-7 text-purple-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Smart Inbox Parser + Schedule Guardian</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm">
+                                Forward your booking emails. We extract PNR codes, connect to airlines, and auto-track your trips. Available in <strong>12 languages</strong> for global travelers.
+                            </p>
+                            <div className="mt-4">
+                                <div className="text-xs text-slate-500">Supported: EN, TR, DE, + 9 more</div>
+                            </div>
                         </div>
                     </div>
                 </div>
