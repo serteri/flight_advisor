@@ -24,7 +24,9 @@ async function setupTestData() {
         // 2. Create test monitored trip
         const trip = await prisma.monitoredTrip.upsert({
             where: { id: "test-trip-001" },
-            update: {},
+            update: {
+                nextCheckAt: new Date(), // Update nextCheckAt so Worker picks it up
+            },
             create: {
                 id: "test-trip-001",
                 userId: user.id,
@@ -37,7 +39,7 @@ async function setupTestData() {
                 isRefundable: false,
                 status: "ACTIVE",
                 checkFrequency: 15, // Check every 15 minutes
-                nextCheckAt: new Date(),
+                nextCheckAt: new Date(), // Check NOW (due for check)
                 lastCheckedAt: null,
                 segments: {
                     create: {
