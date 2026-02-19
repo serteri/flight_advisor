@@ -5,7 +5,7 @@
             "schedule": "0 6 * * *"
         },
         {
-            "path": "/api/cron/guardian-sync",
+            "path": "/api/cron/guardian",
             "schedule": "*/15 * * * *"
         }
     ]

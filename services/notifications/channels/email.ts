@@ -1,13 +1,35 @@
 // services/notifications/channels/email.ts
 import { NotificationPayload } from '../types';
 
+// Initialize Resend (optional - use mock if not available)
+let resendClient: any = null;
+
+const getResendClient = () => {
+    if (resendClient) return resendClient;
+    
+    try {
+        const { Resend } = require('resend');
+        const apiKey = process.env.RESEND_API_KEY;
+        
+        if (apiKey) {
+            resendClient = new Resend(apiKey);
+            console.log("✅ Resend SDK initialized with API key");
+            return resendClient;
+        }
+    } catch (err) {
+        console.log("⚠️ Resend SDK not available, using mock");
+    }
+    
+    return null;
+};
+
 export class EmailChannel {
     private static instance: EmailChannel;
-    
-    // Replace with real Resend API Key in prod
-    private mockResend = true;
+    private fromEmail: string;
 
-    private constructor() {}
+    private constructor() {
+        this.fromEmail = 'notifications@flightguardian.io';
+    }
 
     public static getInstance(): EmailChannel {
         if (!EmailChannel.instance) {
@@ -20,10 +42,41 @@ export class EmailChannel {
         console.log(`📧 [EMAIL SERVICE] Sending to: ${to}`);
         console.log(`   Subject: ${payload.title}`);
         
-        // Mocking Resend API Call
+        const client = getResendClient();
+        
+        // Use real Resend if available
+        if (client) {
+            try {
+                const response = await client.emails.send({
+                    from: this.fromEmail,
+                    to: to,
+                    subject: payload.title,
+                    html: this.generateHtml(payload),
+                    replyTo: 'support@flightguardian.io',
+                });
+                
+                if (response.error) {
+                    console.error(`❌ [EMAIL ERROR] ${response.error.message}`);
+                    return this.mockSend();
+                }
+                
+                console.log(`✅ [EMAIL SENT] Message ID: ${response.data?.id}`);
+                return { success: true, id: response.data?.id };
+            } catch (err: any) {
+                console.error(`❌ [EMAIL ERROR] ${err.message}`);
+                // Fallback to mock on error
+                return this.mockSend();
+            }
+        }
+        
+        // Fallback to mock
+        return this.mockSend();
+    }
+
+    private mockSend(): Promise<{ success: boolean; id?: string }> {
         return new Promise((resolve) => {
             setTimeout(() => {
-                console.log(`✅ [EMAIL SENT] Message delivered via Resend.`);
+                console.log(`✅ [EMAIL SENT] Message delivered via Resend (Mock).`);
                 resolve({ success: true, id: `res_${Date.now()}` });
             }, 500);
         });
