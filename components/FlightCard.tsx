@@ -27,8 +27,6 @@ import { FlightForScoring } from "@/lib/flightTypes";
 
 import { MasterScoreBadge } from "@/components/flights/MasterScoreBadge";
 import { MasterScoreCard } from "@/components/flights/MasterScoreCard";
-import { Switch } from "@/components/ui/switch"; // For demo toggle
-import { Label } from "@/components/ui/label"; // For demo label
 
 interface FlightCardProps {
     flight: FlightForScoring;
@@ -40,7 +38,6 @@ interface FlightCardProps {
 export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps) {
     if (!flight) return null;
     const [isExpanded, setIsExpanded] = useState(false);
-    const [isProDemo, setIsProDemo] = useState(false); // DEMO STATE
     const t = useTranslations("FlightSearch");
 
     // Master Score Data Access
@@ -80,19 +77,6 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
-            {/* DEMO PRO TOGGLE (Remove in Production) */}
-            <div className="absolute top-2 right-2 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 p-1 rounded-full border shadow-sm">
-                <Switch
-                    id={`pro-mode-${flight.id}`}
-                    checked={isProDemo}
-                    onChange={(e) => setIsProDemo(e.target.checked)}
-                    className="scale-75"
-                />
-                <Label htmlFor={`pro-mode-${flight.id}`} className="text-[10px] cursor-pointer font-bold text-indigo-600">
-                    {isProDemo ? "PRO ON" : "PRO OFF"}
-                </Label>
-            </div>
-
             {/* MAIN ROW: Compact & Horizontal */}
             <div className="p-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
 
@@ -198,7 +182,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                         <div className="mb-2 w-fit">
                             <MasterScoreBadge 
                                 score={normalizedScore} 
-                                isPro={isProDemo} 
+                                isPro={false} 
                                 compact 
                             />
                         </div>
@@ -341,8 +325,8 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                 priceStabilityScore: 2, reliabilityScore: 2, flexibilityScore: 2,
                                 penalties: [], bonuses: [], totalPenalties: 0, totalBonuses: 0
                             }} 
-                            isPro={isProDemo}
-                            onUpgrade={() => setIsProDemo(true)}
+                            isPro={false}
+                            onUpgrade={() => {}}
                         />
                     </div>
 
