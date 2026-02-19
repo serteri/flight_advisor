@@ -69,6 +69,139 @@
             "ctaPrimary": "Keşfetmeye Başla",
             "ctaSecondary": "Daha Fazla Bilgi"
         },
+        "badge": {
+            "engineActive": "v1.2 Hibrit Motor Aktif",
+            "aiMode": "Flight Agent: AI Modu"
+        },
+        "trust": {
+            "airlines": "400+ Havayolu",
+            "secure": "Güvenli Rezervasyon",
+            "realtime": "Gerçek Zamanlı Durum"
+        },
+        "system": {
+            "label": "Flight Agent Sistemleri",
+            "title": "Sıfırdan sona ne inşa ettik",
+            "subtitle": "Flight Agent sadece bir fiyat listesi değil. Yolculuğunu skorlayan, öngören ve savunan bir koruma katmanıdır.",
+            "cards": {
+                "hybrid": {
+                    "title": "Hibrit Arama Motoru",
+                    "desc": "4 veri kaynağı (RapidAPI, Amadeus, Travelpayouts, Duffel) birleşir ve kör noktalar kapanır."
+                },
+                "scoring": {
+                    "title": "Master Flight Scoring",
+                    "desc": "100 puanlık motor değer, risk, konfor ve güvenilirliği puanlar. Sadece ucuz değil, akıllı."
+                },
+                "disruption": {
+                    "title": "Disruption Hunter + EU261",
+                    "desc": "Rötar ve iptal riskini yakalar, 600 EUR'a kadar tazminat uygunluğunu kontrol eder."
+                },
+                "guardian": {
+                    "title": "Guardian Worker (24/7)",
+                    "desc": "Her 15 dakikada izleme. Kapı değişimi, rötar, iptal, alarm."
+                },
+                "notifications": {
+                    "title": "Akıllı Bildirimler",
+                    "desc": "Email, SMS ve push. Seviye bazlı uyarılar ve aksiyon rehberi."
+                },
+                "inbox": {
+                    "title": "Inbox Parser + Otomatik Takip",
+                    "desc": "Rezervasyon mailini ilet, PNR parse eder, veriyi çeker ve korumayı başlatır."
+                }
+            }
+        },
+        "scoring": {
+            "label": "Canavar No.10",
+            "title": "Master Flight Scoring Engine",
+            "subtitle": "Sistemin beyni. Bu olmadan diğerleri sadece özellik olur.",
+            "formula": {
+                "title": "Geliştirilmiş Skorlama Formülü",
+                "intro": "Toplam: 100 puan, sonra 10 puanlık skora normalize edilir.",
+                "items": {
+                    "price": {
+                        "title": "1. Price Value Score (20)",
+                        "desc": "medyan rota fiyatı, %20 ucuz = bonus, %30 pahalı = ağır ceza."
+                    },
+                    "duration": {
+                        "title": "2. Duration Efficiency (15)",
+                        "desc": "en hızlı rota referans, %25 uzun = -5, %40 = -8."
+                    },
+                    "stops": {
+                        "title": "3. Stop Count (10)",
+                        "desc": "direkt = full, 1 aktarma = -2, 2+ aktarma = -6."
+                    },
+                    "connection": {
+                        "title": "4. Connection Quality (10)",
+                        "desc": "<45dk risk, 1-2.5 saat ideal, 5+ saat yıpratıcı."
+                    },
+                    "selfTransfer": {
+                        "title": "5. Self-Transfer Risk (10)",
+                        "desc": "farklı PNR, low-cost kombinasyonu, terminal değişimi = ağır ceza."
+                    }
+                }
+            },
+            "quality": {
+                "title": "Kalite ve Konfor Katmanı",
+                "items": {
+                    "baggage": {
+                        "title": "6. Baggage Allowance (10)",
+                        "desc": "23kg dahil = +10, kabin only = -5, yok = -10."
+                    },
+                    "reliability": {
+                        "title": "7. Airline Reliability (10)",
+                        "desc": "zamanında kalkış, güvenlik geçmişi, itibar."
+                    },
+                    "aircraft": {
+                        "title": "8. Aircraft Quality (5)",
+                        "desc": "A350/787 +3, 20 yıllık uçak = -2."
+                    },
+                    "amenity": {
+                        "title": "9. Amenity Score (5)",
+                        "desc": "WiFi, IFE, koltuk aralığı, yemek kalitesi."
+                    },
+                    "airport": {
+                        "title": "10. Airport Difficulty Index (5)",
+                        "desc": "terminal karmaşıklığı, aktarma kolaylığı, güvenlik yoğunluğu."
+                    }
+                }
+            },
+            "final": {
+                "score": {
+                    "title": "Final Skor Mantığı",
+                    "desc": "72/100 -> 7.2/10. Her skor risk ve konfor notlarıyla gelir."
+                },
+                "risk": {
+                    "title": "Risk Bayrakları",
+                    "desc": "Kısa bağlantılar, self-transfer riskleri veya rötar eğilimli taşıyıcılar için kırmızı uyarılar."
+                },
+                "value": {
+                    "title": "Değer Etiketleri",
+                    "desc": "Yeşil değer etiketleri ve konfor notları, uçuşun neden değerli olduğunu açıklar."
+                }
+            }
+        },
+        "strategic": {
+            "label": "Stratejik Gerçek",
+            "title": "Skyscanner fiyat sıralar. Biz sonucu savunuruz.",
+            "subtitle": "Fiyat tek başına karar değildir. Risk modeller, senaryo simüle eder, krizde koruruz.",
+            "typical": {
+                "title": "Tipik Platformlar",
+                "items": {
+                    "price": "Sadece fiyat sıralama",
+                    "risk": "Risk analizi yok",
+                    "future": "Gelecek bozulma simülasyonu yok",
+                    "crisis": "Kriz savunma katmanı yok"
+                }
+            },
+            "agent": {
+                "title": "Flight Agent",
+                "items": {
+                    "ranking": "Risk odaklı sıralama",
+                    "scenario": "Senaryo simülasyonu",
+                    "protection": "Proaktif bozulma koruması",
+                    "compensation": "Tazminat ve toparlanma rehberi"
+                }
+            }
+        },
         "features": {
             "title": "Neden FlightAdvisor?",
             "subtitle": "En iyi uçuş fırsatlarını bulmanız için gereken her şey",
@@ -170,7 +303,9 @@
         "lastUpdated": "Son güncelleme: {time}",
         "nextUpdate": "Sıradaki güncelleme: {time}",
         "delete": "Takibi Bırak",
-        "updatesDaily": "Her Gün Güncellenir"
+        "updatesDaily": "Her Gün Güncellenir",
+        "paymentSuccessTitle": "Ödeme onaylandı — hoş geldin!",
+        "paymentSuccessBody": "Planın artık aktif. Premium korumayı hemen kullanabilirsin."
     },
     "Guardian": {
         "back": "Geri Dön",

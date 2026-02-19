@@ -68,6 +68,139 @@
       "ctaPrimary": "Start Exploring",
       "ctaSecondary": "Learn More"
     },
+    "badge": {
+      "engineActive": "v1.2 Hybrid Engine Active",
+      "aiMode": "Flight Agent: AI Mode"
+    },
+    "trust": {
+      "airlines": "400+ Airlines",
+      "secure": "Secure Booking",
+      "realtime": "Real-time Status"
+    },
+    "system": {
+      "label": "Flight Agent Systems",
+      "title": "What we built, end-to-end",
+      "subtitle": "Flight Agent is not just a price list. It is a protection stack that scores, predicts, and defends your trip.",
+      "cards": {
+        "hybrid": {
+          "title": "Hybrid Search Engine",
+          "desc": "4 data sources (RapidAPI, Amadeus, Travelpayouts, Duffel) combined to remove blind spots."
+        },
+        "scoring": {
+          "title": "Master Flight Scoring",
+          "desc": "100-point engine that evaluates value, risk, comfort, and reliability. Not just cheap, but safe and smart."
+        },
+        "disruption": {
+          "title": "Disruption Hunter + EU261",
+          "desc": "Detects delays and cancellation risk, then checks compensation eligibility up to 600 EUR."
+        },
+        "guardian": {
+          "title": "Guardian Worker (24/7)",
+          "desc": "Cron-driven flight monitoring every 15 minutes. Gate change, delay, cancellation, alert."
+        },
+        "notifications": {
+          "title": "Smart Notifications",
+          "desc": "Email, SMS, and push alerts with severity levels and action guidance."
+        },
+        "inbox": {
+          "title": "Inbox Parser + Auto Tracking",
+          "desc": "Forward your booking email, we parse PNR, detect trip data, and auto start protection."
+        }
+      }
+    },
+    "scoring": {
+      "label": "Monster No.10",
+      "title": "Master Flight Scoring Engine",
+      "subtitle": "The brain of the system. Without it, everything else is just a feature.",
+      "formula": {
+        "title": "Advanced Scoring Formula",
+        "intro": "Total: 100 points then normalized to a 10-point score.",
+        "items": {
+          "price": {
+            "title": "1. Price Value Score (20)",
+            "desc": "median route price, 20% cheaper = bonus, 30% higher = heavy penalty."
+          },
+          "duration": {
+            "title": "2. Duration Efficiency (15)",
+            "desc": "fastest route is baseline, +25% longer = -5, +40% = -8."
+          },
+          "stops": {
+            "title": "3. Stop Count (10)",
+            "desc": "direct = full, 1 stop = -2, 2+ stops = -6."
+          },
+          "connection": {
+            "title": "4. Connection Quality (10)",
+            "desc": "<45m risk, 1-2.5h ideal, 5h+ fatigue penalty."
+          },
+          "selfTransfer": {
+            "title": "5. Self-Transfer Risk (10)",
+            "desc": "different PNR, low-cost combo, terminal change = heavy penalty."
+          }
+        }
+      },
+      "quality": {
+        "title": "Quality and Comfort Stack",
+        "items": {
+          "baggage": {
+            "title": "6. Baggage Allowance (10)",
+            "desc": "23kg included = +10, cabin only = -5, none = -10."
+          },
+          "reliability": {
+            "title": "7. Airline Reliability (10)",
+            "desc": "on-time rate, safety history, reputation."
+          },
+          "aircraft": {
+            "title": "8. Aircraft Quality (5)",
+            "desc": "A350/787 +3, 20y aircraft = -2."
+          },
+          "amenity": {
+            "title": "9. Amenity Score (5)",
+            "desc": "WiFi, IFE, seat pitch, meal quality."
+          },
+          "airport": {
+            "title": "10. Airport Difficulty Index (5)",
+            "desc": "terminal complexity, transfer ease, security load."
+          }
+        }
+      },
+      "final": {
+        "score": {
+          "title": "Final Score Logic",
+          "desc": "72/100 becomes 7.2/10. Each score ships with risk and comfort context."
+        },
+        "risk": {
+          "title": "Risk Flags",
+          "desc": "Red alerts for short connections, self-transfer risks, or delay-prone carriers."
+        },
+        "value": {
+          "title": "Value Tags",
+          "desc": "Green value tags and comfort notes explain why a flight is worth it."
+        }
+      }
+    },
+    "strategic": {
+      "label": "Strategic Reality",
+      "title": "Skyscanner sorts prices. We defend outcomes.",
+      "subtitle": "Price alone is not a decision. We model risk, simulate scenarios, and protect you during crises.",
+      "typical": {
+        "title": "Typical Platforms",
+        "items": {
+          "price": "Price sorting only",
+          "risk": "No risk analysis",
+          "future": "No future disruption modeling",
+          "crisis": "No crisis defense layer"
+        }
+      },
+      "agent": {
+        "title": "Flight Agent",
+        "items": {
+          "ranking": "Risk-aware ranking",
+          "scenario": "Scenario simulation",
+          "protection": "Proactive disruption protection",
+          "compensation": "Compensation and recovery guidance"
+        }
+      }
+    },
     "features": {
       "title": "Why Choose FlightAdvisor?",
       "subtitle": "Everything you need to find the best flight deals",
@@ -169,7 +302,9 @@
     "lastUpdated": "Last updated: {time}",
     "nextUpdate": "Next update: {time}",
     "delete": "Stop Tracking",
-    "updatesDaily": "Updates Daily"
+    "updatesDaily": "Updates Daily",
+    "paymentSuccessTitle": "Payment confirmed — welcome aboard!",
+    "paymentSuccessBody": "Your plan is now active. You can start using premium protection immediately."
   },
   "Guardian": {
     "back": "Back",

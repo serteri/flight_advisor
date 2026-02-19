@@ -28,6 +28,139 @@
             "ctaPrimary": "Jetzt Entdecken",
             "ctaSecondary": "Mehr Erfahren"
         },
+        "badge": {
+            "engineActive": "v1.2 Hybrid Engine Aktiv",
+            "aiMode": "Flight Agent: KI-Modus"
+        },
+        "trust": {
+            "airlines": "400+ Fluggesellschaften",
+            "secure": "Sichere Buchung",
+            "realtime": "Echtzeit-Status"
+        },
+        "system": {
+            "label": "Flight Agent Systeme",
+            "title": "Was wir von Anfang bis Ende gebaut haben",
+            "subtitle": "Flight Agent ist nicht nur eine Preisliste. Es ist ein Schutz-Stack, der Ihre Reise bewertet, prognostiziert und verteidigt.",
+            "cards": {
+                "hybrid": {
+                    "title": "Hybride Suchmaschine",
+                    "desc": "4 Datenquellen (RapidAPI, Amadeus, Travelpayouts, Duffel) kombiniert, um blinde Flecken zu schließen."
+                },
+                "scoring": {
+                    "title": "Master Flight Scoring",
+                    "desc": "100-Punkte-Engine, die Wert, Risiko, Komfort und Zuverlässigkeit bewertet. Nicht nur billig, sondern sicher und smart."
+                },
+                "disruption": {
+                    "title": "Disruption Hunter + EU261",
+                    "desc": "Erkennt Verspätungs- und Stornorisiko und prüft Ansprüche bis 600 EUR."
+                },
+                "guardian": {
+                    "title": "Guardian Worker (24/7)",
+                    "desc": "Cron-basiertes Monitoring alle 15 Minuten. Gate-Wechsel, Verspätung, Storno, Alarm."
+                },
+                "notifications": {
+                    "title": "Intelligente Benachrichtigungen",
+                    "desc": "E-Mail, SMS und Push mit Schweregraden und Handlungsanweisung."
+                },
+                "inbox": {
+                    "title": "Inbox Parser + Auto Tracking",
+                    "desc": "Buchungs-E-Mail weiterleiten, wir parsen PNR, erkennen Reisedaten und starten den Schutz."
+                }
+            }
+        },
+        "scoring": {
+            "label": "Monster Nr.10",
+            "title": "Master Flight Scoring Engine",
+            "subtitle": "Das Gehirn des Systems. Ohne das sind die anderen nur Features.",
+            "formula": {
+                "title": "Erweiterte Scoring-Formel",
+                "intro": "Total: 100 Punkte, dann auf eine 10-Punkte-Skala normalisiert.",
+                "items": {
+                    "price": {
+                        "title": "1. Price Value Score (20)",
+                        "desc": "Medianpreis der Route, 20% günstiger = Bonus, 30% teurer = starke Strafe."
+                    },
+                    "duration": {
+                        "title": "2. Duration Efficiency (15)",
+                        "desc": "Schnellste Route als Basis, +25% länger = -5, +40% = -8."
+                    },
+                    "stops": {
+                        "title": "3. Stop Count (10)",
+                        "desc": "Direkt = voll, 1 Stopp = -2, 2+ Stopps = -6."
+                    },
+                    "connection": {
+                        "title": "4. Connection Quality (10)",
+                        "desc": "<45 Min Risiko, 1-2.5 Std ideal, 5+ Std Ermüdung."
+                    },
+                    "selfTransfer": {
+                        "title": "5. Self-Transfer Risk (10)",
+                        "desc": "Andere PNR, Low-Cost-Kombi, Terminalwechsel = starke Strafe."
+                    }
+                }
+            },
+            "quality": {
+                "title": "Qualitäts- und Komfort-Stack",
+                "items": {
+                    "baggage": {
+                        "title": "6. Baggage Allowance (10)",
+                        "desc": "23kg inklusive = +10, nur Handgepäck = -5, keines = -10."
+                    },
+                    "reliability": {
+                        "title": "7. Airline Reliability (10)",
+                        "desc": "Pünktlichkeit, Sicherheitshistorie, Reputation."
+                    },
+                    "aircraft": {
+                        "title": "8. Aircraft Quality (5)",
+                        "desc": "A350/787 +3, 20 Jahre altes Flugzeug = -2."
+                    },
+                    "amenity": {
+                        "title": "9. Amenity Score (5)",
+                        "desc": "WiFi, IFE, Sitzabstand, Essensqualität."
+                    },
+                    "airport": {
+                        "title": "10. Airport Difficulty Index (5)",
+                        "desc": "Terminalkomplexität, Umsteige-Leichtigkeit, Sicherheitsdichte."
+                    }
+                }
+            },
+            "final": {
+                "score": {
+                    "title": "Finale Score-Logik",
+                    "desc": "72/100 wird 7.2/10. Jeder Score enthält Risiko- und Komfort-Kontext."
+                },
+                "risk": {
+                    "title": "Risikoflaggen",
+                    "desc": "Rote Hinweise für kurze Umstiege, Self-Transfer-Risiken oder verspätungsanfällige Carrier."
+                },
+                "value": {
+                    "title": "Wert-Tags",
+                    "desc": "Grüne Wert-Tags und Komfort-Notizen erklären, warum ein Flug sich lohnt."
+                }
+            }
+        },
+        "strategic": {
+            "label": "Strategische Realität",
+            "title": "Skyscanner sortiert Preise. Wir verteidigen Ergebnisse.",
+            "subtitle": "Preis allein ist keine Entscheidung. Wir modellieren Risiko, simulieren Szenarien und schützen in Krisen.",
+            "typical": {
+                "title": "Typische Plattformen",
+                "items": {
+                    "price": "Nur Preissortierung",
+                    "risk": "Keine Risikoanalyse",
+                    "future": "Kein Zukunfts-Disruption-Modell",
+                    "crisis": "Keine Krisen-Abwehrschicht"
+                }
+            },
+            "agent": {
+                "title": "Flight Agent",
+                "items": {
+                    "ranking": "Risikobewusstes Ranking",
+                    "scenario": "Szenario-Simulation",
+                    "protection": "Proaktiver Disruption-Schutz",
+                    "compensation": "Leitfaden für Entschädigung und Recovery"
+                }
+            }
+        },
         "features": {
             "title": "Warum FlightAdvisor?",
             "subtitle": "Alles, was Sie brauchen, um die besten Flugangebote zu finden",
@@ -115,7 +248,9 @@
         "addNewRoute": "Neue Route hinzufügen",
         "emptyState": "Beginnen Sie mit der Flugverfolgung, um sie hier zu sehen",
         "pleaseSignIn": "Bitte anmelden",
-        "needLogin": "Sie müssen eingeloggt sein, um auf Ihr Flug-Dashboard zuzugreifen."
+        "needLogin": "Sie müssen eingeloggt sein, um auf Ihr Flug-Dashboard zuzugreifen.",
+        "paymentSuccessTitle": "Zahlung bestätigt — willkommen an Bord!",
+        "paymentSuccessBody": "Ihr Plan ist jetzt aktiv. Premium-Schutz steht sofort bereit."
     },
     "FlightSearch": {
         "title": "Flüge Suchen & Verfolgen",

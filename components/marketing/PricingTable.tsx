@@ -8,6 +8,34 @@ import { Button } from '@/components/ui/button';
 export function PricingTable() {
     const t = useTranslations('Pricing');
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+    const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
+
+    const handleCheckout = async (plan: 'PRO' | 'ELITE') => {
+        try {
+            setCheckoutLoading(plan);
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plan,
+                    billingCycle,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Checkout failed');
+            }
+
+            const data = await response.json();
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('[CHECKOUT]', error);
+        } finally {
+            setCheckoutLoading(null);
+        }
+    };
 
     return (
         <section className="py-24 bg-white relative overflow-hidden">
@@ -91,8 +119,12 @@ export function PricingTable() {
                                     <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg">
                                         {t('cta.upgrade')}
                                     </Button>
-                                    <Button className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm">
-                                        Try Free (14 days)
+                                    <Button
+                                        className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm"
+                                        onClick={() => handleCheckout('PRO')}
+                                        disabled={checkoutLoading === 'PRO'}
+                                    >
+                                        {checkoutLoading === 'PRO' ? 'Redirecting...' : 'Try Free (14 days)'}
                                     </Button>
                                 </div>
                             </div>
@@ -120,12 +152,30 @@ export function PricingTable() {
                                 {billingCycle === 'yearly' && (
                                     <div className="text-xs text-emerald-300 font-semibold">💰 Save $59.40/year</div>
                                 )}
+                                <div className="mt-3 space-y-2 text-left text-xs font-semibold">
+                                    <div className="flex items-center gap-2 text-rose-200">
+                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
+                                        Urgent SMS Notifications
+                                    </div>
+                                    <div className="flex items-center gap-2 text-rose-200">
+                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
+                                        Automated Compensation Recovery
+                                    </div>
+                                    <div className="flex items-center gap-2 text-rose-200">
+                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
+                                        24/7 Proactive Crisis Management
+                                    </div>
+                                </div>
                                 <div className="mt-4 space-y-2">
                                     <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-amber-900/20 border-0">
                                         {billingCycle === 'monthly' ? t('cta.upgrade') : 'Subscribe & Save 25%'}
                                     </Button>
-                                    <Button className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm border-0">
-                                        Try Free (14 days)
+                                    <Button
+                                        className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm border-0"
+                                        onClick={() => handleCheckout('ELITE')}
+                                        disabled={checkoutLoading === 'ELITE'}
+                                    >
+                                        {checkoutLoading === 'ELITE' ? 'Redirecting...' : 'Try Free (14 days)'}
                                     </Button>
                                 </div>
                             </div>

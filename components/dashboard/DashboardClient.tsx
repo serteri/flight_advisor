@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, Plane } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
 
@@ -15,11 +16,19 @@ interface DashboardClientProps {
 
 export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const searchParams = useSearchParams();
+    const checkoutStatus = searchParams.get('status');
 
     const t = useTranslations('Dashboard');
 
     return (
         <div className="space-y-12">
+            {checkoutStatus === 'success' && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-emerald-900">
+                    <div className="text-sm font-bold">{t('paymentSuccessTitle')}</div>
+                    <div className="text-sm text-emerald-800">{t('paymentSuccessBody')}</div>
+                </div>
+            )}
 
             {/* --- SECTION 1: SEYAHATLERİM (GUARDIAN V2) --- */}
             <div>
