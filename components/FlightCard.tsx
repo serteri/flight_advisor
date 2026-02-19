@@ -82,10 +82,10 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow mb-3 relative group">
             {/* DEMO PRO TOGGLE (Remove in Production) */}
             <div className="absolute top-2 right-2 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 p-1 rounded-full border shadow-sm">
-                <Switch 
-                    id={`pro-mode-${flight.id}`} 
-                    checked={isProDemo} 
-                    onCheckedChange={setIsProDemo}
+                <Switch
+                    id={`pro-mode-${flight.id}`}
+                    checked={isProDemo}
+                    onChange={(e) => setIsProDemo(e.target.checked)}
                     className="scale-75"
                 />
                 <Label htmlFor={`pro-mode-${flight.id}`} className="text-[10px] cursor-pointer font-bold text-indigo-600">

@@ -24,7 +24,14 @@ model User {
   stripeCurrentPeriodEnd DateTime? // Abonelik ne zaman bitiyor?
   
   isPremium              Boolean   @default(false) // Hızlı kontrol için
-
+  
+  // 🔔 NOTIFICATION PREFERENCES
+  subscriptionPlan      String    @default("FREE") // FREE, PRO, ELITE
+  notificationTone      String    @default("STANDARD") // STANDARD, JUNIOR_GUARDIAN
+  phoneNumber           String?   // +90... for SMS
+  telegramId            String?   // For Telegram alerts
+  pushToken             String?   // Mobile push notifications
+  
   routes          Route[]
   accounts        Account[]
   sessions        Session[]
