@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, X, Minus, Globe, Shield, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function PricingTable() {
     const t = useTranslations('Pricing');
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
     // Feature keys in order
     const features = [
@@ -44,6 +46,33 @@ export function PricingTable() {
                     <p className="text-xl text-slate-500">
                         {t('subtitle')}
                     </p>
+                    
+                    {/* Billing Cycle Toggle */}
+                    <div className="flex justify-center items-center gap-4 pt-6">
+                        <button
+                            onClick={() => setBillingCycle('monthly')}
+                            className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                                billingCycle === 'monthly'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                        >
+                            {t('monthly')}
+                        </button>
+                        <button
+                            onClick={() => setBillingCycle('yearly')}
+                            className={`px-6 py-2 rounded-full font-semibold transition-all relative ${
+                                billingCycle === 'yearly'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                        >
+                            {t('yearly')}
+                            <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                25% OFF
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Table Layout */}
@@ -80,20 +109,31 @@ export function PricingTable() {
                         </div>
 
                         {/* Column 3: Guardian (Pro) */}
-                        <div className="col-span-1 bg-white rounded-3xl p-6 border-2 border-blue-100 shadow-xl shadow-blue-900/5 relative">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
-                                Recommended
+                        <div className="col-span-1 bg-white rounded-3xl p-6 border-2 border-blue-200 shadow-xl shadow-blue-900/10 relative transform scale-105">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
+                                ⭐ Recommended for Most
                             </div>
                             <div className="h-40 flex flex-col justify-between mb-8 text-center">
                                 <div>
-                                    <div className="font-bold text-blue-600 uppercase tracking-widest text-xs mb-2">{t('plans.guardian.badge')}</div>
+                                    <div className="font-bold text-blue-600 uppercase tracking-widest text-xs mb-2  flex justify-center items-center gap-1">
+                                        <Shield className="w-4 h-4" /> {t('plans.guardian.badge')}
+                                    </div>
                                     <div className="text-2xl font-bold text-slate-900">{t('plans.guardian.name')}</div>
                                 </div>
                                 <div className="text-4xl font-black text-slate-900">
-                                    {t('plans.guardian.price')}
-                                    <span className="text-sm font-medium text-slate-400 ml-1">{t('monthly')}</span>
+                                    {billingCycle === 'monthly' ? t('plans.guardian.price') : t('plans.guardian.price_yearly')}
+                                    <span className="text-sm font-medium text-slate-400 ml-1">
+                                        {billingCycle === 'monthly' ? t('monthly') : t('yearly')}
+                                    </span>
                                 </div>
-                                <Button className="w-full mt-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200">{t('cta.upgrade')}</Button>
+                                <div className="space-y-2 mt-4">
+                                    <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200">
+                                        {t('cta.upgrade')}
+                                    </Button>
+                                    <Button variant="outline" className="w-full rounded-xl border-blue-300 text-blue-600 hover:bg-blue-50 font-semibold">
+                                        {t('cta.start_trial')} (14 days)
+                                    </Button>
+                                </div>
                             </div>
                             <div className="space-y-6">
                                 {features.map((feat, idx) => (
@@ -118,17 +158,24 @@ export function PricingTable() {
                                     <div className="text-2xl font-bold text-white">{t('plans.elite.name')}</div>
                                 </div>
                                 <div className="text-4xl font-black text-white">
-                                    {t('plans.elite.price')}
-                                    <span className="text-sm font-medium text-slate-500 ml-1">{t('monthly')}</span>
+                                    {billingCycle === 'monthly' ? t('plans.elite.price') : t('plans.elite.price_yearly')}
+                                    <span className="text-sm font-medium text-slate-500 ml-1">
+                                        {billingCycle === 'monthly' ? t('monthly') : t('yearly')}
+                                    </span>
                                 </div>
 
-                                <div className="mt-4">
+                                <div className="mt-4 space-y-2">
                                     <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-amber-900/20 border-0">
-                                        {t('cta.start_trial')}
+                                        {billingCycle === 'monthly' ? t('cta.upgrade') : 'Subscribe & Save 25%'}
                                     </Button>
-                                    <div className="text-[10px] text-emerald-400 mt-2 font-medium">
-                                        {t('trial')}
-                                    </div>
+                                    <Button variant="outline" className="w-full rounded-xl border-amber-400/50 text-amber-300 hover:bg-amber-900/20 font-semibold">
+                                        {t('cta.start_trial')} (14 days)
+                                    </Button>
+                                    {billingCycle === 'yearly' && (
+                                        <div className="text-[10px] text-emerald-400 mt-2 font-medium">
+                                            💰 Save ${((24.99 * 12 * 0.25).toFixed(2))}/year
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-6 relative z-10">

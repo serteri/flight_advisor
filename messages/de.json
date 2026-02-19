@@ -328,6 +328,7 @@
         "subtitle": "Maßgeschneiderte Schutzpakete für jeden Reisenden.",
         "trial": "7 Tage kostenlos (Elite)",
         "monthly": "/Monat",
+        "yearly": "/Jahr",
         "plans": {
             "free": {
                 "name": "Kostenlos",
@@ -337,12 +338,14 @@
             "guardian": {
                 "name": "Guardian",
                 "badge": "Pro",
-                "price": "$9.90"
+                "price": "$9.90",
+                "price_yearly": "$89.10"
             },
             "elite": {
                 "name": "Elite",
                 "badge": "Familie & Biz",
-                "price": "$19.90"
+                "price": "$19.90",
+                "price_yearly": "$178.20"
             }
         },
         "features": {

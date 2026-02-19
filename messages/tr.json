@@ -539,6 +539,7 @@
         "subtitle": "Her yolculuk tipi için özel koruma paketleri.",
         "trial": "7 Gün Ücretsiz Deneme (Elite)",
         "monthly": "/ay",
+        "yearly": "/yıl",
         "plans": {
             "free": {
                 "name": "Free",
@@ -548,12 +549,14 @@
             "guardian": {
                 "name": "Guardian",
                 "badge": "Pro",
-                "price": "$9.90"
+                "price": "$9.90",
+                "price_yearly": "$89.10"
             },
             "elite": {
                 "name": "Elite",
                 "badge": "Aile & İş",
-                "price": "$19.90"
+                "price": "$19.90",
+                "price_yearly": "$178.20"
             }
         },
         "features": {
