@@ -77,7 +77,7 @@ export async function POST(req: Request) {
                     stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer as string,
                     stripePriceId: priceId,
-                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                    stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
                     isPremium: true,
                     subscriptionPlan: plan,
                 },
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
     if (event.type === 'invoice.paid') {
         const invoice = event.data.object as Stripe.Invoice;
-        const subscriptionId = invoice.subscription as string;
+        const subscriptionId = (invoice as any).subscription as string;
 
         if (!subscriptionId) {
             return new NextResponse('Subscription ID is missing', { status: 400 });
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
                 where: { stripeSubscriptionId: subscription.id },
                 data: {
                     stripePriceId: priceId,
-                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                    stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
                     isPremium: true,
                     subscriptionPlan: plan,
                 },
