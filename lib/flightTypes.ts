@@ -92,6 +92,11 @@ export interface FlightForScoring {
     isSelfTransfer?: boolean;
     isLCC?: boolean;
     isOvernight?: boolean;
+    
+    // ✅ NEW: Duffel conditions (Real Data from API)
+    refundable?: boolean; // From Duffel conditions.refund_before_departure
+    changeAllowed?: boolean; // From Duffel conditions.change_before_departure
+    changeFee?: string; // e.g. "50 USD"
 
     layoverHoursTotal?: number;
     layovers?: { airport: string; duration: number; city?: string }[];

@@ -64,7 +64,46 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
     let checkedBaggage = 'Kontrol Et';
     let cabinBaggage = '1 Parça';
     
+    // ✅ NEW: Extract refund/change conditions from Duffel's conditions object
+    let refundable = false;
+    let changeAllowed = false;
+    let changeFee: string | undefined;
+    
+    // ✅ NEW: Extract aircraft type
+    let aircraftType: string | undefined;
+    
     try {
+        // Extract aircraft info from first segment
+        if (firstSegment.aircraft) {
+            aircraftType = firstSegment.aircraft.name || firstSegment.aircraft.iata_code;
+            console.log(`[Duffel Mapper] Aircraft: ${aircraftType}`);
+        }
+        
+        // Extract conditions (refund/change policies)
+        if (offer.conditions) {
+            console.log(`[Duffel Mapper] Conditions:`, JSON.stringify(offer.conditions, null, 2));
+            
+            // Check refund conditions
+            if (offer.conditions.refund_before_departure) {
+                const refundCondition = offer.conditions.refund_before_departure;
+                refundable = refundCondition.allowed === true;
+                console.log(`[Duffel Mapper] Refundable: ${refundable}`);
+            }
+            
+            // Check change conditions
+            if (offer.conditions.change_before_departure) {
+                const changeCondition = offer.conditions.change_before_departure;
+                changeAllowed = changeCondition.allowed === true;
+                
+                if (changeCondition.penalty_amount && changeCondition.penalty_currency) {
+                    changeFee = `${changeCondition.penalty_amount} ${changeCondition.penalty_currency}`;
+                } else if (changeAllowed) {
+                    changeFee = 'Ücret Detayları İçin Kontrol Et';
+                }
+                console.log(`[Duffel Mapper] Change Allowed: ${changeAllowed}, Fee: ${changeFee || 'N/A'}`);
+            }
+        }
+        
         // Debug: Log entire offer structure for baggage
         console.log(`[Duffel Mapper] Offer ID: ${offer.id}`);
         console.log(`[Duffel Mapper] Passengers:`, JSON.stringify(offer.passengers, null, 2));
@@ -164,6 +203,7 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         airline: firstSegment.operating_carrier?.name || "Airline",
         airlineLogo: firstSegment.operating_carrier?.logo_symbol_url || "",
         flightNumber: fullFlightNumber,
+        aircraft: aircraftType, // ✅ NOW EXTRACTED FROM DUFFEL
 
         // 🔥 Artık "undefined" olamaz:
         from: originCode,
@@ -189,8 +229,9 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         policies: {
             baggageKg,
             cabinBagKg,
-            refundable: false,
-            changeAllowed: false
+            refundable, // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
+            changeAllowed, // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
+            changeFee // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
         },
         baggageSummary: {
             checked: checkedBaggage,

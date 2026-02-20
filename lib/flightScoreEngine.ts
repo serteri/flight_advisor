@@ -112,6 +112,10 @@ export function calculateRawScore(flight: FlightForScoring, stats: BatchStats): 
     if (airline.hasEntertainment) scoreComfort += 0.2;
     // Airline Tier (+0.5 for Premium)
     if (airline.tier === 'TIER_1') scoreComfort += 0.5;
+    
+    // ✅ NEW: Refund/Change Flexibility Bonus (+0.4)
+    if (flight.refundable) scoreComfort += 0.3;
+    if (flight.changeAllowed) scoreComfort += 0.1;
 
     // --- 4. PENALTIES (-4.0 Max) ---
     let penalties = 0;
