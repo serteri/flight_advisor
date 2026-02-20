@@ -1,18 +1,35 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { MasterScoreBreakdown } from "@/lib/flightTypes";
 import { Lock, AlertTriangle, CheckCircle, Shield, Plane, Utensils, Luggage, Clock, TrendingUp, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LockedFeatureOverlay, PremiumBadge } from "@/components/ui/LockedFeature";
+import type { UserTier } from "@/lib/tierUtils";
+import { useRouter } from "next/navigation";
 
 interface MasterScoreCardProps {
     scoreData: MasterScoreBreakdown;
     isPro?: boolean; // Default false (Free user simulation)
+    userTier?: UserTier;
     onUpgrade?: () => void;
 }
 
-export function MasterScoreCard({ scoreData, isPro = false, onUpgrade }: MasterScoreCardProps) {
+export function MasterScoreCard({ scoreData, isPro = false, userTier = 'FREE', onUpgrade }: MasterScoreCardProps) {
+    const router = useRouter();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    
+    const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
+
+    const handleUpgradeClick = () => {
+        if (onUpgrade) {
+            onUpgrade();
+        } else {
+            setShowUpgradeModal(true);
+        }
+    };
     // 1. Calculate Summary Statuses
     const riskStatus = getStatus(scoreData.reliabilityScore + scoreData.layoverScore, 15);
     const comfortStatus = getStatus(scoreData.aircraftScore + scoreData.airlineScore + scoreData.entertainmentScore, 17);
@@ -46,11 +63,15 @@ export function MasterScoreCard({ scoreData, isPro = false, onUpgrade }: MasterS
             {/* --- HEADER --- */}
             <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <Shield className={cn("w-5 h-5", isPro ? "text-emerald-600" : "text-gray-400")} />
+                    <Shield className={cn("w-5 h-5", hasPremiumAccess ? "text-emerald-600" : "text-gray-400")} />
                     <h3 className="font-semibold text-gray-800">Flight Guardian Score</h3>
                 </div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                    {isPro ? "PRO ANALYSIS" : "BASIC VIEW"}
+                <div className="flex items-center gap-2">
+                    {hasPremiumAccess ? (
+                        <PremiumBadge tier={userTier as 'PRO' | 'ELITE'} label="Active" />
+                    ) : (
+                        <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">BASIC VIEW</span>
+                    )}
                 </div>
             </div>
 
@@ -68,11 +89,11 @@ export function MasterScoreCard({ scoreData, isPro = false, onUpgrade }: MasterS
             <div className="relative p-4">
                 <h4 className="text-xs font-semibold text-gray-400 uppercase mb-3 flex items-center gap-2">
                     Guardian Intelligence
-                    {!isPro && <Lock className="w-3 h-3 text-amber-500" />}
+                    {!hasPremiumAccess && <Lock className="w-3 h-3 text-amber-500" />}
                 </h4>
 
                 {/* CONTENT LAYER */}
-                <div className={cn("space-y-4 transition-all duration-300", !isPro && "filter blur-sm opacity-50 select-none pointer-events-none")}>
+                <div className={cn("space-y-4 transition-all duration-300", !hasPremiumAccess && "filter blur-sm opacity-50 select-none pointer-events-none")}>
                     
                     {/* 1. RISK ANALYSIS */}
                     <div className="flex items-start gap-3">
@@ -129,28 +150,54 @@ export function MasterScoreCard({ scoreData, isPro = false, onUpgrade }: MasterS
                     </div>
                 </div>
 
-                {/* LOCK OVERLAY (Only visible if !isPro) */}
-                {!isPro && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[1px] z-10 rounded-b-xl border-t border-dashed border-gray-200">
-                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 text-center max-w-[80%]">
-                            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <Lock className="w-5 h-5" />
-                            </div>
-                            <h4 className="font-bold text-gray-900 mb-1">Unlock Full Analysis</h4>
-                            <p className="text-xs text-gray-500 mb-4">
-                                Is this layover risky? Is the aircraft comfortable? Are there hidden baggage fees?
-                            </p>
-                            <Button 
-                                size="sm" 
-                                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-medium shadow-md"
-                                onClick={onUpgrade}
-                            >
-                                Upgrade to View - $4.99
-                            </Button>
+                {/* LOCK OVERLAY - Using New Component */}
+                {!hasPremiumAccess && (
+                    <div className="absolute inset-4 flex items-center justify-center">
+                        <div className="relative w-full h-full">
+                            <LockedFeatureOverlay
+                                featureName="Guardian Intelligence"
+                                requiredTier="PRO"
+                                description="Get AI-powered risk analysis, comfort insights, and hidden cost detection"
+                                benefits={[
+                                    'Layover & connection risk scoring',
+                                    'Aircraft age & comfort analysis',
+                                    'Baggage & hidden fee detection',
+                                    'EU261 compensation eligibility'
+                                ]}
+                                onClick={handleUpgradeClick}
+                                className="rounded-xl"
+                            />
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* UPGRADE MODAL (Full Screen) */}
+            {showUpgradeModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <LockedFeatureOverlay
+                            featureName="Guardian Intelligence Suite"
+                            requiredTier="PRO"
+                            description="Unlock comprehensive flight analysis and real-time monitoring"
+                            benefits={[
+                                'Risk & reliability scoring',
+                                'Aircraft comfort analysis',
+                                'Hidden cost detection',
+                                'Live disruption alerts',
+                                'EU261 compensation tracking'
+                            ]}
+                            className="!static !backdrop-blur-none"
+                        />
+                        <button
+                            onClick={() => setShowUpgradeModal(false)}
+                            className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

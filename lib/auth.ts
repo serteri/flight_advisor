@@ -61,7 +61,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     const passwordsMatch = await bcrypt.compare(password, user.password)
 
-                    if (passwordsMatch) return user
+                    if (passwordsMatch) {
+                        // Return user with proper NextAuth User type
+                        return {
+                            id: user.id,
+                            email: user.email,
+                            name: user.name,
+                            image: user.image,
+                            subscriptionPlan: user.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined,
+                            isPremium: user.isPremium
+                        };
+                    }
                 }
 
                 return null

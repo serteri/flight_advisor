@@ -11,23 +11,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async session({ session, token }) {
             if (session.user && token.sub) {
                 session.user.id = token.sub;
-                // @ts-ignore
                 session.user.isPremium = token.isPremium as boolean;
+                session.user.subscriptionPlan = token.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
             }
             return session;
         },
         async jwt({ token }) {
             if (!token.sub) return token;
 
-            // Fetch user to get isPremium status and add to token
-            // This runs on the server (Node.js), so Prisma is safe here.
+            // Fetch user to get subscription status
             const existingUser = await prisma.user.findUnique({
                 where: { id: token.sub }
             });
 
             if (existingUser) {
-                // @ts-ignore
                 token.isPremium = existingUser.isPremium;
+                token.subscriptionPlan = existingUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
             }
 
             return token;

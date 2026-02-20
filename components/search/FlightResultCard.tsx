@@ -1,25 +1,39 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Lock, Wifi, Utensils, Luggage, Eye, BellRing, Info } from 'lucide-react';
+import { Lock, Wifi, Utensils, Luggage, Eye, BellRing, Info, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
+import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
+import type { UserTier } from '@/lib/tierUtils';
 
-export default function FlightResultCard({ flight, isPremium = false }: { flight: any, isPremium?: boolean }) {
+export default function FlightResultCard({ 
+    flight, 
+    isPremium = false, 
+    userTier = 'FREE' 
+}: { 
+    flight: any; 
+    isPremium?: boolean; 
+    userTier?: UserTier;
+}) {
     const t = useTranslations('Results');
     const [showScore, setShowScore] = useState(isPremium);
     const [showDetails, setShowDetails] = useState(false);
+    const [showLockOverlay, setShowLockOverlay] = useState(false);
+
+    const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
+    const hasEliteAccess = userTier === 'ELITE';
 
     const handleLockClick = () => {
-        if (!isPremium) {
-            alert("⚠️ Bu özelliği görmek için Premium üye olmalısınız!");
+        if (!hasPremiumAccess) {
+            setShowLockOverlay(true);
             return;
         }
     };
 
     const handleTrackClick = () => {
-        if (!isPremium) {
-            alert("⚠️ Fiyat Takibi sadece Premium üyeler içindir.");
+        if (!hasPremiumAccess) {
+            setShowLockOverlay(true);
             return;
         }
         alert("✅ Uçuş takibe alındı! Fiyat düşerse haber vereceğiz.");
@@ -30,6 +44,13 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
             {/* DEBUG INDICATOR - REMOVE LATER */}
             <div className="hidden">DEBUG: FlightResultCard Active</div>
 
+            {/* Premium Badge (Top Right) - For PRO/ELITE users */}
+            {hasPremiumAccess && (
+                <div className="absolute top-3 right-3 z-20">
+                    <PremiumBadge tier={userTier as 'PRO' | 'ELITE'} />
+                </div>
+            )}
+
             {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
                 <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
@@ -38,14 +59,15 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                 </span>
             </div>
 
-            {/* TRACK BUTONU (SAĞ ÜST - YENİ) */}
+            {/* TRACK BUTONU (SAĞ ÜST ALTINA TAŞINDI) */}
             <button
                 onClick={handleTrackClick}
-                className="absolute top-3 right-4 text-slate-400 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                className={`absolute top-12 right-4 text-slate-400 hover:text-blue-600 flex items-center gap-1 transition-colors ${!hasPremiumAccess && 'cursor-not-allowed opacity-50'}`}
                 title={t('track')}
             >
                 <span className="text-[10px] font-bold">{t('track')}</span>
                 <BellRing className="w-4 h-4" />
+                {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-500" />}
             </button>
 
             <div className="flex flex-col md:flex-row justify-between gap-4 mt-8">
@@ -132,31 +154,65 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                         </div>
                     </div>
 
-                    {/* AMENITIES (AKILLI GÖSTERİM) */}
-                    <div className="flex gap-6 mt-5 pt-3 border-t border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                            <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
-                            <span className="text-[11px] font-medium text-slate-600">
-                                {flight.amenities?.hasMeal ? t('included') : t('paid')}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Wifi className={`w-3.5 h-3.5 ${flight.amenities?.hasWifi ? 'text-blue-600' : 'text-slate-300'}`} />
-                            <span className="text-[11px] font-medium text-slate-600">
-                                {flight.amenities?.hasWifi ? t('wifi_available') : t('wifi_none')}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
-                            <span className="text-[11px] font-medium text-slate-600">
-                                {flight.policies?.baggageKg 
-                                    ? `${flight.policies.baggageKg}kg` 
-                                    : flight.baggageSummary?.checked 
-                                        ? flight.baggageSummary.checked 
-                                        : flight.amenities?.baggage === 'Dahil' 
-                                            ? '20kg Dahil' 
-                                            : 'Kontrol Et'}
-                            </span>
+                    {/* AMENITIES (LOCKED FOR FREE USERS) */}
+                    <div className="relative mt-5 pt-3 border-t border-slate-100">
+                        {/* Lock Overlay for FREE users */}
+                        {!hasPremiumAccess && (
+                            <LockedFeatureOverlay
+                                featureName="Amenity Intelligence"
+                                requiredTier="PRO"
+                                description="Unlock detailed amenity analysis, baggage policies, and refund/change conditions"
+                                benefits={[
+                                    'Aircraft type & age details',
+                                    'Real baggage allowance (kg)',
+                                    'Refund & change policies',
+                                    'WiFi, IFE, meal service details'
+                                ]}
+                                onClick={() => setShowLockOverlay(true)}
+                                className="rounded-lg"
+                            />
+                        )}
+                        
+                        {/* Amenity Content (blurred for FREE) */}
+                        <div className={`flex gap-6 ${!hasPremiumAccess && 'filter blur-sm opacity-50 select-none'}`}>
+                            <div className="flex items-center gap-1.5">
+                                <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
+                                <span className="text-[11px] font-medium text-slate-600">
+                                    {flight.amenities?.hasMeal ? t('included') : t('paid')}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <Wifi className={`w-3.5 h-3.5 ${flight.amenities?.hasWifi ? 'text-blue-600' : 'text-slate-300'}`} />
+                                <span className="text-[11px] font-medium text-slate-600">
+                                    {flight.amenities?.hasWifi ? t('wifi_available') : t('wifi_none')}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
+                                <span className="text-[11px] font-medium text-slate-600">
+                                    {flight.policies?.baggageKg 
+                                        ? `${flight.policies.baggageKg}kg` 
+                                        : flight.baggageSummary?.checked 
+                                            ? flight.baggageSummary.checked 
+                                            : flight.amenities?.baggage === 'Dahil' 
+                                                ? '20kg Dahil' 
+                                                : 'Kontrol Et'}
+                                </span>
+                            </div>
+                            
+                            {/* PRO/ELITE Only: Refund/Change Info */}
+                            {hasPremiumAccess && flight.policies && (
+                                <>
+                                    {flight.policies.refundable !== undefined && (
+                                        <div className="flex items-center gap-1.5">
+                                            <Shield className={`w-3.5 h-3.5 ${flight.policies.refundable ? 'text-green-600' : 'text-red-400'}`} />
+                                            <span className="text-[11px] font-medium text-slate-600">
+                                                {flight.policies.refundable ? '✓ Refundable' : '✗ Non-refundable'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -170,6 +226,59 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                             Kontrol Et
                         </button>
                     </div>
+
+                    {/* 🚨 HISTORICAL PUNCTUALITY RADAR (PRO+) */}
+                    {hasPremiumAccess && flight.historicalPerformance && (
+                        <div className="mt-4 pt-3 border-t border-slate-100">
+                            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg ${
+                                flight.historicalPerformance.risk === 'HIGH' 
+                                    ? 'bg-red-100 text-red-700 border border-red-300'
+                                    : flight.historicalPerformance.risk === 'MODERATE'
+                                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                                    : 'bg-green-100 text-green-700 border border-green-300'
+                            }`}>
+                                <span className="text-lg">
+                                    {flight.historicalPerformance.risk === 'HIGH' ? '⚠️' : 
+                                     flight.historicalPerformance.risk === 'MODERATE' ? '📊' : '✓'}
+                                </span>
+                                <div className="text-left leading-tight">
+                                    <div className="font-bold text-xs">
+                                        {flight.historicalPerformance.delayProbability}% Delay Risk
+                                    </div>
+                                    <div className="text-[10px] opacity-80">
+                                        {flight.historicalPerformance.historicalContext.delayedFlights} of {flight.historicalPerformance.historicalContext.totalFlights} delayed
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 💺 REAL SEAT DATA (PRO+) */}
+                    {hasPremiumAccess && flight.seatMapData && !flight.seatMapData.error && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300">
+                                <span className="text-lg">🟢</span>
+                                <div className="text-left leading-tight">
+                                    <div className="font-bold text-xs">
+                                        {flight.seatMapData.availableSeats} Real Seats Available
+                                    </div>
+                                    <div className="text-[10px] opacity-80">
+                                        {flight.seatMapData.totalSeats} total ({Math.round((flight.seatMapData.availableSeats / flight.seatMapData.totalSeats) * 100)}% free)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ⚲ SEAT DATA UNAVAILABLE (show gracefully) */}
+                    {hasPremiumAccess && flight.seatMapData && flight.seatMapData.error && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 border border-slate-300 text-[11px]">
+                                <span>ℹ️</span>
+                                <span>{flight.seatMapData.message || 'Seat data not available'}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* SAĞ TARAF: FİYAT VE SKOR */}
@@ -177,14 +286,17 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
                     <div className="h-24 relative flex items-center justify-center mb-2 cursor-pointer rounded-xl overflow-hidden bg-slate-50 border border-slate-100" onClick={handleLockClick}>
-                        {!isPremium ? (
-                            // KİLİTLİ HALİ
+                        {!hasPremiumAccess ? (
+                            // KİLİTLİ HALİ - Updated with better CTA
                             <>
-                                <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-10 flex flex-col items-center justify-center">
-                                    <Lock className="w-6 h-6 text-blue-600 mb-2" />
-                                    <span className="text-[10px] font-bold text-slate-800 text-center px-4 leading-tight">{t('view_analysis')}<br />(Premium)</span>
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-md z-10 flex flex-col items-center justify-center">
+                                    <Lock className="w-6 h-6 text-blue-600 mb-1 animate-pulse" />
+                                    <span className="text-[10px] font-bold text-slate-800 text-center px-4 leading-tight">
+                                        {t('view_analysis')}<br />
+                                        <span className="text-blue-600">Tap to Unlock</span>
+                                    </span>
                                 </div>
-                                {/* Arkada flu görünen sahte skor */}
+                                {/* Arkada blur görünen sahte skor */}
                                 <div className="text-5xl font-black text-slate-300 blur-sm pointer-events-none">8.5</div>
                             </>
                         ) : (
@@ -238,6 +350,33 @@ export default function FlightResultCard({ flight, isPremium = false }: { flight
                 open={showDetails} 
                 onClose={() => setShowDetails(false)} 
             />
+
+            {/* UPGRADE OVERLAY DIALOG (Full Screen) */}
+            {showLockOverlay && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowLockOverlay(false)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <LockedFeatureOverlay
+                            featureName="Flight Intelligence Suite"
+                            requiredTier="PRO"
+                            description="Unlock real-time tracking, EU261 compensation alerts, and detailed flight analysis"
+                            benefits={[
+                                'Live flight status & disruption alerts',
+                                'EU261 compensation calculator',
+                                'Detailed amenity & aircraft analysis',
+                                'Refund & change policy insights',
+                                'Price drop notifications'
+                            ]}
+                            className="!static !backdrop-blur-none"
+                        />
+                        <button
+                            onClick={() => setShowLockOverlay(false)}
+                            className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
