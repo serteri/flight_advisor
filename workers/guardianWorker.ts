@@ -1,6 +1,6 @@
 // workers/guardianWorker.ts
 import { prisma } from "@/lib/prisma";
-import { checkAmadeusFlightStatus } from "@/services/amadeus/status";
+import { getFlightStatus } from "@/services/flightStatusService"; // ✅ REAL DATA
 import { NotificationDispatcher } from "@/services/notifications/dispatcher";
 import { NotificationPayload, UserPreferences, UserTier, ToneOfVoice } from "@/services/notifications/types";
 import { TripStatus } from "@prisma/client";
@@ -34,67 +34,114 @@ export async function processFlightMonitoring() {
             if (!segment) continue;
 
             const tripKey = trip.id;
-            // 2. Ask Amadeus for Live Status
+            
+            // 2. ✅ REAL DATA: Ask AeroDataBox for Live Status
             const departureDate = new Date(segment.departureDate);
-            const currentStatus = await checkAmadeusFlightStatus(segment.flightNumber, departureDate);
+            const dateStr = departureDate.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            console.log(`   🔍 Checking ${segment.flightNumber} on ${dateStr}...`);
+            const statusResult = await getFlightStatus(segment.flightNumber, dateStr);
+            
+            // Handle API errors gracefully
+            if ('error' in statusResult) {
+                console.warn(`   ⚠️ Could not fetch status: ${statusResult.message}`);
+                // Continue to next trip instead of crashing
+                continue;
+            }
+            
+            const currentStatus = statusResult;
             
             // Get previous state or initialize
-            const previousState = lastAlertState[tripKey] || { delay: 0, status: 'SCHEDULED', gate: null };
+            const previousState = lastAlertState[tripKey] || { 
+                delay: 0, 
+                status: 'scheduled', 
+                gate: null 
+            };
 
-            // 3. ANALYZE & DISPATCH
+            // 3. ANALYZE & DISPATCH (Real AeroDataBox Data)
 
-            // A) CANCELLATION (CRITICAL)
-            if (currentStatus.status === 'CANCELLED' && previousState.status !== 'CANCELLED') {
+            // A) CANCELLATION (CRITICAL) - EU261 Trigger!
+            if (currentStatus.status === 'cancelled' && previousState.status !== 'cancelled') {
                 console.log(`🚨 FLIGHT CANCELLED: ${segment.flightNumber}`);
+                console.log(`💰 EU261 ELIGIBLE: €${currentStatus.compensationAmount || 600}`);
                 
                 await dispatcher.dispatch(getUserPrefs(trip.user), {
                     userId: trip.userId,
                     tripId: trip.id,
                     type: 'DISRUPTION',
-                    title: 'Flight Cancelled!',
-                    message: `Flight ${segment.flightNumber} is cancelled. Activate Plan B immediately.`,
+                    title: '🚨 Flight Cancelled - EU261 Compensation!',
+                    message: `Flight ${segment.flightNumber} is CANCELLED. You may be eligible for €${currentStatus.compensationAmount || 600} compensation under EU261.`,
                     priority: 'CRITICAL',
                     data: { 
                         flightNumber: segment.flightNumber, 
-                        amount: '600€', // Potential compensation
-                        destination: segment.destination
+                        amount: `€${currentStatus.compensationAmount || 600}`,
+                        destination: segment.destination,
+                        isEU261: true,
+                        reason: 'Flight cancelled'
                     }
                 });
 
-                lastAlertState[tripKey] = { ...previousState, status: 'CANCELLED' };
+                lastAlertState[tripKey] = { ...previousState, status: 'cancelled' };
             }
 
-            // B) DELAY (WARNING / CRITICAL)
-            if (trip.watchDelay && currentStatus.delayMinutes > 0) {
-                // Anti-Spam: Only alert if delay increased by 15+ mins compared to last KNOWN delay
-                const delayDiff = currentStatus.delayMinutes - (previousState.delay || 0);
+            // B) DELAY (WARNING / CRITICAL) - EU261 at 180+ mins
+            const totalDelay = currentStatus.arrivalDelayMinutes || currentStatus.departureDelayMinutes || 0;
+            
+            if (trip.watchDelay && totalDelay > 0) {
+                // Anti-Spam: Only alert if delay increased by 15+ mins
+                const delayDiff = totalDelay - (previousState.delay || 0);
 
                 if (delayDiff >= 15) {
-                    const isCritical = currentStatus.delayMinutes > 180; // >3 hours = Money!
-                    const priority = isCritical ? 'CRITICAL' : 'WARNING';
+                    const isEU261 = totalDelay >= 180; // 3+ hours = Compensation!
+                    const priority = isEU261 ? 'CRITICAL' : 'WARNING';
                     
-                    console.log(`⚠️ DELAY DETECTED: ${currentStatus.delayMinutes} mins (Priority: ${priority})`);
+                    console.log(`⚠️ DELAY: ${totalDelay} mins (EU261: ${isEU261})`);
+                    
+                    const message = isEU261 
+                        ? `Flight ${segment.flightNumber} delayed ${totalDelay}min! EU261 compensation of €${currentStatus.compensationAmount || 400} may apply.`
+                        : `Flight ${segment.flightNumber} delayed ${totalDelay} minutes.`;
 
                     await dispatcher.dispatch(getUserPrefs(trip.user), {
                         userId: trip.userId,
                         tripId: trip.id,
                         type: 'DISRUPTION',
-                        title: `Flight Delayed (${currentStatus.delayMinutes}m)`,
-                        message: `New delay detected. Total delay: ${currentStatus.delayMinutes} minutes.`,
+                        title: isEU261 ? '💰 Major Delay - EU261!' : `⏱️ Flight Delayed (${totalDelay}m)`,
+                        message,
                         priority: priority,
                         data: {
                             flightNumber: segment.flightNumber,
-                            amount: isCritical ? '600€' : '0€',
-                            destination: segment.destination
+                            amount: isEU261 ? `€${currentStatus.compensationAmount || 400}` : '€0',
+                            destination: segment.destination,
+                            isEU261,
+                            delayMinutes: totalDelay
                         }
                     });
 
-                    lastAlertState[tripKey] = { ...previousState, delay: currentStatus.delayMinutes };
+                    lastAlertState[tripKey] = { ...previousState, delay: totalDelay };
                 }
             }
 
-            // C) GATE CHANGE (WARNING) - Disabled: Mock API doesn't provide gate info
-            // if (currentStatus.gate && currentStatus.gate !== previousState.gate) { ... }
+            // C) GATE CHANGE (INFO) - Real data from AeroDataBox
+            const newGate = currentStatus.departureGate || currentStatus.arrivalGate;
+            if (newGate && newGate !== previousState.gate && previousState.gate !== null) {
+                console.log(`🚪 GATE CHANGE: ${previousState.gate} → ${newGate}`);
+                
+                await dispatcher.dispatch(getUserPrefs(trip.user), {
+                    userId: trip.userId,
+                    tripId: trip.id,
+                    type: 'GATE_CHANGE',
+                    title: 'Gate Changed',
+                    message: `Flight ${segment.flightNumber} gate changed from ${previousState.gate} to ${newGate}`,
+                    priority: 'OPPORTUNITY', // Low priority notification
+                    data: {
+                        flightNumber: segment.flightNumber,
+                        oldGate: previousState.gate,
+                        newGate
+                    }
+                });
+
+                lastAlertState[tripKey] = { ...previousState, gate: newGate };
+            }
 
             // 4. Update Next Check Time
             // Frequency is in minutes (e.g., 15, 60, 1440)
