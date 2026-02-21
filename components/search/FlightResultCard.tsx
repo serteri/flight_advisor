@@ -98,54 +98,62 @@ export default function FlightResultCard({
                         </div>
 
                         {/* SÜRE VE AKTARMA DETAYLI */}
-                        <div className="flex-1 flex flex-col items-center">
-                            {/* Toplam Seyahat Süresini Doğru Hesapla */}
+                        <div className="flex-1 flex flex-col items-center gap-2">
+                            {/* Toplam Seyahat Süresini ve Badge'i Hesapla */}
                             {(() => {
                                 const deptTime = new Date(flight.departureTime || flight.departTime).getTime();
                                 const arrTime = new Date(flight.arrivalTime || flight.arriveTime).getTime();
                                 const totalMinutes = Math.max(0, (arrTime - deptTime) / (1000 * 60));
                                 const hours = Math.floor(totalMinutes / 60);
                                 const mins = Math.round(totalMinutes % 60);
+
                                 return (
-                                    <span className="text-xs font-bold text-slate-600 mb-1">
-                                        {hours}h {mins}m
-                                    </span>
+                                    <div className="text-center">
+                                        <span className="text-sm font-bold text-slate-700 block mb-1">
+                                            {hours}h {mins}m {t('total_duration') || 'total'}
+                                        </span>
+                                        
+                                        {/* Stops Badge - PROMINENT */}
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full font-bold text-xs ${
+                                            flight.stops === 0 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-orange-100 text-orange-700'
+                                        }`}>
+                                            {flight.stops === 0 ? `✈️ ${t('direct')}` : `📍 ${flight.stops} ${t('stops')}`}
+                                        </span>
+                                    </div>
                                 );
                             })()}
 
-                            <div className="w-full h-[2px] bg-slate-200 relative my-1">
-                                {/* Plane Icon */}
-                                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white px-1 text-[10px]">✈️</div>
-
-                                {/* Layover Dots */}
-                                {flight.layovers && flight.layovers.length > 0 && (
-                                    <div className="absolute top-[-3px] left-0 w-full flex justify-between px-2">
-                                        {flight.layovers.map((_: any, i: number) => (
-                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-white" style={{ left: `${(i + 1) * (100 / (flight.layovers!.length + 1))}%` }} />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex flex-col items-center">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flight.stops === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                    {flight.stops === 0 ? t('direct') : `${flight.stops} ${t('stops')}`}
-                                </span>
-
-                                {/* Layover Details */}
-                                {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
-                                    <span className="text-[10px] text-slate-600 mt-1 text-center font-semibold">
+                            {/* Layover Timeline */}
+                            {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
+                                <div className="w-full bg-gradient-to-r from-slate-100 to-slate-50 p-3 rounded-lg mt-2 border border-slate-200">
+                                    <div className="space-y-1.5">
                                         {flight.layovers.map((l: any, idx: number) => {
                                             const airportCode = typeof l.airport === 'string' ? l.airport : (l.airport?.iataCode || l.airport?.code || 'XXX');
-                                            // Duration is stored as minutes (number)
                                             const durationNum = typeof l.duration === 'number' ? l.duration : parseInt(l.duration) || 0;
                                             const hrs = Math.floor(durationNum / 60);
                                             const mins = durationNum % 60;
-                                            return `${airportCode} (${hrs}h ${mins}m)`;
-                                        }).join(' → ')}
-                                    </span>
-                                )}
-                            </div>
+                                            const cityName = l.city || airportCode;
+                                            
+                                            return (
+                                                <div key={idx} className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2 flex-1">
+                                                        <span className="font-bold text-slate-900">{airportCode}</span>
+                                                        <span className="text-slate-600 truncate">{cityName}</span>
+                                                    </div>
+                                                    <span className="font-semibold text-slate-700 whitespace-nowrap">
+                                                        {hrs}h {mins}m
+                                                    </span>
+                                                    {idx < flight.layovers.length - 1 && (
+                                                        <span className="text-slate-400 ml-1">→</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="text-right">
@@ -175,8 +183,8 @@ export default function FlightResultCard({
                             />
                         )}
                         
-                        {/* Amenity Content (blurred for FREE) */}
-                        <div className={`flex gap-6 ${!hasPremiumAccess && 'filter blur-sm opacity-50 select-none'}`}>
+                        {/* Amenity Content (blurred for FREE, visible for PRO) */}
+                        <div className={`flex flex-wrap gap-4 ${!hasPremiumAccess && 'filter blur-sm opacity-50 select-none pointer-events-none'}`}>
                             <div className="flex items-center gap-1.5">
                                 <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">

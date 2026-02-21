@@ -83,8 +83,10 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
     }, []);
 
     const handleSelect = (city: CityResult) => {
-        // Display Text: "Paris (PAR)" or "Heathrow (LHR)"
-        const displayText = `${city.displayName} (${city.iataCode})`;
+        // New Format: "Istanbul (Sabiha Gokcen) - SAW"
+        // Using: City (AirportName) - IATA
+        const airportName = (city as any).airportName || city.name || city.iataCode;
+        const displayText = `${city.displayName || city.cityName} (${airportName}) - ${city.iataCode}`;
 
         setQuery(displayText);
         setIataCode(city.iataCode);
@@ -185,13 +187,16 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
 
                                     {/* Text Info */}
                                     <div className="flex flex-col min-w-0">
-                                        {/* Main Line: City Name or Airport Name */}
+                                        {/* Main Line: City Name */}
                                         <div className="font-bold text-slate-900 text-base truncate pr-2">
-                                            {city.displayName}
+                                            {city.displayName || city.cityName}
                                         </div>
-                                        {/* Sub Line: Country or Airport Details */}
+                                        {/* Sub Line: Airport Name + Country */}
                                         <div className="text-sm text-slate-500 truncate">
-                                            {city.detailName}
+                                            {(city as any).airportName && city.detailName 
+                                                ? `${(city as any).airportName}, ${city.detailName}`
+                                                : (city as any).airportName || city.detailName || 'Airport'
+                                            }
                                         </div>
                                     </div>
                                 </div>

@@ -63,45 +63,22 @@ export async function GET(request: Request) {
         });
 
         // 4. Format for Skyscanner-style display
-        const formattedSuggestions = uniqueSuggestions.map(item => {
-            const isCity = item.type === 'CITY';
-
-            // Display Name Logic (Bold Part)
-            // Priority: City Name -> Name -> "Unknown City"
-            let displayName = item.cityName || item.name;
-            if (!displayName) {
-                displayName = item.iataCode; // Fallback to Code if absolutely nothing else
-            }
-
-            // Detail Name Logic (Light Part)
-            // Priority: Country -> "International"
-            let detailName = item.countryName || "";
-
-            if (!isCity) {
-                // AIRPORT
-                const airportName = item.name || item.iataCode;
-
-                // If airport name contains city name, we might want to shorten it, 
-                // but for now let's just show "Airport Name, Country" to be safe and descriptive.
-                if (detailName) {
-                    detailName = `${airportName}, ${detailName}`;
-                } else {
-                    detailName = airportName;
-                }
-            } else {
-                // CITY
-                // Just show Country. If Country is missing (rare), show "All Airports" to imply city code.
-                if (!detailName) detailName = "All Airports";
-            }
+        const formattedSuggestions = uniqueSuggestions
+            .filter(item => item.type === 'AIRPORT') // 🚫 SADECE HAVALIMANLAR
+            .map(item => {
+            // For AIRPORT type only
+            const airportName = item.name || item.iataCode;
+            const cityName = item.cityName || item.iataCode;
 
             return {
                 iataCode: item.iataCode,
-                name: item.name || displayName,
-                cityName: item.cityName || displayName,
+                name: item.name || cityName,
+                cityName: cityName,
                 countryName: item.countryName || "",
                 type: item.type,
-                displayName: displayName,
-                detailName: detailName
+                displayName: cityName, // City name for display
+                airportName: airportName, // Full airport name (NEW FIELD)
+                detailName: item.countryName || ""
             };
         });
 
@@ -110,15 +87,18 @@ export async function GET(request: Request) {
         console.error("City search API error:", error);
         // Even on error, try to return fallback
         const fallbacks = searchFallbackCities(keyword);
-        const formattedFallbacks = fallbacks.map(item => ({
-            iataCode: item.iataCode,
-            name: item.cityName,
-            cityName: item.cityName,
-            countryName: item.countryName,
-            type: 'CITY',
-            displayName: item.cityName,
-            detailName: item.countryName
-        }));
+        const formattedFallbacks = fallbacks
+            .filter(item => item.type === 'AIRPORT' || item.iataCode) // Only airports
+            .map(item => ({
+                iataCode: item.iataCode,
+                name: item.cityName,
+                cityName: item.cityName,
+                countryName: item.countryName,
+                type: 'AIRPORT',
+                displayName: item.cityName,
+                airportName: item.name || item.iataCode, // Airport full name
+                detailName: item.countryName
+            }));
         return NextResponse.json({ data: formattedFallbacks });
     }
 }

@@ -40,10 +40,15 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
             const response = await fetch('/api/auth/user-tier');
             if (response.ok) {
                 const data = await response.json();
-                setUserTier((data.subscriptionPlan as UserTier) || 'FREE');
+                const tier = (data.subscriptionPlan as UserTier) || 'FREE';
+                console.log('[Results] User tier fetched:', tier);
+                setUserTier(tier);
+            } else {
+                console.warn('[Results] Failed to fetch user tier, status:', response.status);
+                setUserTier('FREE');
             }
         } catch (err) {
-            console.error('Failed to fetch user tier:', err);
+            console.error('[Results] Failed to fetch user tier:', err);
             setUserTier('FREE');
         }
     }
