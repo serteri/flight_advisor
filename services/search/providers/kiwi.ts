@@ -74,6 +74,13 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
         const routes = flight.route || [];
         if (routes.length === 0) continue;
 
+        // 🚫 CRITICAL: Filter out $0 price flights (invalid)
+        const price = flight.price || flight.conversion?.EUR || 0;
+        if (price <= 0 || !price) {
+          console.log(`  ⏭️ Skipped 1 Kiwi flight: $0 price`);
+          continue;
+        }
+
         const firstRoute = routes[0];
         const lastRoute = routes[routes.length - 1];
 
@@ -114,7 +121,7 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
           duration: durationMins,
           durationLabel: formatDuration(durationMins),
           stops: Math.max(0, routes.length - 1),
-          price: flight.price || flight.conversion?.EUR || 0,
+          price: price,
           currency: flight.currency || params.currency || 'EUR',
           cabinClass: 'economy',
           layovers: layovers.length > 0 ? layovers : undefined,

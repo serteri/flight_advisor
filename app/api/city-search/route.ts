@@ -19,13 +19,15 @@ export async function GET(request: Request) {
         try {
             // Use searchCity which searches both CITY and AIRPORT types
             const results = await client.searchCity(keyword);
-            suggestions = results.map((item: any) => ({
-                iataCode: item.iataCode,
-                name: item.name || item.address?.cityName,
-                cityName: item.address?.cityName || item.name,
-                countryName: item.address?.countryName,
-                type: item.subType // 'CITY' or 'AIRPORT'
-            }));
+            suggestions = results
+                .filter((item: any) => item.iataCode && item.iataCode.length === 3) // ONLY valid IATA codes
+                .map((item: any) => ({
+                    iataCode: item.iataCode,
+                    name: item.name || item.address?.cityName,
+                    cityName: item.address?.cityName || item.name,
+                    countryName: item.address?.countryName,
+                    type: item.subType // 'CITY' or 'AIRPORT'
+                }));
         } catch (apiError) {
             console.error("Amadeus city/airport search partial failure:", apiError);
         }

@@ -134,7 +134,7 @@ export default function FlightResultCard({
 
                                 {/* Layover Details */}
                                 {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
-                                    <span className="text-[9px] text-slate-500 mt-0.5 text-center">
+                                    <span className="text-[10px] text-slate-600 mt-1 text-center font-semibold">
                                         {flight.layovers.map((l: any, idx: number) => {
                                             const airportCode = typeof l.airport === 'string' ? l.airport : (l.airport?.iataCode || l.airport?.code || 'XXX');
                                             // Duration is stored as minutes (number)
@@ -142,7 +142,7 @@ export default function FlightResultCard({
                                             const hrs = Math.floor(durationNum / 60);
                                             const mins = durationNum % 60;
                                             return `${airportCode} (${hrs}h ${mins}m)`;
-                                        }).join(', ')}
+                                        }).join(' → ')}
                                     </span>
                                 )}
                             </div>
@@ -218,14 +218,27 @@ export default function FlightResultCard({
                         </div>
                     </div>
 
-                    {/* KONTROL ET BUTONU */}
+                    {/* KONTROL ET BUTONU - View Analysis Premium Feature */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
-                            onClick={() => setShowDetails(true)}
-                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            onClick={() => {
+                                // If FREE user, show lock overlay instead of opening details
+                                if (!hasPremiumAccess) {
+                                    setShowLockOverlay(true);
+                                } else {
+                                    // PRO/ELITE: Show flight details dialog
+                                    setShowDetails(true);
+                                }
+                            }}
+                            className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                                hasPremiumAccess 
+                                    ? 'bg-blue-100 hover:bg-blue-200 text-blue-700' 
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
                         >
-                            <Info className="w-4 h-4" />
-                            Kontrol Et
+                            <Eye className="w-4 h-4" />
+                            {hasPremiumAccess ? 'View Analysis' : 'View Analysis (Unlock)'}
+                            {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1" />}
                         </button>
                     </div>
 

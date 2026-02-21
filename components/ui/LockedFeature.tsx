@@ -53,56 +53,31 @@ export function LockedFeatureOverlay({
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className={`absolute inset-0 z-30 flex items-center justify-center backdrop-blur-sm bg-white/60 rounded-lg ${className}`}
+            className={`absolute inset-0 z-30 flex items-center justify-center backdrop-blur-lg bg-slate-900/50 ${className}`}
         >
-            <div className="relative w-full h-full flex items-center justify-center p-6">
-                {/* Gradient Border Effect */}
-                <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${config.gradient} opacity-10`} />
-                
-                {/* Content */}
-                <div className="relative text-center max-w-md">
-                    {/* Icon */}
-                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br ${config.gradient} text-white mb-4 shadow-lg`}>
-                        <Lock className="w-8 h-8" />
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {featureName}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 mb-4">
-                        {description || `Unlock ${featureName} with ${requiredTier} membership`}
-                    </p>
-
-                    {/* Benefits List */}
-                    {benefits.length > 0 && (
-                        <ul className="text-left space-y-2 mb-6 max-w-xs mx-auto">
-                            {benefits.map((benefit, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                    <span>{benefit}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-
-                    {/* CTA Button */}
-                    <Button
-                        onClick={handleUpgrade}
-                        className={`bg-gradient-to-r ${config.gradient} hover:opacity-90 text-white font-semibold px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300`}
-                    >
-                        {config.icon}
-                        <span className="ml-2">Upgrade to {requiredTier}</span>
-                        <span className="ml-2 text-xs opacity-80">{config.price}</span>
-                    </Button>
-
-                    {/* Tier Badge */}
-                    <div className={`inline-block mt-4 px-3 py-1 rounded-full ${config.badge} text-white text-xs font-bold`}>
-                        {requiredTier} Feature
-                    </div>
+            <div className="relative text-center space-y-4">
+                {/* Icon - CENTERED, MINIMAL */}
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 text-white">
+                    <Lock className="w-7 h-7" />
                 </div>
+
+                {/* Title */}
+                <h3 className="text-lg font-bold text-white">
+                    Premium Feature
+                </h3>
+
+                {/* Simple Description */}
+                <p className="text-sm text-white/80 max-w-xs">
+                    Upgrade to {requiredTier} for advanced analytics
+                </p>
+
+                {/* CTA Button - Simple, Clean */}
+                <Button
+                    onClick={handleUpgrade}
+                    className={`bg-gradient-to-r ${config.gradient} hover:opacity-90 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-all mt-4`}
+                >
+                    Upgrade Now
+                </Button>
             </div>
         </motion.div>
     );

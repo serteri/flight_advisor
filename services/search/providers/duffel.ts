@@ -19,8 +19,18 @@ export async function searchDuffel(params: HybridSearchParams): Promise<FlightRe
             cabin_class: 'economy',
         });
 
-        const offers = res.data.offers.map(mapDuffelToPremiumAgent);
-        console.log(`🛫 DUFFEL returned ${offers.length} offers`);
+        const offers = res.data.offers
+            .map(mapDuffelToPremiumAgent)
+            .filter(flight => {
+                // 🚫 CRITICAL: Filter out $0 price offers (invalid)
+                if (flight.price <= 0) {
+                    console.log(`  ⏭️ Filtered out Duffel offer: $0 price`);
+                    return false;
+                }
+                return true;
+            });
+        
+        console.log(`🛫 DUFFEL returned ${offers.length} offers (after $0 filter)`);
         return offers;
     } catch (err: any) {
         // Enhanced logging for authentication issues
