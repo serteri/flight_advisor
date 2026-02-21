@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CityAutocomplete } from "@/components/CityAutocomplete";
+import { SmartCitySearch } from "@/components/SmartCitySearch";
 import { DatePicker } from "@/components/DatePicker";
 import {
     Plane,
@@ -265,9 +265,33 @@ function SearchPageContent() {
 
                             {/* From & To with Swap Button */}
                             <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-4 items-end">
-                                <CityAutocomplete name="from" label={t('from')} placeholder={t('placeholder')} defaultValue={fromCity} defaultIataCode={fromIata} onSelect={(city, iata) => { setFromCity(city); setFromIata(iata); }} />
-                                <button type="button" onClick={swapCities} className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 active:scale-95 mb-0.5"><ArrowRightLeft className="h-5 w-5" /></button>
-                                <CityAutocomplete name="to" label={t('to')} placeholder={t('placeholder')} defaultValue={toCity} defaultIataCode={toIata} onSelect={(city, iata) => { setToCity(city); setToIata(iata); }} />
+                                <SmartCitySearch 
+                                    placeholder={t('from')} 
+                                    value={fromCity} 
+                                    iataCode={fromIata}
+                                    onChange={(city, iata) => {
+                                        setFromCity(city);
+                                        setFromIata(iata);
+                                    }}
+                                    isDestination={false}
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={swapCities} 
+                                    className="hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 active:scale-95 mb-0.5"
+                                >
+                                    <ArrowRightLeft className="h-5 w-5" />
+                                </button>
+                                <SmartCitySearch 
+                                    placeholder={t('to')} 
+                                    value={toCity} 
+                                    iataCode={toIata}
+                                    onChange={(city, iata) => {
+                                        setToCity(city);
+                                        setToIata(iata);
+                                    }}
+                                    isDestination={true}
+                                />
                             </div>
 
                             {/* Dates */}
