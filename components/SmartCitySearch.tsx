@@ -76,15 +76,19 @@ export function SmartCitySearch({
                 console.log('[SmartCitySearch] Found lastOrigin in localStorage:', lastOrigin);
                 setInputValue(lastOrigin);
                 onChange(lastOrigin, lastOriginIata);
+            } else {
+                // Only try geolocation if no stored value
+                tryGetMemoizedGeolocation().then(result => {
+                    console.log('[SmartCitySearch] Geolocation result:', result);
+                    if (result && !('error' in result) && result.city && result.iataCode) {
+                        setInputValue(result.city);
+                        onChange(result.city, result.iataCode);
+                        localStorage.setItem('lastFlightOrigin', result.city);
+                        localStorage.setItem('lastFlightOriginIata', result.iataCode);
+                        setGeoLocation(result);
+                    }
+                });
             }
-            
-            // Then try geolocation
-            tryGetMemoizedGeolocation().then(result => {
-                console.log('[SmartCitySearch] Geolocation result:', result);
-                if (result && !('error' in result) && result.city && result.iataCode) {
-                    setGeoLocation(result);
-                }
-            });
         }
     }, [isDestination, onChange]);
 
@@ -105,9 +109,21 @@ export function SmartCitySearch({
         try {
             // Call API endpoint instead of client-side search
             const response = await fetch(`/api/airports/search?q=${encodeURIComponent(val)}`);
-            const results = await response.json();
             
+            if (!response.ok) {
+                console.error(`[SmartCitySearch] API error: ${response.status}`);
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            const results = await response.json();
             console.log('[SmartCitySearch] API results for', val, ':', results);
+            
+            if (!Array.isArray(results)) {
+                console.error('[SmartCitySearch] Invalid API response (not an array):', results);
+                setSuggestions([]);
+                setShowSuggestions(true);
+                return;
+            }
             
             // Sort: major airports first
             const sorted = results.sort((a: CityOption, b: CityOption) => {
@@ -122,6 +138,7 @@ export function SmartCitySearch({
         } catch (error) {
             console.error('[SmartCitySearch] Search error:', error);
             setSuggestions([]);
+            setShowSuggestions(true);
         } finally {
             setLoading(false);
         }

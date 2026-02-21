@@ -49,8 +49,8 @@ export function searchFallbackCities(keyword: string): CityData[] {
         );
     });
 
-    // Limit and map results
-    return results.slice(0, 10).map(mapAirportToCityData);
+    // Limit and map results (return up to 50 for better search coverage)
+    return results.slice(0, 50).map(mapAirportToCityData);
 }
 
 export function getNearestFallbackCity(lat: number, lon: number): CityData | null {
