@@ -77,6 +77,11 @@ export function FlightInspector({ locale }: FlightInspectorProps) {
         }),
       });
 
+      if (response.status === 403) {
+        router.push(`/${locale}/pricing`);
+        return;
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

@@ -85,7 +85,12 @@ export async function POST(req: Request) {
                 },
             ],
             subscription_data: {
-                trial_period_days: 14,
+                trial_period_days: 7,
+                metadata: {
+                    userId: user.id,
+                    plan,
+                    billingCycle,
+                },
             },
             metadata: {
                 userId: user.id,
@@ -93,7 +98,7 @@ export async function POST(req: Request) {
                 billingCycle,
             },
             success_url: `${baseUrl}/dashboard?status=success`,
-            cancel_url: `${baseUrl}/membership`,
+            cancel_url: `${baseUrl}/pricing?canceled=true`,
         });
 
         return NextResponse.json({ url: checkoutSession.url });

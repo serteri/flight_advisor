@@ -20,6 +20,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const [showFlightInspector, setShowFlightInspector] = useState(false);
     const searchParams = useSearchParams();
     const checkoutStatus = searchParams.get('status');
+    const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
     const locale = pathname?.split('/')[1] || 'en';
 
@@ -30,10 +31,14 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     return (
         <div className="space-y-12">
-            {checkoutStatus === 'success' && (
+            {checkoutSuccess && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-emerald-900">
-                    <div className="text-sm font-bold">{t('paymentSuccessTitle')}</div>
-                    <div className="text-sm text-emerald-800">{t('paymentSuccessBody')}</div>
+                    <div className="text-sm font-bold">
+                        Welcome to {plan === 'ELITE' ? 'ELITE' : 'PRO'}! Your 7-day free trial has started.
+                    </div>
+                    <div className="text-sm text-emerald-800">
+                        Flight Inspector is now unlocked.
+                    </div>
                 </div>
             )}
 

@@ -1,8 +1,13 @@
 'use client';
 import { signIn } from "next-auth/react";
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { ShieldCheck } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
     return (
         <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
 
@@ -44,7 +49,7 @@ export default function LoginPage() {
                     </div>
 
                     <button
-                        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                        onClick={() => signIn("google", { callbackUrl })}
                         className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all shadow-sm hover:shadow-md"
                     >
                         {/* Google Logo SVG */}
@@ -73,5 +78,17 @@ export default function LoginPage() {
             </div>
 
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+                <div className="text-white text-lg">Yükleniyor...</div>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

@@ -9,6 +9,8 @@ const PRICE_TO_PLAN: Record<string, 'PRO' | 'ELITE'> = {
     [process.env.STRIPE_PRO_YEARLY_PRICE_ID || '']: 'PRO',
     [process.env.STRIPE_ELITE_MONTHLY_PRICE_ID || '']: 'ELITE',
     [process.env.STRIPE_ELITE_YEARLY_PRICE_ID || '']: 'ELITE',
+    [process.env.STRIPE_PRO_PRICE_ID || '']: 'PRO',
+    [process.env.STRIPE_ELITE_PRICE_ID || '']: 'ELITE',
 };
 
 const resolvePlan = (priceId?: string | null, metadataPlan?: string | null) => {
@@ -30,6 +32,59 @@ const getPriceId = (subscription: Stripe.Subscription) => {
     }
 
     return typeof priceItem === 'string' ? priceItem : priceItem.id;
+};
+
+const resolveUserId = async (userId: string | null | undefined, customerId: string | null) => {
+    if (userId) {
+        return userId;
+    }
+
+    if (!customerId) {
+        return null;
+    }
+
+    const user = await prisma.user.findFirst({
+        where: { stripeCustomerId: customerId },
+        select: { id: true },
+    });
+
+    return user?.id || null;
+};
+
+const syncSubscriptionToUser = async (
+    subscription: Stripe.Subscription,
+    userId: string | null | undefined,
+    metadataPlan: string | null
+) => {
+    const priceId = getPriceId(subscription);
+    const plan = resolvePlan(priceId, metadataPlan);
+
+    if (!plan) {
+        console.error('[STRIPE_WEBHOOK] Unknown plan for price', priceId);
+        throw new Error('Unknown plan');
+    }
+
+    const resolvedUserId = await resolveUserId(
+        userId,
+        typeof subscription.customer === 'string' ? subscription.customer : null
+    );
+
+    if (!resolvedUserId) {
+        console.error('[STRIPE_WEBHOOK] User not found for subscription', subscription.id);
+        throw new Error('User not found');
+    }
+
+    await prisma.user.update({
+        where: { id: resolvedUserId },
+        data: {
+            stripeSubscriptionId: subscription.id,
+            stripeCustomerId: subscription.customer as string,
+            stripePriceId: priceId,
+            stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            isPremium: true,
+            subscriptionPlan: plan,
+        },
+    });
 };
 
 export async function POST(req: Request) {
@@ -63,27 +118,28 @@ export async function POST(req: Request) {
 
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const priceId = getPriceId(subscription);
-            const plan = resolvePlan(priceId, session.metadata?.plan || null);
-
-            if (!plan) {
-                console.error('[STRIPE_WEBHOOK] Unknown plan for price', priceId);
-                return new NextResponse('Unknown plan', { status: 500 });
-            }
-
-            await prisma.user.update({
-                where: { id: session.metadata.userId },
-                data: {
-                    stripeSubscriptionId: subscription.id,
-                    stripeCustomerId: subscription.customer as string,
-                    stripePriceId: priceId,
-                    stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-                    isPremium: true,
-                    subscriptionPlan: plan,
-                },
-            });
+            await syncSubscriptionToUser(
+                subscription,
+                session.metadata.userId,
+                session.metadata?.plan || null
+            );
         } catch (error) {
             console.error('[STRIPE_WEBHOOK] checkout.session.completed update failed', error);
+            return new NextResponse('Webhook update failed', { status: 500 });
+        }
+    }
+
+    if (event.type === 'customer.subscription.created') {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        try {
+            await syncSubscriptionToUser(
+                subscription,
+                subscription.metadata?.userId || null,
+                subscription.metadata?.plan || null
+            );
+        } catch (error) {
+            console.error('[STRIPE_WEBHOOK] customer.subscription.created update failed', error);
             return new NextResponse('Webhook update failed', { status: 500 });
         }
     }
@@ -98,23 +154,7 @@ export async function POST(req: Request) {
 
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const priceId = getPriceId(subscription);
-            const plan = resolvePlan(priceId, null);
-
-            if (!plan) {
-                console.error('[STRIPE_WEBHOOK] Unknown plan for price', priceId);
-                return new NextResponse('Unknown plan', { status: 500 });
-            }
-
-            await prisma.user.update({
-                where: { stripeSubscriptionId: subscription.id },
-                data: {
-                    stripePriceId: priceId,
-                    stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-                    isPremium: true,
-                    subscriptionPlan: plan,
-                },
-            });
+            await syncSubscriptionToUser(subscription, null, null);
         } catch (error) {
             console.error('[STRIPE_WEBHOOK] invoice.paid update failed', error);
             return new NextResponse('Webhook update failed', { status: 500 });

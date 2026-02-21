@@ -26,6 +26,13 @@ export async function POST(req: Request) {
             return new NextResponse("Missing Price ID", { status: 400 });
         }
 
+        const resolvedPlan =
+            plan.id === 'guardian'
+                ? 'PRO'
+                : plan.id === 'elite'
+                  ? 'ELITE'
+                  : null;
+
         // Get or create Stripe Customer
         let stripeCustomerId = await prisma.user.findUnique({
             where: { id: user.id },
@@ -59,9 +66,18 @@ export async function POST(req: Request) {
                     quantity: 1,
                 },
             ],
+            subscription_data: {
+                trial_period_days: 7,
+                metadata: {
+                    userId: user.id,
+                    planId: plan.id,
+                    plan: resolvedPlan || '',
+                },
+            },
             metadata: {
                 userId: user.id,
-                planId: plan.id
+                planId: plan.id,
+                plan: resolvedPlan || '',
             },
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,

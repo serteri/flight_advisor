@@ -1,16 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Shield, Crown } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 export function PricingTable() {
     const t = useTranslations('Pricing');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const locale = pathname?.split('/')[1] || 'en';
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
+    const autoCheckoutRef = useRef(false);
 
-    const handleCheckout = async (plan: 'PRO' | 'ELITE') => {
+    const redirectToLogin = (plan: 'PRO' | 'ELITE', cycle: 'monthly' | 'yearly') => {
+        const callbackUrl = `/${locale}/pricing?plan=${plan}&billingCycle=${cycle}`;
+        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+    };
+
+    const handleCheckout = async (
+        plan: 'PRO' | 'ELITE',
+        cycleOverride?: 'monthly' | 'yearly'
+    ) => {
+        const resolvedCycle = cycleOverride || billingCycle;
+
         try {
             setCheckoutLoading(plan);
             const response = await fetch('/api/checkout', {
@@ -18,9 +34,14 @@ export function PricingTable() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     plan,
-                    billingCycle,
+                    billingCycle: resolvedCycle,
                 }),
             });
+
+            if (response.status === 401) {
+                redirectToLogin(plan, resolvedCycle);
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Checkout failed');
@@ -36,6 +57,21 @@ export function PricingTable() {
             setCheckoutLoading(null);
         }
     };
+
+    useEffect(() => {
+        if (autoCheckoutRef.current) {
+            return;
+        }
+
+        const planParam = searchParams.get('plan');
+        const cycleParam = searchParams.get('billingCycle');
+
+        if (planParam === 'PRO' || planParam === 'ELITE') {
+            const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
+            autoCheckoutRef.current = true;
+            handleCheckout(planParam, cycle);
+        }
+    }, [searchParams]);
 
     return (
         <section className="py-24 bg-white relative overflow-hidden">
@@ -95,87 +131,116 @@ export function PricingTable() {
                         </div>
 
                         {/* Column 2: Guardian (Pro) */}
-                        <div className="bg-gradient-to-br from-blue-50 to-white rounded-3xl p-6 border-2 border-blue-400 shadow-2xl shadow-blue-400/20 relative">
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
-                                ⭐ Recommended
+                        <div className="bg-gradient-to-b from-blue-50 via-white to-blue-50 rounded-3xl p-8 border-2 border-blue-400 shadow-2xl shadow-blue-400/30 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
+                                ⭐ RECOMMENDED
                             </div>
-                            <div className="h-40 flex flex-col justify-between mb-8 text-center pt-2">
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:scale-110 transition-transform"></div>
+
+                            <div className="h-auto flex flex-col justify-between mb-8 text-center relative z-10 pt-2">
                                 <div>
-                                    <div className="font-bold text-blue-700 uppercase tracking-widest text-xs mb-2 flex justify-center items-center gap-1">
+                                    <div className="font-bold text-blue-700 uppercase tracking-widest text-xs mb-2 flex justify-center items-center gap-2">
                                         <Shield className="w-4 h-4" /> {t('plans.guardian.badge')}
                                     </div>
-                                    <div className="text-2xl font-bold text-slate-900">{t('plans.guardian.name')}</div>
+                                    <div className="text-3xl font-black text-slate-900">{t('plans.guardian.name')}</div>
+                                    <p className="text-xs text-blue-600 mt-1 font-medium">Smart Traveler Essential</p>
                                 </div>
-                                <div className="text-4xl font-black text-slate-900">
-                                    ${billingCycle === 'monthly' ? '9.90' : '89.10'}
-                                    <span className="text-sm font-medium text-slate-500 ml-1">
+                                <div className="mt-4">
+                                    <div className="text-5xl font-black text-blue-600">
+                                        ${billingCycle === 'monthly' ? '9.90' : '89.10'}
+                                    </div>
+                                    <span className="text-sm font-semibold text-slate-600 ml-1">
                                         {billingCycle === 'monthly' ? '/month' : '/year'}
                                     </span>
                                 </div>
                                 {billingCycle === 'yearly' && (
-                                    <div className="text-xs text-emerald-600 font-semibold">💰 Save $29.70/year</div>
+                                    <div className="text-sm text-blue-700 font-bold mt-2 bg-blue-100/60 rounded-lg py-2 px-3 border border-blue-300/50">
+                                        💰 Save $29.70/year • Only $0.74/day
+                                    </div>
                                 )}
-                                <div className="space-y-2 mt-4">
-                                    <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg">
-                                        {t('cta.upgrade')}
-                                    </Button>
+                                
+                                {/* Features */}
+                                <div className="mt-6 space-y-3 text-left">
+                                    <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-blue-500" />
+                                        <span>Real-time Flight Tracking</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-blue-500" />
+                                        <span>Price Drop Alerts</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-blue-500" />
+                                        <span>Flight Inspector Premium</span>
+                                    </div>
+                                </div>
+
+                                {/* CTAs */}
+                                <div className="mt-6">
                                     <Button
-                                        className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm"
+                                        className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base shadow-lg shadow-emerald-900/40 border-0 transition-all duration-300 hover:shadow-emerald-900/60 hover:scale-105 py-3"
                                         onClick={() => handleCheckout('PRO')}
                                         disabled={checkoutLoading === 'PRO'}
                                     >
-                                        {checkoutLoading === 'PRO' ? 'Redirecting...' : 'Try Free (14 days)'}
+                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : '🎁 Try Free (7 Days)'}
                                     </Button>
                                 </div>
                             </div>
                         </div>
 
                         {/* Column 3: Elite */}
-                        <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 text-white shadow-2xl relative overflow-hidden">
-                            {/* Background Glow */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                        <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-black rounded-3xl p-8 border-2 border-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-white shadow-2xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-300">
+                            {/* Premium Glow Background */}
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-amber-500/30 via-orange-500/20 to-transparent rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none group-hover:scale-110 transition-transform"></div>
+                            <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-rose-500/20 to-transparent rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
 
-                            <div className="h-40 flex flex-col justify-between mb-8 text-center relative z-10">
+                            <div className="h-auto flex flex-col justify-between mb-8 text-center relative z-10">
                                 <div>
-                                    <div className="font-bold text-amber-400 uppercase tracking-widest text-xs mb-2 flex justify-center items-center gap-1">
-                                        <Crown className="w-3 h-3" /> {t('plans.elite.badge')}
+                                    <div className="font-bold text-amber-300 uppercase tracking-widest text-xs mb-2 flex justify-center items-center gap-2">
+                                        <Crown className="w-5 h-5 drop-shadow-lg" /> {t('plans.elite.badge')}
                                     </div>
-                                    <div className="text-2xl font-bold text-white">{t('plans.elite.name')}</div>
+                                    <div className="text-3xl font-black text-white drop-shadow-lg">{t('plans.elite.name')}</div>
+                                    <p className="text-sm text-amber-200 mt-1 font-medium">Premium Protection Suite</p>
                                 </div>
-                                <div className="text-4xl font-black text-white">
-                                    ${billingCycle === 'monthly' ? '19.90' : '178.20'}
-                                    <span className="text-sm font-medium text-slate-400 ml-1">
+                                <div className="mt-4">
+                                    <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 drop-shadow-lg">
+                                        ${billingCycle === 'monthly' ? '19.90' : '178.20'}
+                                    </div>
+                                    <span className="text-sm font-semibold text-amber-200 ml-1">
                                         {billingCycle === 'monthly' ? '/month' : '/year'}
                                     </span>
                                 </div>
 
                                 {billingCycle === 'yearly' && (
-                                    <div className="text-xs text-emerald-300 font-semibold">💰 Save $59.40/year</div>
+                                    <div className="text-sm text-emerald-300 font-bold mt-2 bg-emerald-900/30 rounded-lg py-2 px-3 border border-emerald-600/50">
+                                        💎 Save $59.40/year • Only $1.48/day
+                                    </div>
                                 )}
-                                <div className="mt-3 space-y-2 text-left text-xs font-semibold">
-                                    <div className="flex items-center gap-2 text-rose-200">
-                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
-                                        Urgent SMS Notifications
+                                
+                                {/* Features */}
+                                <div className="mt-6 space-y-3 text-left">
+                                    <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-gradient-to-br from-amber-300 to-orange-400 shadow-lg shadow-orange-500/50" />
+                                        <span>Urgent SMS Notifications</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-rose-200">
-                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
-                                        Automated Compensation Recovery
+                                    <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-gradient-to-br from-orange-300 to-rose-400 shadow-lg shadow-rose-500/50" />
+                                        <span>Automated Compensation Recovery</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-rose-200">
-                                        <span className="h-2 w-2 rounded-full bg-rose-400" />
-                                        24/7 Proactive Crisis Management
+                                    <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
+                                        <span className="h-3 w-3 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 shadow-lg shadow-pink-500/50" />
+                                        <span>24/7 Proactive Crisis Management</span>
                                     </div>
                                 </div>
-                                <div className="mt-4 space-y-2">
-                                    <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-amber-900/20 border-0">
-                                        {billingCycle === 'monthly' ? t('cta.upgrade') : 'Subscribe & Save 25%'}
-                                    </Button>
+
+                                {/* CTAs */}
+                                <div className="mt-6">
                                     <Button
-                                        className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm border-0"
+                                        className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:via-orange-600 hover:to-rose-600 text-white font-bold text-base shadow-2xl shadow-orange-900/50 border-0 transition-all duration-300 hover:shadow-orange-900/80 hover:scale-105 py-3"
                                         onClick={() => handleCheckout('ELITE')}
                                         disabled={checkoutLoading === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'ELITE' ? 'Redirecting...' : 'Try Free (14 days)'}
+                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : '👑 Try Free (7 Days)'}
                                     </Button>
                                 </div>
                             </div>

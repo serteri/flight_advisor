@@ -315,7 +315,6 @@ export default function FlightResultCard({
                                     'Refund & change policies',
                                     'WiFi, IFE, meal service details'
                                 ]}
-                                onClick={() => setShowLockOverlay(true)}
                                 className="rounded-lg"
                             />
                         )}

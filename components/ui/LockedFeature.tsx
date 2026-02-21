@@ -1,7 +1,7 @@
 'use client';
 
 import { Lock, Sparkles, Zap, Crown } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
@@ -23,12 +23,14 @@ export function LockedFeatureOverlay({
     onClick
 }: LockedFeatureOverlayProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const locale = pathname?.split('/')[1] || 'en';
 
     const handleUpgrade = () => {
         if (onClick) {
             onClick();
         } else {
-            router.push('/pricing');
+            router.push(`/${locale}/pricing`);
         }
     };
 
