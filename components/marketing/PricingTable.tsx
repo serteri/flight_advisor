@@ -131,13 +131,13 @@ export function PricingTable() {
                         </div>
 
                         {/* Column 2: Guardian (Pro) */}
-                        <div className="bg-gradient-to-b from-blue-50 via-white to-blue-50 rounded-3xl p-8 border-2 border-blue-400 shadow-2xl shadow-blue-400/30 relative overflow-hidden group hover:-translate-y-2 transition-all duration-300">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
+                        <div className="bg-gradient-to-b from-blue-50 via-white to-blue-50 rounded-3xl p-8 border-2 border-blue-400 shadow-2xl shadow-blue-400/30 relative group hover:-translate-y-2 transition-all duration-300">
+                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-lg whitespace-nowrap z-20 pointer-events-none">
                                 ⭐ RECOMMENDED
                             </div>
                             <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:scale-110 transition-transform"></div>
 
-                            <div className="h-auto flex flex-col justify-between mb-8 text-center relative z-10 pt-2">
+                            <div className="h-auto flex flex-col justify-between mb-8 text-center relative z-10 pt-6">
                                 <div>
                                     <div className="font-bold text-blue-700 uppercase tracking-widest text-xs mb-2 flex justify-center items-center gap-2">
                                         <Shield className="w-4 h-4" /> {t('plans.guardian.badge')}
