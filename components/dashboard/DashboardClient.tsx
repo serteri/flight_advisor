@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
@@ -18,7 +18,10 @@ interface DashboardClientProps {
 export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFlightInspector, setShowFlightInspector] = useState(false);
+    const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(false);
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const autoCheckoutRef = useRef(false);
     const checkoutStatus = searchParams.get('status');
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
@@ -29,8 +32,68 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     const t = useTranslations('Dashboard');
 
+    // Auto-trigger checkout if plan params present in URL
+    useEffect(() => {
+        if (autoCheckoutRef.current) return; // Prevent duplicate triggers
+        
+        const planParam = searchParams.get('plan');
+        const cycleParam = searchParams.get('billingCycle');
+        
+        if (!planParam || (planParam !== 'PRO' && planParam !== 'ELITE')) return;
+        
+        const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
+        
+        // Mark as started to prevent re-trigger
+        autoCheckoutRef.current = true;
+        
+        // Trigger checkout
+        const triggerCheckout = async () => {
+            try {
+                setIsAutoCheckoutLoading(true);
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        plan: planParam,
+                        billingCycle: cycle,
+                    }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Checkout failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data?.url) {
+                    window.location.href = data.url; // Redirect to Stripe
+                }
+            } catch (error) {
+                console.error('[AUTO-CHECKOUT ERROR]', error);
+                setIsAutoCheckoutLoading(false);
+                autoCheckoutRef.current = false; // Reset on error
+            }
+        };
+        
+        triggerCheckout();
+    }, [searchParams]);
+
     return (
         <div className="space-y-12">
+            {isAutoCheckoutLoading && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-8 shadow-2xl text-center">
+                        <div className="mb-4 flex justify-center">
+                            <div className="relative w-12 h-12">
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-spin" 
+                                     style={{ clipPath: 'polygon(50% 0%, 100% 0%, 100% 50%, 50% 50%)' }} />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Redirecting to Stripe...</h3>
+                        <p className="text-slate-600">Please wait while we prepare your checkout session.</p>
+                    </div>
+                </div>
+            )}
+
             {checkoutSuccess && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-emerald-900">
                     <div className="text-sm font-bold">
