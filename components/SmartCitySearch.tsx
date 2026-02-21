@@ -88,14 +88,6 @@ export function SmartCitySearch({
         }
     }, [isDestination, onChange]);
 
-    // Convert CityData to CityOption with isMajor flag
-    const convertToCityOption = (city: CityData): CityOption => ({
-        city: city.cityName || city.name,
-        iata: city.iataCode,
-        country: city.countryName,
-        isMajor: MAJOR_AIRPORT_CODES.has(city.iataCode.toUpperCase())
-    });
-
     // Handle input changes and suggest cities
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
