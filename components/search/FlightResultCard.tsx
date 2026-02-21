@@ -137,8 +137,10 @@ export default function FlightResultCard({
                                     <span className="text-[9px] text-slate-500 mt-0.5 text-center">
                                         {flight.layovers.map((l: any, idx: number) => {
                                             const airportCode = typeof l.airport === 'string' ? l.airport : (l.airport?.iataCode || l.airport?.code || 'XXX');
-                                            const hrs = Math.floor((l.duration || 0) / 60);
-                                            const mins = (l.duration || 0) % 60;
+                                            // Duration is stored as minutes (number)
+                                            const durationNum = typeof l.duration === 'number' ? l.duration : parseInt(l.duration) || 0;
+                                            const hrs = Math.floor(durationNum / 60);
+                                            const mins = durationNum % 60;
                                             return `${airportCode} (${hrs}h ${mins}m)`;
                                         }).join(', ')}
                                     </span>
@@ -308,9 +310,19 @@ export default function FlightResultCard({
                         )}
                     </div>
 
-                    {/* FİYAT */}
+                    {/* FİYAT SECTION */}
                     <div className="text-center mb-3">
-                        <span className="text-2xl font-black text-slate-900">${flight.price}</span>
+                        <div className="flex flex-col items-center">
+                            <span className="text-sm font-bold text-slate-400 line-through">
+                                ${Math.max(0, Math.floor((flight.price || 0) * 1.15))}
+                            </span>
+                            <span className="text-2xl font-black text-blue-600 leading-none">
+                                ${Math.max(0, Math.floor(flight.price || 0))}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                                {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}
+                            </span>
+                        </div>
                     </div>
 
                     {/* PUAN DETAYLARI (NEDEN BU PUAN?) */}
@@ -328,19 +340,6 @@ export default function FlightResultCard({
                             ))}
                         </div>
                     )}
-
-                    {/* FİYAT - SADECE FİYAT GÖZÜKSÜN */}
-                    <div className="flex flex-col items-center mt-2">
-                        <span className="text-sm font-bold text-slate-400 line-through">
-                            ${Math.floor(flight.price * 1.15)}
-                        </span>
-                        <span className="text-2xl font-black text-blue-600 leading-none">
-                            ${Math.floor(flight.price)}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                            {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}
-                        </span>
-                    </div>
                 </div>
             </div>
 

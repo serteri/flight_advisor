@@ -139,14 +139,30 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
           duration: durationMins,
           durationLabel: formatDuration(durationMins),
           stops: stopCount,
-          price: typeof item.price === "number" ? item.price : Number(item.price) || 0,
+          price: Math.max(0, typeof item.price === "number" ? item.price : parseFloat(item.price) || 0),
           currency: currencyCode,
           cabinClass: params.cabin || "economy",
-          layovers: (item.layovers || []).map((layover: any) => ({
-            city: layover.name || "",
-            airport: layover.id || "",
-            duration: layover.duration ? `${layover.duration} min` : "0"
-          })),
+          layovers: (item.layovers || []).map((layover: any) => {
+            // Parse duration correctly - SerpAPI may return "2 min" or "120" format
+            let durationMins = 0;
+            if (typeof layover.duration === 'string') {
+              // Extract number from "2 min", "120 minutes", etc.
+              const match = layover.duration.match(/(\d+)/);
+              durationMins = match ? parseInt(match[1]) : 0;
+              // If it's in minutes format, keep as is. If in hours format, multiply
+              if (layover.duration.includes('h')) {
+                durationMins = durationMins * 60;
+              }
+            } else if (typeof layover.duration === 'number') {
+              durationMins = layover.duration;
+            }
+            
+            return {
+              city: layover.name || "",
+              airport: layover.id || "",
+              duration: durationMins // Store as number in minutes
+            };
+          }),
           segments: segments.map((segment: any) => ({
             departure: segment.departure_airport?.time,
             arrival: segment.arrival_airport?.time,
