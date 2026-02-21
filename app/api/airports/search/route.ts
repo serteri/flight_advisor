@@ -25,15 +25,16 @@ export async function GET(request: NextRequest) {
         const formatted = results.map(city => {
             // Get main city name - if contains comma, take the part after comma (the city)
             // Otherwise use whole name
-            const rawCityName = city.cityName || city.name || '';
+            const rawCityName = (city.cityName || city.name || '').toString();
             const mainCity = rawCityName.includes(',') 
                 ? rawCityName.split(',').pop()?.trim() || rawCityName
                 : rawCityName;
             
+            // ENSURE all fields are strings, not objects
             return {
-                city: mainCity,
-                iata: city.iataCode,
-                country: city.countryName
+                city: String(mainCity || 'Unknown'),
+                iata: String(city.iataCode || 'XXX'),
+                country: String(city.countryName || 'Unknown')
             };
         });
 
