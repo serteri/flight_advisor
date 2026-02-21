@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Plane } from 'lucide-react';
+import { Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
+import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
 
 interface DashboardClientProps {
@@ -16,6 +17,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showFlightInspector, setShowFlightInspector] = useState(false);
     const searchParams = useSearchParams();
     const checkoutStatus = searchParams.get('status');
     const pathname = usePathname();
@@ -32,6 +34,39 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-emerald-900">
                     <div className="text-sm font-bold">{t('paymentSuccessTitle')}</div>
                     <div className="text-sm text-emerald-800">{t('paymentSuccessBody')}</div>
+                </div>
+            )}
+
+            {/* --- SECTION 0: FLIGHT INSPECTOR (PRE-BOOKING) --- */}
+            {hasPremium && (
+                <div>
+                    <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-5 h-5 text-blue-500" />
+                            <h2 className="text-2xl font-bold text-slate-900">Flight Inspector</h2>
+                        </div>
+                        <p className="text-slate-500">Inspect flights before booking to see real-time pricing, historical delays, and smart recommendations.</p>
+                    </div>
+
+                    {!showFlightInspector ? (
+                        <button
+                            onClick={() => setShowFlightInspector(true)}
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
+                        >
+                            <Sparkles className="w-5 h-5" />
+                            Start Flight Inspection
+                        </button>
+                    ) : (
+                        <div className="space-y-4">
+                            <FlightInspector locale={locale} />
+                            <button
+                                onClick={() => setShowFlightInspector(false)}
+                                className="w-full text-slate-600 hover:text-slate-900 font-medium text-sm"
+                            >
+                                ← Close Inspector
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
