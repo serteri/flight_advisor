@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Plus, Plane } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
 
@@ -18,6 +18,11 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const [isModalOpen, setIsModalOpen] = useState(false);
     const searchParams = useSearchParams();
     const checkoutStatus = searchParams.get('status');
+    const pathname = usePathname();
+    const locale = pathname?.split('/')[1] || 'en';
+
+    const plan = (user?.subscriptionPlan || '').toUpperCase();
+    const hasPremium = plan === 'PRO' || plan === 'ELITE';
 
     const t = useTranslations('Dashboard');
 
@@ -102,7 +107,18 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                     <p className="text-slate-500">{t('trackedFlightsDesc')}</p>
                 </div>
 
-                {trackedFlights.length === 0 ? (
+                {!hasPremium ? (
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
+                        <h3 className="text-lg font-bold text-slate-900">Premium Feature</h3>
+                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to track flights manually and see advanced scoring.</p>
+                        <Link
+                            href={`/${locale}/pricing`}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
+                        >
+                            Upgrade Now
+                        </Link>
+                    </div>
+                ) : trackedFlights.length === 0 ? (
                     <div className="text-center py-8 opacity-60">
                         <p>{t('noTrackedFlights')}</p>
                     </div>

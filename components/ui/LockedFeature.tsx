@@ -53,9 +53,9 @@ export function LockedFeatureOverlay({
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className={`absolute inset-0 z-30 flex items-center justify-center backdrop-blur-lg bg-slate-900/50 ${className}`}
+            className={`absolute inset-0 z-30 flex items-center justify-center backdrop-blur-sm bg-slate-950/70 ${className}`}
         >
-            <div className="relative text-center space-y-4">
+            <div className="relative text-center space-y-4 text-white drop-shadow-md">
                 {/* Icon - CENTERED, MINIMAL */}
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 text-white">
                     <Lock className="w-7 h-7" />

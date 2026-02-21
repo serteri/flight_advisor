@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { getUserTier } from '@/lib/tierUtils';
 import { TrendingDown, TrendingUp, Minus, Bell, Plane, ArrowRight, Calendar, Search, Clock, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { RemoveWatchButton } from '@/components/RemoveWatchButton';
@@ -71,6 +72,8 @@ export default async function TrackedFlightsPage({
     const { locale } = await params;
     const session = await auth();
     const dateLocale = locale === 'tr' ? tr : locale === 'de' ? de : enUS;
+    const userTier = await getUserTier();
+    const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
 
     let flights: WatchedFlight[] = [];
 
@@ -108,7 +111,23 @@ export default async function TrackedFlightsPage({
                 </div>
 
                 {/* Flight List */}
-                {flights.length === 0 ? (
+                {!hasPremiumAccess ? (
+                    <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                        <Plane className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-700 mb-2">
+                            Premium Feature
+                        </h3>
+                        <p className="text-slate-500 mb-6">
+                            Upgrade to PRO or ELITE to track flights and see advanced scoring in your dashboard.
+                        </p>
+                        <Link
+                            href={`/${locale}/pricing`}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
+                        >
+                            Upgrade Now
+                        </Link>
+                    </div>
+                ) : flights.length === 0 ? (
                     <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
                         <Plane className="h-12 w-12 text-slate-300 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-700 mb-2">

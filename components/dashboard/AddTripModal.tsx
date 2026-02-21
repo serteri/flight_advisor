@@ -10,6 +10,8 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const plan = (user?.subscriptionPlan || '').toUpperCase();
+    const hasPremium = plan === 'PRO' || plan === 'ELITE';
 
     // Inputs
     const [flightNo, setFlightNo] = useState(''); // e.g. TK59
@@ -88,8 +90,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
     }
 
     // Feature Gate
-    // @ts-ignore
-    if (!user.isPremium) {
+    if (!hasPremium) {
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                 <div className="relative w-full max-w-md">

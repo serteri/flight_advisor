@@ -53,6 +53,9 @@ export function TrackButton({ flight, className = '' }: TrackButtonProps) {
     const pathname = usePathname();
     const { data: session, status } = useSession();
 
+    const plan = (session?.user as any)?.subscriptionPlan?.toUpperCase();
+    const hasPremium = plan === 'PRO' || plan === 'ELITE';
+
     // Extract locale from pathname (e.g., /en/flight-search -> en)
     const locale = pathname?.split('/')[1] || 'en';
 
@@ -60,6 +63,11 @@ export function TrackButton({ flight, className = '' }: TrackButtonProps) {
         // If not logged in, redirect to sign in
         if (status === 'unauthenticated') {
             router.push(`/${locale}/login?callbackUrl=` + encodeURIComponent(pathname || '/'));
+            return;
+        }
+
+        if (!hasPremium) {
+            router.push(`/${locale}/pricing`);
             return;
         }
 

@@ -77,18 +77,6 @@ export default function FlightResultCard({
     };
 
     const getSegmentDurationMinutes = (seg: any, fallbackMinutes: number) => {
-        if (typeof seg?.duration === 'number') return seg.duration;
-        if (typeof seg?.duration === 'string') {
-            const hasHours = seg.duration.includes('h');
-            const numbers = seg.duration.match(/(\d+)/g)?.map(Number) || [];
-            if (hasHours) {
-                const hours = numbers[0] || 0;
-                const mins = numbers[1] || 0;
-                return hours * 60 + mins;
-            }
-            return numbers[0] || fallbackMinutes;
-        }
-
         const dep = seg?.departure || seg?.departing_at || seg?.departure_time || seg?.departure_at;
         const arr = seg?.arrival || seg?.arriving_at || seg?.arrival_time || seg?.arrival_at;
         if (dep && arr) {
@@ -97,6 +85,25 @@ export default function FlightResultCard({
             if (!Number.isNaN(depMs) && !Number.isNaN(arrMs)) {
                 return Math.max(0, Math.round((arrMs - depMs) / 60000));
             }
+        }
+
+        if (typeof seg?.duration === 'number') return seg.duration;
+        if (typeof seg?.duration === 'string') {
+            const isoMatch = seg.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+            if (isoMatch) {
+                const hours = parseInt(isoMatch[1] || '0', 10);
+                const mins = parseInt(isoMatch[2] || '0', 10);
+                return hours * 60 + mins;
+            }
+
+            const hasHours = seg.duration.includes('h') || seg.duration.includes('H');
+            const numbers = seg.duration.match(/(\d+)/g)?.map(Number) || [];
+            if (hasHours) {
+                const hours = numbers[0] || 0;
+                const mins = numbers[1] || 0;
+                return hours * 60 + mins;
+            }
+            return numbers[0] || fallbackMinutes;
         }
 
         return fallbackMinutes;
@@ -499,6 +506,7 @@ export default function FlightResultCard({
                 flight={flight} 
                 open={showDetails} 
                 onClose={() => setShowDetails(false)} 
+                canTrack={hasPremiumAccess}
             />
 
             {/* UPGRADE OVERLAY DIALOG (Full Screen) */}
