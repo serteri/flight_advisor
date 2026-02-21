@@ -20,6 +20,7 @@ async function fetchSerpApi(
   url.searchParams.append("departure_id", params.origin);
   url.searchParams.append("arrival_id", params.destination);
   url.searchParams.append("outbound_date", dateStr);
+  url.searchParams.append("type", "2"); // 1=round-trip, 2=one-way
 
   // 🌍 KONUM VE PARA BİRİMİ
   url.searchParams.append("currency", targetCur);
@@ -28,10 +29,8 @@ async function fetchSerpApi(
   url.searchParams.append("api_key", API_KEY || "");
 
   // 🔥 "NAKED" MOD: FİLTRELERİ KALDIRDIK 🔥
-  // type / travel_class / adults SİLİNDİ
   url.searchParams.append("deep_search", "true");
   url.searchParams.append("show_hidden", "true");
-  url.searchParams.append("stops", "0");
 
   try {
     const response = await fetch(url.toString());
