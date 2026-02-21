@@ -1,11 +1,9 @@
 /**
  * Geolocation Service
  * 
- * Browser-based geolocation detection with reverse geocoding
- * Gets user's current location and converts to city name
+ * Browser-based geolocation detection
+ * Gets user's current location (reverse geocoding done via API)
  */
-
-import { getNearestFallbackCity } from '@/lib/fallback-cities';
 
 export interface GeolocationCoordinates {
     latitude: number;
@@ -59,9 +57,6 @@ export async function getUserGeolocation(
                 clearTimeout(timeoutId);
                 const { latitude, longitude, accuracy } = position.coords;
 
-                // Reverse geocode to find nearest city
-                const nearestCity = getNearestFallbackCity(latitude, longitude);
-
                 resolve({
                     coordinates: {
                         latitude,
@@ -69,9 +64,6 @@ export async function getUserGeolocation(
                         accuracy,
                         timestamp: position.timestamp
                     },
-                    city: nearestCity?.cityName,
-                    iataCode: nearestCity?.iataCode,
-                    country: nearestCity?.countryName,
                     confidence: accuracy < 1000 ? 'high' : accuracy < 5000 ? 'medium' : 'low'
                 });
             },
@@ -126,7 +118,6 @@ export async function tryGetMemoizedGeolocation(): Promise<GeolocationResult | n
             (position) => {
                 clearTimeout(timeoutId);
                 const { latitude, longitude, accuracy } = position.coords;
-                const nearestCity = getNearestFallbackCity(latitude, longitude);
 
                 resolve({
                     coordinates: {
@@ -135,9 +126,6 @@ export async function tryGetMemoizedGeolocation(): Promise<GeolocationResult | n
                         accuracy,
                         timestamp: position.timestamp
                     },
-                    city: nearestCity?.cityName,
-                    iataCode: nearestCity?.iataCode,
-                    country: nearestCity?.countryName,
                     confidence: accuracy < 1000 ? 'high' : accuracy < 5000 ? 'medium' : 'low'
                 });
             },
