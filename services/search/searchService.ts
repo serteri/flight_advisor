@@ -46,7 +46,10 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
           console.log(`✅ SERPAPI: ${serpApiCount} flights`);
         }
       } else {
-        console.error(`❌ Provider ${idx} failed:`, result.reason?.message);
+        // Log detailed rejection information
+        const errorMsg = result.reason?.message || String(result.reason);
+        const providerName = idx === 0 && process.env.DUFFEL_ACCESS_TOKEN ? 'Duffel' : 'SERPAPI';
+        console.error(`❌ ${providerName} provider failed:`, errorMsg);
       }
     });
 

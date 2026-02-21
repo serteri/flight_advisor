@@ -42,6 +42,12 @@ async function fetchSerpApi(
       return [];
     }
 
+    // Log response structure for debugging
+    console.log(`[SerpApi Debug] Response keys:`, Object.keys(json));
+    console.log(`[SerpApi Debug] best_flights count:`, json.best_flights?.length || 0);
+    console.log(`[SerpApi Debug] other_flights count:`, json.other_flights?.length || 0);
+    console.log(`[SerpApi Debug] flights count:`, json.flights?.length || 0);
+
     const results = [
       ...(json.best_flights || []),
       ...(json.other_flights || []),

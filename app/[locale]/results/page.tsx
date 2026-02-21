@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import FlightResultCard from '@/components/search/FlightResultCard';
 import { DataSourceIndicator } from '@/components/DataSourceIndicator';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { Search } from 'lucide-react';
+import type { UserTier } from '@/lib/tierUtils';
 
 interface ResultsPageProps {
     searchParams: {
@@ -15,12 +17,36 @@ interface ResultsPageProps {
 }
 
 export default function ResultsPage({ searchParams }: ResultsPageProps) {
+    const { data: session } = useSession();
     const [flights, setFlights] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userTier, setUserTier] = useState<UserTier>('FREE');
 
     // URL'den arama parametrelerini al
     const { origin, destination, date } = searchParams;
+
+    // Fetch user tier on session change
+    useEffect(() => {
+        if (session?.user?.email) {
+            fetchUserTier();
+        } else {
+            setUserTier('FREE');
+        }
+    }, [session?.user?.email]);
+
+    async function fetchUserTier() {
+        try {
+            const response = await fetch('/api/auth/user-tier');
+            if (response.ok) {
+                const data = await response.json();
+                setUserTier((data.subscriptionPlan as UserTier) || 'FREE');
+            }
+        } catch (err) {
+            console.error('Failed to fetch user tier:', err);
+            setUserTier('FREE');
+        }
+    }
 
     useEffect(() => {
         async function fetchResults() {
@@ -112,6 +138,8 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                                     <FlightResultCard
                                         key={flight.id || index}
                                         flight={flight}
+                                        isPremium={userTier === 'PRO' || userTier === 'ELITE'}
+                                        userTier={userTier}
                                     />
                                 ))
                             ) : (
