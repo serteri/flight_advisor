@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-export default function PricingPage({ params }: { params: { locale: string } }) {
-    const { locale } = params;
+export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
 
     return (
         <div className="min-h-screen bg-white">

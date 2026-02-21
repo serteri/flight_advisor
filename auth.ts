@@ -9,27 +9,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
     callbacks: {
         async session({ session, token }) {
-            if (session.user && token.sub) {
-                session.user.id = token.sub;
-                session.user.isPremium = token.isPremium as boolean;
-                session.user.subscriptionPlan = token.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
+            try {
+                if (session.user && token.sub) {
+                    session.user.id = token.sub;
+                    session.user.isPremium = (token.isPremium as boolean) || false;
+                    session.user.subscriptionPlan = (token.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined) || 'FREE';
+                }
+                return session;
+            } catch (error) {
+                console.error('[AUTH SESSION ERROR]', error);
+                // Return session with defaults on error
+                if (session.user) {
+                    session.user.isPremium = false;
+                    session.user.subscriptionPlan = 'FREE';
+                }
+                return session;
             }
-            return session;
         },
         async jwt({ token }) {
-            if (!token.sub) return token;
+            try {
+                if (!token.sub) return token;
 
-            // Fetch user to get subscription status
-            const existingUser = await prisma.user.findUnique({
-                where: { id: token.sub }
-            });
+                // Fetch user to get subscription status
+                const existingUser = await prisma.user.findUnique({
+                    where: { id: token.sub }
+                });
 
-            if (existingUser) {
-                token.isPremium = existingUser.isPremium;
-                token.subscriptionPlan = existingUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
+                if (existingUser) {
+                    token.isPremium = existingUser.isPremium;
+                    token.subscriptionPlan = existingUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
+                }
+
+                return token;
+            } catch (error) {
+                console.error('[AUTH JWT ERROR]', error);
+                // Return token with defaults on error
+                token.isPremium = false;
+                token.subscriptionPlan = 'FREE';
+                return token;
             }
-
-            return token;
         }
     },
 });
