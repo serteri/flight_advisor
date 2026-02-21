@@ -56,6 +56,62 @@ export default function FlightResultCard({
     const originText = toText(origin, 'XXX');
     const destinationText = toText(destination, 'XXX');
 
+    const formatLocalTime = (value: any) => {
+        if (!value) return '--:--';
+        if (typeof value === 'string') {
+            const match = value.match(/(\d{2}:\d{2})/);
+            return match ? match[1] : value;
+        }
+        try {
+            return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return '--:--';
+        }
+    };
+
+    const formatDuration = (mins: number) => {
+        if (!mins || Number.isNaN(mins)) return '0h 0m';
+        const h = Math.floor(mins / 60);
+        const m = Math.round(mins % 60);
+        return `${h}h ${m}m`;
+    };
+
+    const getSegmentDurationMinutes = (seg: any, fallbackMinutes: number) => {
+        if (typeof seg?.duration === 'number') return seg.duration;
+        if (typeof seg?.duration === 'string') {
+            const hasHours = seg.duration.includes('h');
+            const numbers = seg.duration.match(/(\d+)/g)?.map(Number) || [];
+            if (hasHours) {
+                const hours = numbers[0] || 0;
+                const mins = numbers[1] || 0;
+                return hours * 60 + mins;
+            }
+            return numbers[0] || fallbackMinutes;
+        }
+
+        const dep = seg?.departure || seg?.departing_at || seg?.departure_time || seg?.departure_at;
+        const arr = seg?.arrival || seg?.arriving_at || seg?.arrival_time || seg?.arrival_at;
+        if (dep && arr) {
+            const depMs = new Date(dep).getTime();
+            const arrMs = new Date(arr).getTime();
+            if (!Number.isNaN(depMs) && !Number.isNaN(arrMs)) {
+                return Math.max(0, Math.round((arrMs - depMs) / 60000));
+            }
+        }
+
+        return fallbackMinutes;
+    };
+
+    const segments = Array.isArray(flight.segments) ? flight.segments : [];
+    const totalDurationMinutes = duration > 0
+        ? duration
+        : Math.max(0, Math.round((new Date(arrivalTime).getTime() - new Date(departureTime).getTime()) / 60000));
+
+    const totalDurationLabel = (() => {
+        const label = t('total_duration');
+        return label.includes('.') ? 'Total duration' : label;
+    })();
+
     // Validate critical date fields
     if (!departureTime || !arrivalTime) {
         console.error('[FlightResultCard] Missing time fields:', { departureTime, arrivalTime });
@@ -137,7 +193,7 @@ export default function FlightResultCard({
                     <div className="flex items-center justify-between px-2 gap-6">
                         <div className="text-left">
                             <span className="text-2xl font-black text-slate-800">
-                                {new Date(departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {formatLocalTime(departureTime)}
                             </span>
                             <p className="text-xs font-bold text-slate-400">{originText}</p>
                         </div>
@@ -155,7 +211,7 @@ export default function FlightResultCard({
                                 return (
                                     <div className="text-center">
                                         <span className="text-sm font-bold text-slate-700 block mb-1">
-                                            {hours}h {mins}m {t('total_duration') || 'total'}
+                                            {formatDuration(totalDurationMinutes)} {totalDurationLabel}
                                         </span>
                                         
                                         {/* Stops Badge - PROMINENT */}
@@ -203,11 +259,40 @@ export default function FlightResultCard({
 
                         <div className="text-right">
                             <span className="text-2xl font-black text-slate-800">
-                                {new Date(arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {formatLocalTime(arrivalTime)}
                             </span>
                             <p className="text-xs font-bold text-slate-400">{destinationText}</p>
                         </div>
                     </div>
+
+                    {/* SEGMENT DETAILS (EACH LEG) */}
+                    {segments.length > 0 && (
+                        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div className="text-xs font-bold text-slate-500 uppercase mb-2">Flight legs</div>
+                            <div className="space-y-2">
+                                {segments.map((seg: any, idx: number) => {
+                                    const segFrom = toText(seg.origin || seg.from || seg.departure_airport?.id, 'XXX');
+                                    const segTo = toText(seg.destination || seg.to || seg.arrival_airport?.id, 'XXX');
+                                    const segDep = seg.departure || seg.departing_at || seg.departure_time || seg.departure_at || seg.departure_airport?.time;
+                                    const segArr = seg.arrival || seg.arriving_at || seg.arrival_time || seg.arrival_at || seg.arrival_airport?.time;
+                                    const segDuration = getSegmentDurationMinutes(seg, 0);
+
+                                    return (
+                                        <div key={`${segFrom}-${segTo}-${idx}`} className="flex flex-col gap-1">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="font-semibold text-slate-800">{segFrom} → {segTo}</span>
+                                                <span className="font-semibold text-slate-700">{formatDuration(segDuration)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-xs text-slate-500">
+                                                <span>{formatLocalTime(segDep)} departure</span>
+                                                <span>{formatLocalTime(segArr)} arrival</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* AMENITIES (LOCKED FOR FREE USERS) */}
                     <div className="relative mt-5 pt-3 border-t border-slate-100">

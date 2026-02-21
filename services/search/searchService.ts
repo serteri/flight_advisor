@@ -53,11 +53,36 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
       }
     });
 
+    const normalizeCode = (value: any) => {
+      if (!value) return "";
+      if (typeof value === "string") return value.toUpperCase();
+      if (typeof value === "object") {
+        return (
+          value.iata || value.iataCode || value.iata_code || value.code || ""
+        ).toUpperCase();
+      }
+      return "";
+    };
+
+    const targetOrigin = params.origin.toUpperCase();
+    const targetDest = params.destination.toUpperCase();
+
+    const filteredFlights = allFlights.filter((flight) => {
+      const flightOrigin = normalizeCode(flight.from || flight.origin);
+      const flightDest = normalizeCode(flight.to || flight.destination);
+
+      const originMatch = !flightOrigin || flightOrigin === targetOrigin;
+      const destMatch = !flightDest || flightDest === targetDest;
+
+      return originMatch && destMatch;
+    });
+
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
-    console.log(`   Duffel: ${duffelCount} | SERPAPI: ${serpApiCount}\n`);
+    console.log(`   Duffel: ${duffelCount} | SERPAPI: ${serpApiCount}`);
+    console.log(`   Filtered: ${filteredFlights.length} (origin/destination match)\n`);
     
     // Sort by price
-    return allFlights.sort((a, b) => a.price - b.price);
+    return filteredFlights.sort((a, b) => a.price - b.price);
 
   } catch (error) {
     const elapsed = Date.now() - startTime;
