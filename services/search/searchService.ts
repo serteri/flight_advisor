@@ -68,8 +68,8 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     const targetDest = params.destination.toUpperCase();
 
     const filteredFlights = allFlights.filter((flight) => {
-      const flightOrigin = normalizeCode(flight.from || flight.origin);
-      const flightDest = normalizeCode(flight.to || flight.destination);
+      const flightOrigin = normalizeCode(flight.from || (flight as any).origin);
+      const flightDest = normalizeCode(flight.to || (flight as any).destination);
 
       const originMatch = !flightOrigin || flightOrigin === targetOrigin;
       const destMatch = !flightDest || flightDest === targetDest;
