@@ -19,12 +19,23 @@ export async function GET(request: NextRequest) {
         const results = searchFallbackCities(query);
         
         // CRITICAL: searchFallbackCities already filters to commercial airports only
-        // Format for client consumption  
-        const formatted = results.map(city => ({
-            city: city.cityName || city.name,
-            iata: city.iataCode,
-            country: city.countryName
-        }));
+        // Format for client consumption
+        // Extract MAIN CITY NAME from "City, Country" format
+        // e.g., "Bakırköy, Istanbul" → "Istanbul"
+        const formatted = results.map(city => {
+            // Get main city name - if contains comma, take the part after comma (the city)
+            // Otherwise use whole name
+            const rawCityName = city.cityName || city.name || '';
+            const mainCity = rawCityName.includes(',') 
+                ? rawCityName.split(',').pop()?.trim() || rawCityName
+                : rawCityName;
+            
+            return {
+                city: mainCity,
+                iata: city.iataCode,
+                country: city.countryName
+            };
+        });
 
         console.log(`[/api/airports/search] Query: "${query}" -> Found ${formatted.length} airports`);
 
