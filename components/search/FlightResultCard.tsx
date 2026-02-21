@@ -44,6 +44,18 @@ export default function FlightResultCard({
     const stops = flight.stops ?? 0;
     const duration = flight.duration || 0;
 
+    const toText = (value: any, fallback: string) => {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number') return String(value);
+        if (value && typeof value === 'object') {
+            return value.iataCode || value.iata_code || value.iata || value.code || value.city || value.city_name || value.name || fallback;
+        }
+        return fallback;
+    };
+
+    const originText = toText(origin, 'XXX');
+    const destinationText = toText(destination, 'XXX');
+
     // Validate critical date fields
     if (!departureTime || !arrivalTime) {
         console.error('[FlightResultCard] Missing time fields:', { departureTime, arrivalTime });
@@ -127,7 +139,7 @@ export default function FlightResultCard({
                             <span className="text-2xl font-black text-slate-800">
                                 {new Date(departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <p className="text-xs font-bold text-slate-400">{origin}</p>
+                            <p className="text-xs font-bold text-slate-400">{originText}</p>
                         </div>
 
                         {/* SÜRE VE AKTARMA DETAYLI */}
@@ -167,7 +179,7 @@ export default function FlightResultCard({
                                             const durationNum = typeof l.duration === 'number' ? l.duration : parseInt(l.duration) || 0;
                                             const hrs = Math.floor(durationNum / 60);
                                             const mins = durationNum % 60;
-                                            const cityName = l.city || airportCode;
+                                            const cityName = toText(l.city, airportCode);
                                             
                                             return (
                                                 <div key={idx} className="flex items-center justify-between text-xs">
@@ -191,9 +203,9 @@ export default function FlightResultCard({
 
                         <div className="text-right">
                             <span className="text-2xl font-black text-slate-800">
-                                {new Date(flight.arrivalTime || flight.arriveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <p className="text-xs font-bold text-slate-400">{flight.destination || flight.to}</p>
+                            <p className="text-xs font-bold text-slate-400">{destinationText}</p>
                         </div>
                     </div>
 
@@ -384,12 +396,12 @@ export default function FlightResultCard({
                         <div className="mt-2 flex flex-wrap justify-center gap-1 w-full px-2">
                             {flight.scorePros?.map((pro: string, i: number) => (
                                 <span key={`p-${i}`} className="text-[8px] font-bold bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                    {pro}
+                                    {String(pro)}
                                 </span>
                             ))}
                             {flight.scoreCons?.map((con: string, i: number) => (
                                 <span key={`c-${i}`} className="text-[8px] font-bold bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                    {con}
+                                    {String(con)}
                                 </span>
                             ))}
                         </div>
