@@ -20,6 +20,7 @@ import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Popular destinations for quick selection
 const popularDestinations = [
@@ -357,15 +358,17 @@ function SearchPageContent() {
                             resultCount={results.length}
                         />
                         
-                        <div className="space-y-4">
-                            {sortedResults.slice(0, visibleCount).map((flight) => (
-                                <FlightResultCard
-                                    key={flight.id}
-                                    flight={flight}
-                                    isPremium={false} // MOCKED: Set to true to unlock
-                                />
-                            ))}
-                        </div>
+                        <ErrorBoundary>
+                            <div className="space-y-4">
+                                {sortedResults.slice(0, visibleCount).map((flight) => (
+                                    <FlightResultCard
+                                        key={flight.id}
+                                        flight={flight}
+                                        isPremium={false} // MOCKED: Set to true to unlock
+                                    />
+                                ))}
+                            </div>
+                        </ErrorBoundary>
 
                         {/* DAHA FAZLA GÖSTER BUTONU */}
                         {results.length > visibleCount && (

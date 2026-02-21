@@ -31,6 +31,29 @@ export default function FlightResultCard({
         );
     }
 
+    // Safe extract required fields with fallbacks
+    const departureTime = flight.departureTime || flight.departTime;
+    const arrivalTime = flight.arrivalTime || flight.arriveTime;
+    const airline = flight.airline || 'Unknown Airline';
+    const flightNumber = flight.flightNumber || 'N/A';
+    const airlineLogo = flight.airlineLogo || '/default-airline.png';
+    const source = flight.source || 'UNKNOWN';
+    const origin = flight.origin || flight.from || 'XXX';
+    const destination = flight.destination || flight.to || 'XXX';
+    const price = flight.price || 0;
+    const stops = flight.stops ?? 0;
+    const duration = flight.duration || 0;
+
+    // Validate critical date fields
+    if (!departureTime || !arrivalTime) {
+        console.error('[FlightResultCard] Missing time fields:', { departureTime, arrivalTime });
+        return (
+            <div className="bg-red-50 rounded-[16px] p-5 border-2 border-red-200 text-red-700">
+                <p className="font-semibold">❌ Invalid flight times. Please try again.</p>
+            </div>
+        );
+    }
+
     const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
     const hasEliteAccess = userTier === 'ELITE';
 
@@ -63,9 +86,9 @@ export default function FlightResultCard({
 
             {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
-                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${flight.source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
+                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
                     }`}>
-                    {flight.source === 'DUFFEL' ? 'DUFFEL' : 'KIWI'}
+                    {source === 'DUFFEL' ? 'DUFFEL' : 'KIWI'}
                 </span>
             </div>
 
@@ -85,15 +108,15 @@ export default function FlightResultCard({
                 {/* SOL: Uçuş Detayları */}
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-4">
-                        <img src={flight.airlineLogo} alt={flight.airline} className="w-12 h-12 object-contain" />
+                        <img src={airlineLogo} alt={airline} onError={(e) => { e.currentTarget.src = '/default-airline.png'; }} className="w-12 h-12 object-contain" />
                         <div>
-                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{flight.airline}</h4>
+                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{airline}</h4>
                             <div className="flex gap-2 items-center mt-1">
-                                <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flight.flightNumber}</span>
+                                <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flightNumber}</span>
                                 {/* Provider Source Badge */}
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${flight.source === 'DUFFEL' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${source === 'DUFFEL' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                                     }`}>
-                                    {flight.source === 'DUFFEL' ? '🏛️ Duffel' : '🌐 Kiwi'}
+                                    {source === 'DUFFEL' ? '🏛️ Duffel' : '🌐 Kiwi'}
                                 </span>
                             </div>
                         </div>
@@ -102,17 +125,17 @@ export default function FlightResultCard({
                     <div className="flex items-center justify-between px-2 gap-6">
                         <div className="text-left">
                             <span className="text-2xl font-black text-slate-800">
-                                {new Date(flight.departureTime || flight.departTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <p className="text-xs font-bold text-slate-400">{flight.origin || flight.from}</p>
+                            <p className="text-xs font-bold text-slate-400">{origin}</p>
                         </div>
 
                         {/* SÜRE VE AKTARMA DETAYLI */}
                         <div className="flex-1 flex flex-col items-center gap-2">
                             {/* Toplam Seyahat Süresini ve Badge'i Hesapla */}
                             {(() => {
-                                const deptTime = new Date(flight.departureTime || flight.departTime).getTime();
-                                const arrTime = new Date(flight.arrivalTime || flight.arriveTime).getTime();
+                                const deptTime = new Date(departureTime).getTime();
+                                const arrTime = new Date(arrivalTime).getTime();
                                 const totalMinutes = Math.max(0, (arrTime - deptTime) / (1000 * 60));
                                 const hours = Math.floor(totalMinutes / 60);
                                 const mins = Math.round(totalMinutes % 60);
@@ -125,18 +148,18 @@ export default function FlightResultCard({
                                         
                                         {/* Stops Badge - PROMINENT */}
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full font-bold text-xs ${
-                                            flight.stops === 0 
+                                            stops === 0 
                                                 ? 'bg-green-100 text-green-700' 
                                                 : 'bg-orange-100 text-orange-700'
                                         }`}>
-                                            {flight.stops === 0 ? `✈️ ${t('direct')}` : `📍 ${flight.stops} ${t('stops')}`}
+                                            {stops === 0 ? `✈️ ${t('direct')}` : `📍 ${stops} ${t('stops')}`}
                                         </span>
                                     </div>
                                 );
                             })()}
 
                             {/* Layover Timeline */}
-                            {flight.stops > 0 && flight.layovers && flight.layovers.length > 0 && (
+                            {stops > 0 && flight.layovers && flight.layovers.length > 0 && (
                                 <div className="w-full bg-gradient-to-r from-slate-100 to-slate-50 p-3 rounded-lg mt-2 border border-slate-200">
                                     <div className="space-y-1.5">
                                         {flight.layovers.map((l: any, idx: number) => {
