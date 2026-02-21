@@ -2,7 +2,7 @@
  * Airport Search API
  * 
  * GET /api/airports/search?q=istanbul
- * Returns: Array of matching airports
+ * Returns: Array of matching AIRPORTS ONLY (no POIs/districts)
  */
 
 import { searchFallbackCities } from '@/lib/fallback-cities';
@@ -18,12 +18,15 @@ export async function GET(request: NextRequest) {
     try {
         const results = searchFallbackCities(query);
         
-        // Format for client consumption
+        // CRITICAL: searchFallbackCities already filters to commercial airports only
+        // Format for client consumption  
         const formatted = results.map(city => ({
             city: city.cityName || city.name,
             iata: city.iataCode,
             country: city.countryName
         }));
+
+        console.log(`[/api/airports/search] Query: "${query}" -> Found ${formatted.length} airports`);
 
         return NextResponse.json(formatted, { status: 200 });
     } catch (error) {

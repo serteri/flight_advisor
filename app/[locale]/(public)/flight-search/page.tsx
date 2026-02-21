@@ -105,6 +105,13 @@ function SearchPageContent() {
         setVisibleCount(20); // Reset pagination
 
         try {
+            // Validate IATA codes (3 letters)
+            if (params.origin.length !== 3 || params.destination.length !== 3) {
+                setError('Please select valid airports (3-letter codes)');
+                setLoading(false);
+                return;
+            }
+
             // Convert params to URLSearchParams for GET request
             const queryParams = new URLSearchParams({
                 origin: params.origin,

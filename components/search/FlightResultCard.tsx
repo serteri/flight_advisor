@@ -20,6 +20,16 @@ export default function FlightResultCard({
     const [showScore, setShowScore] = useState(isPremium);
     const [showDetails, setShowDetails] = useState(false);
     const [showLockOverlay, setShowLockOverlay] = useState(false);
+    
+    // Safety check: if flight data is missing critical fields, render error
+    if (!flight || !flight.id) {
+        console.error('[FlightResultCard] Invalid flight data:', flight);
+        return (
+            <div className="bg-red-50 rounded-[16px] p-5 border-2 border-red-200 text-red-700">
+                <p className="font-semibold">❌ Flight data error. Please try again.</p>
+            </div>
+        );
+    }
 
     const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
     const hasEliteAccess = userTier === 'ELITE';

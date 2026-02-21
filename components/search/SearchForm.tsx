@@ -29,7 +29,14 @@ export function SearchForm() {
     const [cabin, setCabin] = useState<"ECONOMY" | "BUSINESS" | "FIRST">("ECONOMY");
 
     const handleSearch = () => {
-        if (origin && destination && date) {
+        // SAFETY: Ensure origin and destination have correct structure
+        if (!origin?.iata || !destination?.iata || !date) {
+            console.error('[SearchForm] Invalid form state:', { origin, destination, date });
+            alert('Please select valid airports and date');
+            return;
+        }
+
+        try {
             const dateStr = date.toISOString().split('T')[0];
             const returnDateStr = returnDate ? returnDate.toISOString().split('T')[0] : '';
 
@@ -51,6 +58,9 @@ export function SearchForm() {
             });
 
             router.push(`/flight-search?${queryParams.toString()}`);
+        } catch (error) {
+            console.error('[SearchForm] Error during search:', error);
+            alert('An error occurred. Please try again.');
         }
     };
 
