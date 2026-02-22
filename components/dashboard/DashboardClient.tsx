@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useSession } from 'next-auth/react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
@@ -55,6 +56,13 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const hasPremium = plan === 'PRO' || plan === 'ELITE';
 
     const t = useTranslations('Dashboard');
+    const { status } = useSession();
+
+    const clearPendingPlan = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('pendingPlan');
+        }
+    };
 
     const startCheckout = async (
         planValue: 'PRO' | 'ELITE',
@@ -83,6 +91,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
             const data = await response.json();
             if (data?.url) {
+                clearPendingPlan();
                 window.location.replace(data.url);
             }
         } catch (error) {
@@ -92,6 +101,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     useEffect(() => {
         if (autoCheckoutRef.current) return;
+        if (status !== 'authenticated') return;
 
         const pendingPlan = getPendingPlan();
         const resolvedPlan = hasAutoCheckoutParams ? planParam : pendingPlan?.plan;
@@ -106,10 +116,6 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             ? (trialParam !== 'false')
             : (pendingPlan?.trial !== false);
 
-        if (pendingPlan && typeof window !== 'undefined') {
-            localStorage.removeItem('pendingPlan');
-        }
-
         console.log('[AUTO_CHECKOUT]', {
             plan: resolvedPlan,
             billingCycle: cycle,
@@ -118,7 +124,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         });
 
         void startCheckout(resolvedPlan as 'PRO' | 'ELITE', cycle, trial);
-    }, [cycleParam, hasAutoCheckoutParams, planParam, trialParam]);
+    }, [cycleParam, hasAutoCheckoutParams, planParam, status, trialParam]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
