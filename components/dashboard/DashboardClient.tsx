@@ -20,15 +20,17 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const [showFlightInspector, setShowFlightInspector] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+    const [autoCheckoutError, setAutoCheckoutError] = useState<string | null>(null);
     const searchParams = useSearchParams();
     const checkoutStatus = searchParams.get('status');
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
     const locale = pathname?.split('/')[1] || 'en';
     const planParam = searchParams.get('plan');
+    const normalizedPlanParam = planParam?.toUpperCase() || null;
     const cycleParam = searchParams.get('billingCycle');
     const trialParam = searchParams.get('trial');
-    const hasAutoCheckoutParams = planParam === 'PRO' || planParam === 'ELITE';
+    const hasAutoCheckoutParams = normalizedPlanParam === 'PRO' || normalizedPlanParam === 'ELITE';
     const getPendingPlan = () => {
         if (typeof window === 'undefined') return null;
         const raw = localStorage.getItem('pendingPlan');
@@ -74,7 +76,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
             if (response.status === 401) {
                 console.warn('[CHECKOUT] Unauthorized session');
-                return;
+                return { ok: false, unauthorized: true } as const;
             }
 
             if (!response.ok) {
@@ -84,9 +86,13 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             const data = await response.json();
             if (data?.url) {
                 window.location.replace(data.url);
+                return { ok: true } as const;
             }
+
+            return { ok: false } as const;
         } catch (error) {
             console.error('[CHECKOUT]', error);
+            return { ok: false } as const;
         }
     };
 
@@ -94,7 +100,9 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         if (autoCheckoutRef.current) return;
 
         const pendingPlan = getPendingPlan();
-        const resolvedPlan = hasAutoCheckoutParams ? planParam : pendingPlan?.plan;
+        const resolvedPlan = hasAutoCheckoutParams
+            ? normalizedPlanParam
+            : pendingPlan?.plan;
         if (!resolvedPlan) return;
 
         autoCheckoutRef.current = true;
@@ -117,8 +125,35 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             source: hasAutoCheckoutParams ? 'query' : 'localStorage',
         });
 
-        void startCheckout(resolvedPlan as 'PRO' | 'ELITE', cycle, trial);
-    }, [cycleParam, hasAutoCheckoutParams, planParam, trialParam]);
+        void (async () => {
+            const result = await startCheckout(resolvedPlan as 'PRO' | 'ELITE', cycle, trial);
+
+            if (result?.unauthorized) {
+                const callbackUrl = `${pathname}?${searchParams.toString()}`;
+                window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(
+                    callbackUrl
+                )}`;
+                return;
+            }
+
+            if (!result?.ok) {
+                setAutoCheckoutError('Checkout failed. Please try again.');
+                setIsAutoCheckoutLoading(false);
+                autoCheckoutRef.current = false;
+            }
+        })();
+    }, [cycleParam, hasAutoCheckoutParams, normalizedPlanParam, pathname, searchParams, trialParam]);
+
+    useEffect(() => {
+        if (!isAutoCheckoutLoading) return;
+        const timer = window.setTimeout(() => {
+            setAutoCheckoutError('Checkout is taking longer than expected. Please try again.');
+            setIsAutoCheckoutLoading(false);
+            autoCheckoutRef.current = false;
+        }, 12000);
+
+        return () => window.clearTimeout(timer);
+    }, [isAutoCheckoutLoading]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
@@ -129,20 +164,6 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             setCheckoutLoading(null);
         }
     };
-
-    if (typeof window !== 'undefined' && localStorage.getItem('pendingPlan')) {
-        return (
-            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
-                <div className="text-center text-white">
-                    <div className="mb-6 flex justify-center">
-                        <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Ucus'a hazirlaniyorsunuz...</h3>
-                    <p className="text-white/70">Odeme sayfasina yonlendiriliyorsunuz.</p>
-                </div>
-            </div>
-        );
-    }
 
     if (isAutoCheckoutLoading) {
         return (
@@ -157,6 +178,38 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                             ? 'Please wait while we prepare your secure checkout.'
                             : 'Please wait while we prepare your 7-day free trial.'}
                     </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (autoCheckoutError) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+                <div className="text-center text-white max-w-md px-6">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-12 h-12 rounded-full border-4 border-white/30 border-t-white" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Checkout problem</h3>
+                    <p className="text-white/70 mb-6">{autoCheckoutError}</p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                            onClick={() => {
+                                setAutoCheckoutError(null);
+                                setIsAutoCheckoutLoading(true);
+                                autoCheckoutRef.current = false;
+                            }}
+                            className="bg-white text-slate-900 px-5 py-2 rounded-lg font-semibold"
+                        >
+                            Try again
+                        </button>
+                        <Link
+                            href={`/${locale}/pricing`}
+                            className="text-white/80 underline underline-offset-4"
+                        >
+                            Back to pricing
+                        </Link>
+                    </div>
                 </div>
             </div>
         );
