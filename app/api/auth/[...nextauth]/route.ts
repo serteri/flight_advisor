@@ -1,2 +1,2 @@
-import { handlers } from "@/auth"; // auth.ts'den import et
+import { handlers } from "@/lib/auth";
 export const { GET, POST } = handlers;
