@@ -22,7 +22,7 @@ export function PricingTable() {
         trial: boolean
     ) => {
         const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}&trial=${trial ? 'true' : 'false'}`;
-        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     };
 
     const handleCheckout = async (
