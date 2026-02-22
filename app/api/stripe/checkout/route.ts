@@ -49,6 +49,13 @@ export async function GET(req: Request) {
         const cycle = searchParams.get('billingCycle') === 'yearly' ? 'yearly' : 'monthly';
         const trial = searchParams.get('trial') !== 'false';
 
+        console.log('[STRIPE_CHECKOUT_GET]', {
+            userId: user.id,
+            plan,
+            billingCycle: cycle,
+            trial,
+        });
+
         if (!plan) {
             return new NextResponse("Missing or invalid plan", { status: 400 });
         }
@@ -98,9 +105,7 @@ export async function GET(req: Request) {
             },
         };
 
-        if (trial) {
-            subscriptionData.trial_period_days = 7;
-        }
+        subscriptionData.trial_period_days = 7;
 
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: stripeCustomerId,

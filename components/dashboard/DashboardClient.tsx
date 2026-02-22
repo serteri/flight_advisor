@@ -49,7 +49,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         checkoutUrl.searchParams.set('plan', planParam as 'PRO' | 'ELITE');
         checkoutUrl.searchParams.set('billingCycle', cycle);
         checkoutUrl.searchParams.set('trial', trial ? 'true' : 'false');
-        window.location.href = checkoutUrl.toString();
+        window.location.replace(checkoutUrl.toString());
     }, [cycleParam, hasAutoCheckoutParams, planParam, trialParam]);
 
     // Handle checkout via POST /api/checkout
