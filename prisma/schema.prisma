@@ -27,8 +27,6 @@ model User {
   
   // 🔔 NOTIFICATION PREFERENCES
   subscriptionPlan      String    @default("FREE") // FREE, PRO, ELITE
-  subscriptionStatus    String    @default("none") // none, trial, active, canceled
-  trialEndsAt            DateTime?
   notificationTone      String    @default("STANDARD") // STANDARD, JUNIOR_GUARDIAN
   phoneNumber           String?   // +90... for SMS
   telegramId            String?   // For Telegram alerts
