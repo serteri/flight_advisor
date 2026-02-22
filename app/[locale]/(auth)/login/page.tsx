@@ -4,9 +4,20 @@ import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { use } from "react";
 
-export default function LoginPage(props: { params: Promise<{ locale: string }> }) {
+type LoginPageProps = {
+    params: Promise<{ locale: string }>;
+    searchParams?: { callbackUrl?: string };
+};
+
+function resolveCallbackUrl(raw?: string) {
+    if (!raw) return "/dashboard";
+    return raw.startsWith("/") ? raw : "/dashboard";
+}
+
+export default function LoginPage(props: LoginPageProps) {
     const params = use(props.params);
     const t = useTranslations("Auth");
+    const callbackUrl = resolveCallbackUrl(props.searchParams?.callbackUrl);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 relative overflow-hidden">
@@ -25,7 +36,13 @@ export default function LoginPage(props: { params: Promise<{ locale: string }> }
                     <form
                         action={async (formData) => {
                             "use server"
-                            await signIn("credentials", formData)
+                            const email = formData.get("email");
+                            const password = formData.get("password");
+                            await signIn("credentials", {
+                                email: typeof email === "string" ? email : "",
+                                password: typeof password === "string" ? password : "",
+                                redirectTo: callbackUrl,
+                            });
                         }}
                         className="space-y-4 border-b pb-6 border-slate-200"
                     >
@@ -46,7 +63,7 @@ export default function LoginPage(props: { params: Promise<{ locale: string }> }
                         <form
                             action={async () => {
                                 "use server"
-                                await signIn("google", { redirectTo: "/dashboard" })
+                                await signIn("google", { redirectTo: callbackUrl })
                             }}
                         >
                             <Button type="submit" variant="outline" className="w-full relative gap-2">
@@ -58,7 +75,7 @@ export default function LoginPage(props: { params: Promise<{ locale: string }> }
                         <form
                             action={async () => {
                                 "use server"
-                                await signIn("github", { redirectTo: "/dashboard" })
+                                await signIn("github", { redirectTo: callbackUrl })
                             }}
                         >
                             <Button type="submit" variant="outline" className="w-full gap-2">
@@ -69,7 +86,7 @@ export default function LoginPage(props: { params: Promise<{ locale: string }> }
                         <form
                             action={async () => {
                                 "use server"
-                                await signIn("microsoft-entra-id", { redirectTo: "/dashboard" })
+                                await signIn("microsoft-entra-id", { redirectTo: callbackUrl })
                             }}
                         >
                             <Button type="submit" variant="outline" className="w-full gap-2">
