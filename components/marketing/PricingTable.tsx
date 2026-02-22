@@ -182,7 +182,7 @@ export function PricingTable() {
                                         onClick={() => handleCheckout('PRO')}
                                         disabled={checkoutLoading === 'PRO'}
                                     >
-                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : '🎁 Try Free (7 Days)'}
+                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Upgrade Now · 7-Day Free Trial'}
                                     </Button>
                                 </div>
                             </div>
@@ -240,7 +240,7 @@ export function PricingTable() {
                                         onClick={() => handleCheckout('ELITE')}
                                         disabled={checkoutLoading === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : '👑 Try Free (7 Days)'}
+                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Upgrade Now · 7-Day Free Trial'}
                                     </Button>
                                 </div>
                             </div>
