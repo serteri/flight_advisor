@@ -27,6 +27,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const locale = pathname?.split('/')[1] || 'en';
     const planParam = searchParams.get('plan');
     const cycleParam = searchParams.get('billingCycle');
+    const trialParam = searchParams.get('trial');
     const hasAutoCheckoutParams = planParam === 'PRO' || planParam === 'ELITE';
     const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(hasAutoCheckoutParams);
     const autoCheckoutRef = useRef(false);
@@ -42,12 +43,14 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         autoCheckoutRef.current = true;
         setIsAutoCheckoutLoading(true);
         const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
+        const trial = trialParam !== 'false';
 
         const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
         checkoutUrl.searchParams.set('plan', planParam as 'PRO' | 'ELITE');
         checkoutUrl.searchParams.set('billingCycle', cycle);
+        checkoutUrl.searchParams.set('trial', trial ? 'true' : 'false');
         window.location.href = checkoutUrl.toString();
-    }, [cycleParam, hasAutoCheckoutParams, planParam]);
+    }, [cycleParam, hasAutoCheckoutParams, planParam, trialParam]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
@@ -86,7 +89,11 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                         <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">Redirecting to Secure Checkout...</h3>
-                    <p className="text-white/70">Please wait while we prepare your 7-day free trial.</p>
+                    <p className="text-white/70">
+                        {trialParam === 'false'
+                            ? 'Please wait while we prepare your secure checkout.'
+                            : 'Please wait while we prepare your 7-day free trial.'}
+                    </p>
                 </div>
             </div>
         );

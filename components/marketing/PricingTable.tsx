@@ -16,13 +16,18 @@ export function PricingTable() {
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
     const autoCheckoutRef = useRef(false);
 
-    const redirectToLogin = (plan: 'PRO' | 'ELITE', cycle: 'monthly' | 'yearly') => {
-        const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}`;
+    const redirectToLogin = (
+        plan: 'PRO' | 'ELITE',
+        cycle: 'monthly' | 'yearly',
+        trial: boolean
+    ) => {
+        const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}&trial=${trial ? 'true' : 'false'}`;
         router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     };
 
     const handleCheckout = async (
         plan: 'PRO' | 'ELITE',
+        trial: boolean,
         cycleOverride?: 'monthly' | 'yearly'
     ) => {
         const resolvedCycle = cycleOverride || billingCycle;
@@ -35,11 +40,12 @@ export function PricingTable() {
                 body: JSON.stringify({
                     plan,
                     billingCycle: resolvedCycle,
+                    trial,
                 }),
             });
 
             if (response.status === 401) {
-                redirectToLogin(plan, resolvedCycle);
+                redirectToLogin(plan, resolvedCycle, trial);
                 return;
             }
 
@@ -65,11 +71,13 @@ export function PricingTable() {
 
         const planParam = searchParams.get('plan');
         const cycleParam = searchParams.get('billingCycle');
+        const trialParam = searchParams.get('trial');
 
         if (planParam === 'PRO' || planParam === 'ELITE') {
             const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
+            const trial = trialParam !== 'false';
             autoCheckoutRef.current = true;
-            handleCheckout(planParam, cycle);
+            handleCheckout(planParam, trial, cycle);
         }
     }, [searchParams]);
 
@@ -176,13 +184,21 @@ export function PricingTable() {
                                 </div>
 
                                 {/* CTAs */}
-                                <div className="mt-6">
+                                <div className="mt-6 space-y-3">
                                     <Button
                                         className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base shadow-lg shadow-emerald-900/40 border-0 transition-all duration-300 hover:shadow-emerald-900/60 hover:scale-105 py-3"
-                                        onClick={() => handleCheckout('PRO')}
+                                        onClick={() => handleCheckout('PRO', true)}
                                         disabled={checkoutLoading === 'PRO'}
                                     >
-                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Upgrade Now · 7-Day Free Trial'}
+                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Start Free Trial (7 Days)'}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full rounded-xl border-slate-300 font-semibold text-slate-700 hover:bg-white"
+                                        onClick={() => handleCheckout('PRO', false)}
+                                        disabled={checkoutLoading === 'PRO'}
+                                    >
+                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Subscribe Now'}
                                     </Button>
                                 </div>
                             </div>
@@ -234,13 +250,21 @@ export function PricingTable() {
                                 </div>
 
                                 {/* CTAs */}
-                                <div className="mt-6">
+                                <div className="mt-6 space-y-3">
                                     <Button
                                         className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:via-orange-600 hover:to-rose-600 text-white font-bold text-base shadow-2xl shadow-orange-900/50 border-0 transition-all duration-300 hover:shadow-orange-900/80 hover:scale-105 py-3"
-                                        onClick={() => handleCheckout('ELITE')}
+                                        onClick={() => handleCheckout('ELITE', true)}
                                         disabled={checkoutLoading === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Upgrade Now · 7-Day Free Trial'}
+                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Start Free Trial (7 Days)'}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full rounded-xl border-white/40 text-white hover:bg-white/10"
+                                        onClick={() => handleCheckout('ELITE', false)}
+                                        disabled={checkoutLoading === 'ELITE'}
+                                    >
+                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Subscribe Now'}
                                     </Button>
                                 </div>
                             </div>

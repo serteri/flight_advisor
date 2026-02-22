@@ -47,6 +47,7 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const plan = resolvePlanParam(searchParams.get('plan'));
         const cycle = searchParams.get('billingCycle') === 'yearly' ? 'yearly' : 'monthly';
+        const trial = searchParams.get('trial') !== 'false';
 
         if (!plan) {
             return new NextResponse("Missing or invalid plan", { status: 400 });
@@ -80,6 +81,27 @@ export async function GET(req: Request) {
 
         const baseUrl = resolveBaseUrl();
 
+        const subscriptionData: {
+            trial_period_days?: number;
+            metadata: {
+                userId: string;
+                plan: PlanType;
+                billingCycle: BillingCycle;
+                trial: string;
+            };
+        } = {
+            metadata: {
+                userId: user.id,
+                plan,
+                billingCycle: cycle,
+                trial: trial ? 'true' : 'false',
+            },
+        };
+
+        if (trial) {
+            subscriptionData.trial_period_days = 7;
+        }
+
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: stripeCustomerId,
             mode: "subscription",
@@ -90,18 +112,12 @@ export async function GET(req: Request) {
                     quantity: 1,
                 },
             ],
-            subscription_data: {
-                trial_period_days: 7,
-                metadata: {
-                    userId: user.id,
-                    plan,
-                    billingCycle: cycle,
-                },
-            },
+            subscription_data: subscriptionData,
             metadata: {
                 userId: user.id,
                 plan,
                 billingCycle: cycle,
+                trial: trial ? 'true' : 'false',
             },
             success_url: `${baseUrl}/dashboard?success=true`,
             cancel_url: `${baseUrl}/pricing?canceled=true`,

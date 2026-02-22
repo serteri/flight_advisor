@@ -34,9 +34,10 @@ export async function POST(req: Request) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        const { plan, billingCycle } = (await req.json()) as {
+        const { plan, billingCycle, trial } = (await req.json()) as {
             plan?: PlanType;
             billingCycle?: BillingCycle;
+            trial?: boolean;
         };
 
         if (!plan || !billingCycle) {
@@ -74,6 +75,28 @@ export async function POST(req: Request) {
 
         const baseUrl = resolveBaseUrl();
 
+        const shouldTrial = trial !== false;
+        const subscriptionData: {
+            trial_period_days?: number;
+            metadata: {
+                userId: string;
+                plan: PlanType;
+                billingCycle: BillingCycle;
+                trial: string;
+            };
+        } = {
+            metadata: {
+                userId: user.id,
+                plan,
+                billingCycle,
+                trial: shouldTrial ? 'true' : 'false',
+            },
+        };
+
+        if (shouldTrial) {
+            subscriptionData.trial_period_days = 7;
+        }
+
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: stripeCustomerId,
             mode: 'subscription',
@@ -84,18 +107,12 @@ export async function POST(req: Request) {
                     quantity: 1,
                 },
             ],
-            subscription_data: {
-                trial_period_days: 7,
-                metadata: {
-                    userId: user.id,
-                    plan,
-                    billingCycle,
-                },
-            },
+            subscription_data: subscriptionData,
             metadata: {
                 userId: user.id,
                 plan,
                 billingCycle,
+                trial: shouldTrial ? 'true' : 'false',
             },
             success_url: `${baseUrl}/dashboard?status=success`,
             cancel_url: `${baseUrl}/pricing?canceled=true`,
