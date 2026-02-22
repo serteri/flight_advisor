@@ -31,6 +31,11 @@ export default auth((req) => {
 
     // If logged in and trying to access login, redirect to dashboard
     if (isLogin && isLoggedIn) {
+        const callbackUrl = req.nextUrl.searchParams.get('callbackUrl');
+        if (callbackUrl && callbackUrl.startsWith('/')) {
+            return NextResponse.redirect(new URL(callbackUrl, `${protocol}//${host}`));
+        }
+
         const dashboardUrl = new URL('/dashboard', `${protocol}//${host}`);
         return NextResponse.redirect(dashboardUrl);
     }

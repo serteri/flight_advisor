@@ -17,7 +17,7 @@ export function PricingTable() {
     const autoCheckoutRef = useRef(false);
 
     const redirectToLogin = (plan: 'PRO' | 'ELITE', cycle: 'monthly' | 'yearly') => {
-        const callbackUrl = `/${locale}/pricing?plan=${plan}&billingCycle=${cycle}`;
+        const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}`;
         router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     };
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
@@ -20,7 +20,6 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const [showFlightInspector, setShowFlightInspector] = useState(false);
     const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(false);
     const searchParams = useSearchParams();
-    const router = useRouter();
     const autoCheckoutRef = useRef(false);
     const checkoutStatus = searchParams.get('status');
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
@@ -47,34 +46,11 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         autoCheckoutRef.current = true;
         
         // Trigger checkout
-        const triggerCheckout = async () => {
-            try {
-                setIsAutoCheckoutLoading(true);
-                const response = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        plan: planParam,
-                        billingCycle: cycle,
-                    }),
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Checkout failed: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                if (data?.url) {
-                    window.location.href = data.url; // Redirect to Stripe
-                }
-            } catch (error) {
-                console.error('[AUTO-CHECKOUT ERROR]', error);
-                setIsAutoCheckoutLoading(false);
-                autoCheckoutRef.current = false; // Reset on error
-            }
-        };
-        
-        triggerCheckout();
+        setIsAutoCheckoutLoading(true);
+        const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
+        checkoutUrl.searchParams.set('plan', planParam);
+        checkoutUrl.searchParams.set('billingCycle', cycle);
+        window.location.href = checkoutUrl.toString();
     }, [searchParams]);
 
     return (
