@@ -17,9 +17,7 @@ export function PricingTable() {
     const autoCheckoutRef = useRef(false);
 
     const redirectToLogin = (plan: 'PRO' | 'ELITE', cycle: 'monthly' | 'yearly') => {
-        // After login, redirect to dashboard (no auto-checkout via GET)
-        // User will see upgrade card with Upgrade buttons to POST /api/checkout
-        const callbackUrl = `/${locale}/dashboard`;
+        const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}`;
         router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     };
 

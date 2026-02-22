@@ -25,11 +25,29 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
     const locale = pathname?.split('/')[1] || 'en';
+    const planParam = searchParams.get('plan');
+    const cycleParam = searchParams.get('billingCycle');
+    const hasAutoCheckoutParams = planParam === 'PRO' || planParam === 'ELITE';
+    const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(hasAutoCheckoutParams);
+    const autoCheckoutRef = useRef(false);
 
     const plan = (user?.subscriptionPlan || '').toUpperCase();
     const hasPremium = plan === 'PRO' || plan === 'ELITE';
 
     const t = useTranslations('Dashboard');
+
+    useEffect(() => {
+        if (!hasAutoCheckoutParams || autoCheckoutRef.current) return;
+
+        autoCheckoutRef.current = true;
+        setIsAutoCheckoutLoading(true);
+        const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
+
+        const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
+        checkoutUrl.searchParams.set('plan', planParam as 'PRO' | 'ELITE');
+        checkoutUrl.searchParams.set('billingCycle', cycle);
+        window.location.href = checkoutUrl.toString();
+    }, [cycleParam, hasAutoCheckoutParams, planParam]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
@@ -59,6 +77,20 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             setCheckoutLoading(null);
         }
     };
+
+    if (isAutoCheckoutLoading) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+                <div className="text-center text-white">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Redirecting to Secure Checkout...</h3>
+                    <p className="text-white/70">Please wait while we prepare your 7-day free trial.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-12">
