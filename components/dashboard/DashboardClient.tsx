@@ -56,6 +56,40 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     const t = useTranslations('Dashboard');
 
+    const startCheckout = async (
+        planValue: 'PRO' | 'ELITE',
+        cycleValue: 'monthly' | 'yearly',
+        trialValue: boolean
+    ) => {
+        try {
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plan: planValue,
+                    billingCycle: cycleValue,
+                    trial: trialValue,
+                }),
+            });
+
+            if (response.status === 401) {
+                console.warn('[CHECKOUT] Unauthorized session');
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Checkout failed');
+            }
+
+            const data = await response.json();
+            if (data?.url) {
+                window.location.replace(data.url);
+            }
+        } catch (error) {
+            console.error('[CHECKOUT]', error);
+        }
+    };
+
     useEffect(() => {
         if (autoCheckoutRef.current) return;
 
@@ -83,41 +117,32 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             source: hasAutoCheckoutParams ? 'query' : 'localStorage',
         });
 
-        const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
-        checkoutUrl.searchParams.set('plan', resolvedPlan as 'PRO' | 'ELITE');
-        checkoutUrl.searchParams.set('billingCycle', cycle);
-        checkoutUrl.searchParams.set('trial', trial ? 'true' : 'false');
-        window.location.replace(checkoutUrl.toString());
+        void startCheckout(resolvedPlan as 'PRO' | 'ELITE', cycle, trial);
     }, [cycleParam, hasAutoCheckoutParams, planParam, trialParam]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
         try {
             setCheckoutLoading(selectedPlan);
-            const response = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    plan: selectedPlan,
-                    billingCycle: billingCycle,
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Checkout failed');
-            }
-
-            const data = await response.json();
-            if (data?.url) {
-                window.location.href = data.url;
-            }
-        } catch (error) {
-            console.error('[CHECKOUT]', error);
-            alert('Checkout failed. Please try again.');
+            await startCheckout(selectedPlan, billingCycle, true);
         } finally {
             setCheckoutLoading(null);
         }
     };
+
+    if (typeof window !== 'undefined' && localStorage.getItem('pendingPlan')) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+                <div className="text-center text-white">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Ucus'a hazirlaniyorsunuz...</h3>
+                    <p className="text-white/70">Odeme sayfasina yonlendiriliyorsunuz.</p>
+                </div>
+            </div>
+        );
+    }
 
     if (isAutoCheckoutLoading) {
         return (

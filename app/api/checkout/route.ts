@@ -27,6 +27,10 @@ function resolveBaseUrl() {
 
 export async function POST(req: Request) {
     try {
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn('[ENV] NODE_ENV is not production:', process.env.NODE_ENV);
+        }
+
         const session = await auth();
         const user = session?.user;
 
@@ -43,6 +47,13 @@ export async function POST(req: Request) {
         if (!plan || !billingCycle) {
             return new NextResponse('Missing plan or billing cycle', { status: 400 });
         }
+
+        console.log('[CHECKOUT_POST]', {
+            userId: user.id,
+            plan,
+            billingCycle,
+            trial: trial !== false,
+        });
 
         const priceId = PRICE_MAP[plan]?.[billingCycle];
         if (!priceId) {

@@ -14,6 +14,10 @@ const LoginSchema = z.object({
     password: z.string().min(1)
 })
 
+const cookieDomain =
+    process.env.AUTH_COOKIE_DOMAIN ||
+    (process.env.NODE_ENV === "production" ? ".flightagent.io" : undefined);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
     secret: process.env.AUTH_SECRET,
@@ -25,7 +29,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: process.env.NODE_ENV === 'production'
+                secure: process.env.NODE_ENV === 'production',
+                domain: cookieDomain
             }
         }
     },
