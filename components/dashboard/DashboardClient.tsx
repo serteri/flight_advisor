@@ -18,9 +18,9 @@ interface DashboardClientProps {
 export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFlightInspector, setShowFlightInspector] = useState(false);
-    const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(false);
+    const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const searchParams = useSearchParams();
-    const autoCheckoutRef = useRef(false);
     const checkoutStatus = searchParams.get('status');
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
@@ -31,41 +31,83 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     const t = useTranslations('Dashboard');
 
-    // Auto-trigger checkout if plan params present in URL
-    useEffect(() => {
-        if (autoCheckoutRef.current) return; // Prevent duplicate triggers
-        
-        const planParam = searchParams.get('plan');
-        const cycleParam = searchParams.get('billingCycle');
-        
-        if (!planParam || (planParam !== 'PRO' && planParam !== 'ELITE')) return;
-        
-        const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
-        
-        // Mark as started to prevent re-trigger
-        autoCheckoutRef.current = true;
-        
-        // Trigger checkout
-        setIsAutoCheckoutLoading(true);
-        const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
-        checkoutUrl.searchParams.set('plan', planParam);
-        checkoutUrl.searchParams.set('billingCycle', cycle);
-        window.location.href = checkoutUrl.toString();
-    }, [searchParams]);
+    // Handle checkout via POST /api/checkout
+    const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
+        try {
+            setCheckoutLoading(selectedPlan);
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plan: selectedPlan,
+                    billingCycle: billingCycle,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Checkout failed');
+            }
+
+            const data = await response.json();
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('[CHECKOUT]', error);
+            alert('Checkout failed. Please try again.');
+        } finally {
+            setCheckoutLoading(null);
+        }
+    };
 
     return (
         <div className="space-y-12">
-            {isAutoCheckoutLoading && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-8 shadow-2xl text-center">
-                        <div className="mb-4 flex justify-center">
-                            <div className="relative w-12 h-12">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-spin" 
-                                     style={{ clipPath: 'polygon(50% 0%, 100% 0%, 100% 50%, 50% 50%)' }} />
+            {/* UPGRADE CARD - For FREE tier users */}
+            {!hasPremium && (
+                <div className="rounded-2xl border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 p-8 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Unlock Premium Features</h3>
+                            <p className="text-slate-600 mb-4">Get real-time flight tracking, price alerts, and Flight Inspector with a 7-day free trial.</p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setBillingCycle('monthly')}
+                                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                        billingCycle === 'monthly'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white text-slate-700 border border-slate-300'
+                                    }`}
+                                >
+                                    Monthly
+                                </button>
+                                <button
+                                    onClick={() => setBillingCycle('yearly')}
+                                    className={`px-4 py-2 rounded-lg font-semibold transition-all relative ${
+                                        billingCycle === 'yearly'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white text-slate-700 border border-slate-300'
+                                    }`}
+                                >
+                                    Yearly <span className="text-xs ml-1">25% OFF</span>
+                                </button>
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">Redirecting to Stripe...</h3>
-                        <p className="text-slate-600">Please wait while we prepare your checkout session.</p>
+                        <div className="flex gap-3 flex-col md:flex-row">
+                            <button
+                                onClick={() => handleUpgradeClick('PRO')}
+                                disabled={checkoutLoading === 'PRO'}
+                                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50"
+                            >
+                                {checkoutLoading === 'PRO' ? '⏳ PRO...' : '🎁 PRO - $9.90/mo'}
+                            </button>
+                            <button
+                                onClick={() => handleUpgradeClick('ELITE')}
+                                disabled={checkoutLoading === 'ELITE'}
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50"
+                            >
+                                {checkoutLoading === 'ELITE' ? '⏳ ELITE...' : '👑 ELITE - $19.90/mo'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
