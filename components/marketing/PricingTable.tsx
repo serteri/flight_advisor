@@ -21,6 +21,13 @@ export function PricingTable() {
         cycle: 'monthly' | 'yearly',
         trial: boolean
     ) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('pendingPlan', JSON.stringify({
+                plan,
+                billingCycle: cycle,
+                trial,
+            }));
+        }
         const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}&trial=${trial ? 'true' : 'false'}`;
         const encodedCallbackUrl = encodeURIComponent(callbackUrl);
         router.push(`/${locale}/login?callbackUrl=${encodedCallbackUrl}`);

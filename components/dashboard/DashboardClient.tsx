@@ -29,7 +29,26 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const cycleParam = searchParams.get('billingCycle');
     const trialParam = searchParams.get('trial');
     const hasAutoCheckoutParams = planParam === 'PRO' || planParam === 'ELITE';
-    const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(hasAutoCheckoutParams);
+    const getPendingPlan = () => {
+        if (typeof window === 'undefined') return null;
+        const raw = localStorage.getItem('pendingPlan');
+        if (!raw) return null;
+        try {
+            const parsed = JSON.parse(raw) as {
+                plan?: 'PRO' | 'ELITE';
+                billingCycle?: 'monthly' | 'yearly';
+                trial?: boolean;
+            };
+            if (parsed.plan !== 'PRO' && parsed.plan !== 'ELITE') return null;
+            return parsed;
+        } catch {
+            return null;
+        }
+    };
+    const [isAutoCheckoutLoading, setIsAutoCheckoutLoading] = useState(() => {
+        if (hasAutoCheckoutParams) return true;
+        return !!getPendingPlan();
+    });
     const autoCheckoutRef = useRef(false);
 
     const plan = (user?.subscriptionPlan || '').toUpperCase();
@@ -38,15 +57,34 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const t = useTranslations('Dashboard');
 
     useEffect(() => {
-        if (!hasAutoCheckoutParams || autoCheckoutRef.current) return;
+        if (autoCheckoutRef.current) return;
+
+        const pendingPlan = getPendingPlan();
+        const resolvedPlan = hasAutoCheckoutParams ? planParam : pendingPlan?.plan;
+        if (!resolvedPlan) return;
 
         autoCheckoutRef.current = true;
         setIsAutoCheckoutLoading(true);
-        const cycle = cycleParam === 'yearly' ? 'yearly' : 'monthly';
-        const trial = trialParam !== 'false';
+        const cycle = hasAutoCheckoutParams
+            ? (cycleParam === 'yearly' ? 'yearly' : 'monthly')
+            : (pendingPlan?.billingCycle === 'yearly' ? 'yearly' : 'monthly');
+        const trial = hasAutoCheckoutParams
+            ? (trialParam !== 'false')
+            : (pendingPlan?.trial !== false);
+
+        if (pendingPlan && typeof window !== 'undefined') {
+            localStorage.removeItem('pendingPlan');
+        }
+
+        console.log('[AUTO_CHECKOUT]', {
+            plan: resolvedPlan,
+            billingCycle: cycle,
+            trial,
+            source: hasAutoCheckoutParams ? 'query' : 'localStorage',
+        });
 
         const checkoutUrl = new URL('/api/stripe/checkout', window.location.origin);
-        checkoutUrl.searchParams.set('plan', planParam as 'PRO' | 'ELITE');
+        checkoutUrl.searchParams.set('plan', resolvedPlan as 'PRO' | 'ELITE');
         checkoutUrl.searchParams.set('billingCycle', cycle);
         checkoutUrl.searchParams.set('trial', trial ? 'true' : 'false');
         window.location.replace(checkoutUrl.toString());
@@ -88,7 +126,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                     <div className="mb-6 flex justify-center">
                         <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Redirecting to Secure Checkout...</h3>
+                    <h3 className="text-xl font-bold mb-2">Redirecting to Payment...</h3>
                     <p className="text-white/70">
                         {trialParam === 'false'
                             ? 'Please wait while we prepare your secure checkout.'
