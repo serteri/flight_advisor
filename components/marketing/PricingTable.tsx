@@ -260,7 +260,7 @@ export function PricingTable() {
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="w-full rounded-xl border-white/40 text-white hover:bg-white/10"
+                                        className="w-full rounded-xl border-white/60 bg-white text-slate-900 hover:bg-white"
                                         onClick={() => handleCheckout('ELITE', false)}
                                         disabled={checkoutLoading === 'ELITE'}
                                     >
