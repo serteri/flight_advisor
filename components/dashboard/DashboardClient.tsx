@@ -167,7 +167,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     if (isAutoCheckoutLoading) {
         return (
-            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[9999]">
                 <div className="text-center text-white">
                     <div className="mb-6 flex justify-center">
                         <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
@@ -185,7 +185,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     if (autoCheckoutError) {
         return (
-            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[9999]">
                 <div className="text-center text-white max-w-md px-6">
                     <div className="mb-6 flex justify-center">
                         <div className="w-12 h-12 rounded-full border-4 border-white/30 border-t-white" />

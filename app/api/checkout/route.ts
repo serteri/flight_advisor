@@ -6,14 +6,18 @@ import { prisma } from '@/lib/prisma';
 type PlanType = 'PRO' | 'ELITE';
 type BillingCycle = 'monthly' | 'yearly';
 
+// Detect Stripe test/live mode from secret key
+const isStripeTestMode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_');
+const priceIdSuffix = isStripeTestMode ? 'TEST_' : '';
+
 const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
     PRO: {
-        monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
-        yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+        monthly: process.env[`STRIPE_PRO_${priceIdSuffix}MONTHLY_PRICE_ID`],
+        yearly: process.env[`STRIPE_PRO_${priceIdSuffix}YEARLY_PRICE_ID`],
     },
     ELITE: {
-        monthly: process.env.STRIPE_ELITE_MONTHLY_PRICE_ID,
-        yearly: process.env.STRIPE_ELITE_YEARLY_PRICE_ID,
+        monthly: process.env[`STRIPE_ELITE_${priceIdSuffix}MONTHLY_PRICE_ID`],
+        yearly: process.env[`STRIPE_ELITE_${priceIdSuffix}YEARLY_PRICE_ID`],
     },
 };
 
@@ -53,6 +57,8 @@ export async function POST(req: Request) {
             plan,
             billingCycle,
             trial: trial !== false,
+            stripeMode: isStripeTestMode ? 'TEST' : 'LIVE',
+            priceIdLookup: `STRIPE_${plan}_${priceIdSuffix}${billingCycle.toUpperCase()}_PRICE_ID`,
         });
 
         const priceId = PRICE_MAP[plan]?.[billingCycle];
