@@ -18,9 +18,13 @@ const cookieDomain =
     process.env.AUTH_COOKIE_DOMAIN ||
     (process.env.NODE_ENV === "production" ? ".flightagent.io" : undefined);
 
+const authSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+const trustHost = process.env.AUTH_TRUST_HOST === "true";
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
-    secret: process.env.AUTH_SECRET,
+    secret: authSecret,
+    trustHost,
     session: { strategy: "jwt" },
     cookies: {
         sessionToken: {
