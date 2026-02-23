@@ -25,6 +25,10 @@ const resolveCustomerProfile = async (customerId: string | null) => {
         return null;
     }
 
+    if ("deleted" in customer && customer.deleted) {
+        return null;
+    }
+
     return {
         email: customer.email || null,
         name: customer.name || null,
@@ -117,7 +121,6 @@ export async function POST(req: Request) {
                 create: {
                     email: customerEmail,
                     name: customerProfile?.name || null,
-                    stripeCustomerId: customerId,
                     ...updateData,
                 },
             });
