@@ -56,6 +56,10 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     const plan = (user?.subscriptionPlan || '').toUpperCase();
     const hasPremium = plan === 'PRO' || plan === 'ELITE';
+    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+    const subscriptionStatus = user?.subscriptionStatus || null;
+    const isTrialing = subscriptionStatus === 'trialing' && !!trialEndsAt;
+    const daysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
 
     const t = useTranslations('Dashboard');
 
@@ -232,8 +236,46 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         );
     }
 
+    if (checkoutSuccess && !hasPremium) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[9999]">
+                <div className="text-center text-white">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Finalizing your upgrade...</h3>
+                    <p className="text-white/70">Syncing your subscription status.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user || user.isPremium === undefined) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[9999]">
+                <div className="text-center text-white">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Loading your dashboard...</h3>
+                    <p className="text-white/70">Syncing your subscription status.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-12">
+            {isTrialing && daysLeft !== null && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-amber-900">
+                    <div className="text-sm font-bold">
+                        Deneme surenizin bitmesine {daysLeft} gun kaldi.
+                    </div>
+                    <div className="text-sm text-amber-800">
+                        7. gunun sonunda {plan} plani uzerinden aboneliginiz baslayacaktir.
+                    </div>
+                </div>
+            )}
             {/* UPGRADE CARD - For FREE tier users */}
             {!hasPremium && (
                 <div className="rounded-2xl border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 p-8 shadow-lg">
@@ -284,7 +326,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                 </div>
             )}
 
-            {checkoutSuccess && (
+            {checkoutSuccess && hasPremium && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-emerald-900">
                     <div className="text-sm font-bold">
                         Welcome to {plan === 'ELITE' ? 'ELITE' : 'PRO'}! Your 7-day free trial has started.

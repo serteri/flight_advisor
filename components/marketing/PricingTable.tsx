@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Shield, Crown } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useSession } from 'next-auth/react';
 
 export function PricingTable() {
     const t = useTranslations('Pricing');
@@ -15,6 +16,8 @@ export function PricingTable() {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
     const autoCheckoutRef = useRef(false);
+    const { data: session } = useSession();
+    const [userTier, setUserTier] = useState<'FREE' | 'PRO' | 'ELITE'>('FREE');
 
     const redirectToLogin = (
         plan: 'PRO' | 'ELITE',
@@ -38,6 +41,9 @@ export function PricingTable() {
         trial: boolean,
         cycleOverride?: 'monthly' | 'yearly'
     ) => {
+        if (userTier === plan || (userTier === 'ELITE' && plan === 'PRO')) {
+            return;
+        }
         const resolvedCycle = cycleOverride || billingCycle;
 
         try {
@@ -114,6 +120,28 @@ Please check the browser console for full error details.
             handleCheckout(planParam, trial, cycle);
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!session?.user?.email) {
+            setUserTier('FREE');
+            return;
+        }
+
+        const fetchTier = async () => {
+            try {
+                const response = await fetch('/api/auth/user-tier');
+                if (response.ok) {
+                    const data = await response.json();
+                    const tier = (data.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE') || 'FREE';
+                    setUserTier(tier);
+                }
+            } catch {
+                setUserTier('FREE');
+            }
+        };
+
+        void fetchTier();
+    }, [session?.user?.email]);
 
     return (
         <section className="py-24 bg-white relative overflow-hidden">
@@ -222,17 +250,25 @@ Please check the browser console for full error details.
                                     <Button
                                         className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base shadow-lg shadow-emerald-900/40 border-0 transition-all duration-300 hover:shadow-emerald-900/60 hover:scale-105 py-3"
                                         onClick={() => handleCheckout('PRO', true)}
-                                        disabled={checkoutLoading === 'PRO'}
+                                        disabled={checkoutLoading === 'PRO' || userTier === 'PRO' || userTier === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Start Free Trial (7 Days)'}
+                                        {userTier === 'PRO' || userTier === 'ELITE'
+                                            ? 'Current Plan'
+                                            : checkoutLoading === 'PRO'
+                                            ? '⏳ Connecting...'
+                                            : 'Start Free Trial (7 Days)'}
                                     </Button>
                                     <Button
                                         variant="outline"
                                         className="w-full rounded-xl border-slate-300 font-semibold text-slate-700 hover:bg-white"
                                         onClick={() => handleCheckout('PRO', false)}
-                                        disabled={checkoutLoading === 'PRO'}
+                                        disabled={checkoutLoading === 'PRO' || userTier === 'PRO' || userTier === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'PRO' ? '⏳ Connecting...' : 'Subscribe Now'}
+                                        {userTier === 'PRO' || userTier === 'ELITE'
+                                            ? 'Current Plan'
+                                            : checkoutLoading === 'PRO'
+                                            ? '⏳ Connecting...'
+                                            : 'Subscribe Now'}
                                     </Button>
                                 </div>
                             </div>
@@ -288,17 +324,25 @@ Please check the browser console for full error details.
                                     <Button
                                         className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:via-orange-600 hover:to-rose-600 text-white font-bold text-base shadow-2xl shadow-orange-900/50 border-0 transition-all duration-300 hover:shadow-orange-900/80 hover:scale-105 py-3"
                                         onClick={() => handleCheckout('ELITE', true)}
-                                        disabled={checkoutLoading === 'ELITE'}
+                                        disabled={checkoutLoading === 'ELITE' || userTier === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Start Free Trial (7 Days)'}
+                                        {userTier === 'ELITE'
+                                            ? 'Current Plan'
+                                            : checkoutLoading === 'ELITE'
+                                            ? '⏳ Connecting...'
+                                            : 'Start Free Trial (7 Days)'}
                                     </Button>
                                     <Button
                                         variant="outline"
                                         className="w-full rounded-xl border-white/60 bg-white text-slate-900 hover:bg-white"
                                         onClick={() => handleCheckout('ELITE', false)}
-                                        disabled={checkoutLoading === 'ELITE'}
+                                        disabled={checkoutLoading === 'ELITE' || userTier === 'ELITE'}
                                     >
-                                        {checkoutLoading === 'ELITE' ? '⏳ Connecting...' : 'Subscribe Now'}
+                                        {userTier === 'ELITE'
+                                            ? 'Current Plan'
+                                            : checkoutLoading === 'ELITE'
+                                            ? '⏳ Connecting...'
+                                            : 'Subscribe Now'}
                                     </Button>
                                 </div>
                             </div>

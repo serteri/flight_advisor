@@ -80,17 +80,13 @@ export async function POST(req: Request) {
             return new NextResponse("Subscription ID is missing", { status: 400 });
         }
 
-        const userId = session?.metadata?.userId;
-        if (!userId) {
-            return new NextResponse("User ID is missing in metadata", { status: 400 });
-        }
-
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = getPriceId(subscription);
         const plan = resolvePlan(priceId, session.metadata?.plan || null);
         const customerId = typeof subscription.customer === "string" ? subscription.customer : null;
         const customerProfile = await resolveCustomerProfile(customerId);
         const customerEmail = customerProfile?.email || session.customer_details?.email || null;
+        const userId = session?.metadata?.userId;
 
         const updateData: {
             stripeSubscriptionId: string;
@@ -99,12 +95,18 @@ export async function POST(req: Request) {
             stripeCurrentPeriodEnd: Date;
             isPremium: boolean;
             subscriptionPlan?: string;
+            subscriptionStatus?: string;
+            trialEndsAt?: Date | null;
         } = {
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
             stripePriceId: priceId,
             stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             isPremium: true,
+            subscriptionStatus: subscription.status,
+            trialEndsAt: (subscription as any).trial_end
+                ? new Date((subscription as any).trial_end * 1000)
+                : null,
         };
 
         if (plan) {
@@ -124,11 +126,13 @@ export async function POST(req: Request) {
                     ...updateData,
                 },
             });
-        } else {
+        } else if (userId) {
             await prisma.user.update({
                 where: { id: userId },
                 data: updateData,
             });
+        } else {
+            console.error('[STRIPE_WEBHOOK] Missing user identifiers for checkout.session.completed');
         }
     }
 
@@ -152,10 +156,16 @@ export async function POST(req: Request) {
             stripeCurrentPeriodEnd: Date;
             isPremium: boolean;
             subscriptionPlan?: string;
+            subscriptionStatus?: string;
+            trialEndsAt?: Date | null;
         } = {
             stripePriceId: priceId,
             stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             isPremium: true,
+            subscriptionStatus: subscription.status,
+            trialEndsAt: (subscription as any).trial_end
+                ? new Date((subscription as any).trial_end * 1000)
+                : null,
         };
 
         if (plan) {
@@ -190,6 +200,8 @@ export async function POST(req: Request) {
                 isPremium: false,
                 subscriptionPlan: "FREE",
                 stripeCurrentPeriodEnd: null,
+                subscriptionStatus: 'canceled',
+                trialEndsAt: null,
             },
         });
     }

@@ -84,12 +84,23 @@ export class EmailChannel {
 
     // HTML Template Generator (Simplified)
     public generateHtml(payload: NotificationPayload): string {
+        const ctaUrl = payload.data?.ctaUrl
+            ? String(payload.data.ctaUrl)
+            : payload.tripId
+                ? `https://flight-guardian.com/trips/${payload.tripId}`
+                : 'https://flight-guardian.com/dashboard';
+        const ctaLabel = payload.data?.ctaLabel
+            ? String(payload.data.ctaLabel)
+            : payload.tripId
+                ? 'View Trip Details'
+                : 'Open Dashboard';
+
         return `
             <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
                 <h2 style="color: #333;">${payload.title}</h2>
                 <p style="font-size: 16px; color: #555;">${payload.message}</p>
                 <br/>
-                <a href="https://flight-guardian.com/trips/${payload.tripId}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Trip Details</a>
+                <a href="${ctaUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">${ctaLabel}</a>
             </div>
         `;
     }

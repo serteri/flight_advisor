@@ -22,6 +22,9 @@ model User {
   stripeSubscriptionId   String?   @unique // Aktif abonelik ID'si
   stripePriceId          String?   // Hangi paketi aldı?
   stripeCurrentPeriodEnd DateTime? // Abonelik ne zaman bitiyor?
+  subscriptionStatus     String?   // trialing, active, canceled
+  trialEndsAt            DateTime? // Deneme bitiş tarihi
+  trialReminderSentAt    DateTime? // Trial bitiş hatirlatma gonderim zamani
   
   isPremium              Boolean   @default(false) // Hızlı kontrol için
   

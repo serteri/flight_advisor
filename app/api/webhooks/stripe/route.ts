@@ -99,6 +99,10 @@ const syncSubscriptionToUser = async (
         stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
         isPremium: true,
         subscriptionPlan: plan,
+        subscriptionStatus: subscription.status,
+        trialEndsAt: (subscription as any).trial_end
+            ? new Date((subscription as any).trial_end * 1000)
+            : null,
     };
 
     if (customerEmail) {
@@ -155,15 +159,11 @@ export async function POST(req: Request) {
             return new NextResponse('Subscription ID is missing', { status: 400 });
         }
 
-        if (!session?.metadata?.userId) {
-            return new NextResponse('User ID is missing in metadata', { status: 400 });
-        }
-
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             await syncSubscriptionToUser(
                 subscription,
-                session.metadata.userId,
+                session.metadata?.userId || null,
                 session.metadata?.plan || null
             );
         } catch (error) {
@@ -213,6 +213,8 @@ export async function POST(req: Request) {
                 isPremium: false,
                 subscriptionPlan: 'FREE',
                 stripeCurrentPeriodEnd: null,
+                subscriptionStatus: 'canceled',
+                trialEndsAt: null,
             },
         });
     }
