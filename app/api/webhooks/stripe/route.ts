@@ -80,17 +80,28 @@ const syncSubscriptionToUser = async (
     userId: string | null | undefined,
     metadataPlan: string | null
 ) => {
+    console.log('[SYNC] 🔄 Starting sync for subscription:', subscription.id);
+    
     const priceId = getPriceId(subscription);
     const plan = resolvePlan(priceId, metadataPlan);
 
+    console.log('[SYNC] 📊 Resolved plan details:', { priceId, plan, metadataPlan });
+
     if (!plan) {
-        console.error('[STRIPE_WEBHOOK] Unknown plan for price', priceId);
+        console.error('[SYNC] ❌ Unknown plan for price:', priceId);
         throw new Error('Unknown plan');
     }
 
     const customerId = typeof subscription.customer === 'string' ? subscription.customer : null;
+    console.log('[SYNC] 👤 Customer ID:', customerId);
+    
     const customerProfile = await resolveCustomerProfile(customerId);
-    const customerEmail = customerProfile?.email || null;
+    const customerEmail = customerProfile?.email?.trim().toLowerCase() || null;
+    
+    console.log('[SYNC] 📧 Customer profile:', { 
+        email: customerEmail, 
+        name: customerProfile?.name 
+    });
 
     const updateData = {
         stripeSubscriptionId: subscription.id,
@@ -105,39 +116,85 @@ const syncSubscriptionToUser = async (
             : null,
     };
 
+    console.log('[SYNC] 💾 Update data prepared:', updateData);
+
     if (customerEmail) {
-        await prisma.user.upsert({
-            where: { email: customerEmail },
-            update: {
-                ...updateData,
-                name: customerProfile?.name || undefined,
-            },
-            create: {
-                email: customerEmail,
-                name: customerProfile?.name || null,
-                ...updateData,
-            },
-        });
-        return;
+        console.log('[SYNC] 🔍 Attempting upsert by email:', customerEmail);
+        
+        try {
+            // First try to find existing user
+            const existingUser = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { email: customerEmail },
+                        { email: { equals: customerEmail, mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            console.log('[SYNC] 🔎 Existing user found:', existingUser ? existingUser.id : 'NONE');
+
+            if (existingUser) {
+                // Update existing user
+                const updatedUser = await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        ...updateData,
+                        name: customerProfile?.name || existingUser.name,
+                    },
+                });
+                console.log('[SYNC] ✅ User UPDATED successfully:', updatedUser.id);
+            } else {
+                // Create new user
+                const newUser = await prisma.user.create({
+                    data: {
+                        email: customerEmail,
+                        name: customerProfile?.name || null,
+                        ...updateData,
+                    },
+                });
+                console.log('[SYNC] ✅ User CREATED successfully:', newUser.id);
+            }
+            return;
+        } catch (dbError: any) {
+            console.error('[SYNC] ❌ Database operation failed:', {
+                error: dbError.message,
+                code: dbError.code,
+                meta: dbError.meta,
+            });
+            throw dbError;
+        }
     }
 
     const resolvedUserId = await resolveUserId(userId, customerId);
+    console.log('[SYNC] 🆔 Resolved user ID:', resolvedUserId);
 
     if (!resolvedUserId) {
-        console.error('[STRIPE_WEBHOOK] User not found for subscription', subscription.id);
+        console.error('[SYNC] ❌ User not found for subscription:', subscription.id);
         throw new Error('User not found');
     }
 
-    await prisma.user.update({
-        where: { id: resolvedUserId },
-        data: updateData,
-    });
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: resolvedUserId },
+            data: updateData,
+        });
+        console.log('[SYNC] ✅ User updated by ID:', updatedUser.id);
+    } catch (dbError: any) {
+        console.error('[SYNC] ❌ User update failed:', {
+            userId: resolvedUserId,
+            error: dbError.message,
+        });
+        throw dbError;
+    }
 };
 
 export async function POST(req: Request) {
     const body = await req.text();
     const headersList = await headers();
     const signature = headersList.get('Stripe-Signature') as string;
+
+    console.log('[STRIPE_WEBHOOK] 🔔 Received webhook request');
 
     let event: Stripe.Event;
 
@@ -147,7 +204,9 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         );
+        console.log('[STRIPE_WEBHOOK] ✅ Signature verified, event type:', event.type);
     } catch (error: any) {
+        console.error('[STRIPE_WEBHOOK] ❌ Signature verification failed:', error.message);
         return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
     }
 
@@ -155,19 +214,38 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const subscriptionId = session.subscription as string;
 
+        console.log('[STRIPE_WEBHOOK] 💳 checkout.session.completed', {
+            sessionId: session.id,
+            subscriptionId,
+            customerEmail: session.customer_email,
+            metadata: session.metadata,
+        });
+
         if (!subscriptionId) {
+            console.error('[STRIPE_WEBHOOK] ❌ Subscription ID is missing');
             return new NextResponse('Subscription ID is missing', { status: 400 });
         }
 
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            console.log('[STRIPE_WEBHOOK] 📦 Retrieved subscription:', {
+                id: subscription.id,
+                status: subscription.status,
+                customer: subscription.customer,
+                trial_end: subscription.trial_end,
+            });
+            
             await syncSubscriptionToUser(
                 subscription,
                 session.metadata?.userId || null,
                 session.metadata?.plan || null
             );
-        } catch (error) {
-            console.error('[STRIPE_WEBHOOK] checkout.session.completed update failed', error);
+            console.log('[STRIPE_WEBHOOK] ✅ checkout.session.completed sync SUCCESS');
+        } catch (error: any) {
+            console.error('[STRIPE_WEBHOOK] ❌ checkout.session.completed update failed:', {
+                error: error.message,
+                stack: error.stack,
+            });
             return new NextResponse('Webhook update failed', { status: 500 });
         }
     }
@@ -175,14 +253,25 @@ export async function POST(req: Request) {
     if (event.type === 'customer.subscription.created') {
         const subscription = event.data.object as Stripe.Subscription;
 
+        console.log('[STRIPE_WEBHOOK] 🆕 customer.subscription.created', {
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            customer: subscription.customer,
+            metadata: subscription.metadata,
+        });
+
         try {
             await syncSubscriptionToUser(
                 subscription,
                 subscription.metadata?.userId || null,
                 subscription.metadata?.plan || null
             );
-        } catch (error) {
-            console.error('[STRIPE_WEBHOOK] customer.subscription.created update failed', error);
+            console.log('[STRIPE_WEBHOOK] ✅ customer.subscription.created sync SUCCESS');
+        } catch (error: any) {
+            console.error('[STRIPE_WEBHOOK] ❌ customer.subscription.created update failed:', {
+                error: error.message,
+                stack: error.stack,
+            });
             return new NextResponse('Webhook update failed', { status: 500 });
         }
     }
@@ -191,21 +280,36 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = (invoice as any).subscription as string;
 
+        console.log('[STRIPE_WEBHOOK] 💰 invoice.paid', {
+            invoiceId: invoice.id,
+            subscriptionId,
+            customer: invoice.customer,
+        });
+
         if (!subscriptionId) {
+            console.error('[STRIPE_WEBHOOK] ❌ Subscription ID is missing for invoice');
             return new NextResponse('Subscription ID is missing', { status: 400 });
         }
 
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             await syncSubscriptionToUser(subscription, null, null);
-        } catch (error) {
-            console.error('[STRIPE_WEBHOOK] invoice.paid update failed', error);
+            console.log('[STRIPE_WEBHOOK] ✅ invoice.paid sync SUCCESS');
+        } catch (error: any) {
+            console.error('[STRIPE_WEBHOOK] ❌ invoice.paid update failed:', {
+                error: error.message,
+                stack: error.stack,
+            });
             return new NextResponse('Webhook update failed', { status: 500 });
         }
     }
 
     if (event.type === 'customer.subscription.deleted') {
         const subscription = event.data.object as Stripe.Subscription;
+
+        console.log('[STRIPE_WEBHOOK] 🗑️ customer.subscription.deleted', {
+            subscriptionId: subscription.id,
+        });
 
         await prisma.user.updateMany({
             where: { stripeSubscriptionId: subscription.id },
@@ -217,7 +321,10 @@ export async function POST(req: Request) {
                 trialEndsAt: null,
             },
         });
+
+        console.log('[STRIPE_WEBHOOK] ✅ Subscription canceled in DB');
     }
 
+    console.log('[STRIPE_WEBHOOK] ✅ Webhook processed successfully');
     return new NextResponse(null, { status: 200 });
 }
