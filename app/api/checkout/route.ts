@@ -117,33 +117,67 @@ export async function POST(req: Request) {
             );
         }
 
-        // Verify user exists in database
+        // Resolve user record by email (create if missing)
         console.log('👤 [USER_LOOKUP] Searching for user in database', {
             userId: user.id,
             userEmail: user.email,
             userName: user.name,
         });
 
+        const sessionUserId = user.id;
+        const sessionEmail = user.email;
         let dbUser;
+
         try {
             dbUser = await prisma.user.findUnique({
-                where: { id: user.id },
-                select: { 
+                where: { email: sessionEmail },
+                select: {
                     id: true,
                     email: true,
-                    stripeCustomerId: true 
+                    stripeCustomerId: true,
                 },
             });
-            
+
+            if (!dbUser) {
+                console.warn('⚠️ [USER_NOT_FOUND] Creating user record from session', {
+                    userId: sessionUserId,
+                    userEmail: sessionEmail,
+                });
+
+                dbUser = await prisma.user.create({
+                    data: {
+                        id: sessionUserId,
+                        email: sessionEmail,
+                        name: user.name || null,
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        stripeCustomerId: true,
+                    },
+                });
+
+                console.log('✅ [USER_CREATED]', {
+                    userId: dbUser.id,
+                    userEmail: dbUser.email,
+                });
+            } else if (dbUser.id !== sessionUserId) {
+                console.warn('⚠️ [USER_ID_MISMATCH]', {
+                    sessionUserId,
+                    dbUserId: dbUser.id,
+                    userEmail: sessionEmail,
+                });
+            }
+
             console.log('🔍 [USER_DB_CHECK]', {
-                userId: user.id,
-                found: !!dbUser,
-                hasStripeId: !!dbUser?.stripeCustomerId,
-                stripeCustomerId: dbUser?.stripeCustomerId || 'NOT_SET',
+                userId: dbUser.id,
+                found: true,
+                hasStripeId: !!dbUser.stripeCustomerId,
+                stripeCustomerId: dbUser.stripeCustomerId || 'NOT_SET',
             });
         } catch (dbError: any) {
             console.error('❌ [USER_LOOKUP_FAILED]', {
-                userId: user.id,
+                userId: sessionUserId,
                 error: dbError?.message,
             });
             return NextResponse.json(
@@ -155,35 +189,21 @@ export async function POST(req: Request) {
             );
         }
 
-        if (!dbUser) {
-            console.error('❌ [USER_NOT_FOUND]', {
-                userId: user.id,
-                userEmail: user.email,
-                message: 'User authenticated but not found in database. This indicates a sync issue between Auth and DB.',
-            });
-            return NextResponse.json(
-                {
-                    error: 'User not found',
-                    details: 'Your account exists but is not properly synced. Please contact support.',
-                },
-                { status: 404 }
-            );
-        }
-
+        const effectiveUserId = dbUser.id;
         let stripeCustomerId = dbUser.stripeCustomerId;
 
         if (!stripeCustomerId) {
             console.log('💳 [STRIPE_CUSTOMER_CREATE] Creating new Stripe customer', {
-                userId: user.id,
-                userEmail: user.email,
+                userId: effectiveUserId,
+                userEmail: sessionEmail,
             });
 
             try {
                 const customer = await stripe.customers.create({
-                    email: user.email,
+                    email: sessionEmail,
                     name: user.name || undefined,
                     metadata: {
-                        userId: user.id,
+                        userId: effectiveUserId,
                     },
                 });
 
@@ -191,21 +211,21 @@ export async function POST(req: Request) {
 
                 console.log('✅ [STRIPE_CUSTOMER_CREATED]', {
                     customerId: stripeCustomerId,
-                    userId: user.id,
+                    userId: effectiveUserId,
                 });
 
                 // Use upsert to handle edge cases
                 console.log('💾 [USER_UPDATE] Saving Stripe customer ID to database', {
-                    userId: user.id,
+                    userId: effectiveUserId,
                     stripeCustomerId,
                 });
 
                 await prisma.user.upsert({
-                    where: { id: user.id },
+                    where: { email: sessionEmail },
                     update: { stripeCustomerId },
                     create: {
-                        id: user.id,
-                        email: user.email,
+                        id: effectiveUserId,
+                        email: sessionEmail,
                         name: user.name || null,
                         stripeCustomerId,
                     },
@@ -214,7 +234,7 @@ export async function POST(req: Request) {
                 console.log('✅ [USER_UPDATED] Stripe customer ID saved');
             } catch (stripeError: any) {
                 console.error('❌ [STRIPE_CUSTOMER_CREATE_FAILED]', {
-                    userId: user.id,
+                    userId: effectiveUserId,
                     error: stripeError?.message,
                 });
                 return NextResponse.json(
@@ -240,7 +260,7 @@ export async function POST(req: Request) {
             };
         } = {
             metadata: {
-                userId: user.id,
+                userId: effectiveUserId,
                 plan,
                 billingCycle,
                 trial: shouldTrial ? 'true' : 'false',
@@ -275,7 +295,7 @@ export async function POST(req: Request) {
                 ],
                 subscription_data: subscriptionData,
                 metadata: {
-                    userId: user.id,
+                    userId: effectiveUserId,
                     plan,
                     billingCycle,
                     trial: shouldTrial ? 'true' : 'false',

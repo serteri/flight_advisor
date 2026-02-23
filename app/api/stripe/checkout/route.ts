@@ -110,32 +110,66 @@ export async function GET(req: Request) {
             );
         }
 
-        // Verify user exists in database
+        // Resolve user record by email (create if missing)
         console.log('👤 [USER_LOOKUP - GET] Searching for user in database', {
             userId: user.id,
             userEmail: user.email,
         });
 
+        const sessionUserId = user.id;
+        const sessionEmail = user.email;
         let dbUser;
+
         try {
             dbUser = await prisma.user.findUnique({
-                where: { id: user.id },
-                select: { 
+                where: { email: sessionEmail },
+                select: {
                     id: true,
                     email: true,
-                    stripeCustomerId: true 
+                    stripeCustomerId: true,
                 },
             });
-            
+
+            if (!dbUser) {
+                console.warn('⚠️ [USER_NOT_FOUND - GET] Creating user record from session', {
+                    userId: sessionUserId,
+                    userEmail: sessionEmail,
+                });
+
+                dbUser = await prisma.user.create({
+                    data: {
+                        id: sessionUserId,
+                        email: sessionEmail,
+                        name: user.name || null,
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        stripeCustomerId: true,
+                    },
+                });
+
+                console.log('✅ [USER_CREATED - GET]', {
+                    userId: dbUser.id,
+                    userEmail: dbUser.email,
+                });
+            } else if (dbUser.id !== sessionUserId) {
+                console.warn('⚠️ [USER_ID_MISMATCH - GET]', {
+                    sessionUserId,
+                    dbUserId: dbUser.id,
+                    userEmail: sessionEmail,
+                });
+            }
+
             console.log('🔍 [USER_DB_CHECK - GET]', {
-                userId: user.id,
-                found: !!dbUser,
-                hasStripeId: !!dbUser?.stripeCustomerId,
-                stripeCustomerId: dbUser?.stripeCustomerId || 'NOT_SET',
+                userId: dbUser.id,
+                found: true,
+                hasStripeId: !!dbUser.stripeCustomerId,
+                stripeCustomerId: dbUser.stripeCustomerId || 'NOT_SET',
             });
         } catch (dbError: any) {
             console.error('❌ [USER_LOOKUP_FAILED - GET]', {
-                userId: user.id,
+                userId: sessionUserId,
                 error: dbError?.message,
             });
             return NextResponse.json(
@@ -147,34 +181,21 @@ export async function GET(req: Request) {
             );
         }
 
-        if (!dbUser) {
-            console.error('❌ [USER_NOT_FOUND - GET]', {
-                userId: user.id,
-                userEmail: user.email,
-            });
-            return NextResponse.json(
-                {
-                    error: 'User not found',
-                    details: 'Your account exists but is not properly synced. Please contact support.',
-                },
-                { status: 404 }
-            );
-        }
-
+        const effectiveUserId = dbUser.id;
         let stripeCustomerId = dbUser.stripeCustomerId;
 
         if (!stripeCustomerId) {
             console.log('💳 [STRIPE_CUSTOMER_CREATE - GET] Creating new Stripe customer', {
-                userId: user.id,
-                userEmail: user.email,
+                userId: effectiveUserId,
+                userEmail: sessionEmail,
             });
 
             try {
                 const customer = await stripe.customers.create({
-                    email: user.email,
+                    email: sessionEmail,
                     name: user.name || undefined,
                     metadata: {
-                        userId: user.id
+                        userId: effectiveUserId
                     }
                 });
 
@@ -182,16 +203,16 @@ export async function GET(req: Request) {
 
                 console.log('✅ [STRIPE_CUSTOMER_CREATED - GET]', {
                     customerId: stripeCustomerId,
-                    userId: user.id,
+                    userId: effectiveUserId,
                 });
 
                 // Use upsert to handle edge cases
                 await prisma.user.upsert({
-                    where: { id: user.id },
+                    where: { email: sessionEmail },
                     update: { stripeCustomerId },
                     create: {
-                        id: user.id,
-                        email: user.email,
+                        id: effectiveUserId,
+                        email: sessionEmail,
                         name: user.name || null,
                         stripeCustomerId,
                     },
@@ -200,7 +221,7 @@ export async function GET(req: Request) {
                 console.log('✅ [USER_UPDATED - GET] Stripe customer ID saved');
             } catch (stripeError: any) {
                 console.error('❌ [STRIPE_CUSTOMER_CREATE_FAILED - GET]', {
-                    userId: user.id,
+                    userId: effectiveUserId,
                     error: stripeError?.message,
                 });
                 return NextResponse.json(
@@ -225,7 +246,7 @@ export async function GET(req: Request) {
             };
         } = {
             metadata: {
-                userId: user.id,
+                userId: effectiveUserId,
                 plan,
                 billingCycle: cycle,
                 trial: trial ? 'true' : 'false',
@@ -247,7 +268,7 @@ export async function GET(req: Request) {
             ],
             subscription_data: subscriptionData,
             metadata: {
-                userId: user.id,
+                userId: effectiveUserId,
                 plan,
                 billingCycle: cycle,
                 trial: trial ? 'true' : 'false',
@@ -296,25 +317,57 @@ export async function POST(req: Request) {
                   ? 'ELITE'
                   : null;
 
-        // Get or create Stripe Customer
-        let stripeCustomerId = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { stripeCustomerId: true }
-        }).then(u => u?.stripeCustomerId);
+        // Resolve user record by email (create if missing)
+        const sessionUserId = user.id;
+        const sessionEmail = user.email;
+        let dbUser = await prisma.user.findUnique({
+            where: { email: sessionEmail },
+            select: { id: true, email: true, stripeCustomerId: true }
+        });
+
+        if (!dbUser) {
+            console.warn('⚠️ [USER_NOT_FOUND - STRIPE_POST] Creating user record from session', {
+                userId: sessionUserId,
+                userEmail: sessionEmail,
+            });
+            dbUser = await prisma.user.create({
+                data: {
+                    id: sessionUserId,
+                    email: sessionEmail,
+                    name: user.name || null,
+                },
+                select: { id: true, email: true, stripeCustomerId: true }
+            });
+        } else if (dbUser.id !== sessionUserId) {
+            console.warn('⚠️ [USER_ID_MISMATCH - STRIPE_POST]', {
+                sessionUserId,
+                dbUserId: dbUser.id,
+                userEmail: sessionEmail,
+            });
+        }
+
+        const effectiveUserId = dbUser.id;
+        let stripeCustomerId = dbUser.stripeCustomerId;
 
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
-                email: user.email,
+                email: sessionEmail,
                 name: user.name || undefined,
                 metadata: {
-                    userId: user.id
+                    userId: effectiveUserId
                 }
             });
             stripeCustomerId = customer.id;
 
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { stripeCustomerId }
+            await prisma.user.upsert({
+                where: { email: sessionEmail },
+                update: { stripeCustomerId },
+                create: {
+                    id: effectiveUserId,
+                    email: sessionEmail,
+                    name: user.name || null,
+                    stripeCustomerId
+                }
             });
         }
 
@@ -332,13 +385,13 @@ export async function POST(req: Request) {
             subscription_data: {
                 trial_period_days: 7,
                 metadata: {
-                    userId: user.id,
+                    userId: effectiveUserId,
                     planId: plan.id,
                     plan: resolvedPlan || '',
                 },
             },
             metadata: {
-                userId: user.id,
+                userId: effectiveUserId,
                 planId: plan.id,
                 plan: resolvedPlan || '',
             },
