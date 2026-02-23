@@ -302,25 +302,9 @@ export default function FlightResultCard({
                     )}
 
                     {/* AMENITIES (LOCKED FOR FREE USERS) */}
-                    <div className="relative mt-5 pt-3 border-t border-slate-100">
-                        {/* Lock Overlay for FREE users */}
-                        {!hasPremiumAccess && (
-                            <LockedFeatureOverlay
-                                featureName="Amenity Intelligence"
-                                requiredTier="PRO"
-                                description="Unlock detailed amenity analysis, baggage policies, and refund/change conditions"
-                                benefits={[
-                                    'Aircraft type & age details',
-                                    'Real baggage allowance (kg)',
-                                    'Refund & change policies',
-                                    'WiFi, IFE, meal service details'
-                                ]}
-                                className="rounded-lg"
-                            />
-                        )}
-                        
+                    <div className="mt-5 pt-3 border-t border-slate-100">
                         {/* Amenity Content (blurred for FREE, visible for PRO) */}
-                        <div className={`flex flex-wrap gap-4 ${!hasPremiumAccess && 'filter blur-sm opacity-50 select-none pointer-events-none'}`}>
+                        <div className={`flex flex-wrap gap-4 ${!hasPremiumAccess ? 'filter blur-sm opacity-50 select-none pointer-events-none' : ''}`}>
                             <div className="flex items-center gap-1.5">
                                 <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
@@ -362,26 +346,39 @@ export default function FlightResultCard({
                         </div>
                     </div>
 
-                    {/* KONTROL ET BUTONU - View Analysis Premium Feature */}
+                    {/* Premium callout for FREE users */}
+                    {!hasPremiumAccess && (
+                        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-900">Premium analysis locked</p>
+                                <p className="text-xs text-slate-600">Upgrade to PRO to unlock full analysis, scoring, and tracking.</p>
+                            </div>
+                            <button
+                                onClick={() => setShowLockOverlay(true)}
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
+                            >
+                                Upgrade to PRO
+                            </button>
+                        </div>
+                    )}
+
+                    {/* KONTROL ET BUTONU - View Analysis */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
                             onClick={() => {
-                                // If FREE user, show lock overlay instead of opening details
-                                if (!hasPremiumAccess) {
-                                    setShowLockOverlay(true);
-                                } else {
-                                    // PRO/ELITE: Show flight details dialog
+                                if (hasPremiumAccess) {
                                     setShowDetails(true);
                                 }
                             }}
+                            disabled={!hasPremiumAccess}
                             className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
                                 hasPremiumAccess 
                                     ? 'bg-blue-100 hover:bg-blue-200 text-blue-700' 
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             }`}
                         >
                             <Eye className="w-4 h-4" />
-                            {hasPremiumAccess ? 'View Analysis' : 'View Analysis (Unlock)'}
+                            View Analysis
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1" />}
                         </button>
                     </div>
@@ -444,22 +441,13 @@ export default function FlightResultCard({
                 <div className="w-full md:w-52 border-l pl-6 flex flex-col justify-between relative">
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
-                    <div className="h-24 relative flex items-center justify-center mb-2 cursor-pointer rounded-xl overflow-hidden bg-slate-50 border border-slate-100" onClick={handleLockClick}>
+                    <div className="h-24 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
                         {!hasPremiumAccess ? (
-                            // KİLİTLİ HALİ - Updated with better CTA
-                            <>
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-md z-10 flex flex-col items-center justify-center">
-                                    <Lock className="w-6 h-6 text-blue-600 mb-1 animate-pulse" />
-                                    <span className="text-[10px] font-bold text-slate-800 text-center px-4 leading-tight">
-                                        {t('view_analysis')}<br />
-                                        <span className="text-blue-600">Tap to Unlock</span>
-                                    </span>
-                                </div>
-                                {/* Arkada blur görünen sahte skor */}
-                                <div className="text-5xl font-black text-slate-300 blur-sm pointer-events-none">8.5</div>
-                            </>
+                            <div className="text-center opacity-70">
+                                <div className="text-5xl font-black text-slate-300 blur-sm">8.5</div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analysis locked</span>
+                            </div>
                         ) : (
-                            // AÇIK HALİ
                             <div className="text-center">
                                 <div className="text-5xl font-black text-blue-600 tracking-tighter">{flight.agentScore?.toFixed(1) || "?.?"}</div>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>

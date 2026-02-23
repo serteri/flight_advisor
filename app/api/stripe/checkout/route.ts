@@ -273,8 +273,8 @@ export async function GET(req: Request) {
                 billingCycle: cycle,
                 trial: trial ? 'true' : 'false',
             },
-            success_url: `${baseUrl}/dashboard?success=true`,
-            cancel_url: `${baseUrl}/pricing?canceled=true`,
+            success_url: `${baseUrl}/en/dashboard?success=true`,
+            cancel_url: `${baseUrl}/en/pricing?canceled=true`,
         });
 
         if (!checkoutSession.url) {
@@ -395,8 +395,8 @@ export async function POST(req: Request) {
                 planId: plan.id,
                 plan: resolvedPlan || '',
             },
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/en/dashboard?success=true`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/en/pricing?canceled=true`,
         });
 
         return NextResponse.json({ url: checkoutSession.url });

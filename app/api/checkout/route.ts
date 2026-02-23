@@ -286,8 +286,8 @@ export async function POST(req: Request) {
                     billingCycle,
                     trial: shouldTrial ? 'true' : 'false',
                 },
-                success_url: `${baseUrl}/dashboard?status=success`,
-                cancel_url: `${baseUrl}/pricing?canceled=true`,
+                success_url: `${baseUrl}/en/dashboard?success=true`,
+                cancel_url: `${baseUrl}/en/pricing?canceled=true`,
             });
             console.log('✅ [STRIPE_SESSION_CREATED]', {
                 sessionId: checkoutSession.id,

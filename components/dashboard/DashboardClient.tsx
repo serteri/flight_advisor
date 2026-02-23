@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
@@ -26,6 +26,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const checkoutSuccess = checkoutStatus === 'success' || searchParams.get('success') === 'true';
     const pathname = usePathname();
     const locale = pathname?.split('/')[1] || 'en';
+    const router = useRouter();
     const planParam = searchParams.get('plan');
     const normalizedPlanParam = planParam?.toUpperCase() || null;
     const cycleParam = searchParams.get('billingCycle');
@@ -165,6 +166,11 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
         return () => window.clearTimeout(timer);
     }, [isAutoCheckoutLoading]);
+
+    useEffect(() => {
+        if (!checkoutSuccess) return;
+        router.refresh();
+    }, [checkoutSuccess, router]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
