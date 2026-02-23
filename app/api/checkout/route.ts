@@ -117,28 +117,114 @@ export async function POST(req: Request) {
             );
         }
 
-        let stripeCustomerId = await prisma.user
-            .findUnique({
-                where: { id: user.id },
-                select: { stripeCustomerId: true },
-            })
-            .then((record) => record?.stripeCustomerId);
+        // Verify user exists in database
+        console.log('👤 [USER_LOOKUP] Searching for user in database', {
+            userId: user.id,
+            userEmail: user.email,
+            userName: user.name,
+        });
 
-        if (!stripeCustomerId) {
-            const customer = await stripe.customers.create({
-                email: user.email,
-                name: user.name || undefined,
-                metadata: {
-                    userId: user.id,
+        let dbUser;
+        try {
+            dbUser = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { 
+                    id: true,
+                    email: true,
+                    stripeCustomerId: true 
                 },
             });
-
-            stripeCustomerId = customer.id;
-
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { stripeCustomerId },
+            
+            console.log('🔍 [USER_DB_CHECK]', {
+                userId: user.id,
+                found: !!dbUser,
+                hasStripeId: !!dbUser?.stripeCustomerId,
+                stripeCustomerId: dbUser?.stripeCustomerId || 'NOT_SET',
             });
+        } catch (dbError: any) {
+            console.error('❌ [USER_LOOKUP_FAILED]', {
+                userId: user.id,
+                error: dbError?.message,
+            });
+            return NextResponse.json(
+                {
+                    error: 'User lookup failed',
+                    details: 'Could not verify user in database',
+                },
+                { status: 500 }
+            );
+        }
+
+        if (!dbUser) {
+            console.error('❌ [USER_NOT_FOUND]', {
+                userId: user.id,
+                userEmail: user.email,
+                message: 'User authenticated but not found in database. This indicates a sync issue between Auth and DB.',
+            });
+            return NextResponse.json(
+                {
+                    error: 'User not found',
+                    details: 'Your account exists but is not properly synced. Please contact support.',
+                },
+                { status: 404 }
+            );
+        }
+
+        let stripeCustomerId = dbUser.stripeCustomerId;
+
+        if (!stripeCustomerId) {
+            console.log('💳 [STRIPE_CUSTOMER_CREATE] Creating new Stripe customer', {
+                userId: user.id,
+                userEmail: user.email,
+            });
+
+            try {
+                const customer = await stripe.customers.create({
+                    email: user.email,
+                    name: user.name || undefined,
+                    metadata: {
+                        userId: user.id,
+                    },
+                });
+
+                stripeCustomerId = customer.id;
+
+                console.log('✅ [STRIPE_CUSTOMER_CREATED]', {
+                    customerId: stripeCustomerId,
+                    userId: user.id,
+                });
+
+                // Use upsert to handle edge cases
+                console.log('💾 [USER_UPDATE] Saving Stripe customer ID to database', {
+                    userId: user.id,
+                    stripeCustomerId,
+                });
+
+                await prisma.user.upsert({
+                    where: { id: user.id },
+                    update: { stripeCustomerId },
+                    create: {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name || null,
+                        stripeCustomerId,
+                    },
+                });
+
+                console.log('✅ [USER_UPDATED] Stripe customer ID saved');
+            } catch (stripeError: any) {
+                console.error('❌ [STRIPE_CUSTOMER_CREATE_FAILED]', {
+                    userId: user.id,
+                    error: stripeError?.message,
+                });
+                return NextResponse.json(
+                    {
+                        error: 'Failed to create Stripe customer',
+                        details: stripeError?.message || 'Unknown Stripe error',
+                    },
+                    { status: 500 }
+                );
+            }
         }
 
         const baseUrl = resolveBaseUrl();
