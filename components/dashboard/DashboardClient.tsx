@@ -171,10 +171,35 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         return () => window.clearTimeout(timer);
     }, [isAutoCheckoutLoading]);
 
+    // Polling for checkout success - retry every 3s, max 5 times (15s)
+    const pollCountRef = useRef(0);
     useEffect(() => {
         if (!checkoutSuccess) return;
+        if (hasPremium) return; // Already synced
+        
+        pollCountRef.current = 0;
+        
+        const pollInterval = setInterval(() => {
+            pollCountRef.current += 1;
+            console.log(`🔄 [CHECKOUT_POLL] Attempt ${pollCountRef.current}/5`);
+            router.refresh();
+            
+            if (pollCountRef.current >= 5) {
+                console.warn('⏱️ [CHECKOUT_TIMEOUT] Max retries reached, clearing success param');
+                clearInterval(pollInterval);
+                // Clear success param from URL to unblock UI
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.delete('success');
+                newUrl.searchParams.delete('status');
+                router.replace(newUrl.pathname + newUrl.search);
+            }
+        }, 3000);
+        
+        // Initial refresh
         router.refresh();
-    }, [checkoutSuccess, router]);
+        
+        return () => clearInterval(pollInterval);
+    }, [checkoutSuccess, hasPremium, router]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {
@@ -239,12 +264,13 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     if (checkoutSuccess && !hasPremium) {
         return (
             <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[9999]">
-                <div className="text-center text-white">
+                <div className="text-center text-white max-w-md px-4">
                     <div className="mb-6 flex justify-center">
                         <div className="w-14 h-14 rounded-full border-4 border-white/30 border-t-white animate-spin" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">Finalizing your upgrade...</h3>
-                    <p className="text-white/70">Syncing your subscription status.</p>
+                    <p className="text-white/70 mb-4">Syncing your subscription status.</p>
+                    <p className="text-white/50 text-sm">This usually takes 5-10 seconds. If stuck, refresh the page.</p>
                 </div>
             </div>
         );
