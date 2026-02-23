@@ -187,7 +187,8 @@ export function MasterScoreCard({ scoreData, isPro = false, userTier = 'FREE', o
                                 'Live disruption alerts',
                                 'EU261 compensation tracking'
                             ]}
-                            className="!static !backdrop-blur-none"
+                            variant="panel"
+                            className="w-full"
                         />
                         <button
                             onClick={() => setShowUpgradeModal(false)}

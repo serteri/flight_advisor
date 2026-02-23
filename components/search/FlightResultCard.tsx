@@ -523,7 +523,8 @@ export default function FlightResultCard({
                                 'Refund & change policy insights',
                                 'Price drop notifications'
                             ]}
-                            className="!static !backdrop-blur-none"
+                            variant="panel"
+                            className="w-full"
                         />
                         <button
                             onClick={() => setShowLockOverlay(false)}
