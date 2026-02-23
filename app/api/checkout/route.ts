@@ -117,8 +117,8 @@ export async function POST(req: Request) {
             );
         }
 
-        // Resolve user record by email (create if missing)
-        console.log('👤 [USER_LOOKUP] Searching for user in database', {
+        // Resolve user record by email (self-healing upsert)
+        console.log('👤 [USER_LOOKUP] Resolving user via upsert', {
             userId: user.id,
             userEmail: user.email,
             userName: user.name,
@@ -129,8 +129,17 @@ export async function POST(req: Request) {
         let dbUser;
 
         try {
-            dbUser = await prisma.user.findUnique({
+            dbUser = await prisma.user.upsert({
                 where: { email: sessionEmail },
+                update: {
+                    name: user.name ?? undefined,
+                    image: user.image ?? undefined,
+                },
+                create: {
+                    email: sessionEmail,
+                    name: user.name || null,
+                    image: user.image || null,
+                },
                 select: {
                     id: true,
                     email: true,
@@ -138,30 +147,7 @@ export async function POST(req: Request) {
                 },
             });
 
-            if (!dbUser) {
-                console.warn('⚠️ [USER_NOT_FOUND] Creating user record from session', {
-                    userId: sessionUserId,
-                    userEmail: sessionEmail,
-                });
-
-                dbUser = await prisma.user.create({
-                    data: {
-                        id: sessionUserId,
-                        email: sessionEmail,
-                        name: user.name || null,
-                    },
-                    select: {
-                        id: true,
-                        email: true,
-                        stripeCustomerId: true,
-                    },
-                });
-
-                console.log('✅ [USER_CREATED]', {
-                    userId: dbUser.id,
-                    userEmail: dbUser.email,
-                });
-            } else if (dbUser.id !== sessionUserId) {
+            if (dbUser.id !== sessionUserId) {
                 console.warn('⚠️ [USER_ID_MISMATCH]', {
                     sessionUserId,
                     dbUserId: dbUser.id,
