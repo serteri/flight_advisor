@@ -11,6 +11,12 @@ type BillingCycle = 'monthly' | 'yearly';
 const isStripeTestMode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_');
 const priceIdSuffix = isStripeTestMode ? 'TEST_' : '';
 
+console.log('🔧 [STRIPE CONFIG - GET]', {
+    mode: isStripeTestMode ? 'TEST' : 'LIVE',
+    suffix: priceIdSuffix,
+    secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
+});
+
 const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
     PRO: {
         monthly: process.env[`STRIPE_PRO_${priceIdSuffix}MONTHLY_PRICE_ID`],
@@ -21,6 +27,13 @@ const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
         yearly: process.env[`STRIPE_ELITE_${priceIdSuffix}YEARLY_PRICE_ID`],
     },
 };
+
+console.log('💰 [PRICE MAP - GET]', {
+    PRO_monthly: PRICE_MAP.PRO.monthly || 'MISSING',
+    PRO_yearly: PRICE_MAP.PRO.yearly || 'MISSING',
+    ELITE_monthly: PRICE_MAP.ELITE.monthly || 'MISSING',
+    ELITE_yearly: PRICE_MAP.ELITE.yearly || 'MISSING',
+});
 
 function resolveBaseUrl() {
     return (
@@ -44,7 +57,15 @@ export async function GET(req: Request) {
         const session = await auth();
         const user = session?.user;
 
+        console.log('🔐 [AUTH CHECK]', {
+            hasSession: !!session,
+            hasUser: !!user,
+            userId: user?.id || 'N/A',
+            userEmail: user?.email || 'N/A',
+        });
+
         if (!user || !user.email || !user.id) {
+            console.error('❌ [UNAUTHORIZED] No valid session');
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -53,22 +74,40 @@ export async function GET(req: Request) {
         const cycle = searchParams.get('billingCycle') === 'yearly' ? 'yearly' : 'monthly';
         const trial = searchParams.get('trial') !== 'false';
 
-        console.log('[STRIPE_CHECKOUT_GET]', {
+        if (!plan) {
+            console.error('❌ [INVALID_PLAN]', { planParam: searchParams.get('plan') });
+            return new NextResponse("Missing or invalid plan", { status: 400 });
+        }
+
+        const envVarName = `STRIPE_${plan}_${priceIdSuffix}${cycle.toUpperCase()}_PRICE_ID`;
+        const priceId = PRICE_MAP[plan]?.[cycle];
+
+        console.log('🚀 [STRIPE_CHECKOUT_GET]', {
             userId: user.id,
             plan,
             billingCycle: cycle,
             trial,
             stripeMode: isStripeTestMode ? 'TEST' : 'LIVE',
-            priceIdLookup: `STRIPE_${plan}_${priceIdSuffix}${cycle.toUpperCase()}_PRICE_ID`,
+            envVarName,
+            priceId: priceId || '❌ MISSING',
+            priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
         });
 
-        if (!plan) {
-            return new NextResponse("Missing or invalid plan", { status: 400 });
-        }
-
-        const priceId = PRICE_MAP[plan]?.[cycle];
         if (!priceId) {
-            return new NextResponse("Missing Stripe price ID", { status: 400 });
+            console.error('❌ [PRICE_ID_MISSING - GET]', {
+                plan,
+                cycle,
+                envVarName,
+                availableEnvVars: Object.keys(process.env).filter(k => k.startsWith('STRIPE_')),
+            });
+            return NextResponse.json(
+                {
+                    error: 'Stripe Configuration Error',
+                    details: `Missing price ID for ${plan} ${cycle}`,
+                    expectedEnvVar: envVarName,
+                },
+                { status: 500 }
+            );
         }
 
         let stripeCustomerId = await prisma.user.findUnique({

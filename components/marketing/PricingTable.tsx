@@ -58,15 +58,26 @@ export function PricingTable() {
             }
 
             if (!response.ok) {
-                throw new Error('Checkout failed');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ [CHECKOUT_ERROR]', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData,
+                });
+                alert(`Checkout Error: ${errorData.error || 'Failed to create checkout session'}\n\nDetails: ${errorData.details || 'Please check console for more info'}`);
+                throw new Error(errorData.error || 'Checkout failed');
             }
 
             const data = await response.json();
+            console.log('✅ [CHECKOUT_SUCCESS]', { hasUrl: !!data?.url });
+            
             if (data?.url) {
                 window.location.href = data.url;
+            } else {
+                throw new Error('No checkout URL returned');
             }
         } catch (error) {
-            console.error('[CHECKOUT]', error);
+            console.error('❌ [CHECKOUT]', error);
         } finally {
             setCheckoutLoading(null);
         }

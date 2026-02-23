@@ -64,6 +64,8 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         trialValue: boolean
     ) => {
         try {
+            console.log('🛒 [DASHBOARD_CHECKOUT]', { plan: planValue, cycle: cycleValue, trial: trialValue });
+            
             const response = await fetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -75,23 +77,32 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
             });
 
             if (response.status === 401) {
-                console.warn('[CHECKOUT] Unauthorized session');
+                console.warn('❌ [CHECKOUT] Unauthorized session - redirecting to login');
                 return { ok: false, unauthorized: true } as const;
             }
 
             if (!response.ok) {
-                throw new Error('Checkout failed');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ [CHECKOUT_FAILED]', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData,
+                });
+                throw new Error(errorData.error || 'Checkout failed');
             }
 
             const data = await response.json();
+            console.log('✅ [CHECKOUT_RESPONSE]', { hasUrl: !!data?.url });
+            
             if (data?.url) {
+                console.log('🚀 [REDIRECTING]', data.url);
                 window.location.replace(data.url);
                 return { ok: true } as const;
             }
 
             return { ok: false } as const;
         } catch (error) {
-            console.error('[CHECKOUT]', error);
+            console.error('❌ [CHECKOUT_ERROR]', error);
             return { ok: false } as const;
         }
     };

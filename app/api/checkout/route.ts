@@ -10,6 +10,12 @@ type BillingCycle = 'monthly' | 'yearly';
 const isStripeTestMode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_');
 const priceIdSuffix = isStripeTestMode ? 'TEST_' : '';
 
+console.log('🔧 [STRIPE CONFIG]', {
+    mode: isStripeTestMode ? 'TEST' : 'LIVE',
+    suffix: priceIdSuffix,
+    secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
+});
+
 const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
     PRO: {
         monthly: process.env[`STRIPE_PRO_${priceIdSuffix}MONTHLY_PRICE_ID`],
@@ -20,6 +26,13 @@ const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
         yearly: process.env[`STRIPE_ELITE_${priceIdSuffix}YEARLY_PRICE_ID`],
     },
 };
+
+console.log('💰 [PRICE MAP]', {
+    PRO_monthly: PRICE_MAP.PRO.monthly || 'MISSING',
+    PRO_yearly: PRICE_MAP.PRO.yearly || 'MISSING',
+    ELITE_monthly: PRICE_MAP.ELITE.monthly || 'MISSING',
+    ELITE_yearly: PRICE_MAP.ELITE.yearly || 'MISSING',
+});
 
 function resolveBaseUrl() {
     return (
@@ -32,13 +45,21 @@ function resolveBaseUrl() {
 export async function POST(req: Request) {
     try {
         if (process.env.NODE_ENV !== 'production') {
-            console.warn('[ENV] NODE_ENV is not production:', process.env.NODE_ENV);
+            console.warn('⚠️ [ENV] NODE_ENV is not production:', process.env.NODE_ENV);
         }
 
         const session = await auth();
         const user = session?.user;
 
+        console.log('🔐 [AUTH CHECK - POST]', {
+            hasSession: !!session,
+            hasUser: !!user,
+            userId: user?.id || 'N/A',
+            userEmail: user?.email || 'N/A',
+        });
+
         if (!user?.id || !user?.email) {
+            console.error('❌ [UNAUTHORIZED] No valid session');
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
@@ -52,18 +73,35 @@ export async function POST(req: Request) {
             return new NextResponse('Missing plan or billing cycle', { status: 400 });
         }
 
-        console.log('[CHECKOUT_POST]', {
+        const envVarName = `STRIPE_${plan}_${priceIdSuffix}${billingCycle.toUpperCase()}_PRICE_ID`;
+        const priceId = PRICE_MAP[plan]?.[billingCycle];
+
+        console.log('🚀 [CHECKOUT_POST]', {
             userId: user.id,
             plan,
             billingCycle,
             trial: trial !== false,
             stripeMode: isStripeTestMode ? 'TEST' : 'LIVE',
-            priceIdLookup: `STRIPE_${plan}_${priceIdSuffix}${billingCycle.toUpperCase()}_PRICE_ID`,
+            envVarName,
+            priceId: priceId || '❌ MISSING',
+            priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
         });
 
-        const priceId = PRICE_MAP[plan]?.[billingCycle];
         if (!priceId) {
-            return new NextResponse('Missing Stripe price ID', { status: 400 });
+            console.error('❌ [PRICE_ID_MISSING]', {
+                plan,
+                billingCycle,
+                envVarName,
+                availableEnvVars: Object.keys(process.env).filter(k => k.startsWith('STRIPE_')),
+            });
+            return NextResponse.json(
+                { 
+                    error: 'Stripe Configuration Error',
+                    details: `Missing price ID for ${plan} ${billingCycle}`,
+                    expectedEnvVar: envVarName,
+                }, 
+                { status: 500 }
+            );
         }
 
         let stripeCustomerId = await prisma.user
