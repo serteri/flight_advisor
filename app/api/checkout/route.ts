@@ -48,6 +48,19 @@ export async function POST(req: Request) {
             console.warn('⚠️ [ENV] NODE_ENV is not production:', process.env.NODE_ENV);
         }
 
+        // Database ping to ensure connection
+        console.log('🔌 [DB_PING] Checking database connection...');
+        try {
+            await prisma.$connect();
+            console.log('✅ [DB_PING] Database connected');
+        } catch (dbError) {
+            console.error('❌ [DB_PING_FAILED]', dbError);
+            return NextResponse.json(
+                { error: 'Database connection failed', details: String(dbError) },
+                { status: 500 }
+            );
+        }
+
         const session = await auth();
         const user = session?.user;
 
@@ -60,7 +73,7 @@ export async function POST(req: Request) {
 
         if (!user?.id || !user?.email) {
             console.error('❌ [UNAUTHORIZED] No valid session');
-            return new NextResponse('Unauthorized', { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const { plan, billingCycle, trial } = (await req.json()) as {
@@ -152,31 +165,77 @@ export async function POST(req: Request) {
             subscriptionData.trial_period_days = 7;
         }
 
-        const checkoutSession = await stripe.checkout.sessions.create({
+        console.log('💳 [STRIPE_SESSION_CREATE] About to create checkout session', {
             customer: stripeCustomerId,
-            mode: 'subscription',
-            payment_method_collection: 'always',
-            billing_address_collection: 'auto',
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: 1,
-                },
-            ],
-            subscription_data: subscriptionData,
-            metadata: {
-                userId: user.id,
-                plan,
-                billingCycle,
-                trial: shouldTrial ? 'true' : 'false',
-            },
-            success_url: `${baseUrl}/dashboard?status=success`,
-            cancel_url: `${baseUrl}/pricing?canceled=true`,
+            priceId,
+            plan,
+            billingCycle,
+            trial: shouldTrial,
+            baseUrl,
         });
 
+        let checkoutSession;
+        try {
+            checkoutSession = await stripe.checkout.sessions.create({
+                customer: stripeCustomerId,
+                mode: 'subscription',
+                payment_method_collection: 'always',
+                billing_address_collection: 'auto',
+                line_items: [
+                    {
+                        price: priceId,
+                        quantity: 1,
+                    },
+                ],
+                subscription_data: subscriptionData,
+                metadata: {
+                    userId: user.id,
+                    plan,
+                    billingCycle,
+                    trial: shouldTrial ? 'true' : 'false',
+                },
+                success_url: `${baseUrl}/dashboard?status=success`,
+                cancel_url: `${baseUrl}/pricing?canceled=true`,
+            });
+            console.log('✅ [STRIPE_SESSION_CREATED]', {
+                sessionId: checkoutSession.id,
+                url: checkoutSession.url,
+            });
+        } catch (stripeError: any) {
+            console.error('🚨 [STRIPE_API_ERROR]', {
+                message: stripeError?.message,
+                type: stripeError?.type,
+                code: stripeError?.code,
+                param: stripeError?.param,
+                priceId,
+                stripeCustomerId,
+            });
+            return NextResponse.json(
+                { 
+                    error: 'Stripe API Error',
+                    details: stripeError?.message || 'Failed to create checkout session',
+                    stripeErrorType: stripeError?.type,
+                    stripeErrorCode: stripeError?.code,
+                },
+                { status: 500 }
+            );
+        }
+
         return NextResponse.json({ url: checkoutSession.url });
-    } catch (error) {
-        console.error('[STRIPE_CHECKOUT]', error);
-        return new NextResponse('Internal Error', { status: 500 });
+    } catch (error: any) {
+        console.error('🚨 [CHECKOUT_SERVER_CRASH]', {
+            message: error?.message,
+            name: error?.name,
+            stack: error?.stack,
+            error: error,
+        });
+        return NextResponse.json(
+            { 
+                error: error?.message || 'Internal Server Error',
+                details: 'Checkout handler crashed unexpectedly',
+                errorType: error?.name,
+            },
+            { status: 500 }
+        );
     }
 }

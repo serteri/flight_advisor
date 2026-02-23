@@ -64,7 +64,22 @@ export function PricingTable() {
                     statusText: response.statusText,
                     error: errorData,
                 });
-                alert(`Checkout Error: ${errorData.error || 'Failed to create checkout session'}\n\nDetails: ${errorData.details || 'Please check console for more info'}`);
+                
+                // Show detailed error to user
+                const errorMessage = `
+🚨 Checkout Error
+
+Error: ${errorData.error || 'Failed to create checkout session'}
+
+Details: ${errorData.details || 'No additional details available'}
+
+${errorData.stripeErrorCode ? `Stripe Error Code: ${errorData.stripeErrorCode}` : ''}
+${errorData.expectedEnvVar ? `Missing Environment Variable: ${errorData.expectedEnvVar}` : ''}
+
+Please check the browser console for full error details.
+                `.trim();
+                
+                alert(errorMessage);
                 throw new Error(errorData.error || 'Checkout failed');
             }
 
