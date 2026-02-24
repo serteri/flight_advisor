@@ -117,7 +117,9 @@ export async function GET() {
                 stripeSubscriptionId: activeSubscription.id,
                 stripeCustomerId: dbUser.stripeCustomerId,
                 stripePriceId: priceId,
-                stripeCurrentPeriodEnd: new Date((activeSubscription as any).current_period_end * 1000),
+                stripeCurrentPeriodEnd: (activeSubscription as any).current_period_end
+                    ? new Date((activeSubscription as any).current_period_end * 1000)
+                    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 isPremium: true,
                 subscriptionPlan: plan,
                 subscriptionStatus: activeSubscription.status,

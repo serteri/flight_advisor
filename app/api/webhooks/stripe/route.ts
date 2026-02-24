@@ -112,8 +112,8 @@ const syncSubscriptionToUser = async (
         stripeCustomerId: customerId,
         stripePriceId: priceId,
         stripeCurrentPeriodEnd: currentPeriodEnd && typeof currentPeriodEnd === 'number' 
-            ? new Date(currentPeriodEnd * 1000) 
-            : null,
+            ? new Date(currentPeriodEnd * 1000)
+            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         isPremium: true,
         subscriptionPlan: plan,
         subscriptionStatus: subscription.status || 'active',
