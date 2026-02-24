@@ -19,7 +19,7 @@ model User {
 
   // 💳 ÖDEME SİSTEMİ (STRIPE)
   stripeCustomerId       String?   @unique // Stripe'daki ID'si
-  stripeSubscriptionId   String?   @unique // Aktif abonelik ID'si
+  stripeSubscriptionId   String?   // Aktif abonelik ID'si (upsert idempotency için non-unique)
   stripePriceId          String?   // Hangi paketi aldı?
   stripeCurrentPeriodEnd DateTime? // Abonelik ne zaman bitiyor?
   subscriptionStatus     String?   // trialing, active, canceled

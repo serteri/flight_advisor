@@ -103,16 +103,22 @@ const syncSubscriptionToUser = async (
         name: customerProfile?.name 
     });
 
+    // Build update data with safe date handling
+    const currentPeriodEnd = (subscription as any).current_period_end;
+    const trialEnd = (subscription as any).trial_end;
+    
     const updateData = {
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
         stripePriceId: priceId,
-        stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        stripeCurrentPeriodEnd: currentPeriodEnd && typeof currentPeriodEnd === 'number' 
+            ? new Date(currentPeriodEnd * 1000) 
+            : null,
         isPremium: true,
         subscriptionPlan: plan,
-        subscriptionStatus: subscription.status,
-        trialEndsAt: (subscription as any).trial_end
-            ? new Date((subscription as any).trial_end * 1000)
+        subscriptionStatus: subscription.status || 'active',
+        trialEndsAt: trialEnd && typeof trialEnd === 'number' 
+            ? new Date(trialEnd * 1000) 
             : null,
     };
 
