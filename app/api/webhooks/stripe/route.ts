@@ -216,57 +216,58 @@ const syncSubscriptionToUser = async (
 };
 
 export async function POST(req: Request) {
-    console.log('[STRIPE_WEBHOOK] 🔔 Webhook request received');
-    console.log('[STRIPE_WEBHOOK] 📝 Content-Type:', req.headers.get('content-type'));
-    console.log('[STRIPE_WEBHOOK] 🔑 Has Stripe-Signature:', !!req.headers.get('Stripe-Signature'));
-    
-    // CRITICAL: Use req.text() for raw body to preserve signature verification!
-    let body: string;
     try {
-        body = await req.text();
-        console.log('[STRIPE_WEBHOOK] ✅ Raw body parsed successfully');
-        console.log('[STRIPE_WEBHOOK] 📏 Body length:', body.length);
-    } catch (error: any) {
-        console.error('[STRIPE_WEBHOOK] ❌ Failed to parse body:', error.message);
-        return new NextResponse('Failed to parse request body', { status: 400 });
-    }
-
-    const headersList = await headers();
-    const signature = headersList.get('Stripe-Signature') as string;
-
-    if (!signature) {
-        console.error('[STRIPE_WEBHOOK] ❌ Missing Stripe-Signature header');
-        return new NextResponse('Missing Stripe-Signature header', { status: 400 });
-    }
-
-    console.log('[STRIPE_WEBHOOK] 🔐 Signature header present, verifying...');
-
-    let event: Stripe.Event;
-
-    try {
-        const secret = process.env.STRIPE_WEBHOOK_SECRET;
-        if (!secret) {
-            console.error('[STRIPE_WEBHOOK] ❌ STRIPE_WEBHOOK_SECRET not configured');
-            return new NextResponse('Webhook secret not configured', { status: 500 });
+        console.log('[STRIPE_WEBHOOK] 🔔 Webhook request received');
+        console.log('[STRIPE_WEBHOOK] 📝 Content-Type:', req.headers.get('content-type'));
+        console.log('[STRIPE_WEBHOOK] 🔑 Has Stripe-Signature:', !!req.headers.get('Stripe-Signature'));
+        
+        // CRITICAL: Use req.text() for raw body to preserve signature verification!
+        let body: string;
+        try {
+            body = await req.text();
+            console.log('[STRIPE_WEBHOOK] ✅ Raw body parsed successfully');
+            console.log('[STRIPE_WEBHOOK] 📏 Body length:', body.length);
+        } catch (error: any) {
+            console.error('[STRIPE_WEBHOOK] ❌ Failed to parse body:', error.message);
+            return new NextResponse('Failed to parse request body', { status: 400 });
         }
 
-        console.log('[STRIPE_WEBHOOK] 🔑 Secret prefix:', secret.substring(0, 10) + '...');
-        
-        event = stripe.webhooks.constructEvent(
-            body,
-            signature,
-            secret
-        );
-        console.log('[STRIPE_WEBHOOK] ✅ Signature verified successfully');
-        console.log('[STRIPE_WEBHOOK] 📌 Event type:', event.type);
-        console.log('[STRIPE_WEBHOOK] 📅 Event ID:', event.id);
-    } catch (error: any) {
-        console.error('[STRIPE_WEBHOOK] ❌ Signature verification FAILED:', {
-            message: error.message,
-            code: error.code,
-        });
-        return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
-    }
+        const headersList = await headers();
+        const signature = headersList.get('Stripe-Signature') as string;
+
+        if (!signature) {
+            console.error('[STRIPE_WEBHOOK] ❌ Missing Stripe-Signature header');
+            return new NextResponse('Missing Stripe-Signature header', { status: 400 });
+        }
+
+        console.log('[STRIPE_WEBHOOK] 🔐 Signature header present, verifying...');
+
+        let event: Stripe.Event;
+
+        try {
+            const secret = process.env.STRIPE_WEBHOOK_SECRET;
+            if (!secret) {
+                console.error('[STRIPE_WEBHOOK] ❌ STRIPE_WEBHOOK_SECRET not configured');
+                return new NextResponse('Webhook secret not configured', { status: 500 });
+            }
+
+            console.log('[STRIPE_WEBHOOK] 🔑 Secret prefix:', secret.substring(0, 10) + '...');
+            
+            event = stripe.webhooks.constructEvent(
+                body,
+                signature,
+                secret
+            );
+            console.log('[STRIPE_WEBHOOK] ✅ Signature verified successfully');
+            console.log('[STRIPE_WEBHOOK] 📌 Event type:', event.type);
+            console.log('[STRIPE_WEBHOOK] 📅 Event ID:', event.id);
+        } catch (error: any) {
+            console.error('[STRIPE_WEBHOOK] ❌ Signature verification FAILED:', {
+                message: error.message,
+                code: error.code,
+            });
+            return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+        }
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -388,6 +389,14 @@ export async function POST(req: Request) {
         console.log('[STRIPE_WEBHOOK] ✅ Subscription canceled in DB');
     }
 
-    console.log('[STRIPE_WEBHOOK] ✅ Webhook processed successfully');
-    return new NextResponse(null, { status: 200 });
+        console.log('[STRIPE_WEBHOOK] ✅ Webhook processed successfully');
+        return new NextResponse(null, { status: 200 });
+    } catch (outerError: any) {
+        console.error('[STRIPE_WEBHOOK] 🚨 CRITICAL ERROR - Uncaught exception:', {
+            message: outerError.message,
+            stack: outerError.stack,
+            code: outerError.code,
+        });
+        return new NextResponse('Internal server error', { status: 500 });
+    }
 }
