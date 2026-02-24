@@ -13,17 +13,30 @@ const intlMiddleware = createMiddleware({
 
 // @ts-ignore
 export default auth((req) => {
-    // 🔓 SKIP AUTH for Stripe webhooks - they don't have user context
-    const isStripeWebhook = req.nextUrl.pathname === '/api/webhooks/stripe';
-    if (isStripeWebhook) {
-        console.log('[MIDDLEWARE] 🔓 Stripe webhook path detected - skipping auth');
+    // � CRITICAL: STRIPE WEBHOOK BYPASS - RUNS BEFORE EVERYTHING ELSE
+    // Stripe webhooks POST to /api/webhooks/stripe
+    // They have no user context, no session, no auth needed
+    // Block them here = 405 Method Not Allowed
+    const pathname = req.nextUrl.pathname;
+    
+    if (pathname === '/api/webhooks/stripe') {
+        console.log('[MIDDLEWARE] 🔴 STRIPE WEBHOOK DETECTED - BYPASSING ALL CHECKS');
+        console.log('[MIDDLEWARE] 📍 Path:', pathname);
+        console.log('[MIDDLEWARE] 📌 Method:', req.method);
+        return NextResponse.next();
+    }
+
+    // 🔓 SKIP AUTH for other webhook endpoints  
+    const isApiRoute = pathname.startsWith('/api/');
+    if (isApiRoute && !pathname.includes('/api/checkout') && !pathname.includes('/dashboard')) {
+        console.log('[MIDDLEWARE] 🔓 API route detected (non-checkout) - skipping auth:', pathname);
         return NextResponse.next();
     }
 
     // 1. Auth Guard for Dashboard
     const isLoggedIn = !!req.auth;
-    const isDashboard = req.nextUrl.pathname.includes('/dashboard');
-    const isLogin = req.nextUrl.pathname === '/login';
+    const isDashboard = pathname.includes('/dashboard');
+    const isLogin = pathname === '/login';
 
     // CORS Fix: Use the actual Host header to prevent cross-origin redirects (www vs non-www)
     const host = req.headers.get('host') || req.nextUrl.host;
@@ -64,6 +77,12 @@ export default auth((req) => {
 });
 
 export const config = {
-    // Skip all internal paths
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|airlines).*)']
+    // Completely skip middleware for:
+    // - /api/* (all API routes, especially webhooks)
+    // - _next/static, _next/image (Next.js internals)
+    // - /favicon.ico, /airlines (static assets)
+    // Only run middleware for page routes (/dashboard, /pricing, etc)
+    matcher: [
+        '/((?!api|_next/static|_next/image|favicon.ico|airlines|\.well-known).*)' 
+    ]
 };
