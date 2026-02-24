@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import authConfig from "@/auth.config";
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 // Initialize NextAuth with ONLY the config (no adapter) for usage in Middleware (Edge)
 const { auth } = NextAuth(authConfig);
@@ -11,37 +12,34 @@ const intlMiddleware = createMiddleware({
     defaultLocale: 'en'
 });
 
-// @ts-ignore
-export default auth((req) => {
+// 🟢 CRITICAL: API BYPASS - RUNS BEFORE auth() wrapper
+// This is the OUTERMOST middleware check - API routes NEVER enter auth()
+function apiBypass(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
     
-    // ✅ CRITICAL: BYPASS ALL /api/* ROUTES FROM MIDDLEWARE
-    // API routes should process directly without middleware interference
-    // This prevents 405 errors on webhook endpoints, checkout, etc.
+    // ✅ ALL /api/* routes bypass EVERYTHING
+    // - No auth() wrapper
+    // - No middleware processing
+    // - Direct route handler execution
     if (pathname.startsWith('/api/')) {
-        console.log('[MIDDLEWARE] 🟢 API route detected - allowing direct passthrough:', pathname);
+        console.log('[MIDDLEWARE] 🟢 API bypass - direct passthrough:', pathname);
         return NextResponse.next();
     }
     
-    // 🔴 LEGACY WEBHOOK BYPASS (kept as backup, but /api/* already bypassed above)
-    // Stripe webhooks POST to /api/webhooks/stripe
-    // They have no user context, no session, no auth needed
+    return null; // Continue to auth() wrapper
+}
+
+// @ts-ignore
+export default auth((req) => {
+    // ✅ FIRST CHECK: API routes (before any auth processing)
+    const apiBypassResult = apiBypass(req as NextRequest);
+    if (apiBypassResult !== null) {
+        return apiBypassResult;
+    }
     
-    if (pathname === '/api/webhooks/stripe') {
-        console.log('[MIDDLEWARE] 🔴 STRIPE WEBHOOK DETECTED - BYPASSING ALL CHECKS');
-        console.log('[MIDDLEWARE] 📍 Path:', pathname);
-        console.log('[MIDDLEWARE] 📌 Method:', req.method);
-        return NextResponse.next();
-    }
-
-    // 🔓 SKIP AUTH for other webhook endpoints  
-    const isApiRoute = pathname.startsWith('/api/');
-    if (isApiRoute && !pathname.includes('/api/checkout') && !pathname.includes('/dashboard')) {
-        console.log('[MIDDLEWARE] 🔓 API route detected (non-checkout) - skipping auth:', pathname);
-        return NextResponse.next();
-    }
-
-    // 1. Auth Guard for Dashboard
+    const pathname = req.nextUrl.pathname;
+    
+    // Dashboard & Auth Logic (API routes already bypassed above)
     const isLoggedIn = !!req.auth;
     const isDashboard = pathname.includes('/dashboard');
     const isLogin = pathname === '/login';
