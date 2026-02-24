@@ -13,6 +13,13 @@ const intlMiddleware = createMiddleware({
 
 // @ts-ignore
 export default auth((req) => {
+    // 🔓 SKIP AUTH for Stripe webhooks - they don't have user context
+    const isStripeWebhook = req.nextUrl.pathname === '/api/webhooks/stripe';
+    if (isStripeWebhook) {
+        console.log('[MIDDLEWARE] 🔓 Stripe webhook path detected - skipping auth');
+        return NextResponse.next();
+    }
+
     // 1. Auth Guard for Dashboard
     const isLoggedIn = !!req.auth;
     const isDashboard = req.nextUrl.pathname.includes('/dashboard');

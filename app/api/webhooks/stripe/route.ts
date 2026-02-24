@@ -190,23 +190,55 @@ const syncSubscriptionToUser = async (
 };
 
 export async function POST(req: Request) {
-    const body = await req.text();
+    console.log('[STRIPE_WEBHOOK] 🔔 Webhook request received');
+    console.log('[STRIPE_WEBHOOK] 📝 Content-Type:', req.headers.get('content-type'));
+    console.log('[STRIPE_WEBHOOK] 🔑 Has Stripe-Signature:', !!req.headers.get('Stripe-Signature'));
+    
+    // CRITICAL: Use req.text() for raw body to preserve signature verification!
+    let body: string;
+    try {
+        body = await req.text();
+        console.log('[STRIPE_WEBHOOK] ✅ Raw body parsed successfully');
+        console.log('[STRIPE_WEBHOOK] 📏 Body length:', body.length);
+    } catch (error: any) {
+        console.error('[STRIPE_WEBHOOK] ❌ Failed to parse body:', error.message);
+        return new NextResponse('Failed to parse request body', { status: 400 });
+    }
+
     const headersList = await headers();
     const signature = headersList.get('Stripe-Signature') as string;
 
-    console.log('[STRIPE_WEBHOOK] 🔔 Received webhook request');
+    if (!signature) {
+        console.error('[STRIPE_WEBHOOK] ❌ Missing Stripe-Signature header');
+        return new NextResponse('Missing Stripe-Signature header', { status: 400 });
+    }
+
+    console.log('[STRIPE_WEBHOOK] 🔐 Signature header present, verifying...');
 
     let event: Stripe.Event;
 
     try {
+        const secret = process.env.STRIPE_WEBHOOK_SECRET;
+        if (!secret) {
+            console.error('[STRIPE_WEBHOOK] ❌ STRIPE_WEBHOOK_SECRET not configured');
+            return new NextResponse('Webhook secret not configured', { status: 500 });
+        }
+
+        console.log('[STRIPE_WEBHOOK] 🔑 Secret prefix:', secret.substring(0, 10) + '...');
+        
         event = stripe.webhooks.constructEvent(
             body,
             signature,
-            process.env.STRIPE_WEBHOOK_SECRET!
+            secret
         );
-        console.log('[STRIPE_WEBHOOK] ✅ Signature verified, event type:', event.type);
+        console.log('[STRIPE_WEBHOOK] ✅ Signature verified successfully');
+        console.log('[STRIPE_WEBHOOK] 📌 Event type:', event.type);
+        console.log('[STRIPE_WEBHOOK] 📅 Event ID:', event.id);
     } catch (error: any) {
-        console.error('[STRIPE_WEBHOOK] ❌ Signature verification failed:', error.message);
+        console.error('[STRIPE_WEBHOOK] ❌ Signature verification FAILED:', {
+            message: error.message,
+            code: error.code,
+        });
         return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
     }
 
