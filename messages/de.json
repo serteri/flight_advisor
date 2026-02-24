@@ -491,7 +491,10 @@
             "schedule_guardian": "Zeitplan-Wächter",
             "junior_guardian": "Junior Guardian",
             "backup_generator": "Backup Generator",
-            "lounge_intel": "Lounge Intelligence"
+            "lounge_intel": "Lounge Intelligence",
+            "email_notifications": "E-Mail-Benachrichtigungen",
+            "sms_notifications": "SMS-Benachrichtigungen",
+            "push_notifications": "Push-Benachrichtigungen"
         },
         "values": {
             "unlimited": "Unbegrenzt",

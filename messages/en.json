@@ -769,7 +769,10 @@
       "schedule_guardian": "Schedule Guardian",
       "junior_guardian": "Junior Guardian",
       "backup_generator": "Backup Generator",
-      "lounge_intel": "Lounge Intelligence"
+      "lounge_intel": "Lounge Intelligence",
+      "email_notifications": "Email Notifications",
+      "sms_notifications": "SMS Notifications",
+      "push_notifications": "Push Notifications"
     },
     "values": {
       "unlimited": "Unlimited",

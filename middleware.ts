@@ -13,11 +13,19 @@ const intlMiddleware = createMiddleware({
 
 // @ts-ignore
 export default auth((req) => {
-    // � CRITICAL: STRIPE WEBHOOK BYPASS - RUNS BEFORE EVERYTHING ELSE
+    const pathname = req.nextUrl.pathname;
+    
+    // ✅ CRITICAL: BYPASS ALL /api/* ROUTES FROM MIDDLEWARE
+    // API routes should process directly without middleware interference
+    // This prevents 405 errors on webhook endpoints, checkout, etc.
+    if (pathname.startsWith('/api/')) {
+        console.log('[MIDDLEWARE] 🟢 API route detected - allowing direct passthrough:', pathname);
+        return NextResponse.next();
+    }
+    
+    // 🔴 LEGACY WEBHOOK BYPASS (kept as backup, but /api/* already bypassed above)
     // Stripe webhooks POST to /api/webhooks/stripe
     // They have no user context, no session, no auth needed
-    // Block them here = 405 Method Not Allowed
-    const pathname = req.nextUrl.pathname;
     
     if (pathname === '/api/webhooks/stripe') {
         console.log('[MIDDLEWARE] 🔴 STRIPE WEBHOOK DETECTED - BYPASSING ALL CHECKS');
