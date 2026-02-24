@@ -40,7 +40,14 @@ export async function processFlightMonitoring() {
             const dateStr = departureDate.toISOString().split('T')[0]; // YYYY-MM-DD
             
             console.log(`   🔍 Checking ${segment.flightNumber} on ${dateStr}...`);
-            const statusResult = await getFlightStatus(segment.flightNumber, dateStr);
+            
+            let statusResult;
+            try {
+                statusResult = await getFlightStatus(segment.flightNumber, dateStr);
+            } catch (err: any) {
+                console.warn(`   ⚠️ Exception during status fetch: ${err.message}`);
+                continue; // Skip this trip if status fetch throws
+            }
             
             // Handle API errors gracefully
             if ('error' in statusResult) {
