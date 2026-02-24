@@ -116,13 +116,21 @@ const syncSubscriptionToUser = async (
             : null,
     };
 
-    console.log('[SYNC] 💾 Update data prepared:', updateData);
+    console.log('[SYNC] 💾 Update data prepared:', {
+        email: customerEmail,
+        plan: updateData.subscriptionPlan,
+        status: updateData.subscriptionStatus,
+        isPremium: updateData.isPremium,
+        periodEnd: updateData.stripeCurrentPeriodEnd,
+        trialEnd: updateData.trialEndsAt,
+    });
 
     if (customerEmail) {
         console.log('[SYNC] 🔍 Attempting upsert by email:', customerEmail);
         
         try {
-            // First try to find existing user
+            // First try to find existing user with case-insensitive search
+            console.log('[SYNC] 🔎 Searching for existing user in DB');
             const existingUser = await prisma.user.findFirst({
                 where: {
                     OR: [
@@ -132,10 +140,11 @@ const syncSubscriptionToUser = async (
                 }
             });
 
-            console.log('[SYNC] 🔎 Existing user found:', existingUser ? existingUser.id : 'NONE');
+            console.log('[SYNC] 🔎 User search result:', existingUser ? `Found ${existingUser.id}` : 'NOT FOUND');
 
             if (existingUser) {
                 // Update existing user
+                console.log('[SYNC] ✏️ Updating existing user:', existingUser.id);
                 const updatedUser = await prisma.user.update({
                     where: { id: existingUser.id },
                     data: {
@@ -143,9 +152,14 @@ const syncSubscriptionToUser = async (
                         name: customerProfile?.name || existingUser.name,
                     },
                 });
-                console.log('[SYNC] ✅ User UPDATED successfully:', updatedUser.id);
+                console.log('[SYNC] ✅ User UPDATED successfully:', {
+                    id: updatedUser.id,
+                    plan: updatedUser.subscriptionPlan,
+                    isPremium: updatedUser.isPremium,
+                });
             } else {
                 // Create new user
+                console.log('[SYNC] 🆕 Creating new user');
                 const newUser = await prisma.user.create({
                     data: {
                         email: customerEmail,
@@ -153,19 +167,24 @@ const syncSubscriptionToUser = async (
                         ...updateData,
                     },
                 });
-                console.log('[SYNC] ✅ User CREATED successfully:', newUser.id);
+                console.log('[SYNC] ✅ User CREATED successfully:', {
+                    id: newUser.id,
+                    plan: newUser.subscriptionPlan,
+                    isPremium: newUser.isPremium,
+                });
             }
             return;
         } catch (dbError: any) {
-            console.error('[SYNC] ❌ Database operation failed:', {
+            console.error('[SYNC] ❌ DATABASE ERROR - Email upsert failed:', {
                 error: dbError.message,
                 code: dbError.code,
-                meta: dbError.meta,
+                meta: JSON.stringify(dbError.meta),
             });
             throw dbError;
         }
     }
 
+    console.log('[SYNC] 🔎 No customer email, trying to resolve by user ID');
     const resolvedUserId = await resolveUserId(userId, customerId);
     console.log('[SYNC] 🆔 Resolved user ID:', resolvedUserId);
 
@@ -175,15 +194,22 @@ const syncSubscriptionToUser = async (
     }
 
     try {
+        console.log('[SYNC] ✏️ Updating user by ID:', resolvedUserId);
         const updatedUser = await prisma.user.update({
             where: { id: resolvedUserId },
             data: updateData,
         });
-        console.log('[SYNC] ✅ User updated by ID:', updatedUser.id);
+        console.log('[SYNC] ✅ User updated by ID successfully:', {
+            id: updatedUser.id,
+            plan: updatedUser.subscriptionPlan,
+            isPremium: updatedUser.isPremium,
+        });
     } catch (dbError: any) {
-        console.error('[SYNC] ❌ User update failed:', {
+        console.error('[SYNC] ❌ DATABASE ERROR - User update failed:', {
             userId: resolvedUserId,
             error: dbError.message,
+            code: dbError.code,
+            meta: JSON.stringify(dbError.meta),
         });
         throw dbError;
     }
@@ -246,7 +272,7 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const subscriptionId = session.subscription as string;
 
-        console.log('[STRIPE_WEBHOOK] 💳 checkout.session.completed', {
+        console.log('[STRIPE_WEBHOOK] 💳 checkout.session.completed STARTED', {
             sessionId: session.id,
             subscriptionId,
             customerEmail: session.customer_email,
@@ -259,23 +285,28 @@ export async function POST(req: Request) {
         }
 
         try {
+            console.log('[STRIPE_WEBHOOK] 🔄 Fetching subscription from Stripe API');
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            console.log('[STRIPE_WEBHOOK] 📦 Retrieved subscription:', {
+            console.log('[STRIPE_WEBHOOK] ✅ Subscription retrieved:', {
                 id: subscription.id,
                 status: subscription.status,
                 customer: subscription.customer,
                 trial_end: subscription.trial_end,
+                current_period_end: (subscription as any).current_period_end,
             });
             
+            console.log('[STRIPE_WEBHOOK] 🔄 Starting syncSubscriptionToUser');
             await syncSubscriptionToUser(
                 subscription,
                 session.metadata?.userId || null,
                 session.metadata?.plan || null
             );
-            console.log('[STRIPE_WEBHOOK] ✅ checkout.session.completed sync SUCCESS');
+            console.log('[STRIPE_WEBHOOK] ✅ checkout.session.completed COMPLETED SUCCESSFULLY');
+            return new NextResponse(null, { status: 200 });
         } catch (error: any) {
-            console.error('[STRIPE_WEBHOOK] ❌ checkout.session.completed update failed:', {
+            console.error('[STRIPE_WEBHOOK] ❌ checkout.session.completed FAILED:', {
                 error: error.message,
+                code: error.code,
                 stack: error.stack,
             });
             return new NextResponse('Webhook update failed', { status: 500 });

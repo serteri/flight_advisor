@@ -91,11 +91,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         signIn: "/login",
     },
     callbacks: {
-        session({ session, token }) {
+        async session({ session, token }) {
             if (token.sub && session.user) {
-                session.user.id = token.sub
+                session.user.id = token.sub;
+                
+                // Force refresh premium status from database on every session
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: token.sub },
+                        select: {
+                            id: true,
+                            email: true,
+                            subscriptionPlan: true,
+                            isPremium: true,
+                            subscriptionStatus: true,
+                            trialEndsAt: true,
+                            stripeSubscriptionId: true,
+                        },
+                    });
+                    
+                    if (dbUser) {
+                        // Update session with fresh DB data
+                        (session.user as any).subscriptionPlan = dbUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
+                        (session.user as any).isPremium = dbUser.isPremium;
+                        (session.user as any).subscriptionStatus = dbUser.subscriptionStatus;
+                        (session.user as any).trialEndsAt = dbUser.trialEndsAt;
+                        
+                        console.log('✅ [SESSION_REFRESH] User subscription data updated from DB', {
+                            userId: token.sub,
+                            plan: dbUser.subscriptionPlan,
+                            isPremium: dbUser.isPremium,
+                            hasSubscription: !!dbUser.stripeSubscriptionId,
+                        });
+                    }
+                } catch (error: any) {
+                    console.error('❌ [SESSION_REFRESH] Failed to fetch user from DB:', error.message);
+                    // Continue with stale session data if DB fails
+                }
             }
-            return session
+            return session;
         },
         jwt({ token, user }) {
             if (user) {
