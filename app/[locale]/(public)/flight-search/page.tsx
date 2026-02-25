@@ -21,6 +21,8 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useSession } from "next-auth/react";
+import type { UserTier } from "@/lib/tierUtils";
 
 // Popular destinations for quick selection
 const popularDestinations = [
@@ -53,6 +55,9 @@ function SearchPageContent() {
     const [sortedResults, setSortedResults] = useState<FlightResult[]>([]);
     const [currentSort, setCurrentSort] = useState<SortOption>("best");
     const [error, setError] = useState<string | null>(null);
+    const [viewerTier, setViewerTier] = useState<UserTier>('FREE');
+    const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+    const { data: session, update } = useSession();
 
     // Form state
     const [fromCity, setFromCity] = useState("");
@@ -127,7 +132,7 @@ function SearchPageContent() {
                 queryParams.append('returnDate', params.returnDate);
             }
 
-            const res = await fetch(`/api/search?${queryParams.toString()}`, {
+            const res = await fetch(`/api/flight-search?${queryParams.toString()}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -138,8 +143,18 @@ function SearchPageContent() {
                 throw new Error(data.error || t('error'));
             }
 
-            // API flat array döner: [...] veya {results: [...]}
             const flights = Array.isArray(data) ? data : (data.results || []);
+
+            const access = Array.isArray(data) ? null : data.viewerAccess;
+            if (access) {
+                const periodEnd = access.stripeCurrentPeriodEnd
+                    ? new Date(access.stripeCurrentPeriodEnd)
+                    : null;
+                const periodValid = !!periodEnd && periodEnd > new Date();
+                const activePremium = Boolean(access.isPremium && periodValid);
+                setHasPremiumAccess(activePremium);
+                setViewerTier(activePremium ? (access.userTier as UserTier) : 'FREE');
+            }
 
             if (flights.length > 0) {
                 setResults(flights);
@@ -192,6 +207,21 @@ function SearchPageContent() {
             });
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        void update();
+    }, [update]);
+
+    useEffect(() => {
+        const plan = (session?.user as any)?.subscriptionPlan;
+        const sessionPremium = plan === 'PRO' || plan === 'ELITE';
+        if (sessionPremium && viewerTier === 'FREE') {
+            setViewerTier(plan);
+        }
+        if (sessionPremium && !hasPremiumAccess) {
+            setHasPremiumAccess(true);
+        }
+    }, [session, viewerTier, hasPremiumAccess]);
 
     async function handleSearch(e: React.FormEvent) {
         e.preventDefault();
@@ -364,7 +394,8 @@ function SearchPageContent() {
                                     <FlightResultCard
                                         key={flight.id}
                                         flight={flight}
-                                        isPremium={false} // MOCKED: Set to true to unlock
+                                        isPremium={hasPremiumAccess}
+                                        userTier={viewerTier}
                                     />
                                 ))}
                             </div>

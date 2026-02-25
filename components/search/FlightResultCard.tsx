@@ -129,8 +129,12 @@ export default function FlightResultCard({
         );
     }
 
-    const hasPremiumAccess = userTier === 'PRO' || userTier === 'ELITE';
+    const hasPremiumAccess = isPremium || userTier === 'PRO' || userTier === 'ELITE';
     const hasEliteAccess = userTier === 'ELITE';
+    const displayPrice = Number.isFinite(price) && price > 0 ? Math.max(1, Math.round(price)) : null;
+    const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
+    const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : source === 'SERPAPI' ? 'SERPAPI' : 'KIWI';
+    const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : source === 'SERPAPI' ? '🔎 SerpApi' : '🌐 Kiwi';
 
     const handleLockClick = () => {
         if (!hasPremiumAccess) {
@@ -163,7 +167,7 @@ export default function FlightResultCard({
             <div className="absolute top-0 left-0 z-20">
                 <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
                     }`}>
-                    {source === 'DUFFEL' ? 'DUFFEL' : 'KIWI'}
+                    {sourceLabel}
                 </span>
             </div>
 
@@ -191,7 +195,7 @@ export default function FlightResultCard({
                                 {/* Provider Source Badge */}
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${source === 'DUFFEL' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                                     }`}>
-                                    {source === 'DUFFEL' ? '🏛️ Duffel' : '🌐 Kiwi'}
+                                    {sourceSubLabel}
                                 </span>
                             </div>
                         </div>
@@ -458,11 +462,13 @@ export default function FlightResultCard({
                     {/* FİYAT SECTION */}
                     <div className="text-center mb-3">
                         <div className="flex flex-col items-center">
-                            <span className="text-sm font-bold text-slate-400 line-through">
-                                ${Math.max(0, Math.floor((flight.price || 0) * 1.15))}
-                            </span>
+                            {displayOriginalPrice && (
+                                <span className="text-sm font-bold text-slate-400 line-through">
+                                    ${displayOriginalPrice}
+                                </span>
+                            )}
                             <span className="text-2xl font-black text-blue-600 leading-none">
-                                ${Math.max(0, Math.floor(flight.price || 0))}
+                                {displayPrice ? `$${displayPrice}` : 'N/A'}
                             </span>
                             <span className="text-[10px] text-slate-500 font-medium">
                                 {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}

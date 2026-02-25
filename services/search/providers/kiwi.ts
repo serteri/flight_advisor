@@ -15,6 +15,21 @@ import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 
 const KIWI_API_BASE = 'https://api.tequila.kiwi.com';
 
+function parsePositivePrice(value: unknown): number {
+  const numeric =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? parseFloat(value.replace(/[^0-9.]/g, ''))
+        : NaN;
+
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+
+  return numeric;
+}
+
 export async function searchKiwi(params: HybridSearchParams): Promise<FlightResult[]> {
   console.log(`\n🥝 KIWI.COM SEARCH START`);
   console.log(`  Origin: ${params.origin}`);
@@ -75,7 +90,12 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
         if (routes.length === 0) continue;
 
         // 🚫 CRITICAL: Filter out $0 price flights (invalid)
-        const price = flight.price || flight.conversion?.EUR || 0;
+        const price =
+          parsePositivePrice(flight.price) ||
+          parsePositivePrice(flight.conversion?.[params.currency || 'USD']) ||
+          parsePositivePrice(flight.conversion?.USD) ||
+          parsePositivePrice(flight.conversion?.EUR);
+
         if (price <= 0 || !price) {
           console.log(`  ⏭️ Skipped 1 Kiwi flight: $0 price`);
           continue;

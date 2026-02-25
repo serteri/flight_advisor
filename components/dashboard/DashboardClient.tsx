@@ -8,6 +8,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
+import { useSession } from 'next-auth/react';
 
 interface DashboardClientProps {
     trips: any[];           // MonitoredTrip[]
@@ -53,6 +54,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         return !!getPendingPlan();
     });
     const autoCheckoutRef = useRef(false);
+    const { update } = useSession();
 
     const plan = (user?.subscriptionPlan || '').toUpperCase();
     const hasPremium = plan === 'PRO' || plan === 'ELITE';
@@ -62,6 +64,10 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
     const daysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
 
     const t = useTranslations('Dashboard');
+
+    useEffect(() => {
+        void update();
+    }, [update]);
 
     const startCheckout = async (
         planValue: 'PRO' | 'ELITE',
@@ -200,6 +206,21 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
         
         return () => clearInterval(pollInterval);
     }, [checkoutSuccess, hasPremium, router]);
+
+    useEffect(() => {
+        if (!checkoutSuccess) return;
+
+        void (async () => {
+            try {
+                await fetch('/api/user/sync-subscription', { method: 'GET' });
+            } catch (error) {
+                console.warn('[CHECKOUT_SYNC] sync-subscription failed:', error);
+            }
+
+            await update();
+            router.refresh();
+        })();
+    }, [checkoutSuccess, router, update]);
 
     // Handle checkout via POST /api/checkout
     const handleUpgradeClick = async (selectedPlan: 'PRO' | 'ELITE') => {

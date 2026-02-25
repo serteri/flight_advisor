@@ -70,11 +70,13 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Fl
     const filteredFlights = allFlights.filter((flight) => {
       const flightOrigin = normalizeCode(flight.from || (flight as any).origin);
       const flightDest = normalizeCode(flight.to || (flight as any).destination);
+      const price = Number(flight.price);
 
       const originMatch = !flightOrigin || flightOrigin === targetOrigin;
       const destMatch = !flightDest || flightDest === targetDest;
+      const validPrice = Number.isFinite(price) && price > 0;
 
-      return originMatch && destMatch;
+      return originMatch && destMatch && validPrice;
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
