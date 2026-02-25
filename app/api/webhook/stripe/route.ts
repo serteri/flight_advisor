@@ -56,6 +56,15 @@ const getPriceId = (subscription: Stripe.Subscription) => {
     return typeof priceItem === "string" ? priceItem : priceItem.id;
 };
 
+const toDateFromUnixSeconds = (value: unknown): Date | null => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+
+    const parsed = new Date(value * 1000);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export async function POST(req: Request) {
     const body = await req.text();
     const signature = (await headers()).get("Stripe-Signature") as string;
@@ -101,12 +110,12 @@ export async function POST(req: Request) {
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
             stripePriceId: priceId,
-            stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            stripeCurrentPeriodEnd:
+                toDateFromUnixSeconds((subscription as any).current_period_end) ||
+                new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             isPremium: true,
             subscriptionStatus: subscription.status,
-            trialEndsAt: (subscription as any).trial_end
-                ? new Date((subscription as any).trial_end * 1000)
-                : null,
+            trialEndsAt: toDateFromUnixSeconds((subscription as any).trial_end),
         };
 
         if (plan) {
@@ -160,12 +169,12 @@ export async function POST(req: Request) {
             trialEndsAt?: Date | null;
         } = {
             stripePriceId: priceId,
-            stripeCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            stripeCurrentPeriodEnd:
+                toDateFromUnixSeconds((subscription as any).current_period_end) ||
+                new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             isPremium: true,
             subscriptionStatus: subscription.status,
-            trialEndsAt: (subscription as any).trial_end
-                ? new Date((subscription as any).trial_end * 1000)
-                : null,
+            trialEndsAt: toDateFromUnixSeconds((subscription as any).trial_end),
         };
 
         if (plan) {

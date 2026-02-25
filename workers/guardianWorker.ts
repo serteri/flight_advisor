@@ -196,13 +196,6 @@ function getUserPrefs(user: any): UserPreferences {
     };
 }
 
-// ====== MAIN EXECUTION ======
-processFlightMonitoring()
-    .then(() => {
-        console.log("✅ [GUARDIAN WORKER] Cycle complete!");
-        process.exit(0);
-    })
-    .catch((err) => {
-        console.error("❌ [GUARDIAN WORKER] Fatal error:", err);
-        process.exit(1);
-    });
+// NOTE:
+// This module must be side-effect free.
+// Monitoring is triggered only by cron routes or explicit worker runners.

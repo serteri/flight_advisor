@@ -75,6 +75,15 @@ const resolveUserId = async (userId: string | null | undefined, customerId: stri
     return user?.id || null;
 };
 
+const toDateFromUnixSeconds = (value: unknown): Date | null => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+
+    const parsed = new Date(value * 1000);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const syncSubscriptionToUser = async (
     subscription: Stripe.Subscription,
     userId: string | null | undefined,
@@ -111,15 +120,13 @@ const syncSubscriptionToUser = async (
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
         stripePriceId: priceId,
-        stripeCurrentPeriodEnd: currentPeriodEnd && typeof currentPeriodEnd === 'number' 
-            ? new Date(currentPeriodEnd * 1000)
-            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        stripeCurrentPeriodEnd:
+            toDateFromUnixSeconds(currentPeriodEnd) ||
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         isPremium: true,
         subscriptionPlan: plan,
         subscriptionStatus: subscription.status || 'active',
-        trialEndsAt: trialEnd && typeof trialEnd === 'number' 
-            ? new Date(trialEnd * 1000) 
-            : null,
+        trialEndsAt: toDateFromUnixSeconds(trialEnd),
     };
 
     console.log('[SYNC] 💾 Update data prepared:', {

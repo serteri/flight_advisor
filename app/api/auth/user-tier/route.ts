@@ -39,6 +39,15 @@ const pickActiveSubscription = (subscriptions: Stripe.Subscription[]) => {
   return subscriptions.find((sub) => preferredStatuses.has(sub.status)) || subscriptions[0] || null;
 };
 
+const toDateFromUnixSeconds = (value: unknown): Date | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  const parsed = new Date(value * 1000);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export async function GET() {
   try {
     const session = await auth();
@@ -101,9 +110,7 @@ export async function GET() {
 
     const priceItem = subscription.items.data[0]?.price;
     const priceId = typeof priceItem === 'string' ? priceItem : priceItem?.id;
-    const periodEnd = (subscription as any).current_period_end
-      ? new Date((subscription as any).current_period_end * 1000)
-      : null;
+    const periodEnd = toDateFromUnixSeconds((subscription as any).current_period_end);
 
     await prisma.user.update({
       where: { id: user.id },

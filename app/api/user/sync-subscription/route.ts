@@ -3,6 +3,15 @@ import { auth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 
+const toDateFromUnixSeconds = (value: unknown): Date | null => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+
+    const parsed = new Date(value * 1000);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 /**
  * Manual subscription sync endpoint
  * GET /api/user/sync-subscription
@@ -117,15 +126,13 @@ export async function GET() {
                 stripeSubscriptionId: activeSubscription.id,
                 stripeCustomerId: dbUser.stripeCustomerId,
                 stripePriceId: priceId,
-                stripeCurrentPeriodEnd: (activeSubscription as any).current_period_end
-                    ? new Date((activeSubscription as any).current_period_end * 1000)
-                    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                stripeCurrentPeriodEnd:
+                    toDateFromUnixSeconds((activeSubscription as any).current_period_end) ||
+                    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 isPremium: true,
                 subscriptionPlan: plan,
                 subscriptionStatus: activeSubscription.status,
-                trialEndsAt: (activeSubscription as any).trial_end
-                    ? new Date((activeSubscription as any).trial_end * 1000)
-                    : null,
+                trialEndsAt: toDateFromUnixSeconds((activeSubscription as any).trial_end),
             },
         });
 

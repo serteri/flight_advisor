@@ -9,15 +9,27 @@ type LoginPageProps = {
     searchParams?: { callbackUrl?: string };
 };
 
-function resolveCallbackUrl(raw?: string) {
-    if (!raw) return "/dashboard";
-    return raw.startsWith("/") ? raw : "/dashboard";
+function resolveCallbackUrl(raw: string | undefined, locale: string) {
+    const defaultDashboard = `/${locale}/dashboard`;
+
+    if (!raw) return defaultDashboard;
+    if (!raw.startsWith("/")) return defaultDashboard;
+
+    if (/^\/[a-z]{2}(?:\/|$)/i.test(raw)) {
+        return raw;
+    }
+
+    if (raw === "/dashboard" || raw.startsWith("/dashboard?")) {
+        return `/${locale}${raw}`;
+    }
+
+    return raw;
 }
 
 export default function LoginPage(props: LoginPageProps) {
     const params = use(props.params);
     const t = useTranslations("Auth");
-    const callbackUrl = resolveCallbackUrl(props.searchParams?.callbackUrl);
+    const callbackUrl = resolveCallbackUrl(props.searchParams?.callbackUrl, params.locale);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] p-4 relative overflow-hidden">

@@ -6,7 +6,7 @@ import { ShieldCheck } from "lucide-react";
 
 function LoginForm() {
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+    const callbackUrl = searchParams.get('callbackUrl') || '/en/dashboard';
 
     return (
         <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
