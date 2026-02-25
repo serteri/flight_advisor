@@ -42,7 +42,7 @@ export default auth((req) => {
     // Dashboard & Auth Logic (API routes already bypassed above)
     const isLoggedIn = !!req.auth;
     const isDashboard = pathname.includes('/dashboard');
-    const isLogin = pathname === '/login';
+    const isLogin = pathname === '/login' || /^\/(en|tr|de)\/login$/.test(pathname);
 
     // CORS Fix: Use the actual Host header to prevent cross-origin redirects (www vs non-www)
     const host = req.headers.get('host') || req.nextUrl.host;

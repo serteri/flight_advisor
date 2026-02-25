@@ -18,8 +18,10 @@ const cookieDomain =
     process.env.AUTH_COOKIE_DOMAIN ||
     (process.env.NODE_ENV === "production" ? ".flightagent.io" : undefined);
 
-const authSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-const trustHost = process.env.AUTH_TRUST_HOST === "true";
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+const trustHost =
+    process.env.AUTH_TRUST_HOST === "true" ||
+    process.env.AUTH_TRUST_HOSTS === "true";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),

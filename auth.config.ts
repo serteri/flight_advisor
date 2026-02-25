@@ -24,6 +24,10 @@ if (process.env.AUTH_MICROSOFT_ENTRA_ID && process.env.AUTH_MICROSOFT_ENTRA_SECR
 
 export default {
     providers,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost:
+        process.env.AUTH_TRUST_HOST === "true" ||
+        process.env.AUTH_TRUST_HOSTS === "true",
     pages: {
         signIn: '/login',
     }
