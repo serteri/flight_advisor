@@ -125,4 +125,23 @@ export type FlightResult = {
     scoreReason?: string; // OpenClaw reason
     scorePros?: string[];
     scoreCons?: string[];
+    advancedScore?: {
+        totalScore: number;
+        displayScore: number;
+        breakdown: {
+            priceValue: number;
+            duration: number;
+            stops: number;
+            connection: number;
+            selfTransfer: number;
+            baggage: number;
+            reliability: number;
+            aircraft: number;
+            amenities: number;
+            airportIndex: number;
+        };
+        riskFlags: string[];
+        comfortNotes: string[];
+        valueTag: string;
+    };
 };

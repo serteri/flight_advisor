@@ -135,6 +135,14 @@ export default function FlightResultCard({
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
     const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : source === 'SERPAPI' ? 'SERPAPI' : 'KIWI';
     const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : source === 'SERPAPI' ? '🔎 SerpApi' : '🌐 Kiwi';
+    const displayScore =
+        typeof flight.agentScore === 'number' && Number.isFinite(flight.agentScore)
+            ? flight.agentScore
+            : typeof flight.advancedScore?.displayScore === 'number' && Number.isFinite(flight.advancedScore.displayScore)
+                ? flight.advancedScore.displayScore
+                : typeof flight.score === 'number' && Number.isFinite(flight.score)
+                    ? flight.score
+                    : 0;
 
     const handleLockClick = () => {
         if (!hasPremiumAccess) {
@@ -453,7 +461,7 @@ export default function FlightResultCard({
                             </div>
                         ) : (
                             <div className="text-center">
-                                <div className="text-5xl font-black text-blue-600 tracking-tighter">{flight.agentScore?.toFixed(1) || "?.?"}</div>
+                                <div className="text-5xl font-black text-blue-600 tracking-tighter">{displayScore.toFixed(1)}</div>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>
                             </div>
                         )}
