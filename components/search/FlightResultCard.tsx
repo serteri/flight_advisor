@@ -463,6 +463,12 @@ export default function FlightResultCard({
                             <div className="text-center">
                                 <div className="text-5xl font-black text-blue-600 tracking-tighter">{displayScore.toFixed(1)}</div>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>
+                                <div className="text-[10px] text-slate-500 mt-1 font-medium">10-Criteria Engine</div>
+                                {flight.advancedScore?.valueTag && (
+                                    <div className="mt-1 inline-block text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                                        {flight.advancedScore.valueTag}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

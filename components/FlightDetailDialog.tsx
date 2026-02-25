@@ -57,6 +57,22 @@ const toMinutes = (value: unknown): number => {
     return 0;
 };
 
+const segmentDurationMinutes = (segment: any): number => {
+    const direct = toMinutes(segment?.duration);
+    if (direct > 0) return direct;
+
+    const depRaw = segment?.departing_at || segment?.departure;
+    const arrRaw = segment?.arriving_at || segment?.arrival;
+    const depMs = depRaw ? new Date(depRaw).getTime() : NaN;
+    const arrMs = arrRaw ? new Date(arrRaw).getTime() : NaN;
+
+    if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
+        return Math.round((arrMs - depMs) / 60000);
+    }
+
+    return 0;
+};
+
 export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: FlightDetailDialogProps) {
     if (!flight) return null;
 
@@ -106,7 +122,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     </div>
                     <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> Bagaj</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">Kabin</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">Kontrol</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
                     {segs.length > 0 && (
-                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> Segmentler ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {name: "Havayolu"}; const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={c.iata_code || "XX"} airlineName={c.name} className="w-5 h-5" /><div className="text-xs font-bold flex-1">{c.name}</div><div className="text-xs text-slate-500">Seg {i+1}</div></div><div className="grid grid-cols-3 gap-2 text-xs"><div><div className="text-slate-500">Kal</div><div className="font-bold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">S</div><div className="font-bold">{formatDuration(s.duration || 0)}</div></div><div className="text-right"><div className="text-slate-500">Var</div><div className="font-bold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-xs bg-amber-50 border border-amber-200 p-1 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
+                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> Segmentler ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {name: "Havayolu"}; const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={c.iata_code || "XX"} airlineName={c.name} className="w-5 h-5" /><div className="text-xs font-bold flex-1">{c.name}</div><div className="text-xs text-slate-500">Seg {i+1}</div></div><div className="grid grid-cols-3 gap-2 text-xs"><div><div className="text-slate-500">Kal</div><div className="font-bold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">S</div><div className="font-bold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">Var</div><div className="font-bold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-xs bg-amber-50 border border-amber-200 p-1 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
                     )}
 
                     {flight.advancedScore && (

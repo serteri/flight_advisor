@@ -65,20 +65,29 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
             setError(null);
 
             try {
-                const response = await fetch('/api/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ origin, destination, date }),
+                const queryParams = new URLSearchParams({
+                    origin,
+                    destination,
+                    date,
                 });
+
+                const response = await fetch(`/api/flight-search?${queryParams.toString()}`);
 
                 if (!response.ok) {
                     throw new Error('Arama motoru yanıt vermedi');
                 }
 
                 const data = await response.json();
-                setFlights(data);
+                const responseFlights = Array.isArray(data) ? data : (data.results || []);
+                setFlights(responseFlights);
+
+                const access = Array.isArray(data) ? null : data.viewerAccess;
+                if (access) {
+                    const tier = access.userTier === 'PRO' || access.userTier === 'ELITE'
+                        ? access.userTier
+                        : 'FREE';
+                    setUserTier(tier);
+                }
             } catch (err) {
                 console.error("Arama motoru hatası:", err);
                 setError("Arama motoru başlatılamadı. Lütfen tekrar deneyin.");

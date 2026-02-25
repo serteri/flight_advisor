@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchAllProviders } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';
+import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
 
 // Vercel Pro Ayarları
 export const maxDuration = 300;
@@ -37,13 +38,14 @@ export async function GET(request: Request) {
 
         console.log(`📡 Calling searchAllProviders...`);
         const allFlights = await searchAllProviders(queryParams);
-        console.log(`✅ searchAllProviders returned ${allFlights.length} flights`);
+        const scoredFlights = applyAdvancedFlightScoring(allFlights);
+        console.log(`✅ searchAllProviders returned ${scoredFlights.length} scored flights`);
 
-        if (allFlights.length === 0) {
+        if (scoredFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
         }
 
-        return NextResponse.json(allFlights);
+        return NextResponse.json(scoredFlights);
 
     } catch (error) {
         console.error("🔥 GENEL ARAMA HATASI:", error);
@@ -74,12 +76,13 @@ export async function POST(request: Request) {
         };
 
         const allFlights = await searchAllProviders(queryParams);
+        const scoredFlights = applyAdvancedFlightScoring(allFlights);
 
-        if (allFlights.length === 0) {
+        if (scoredFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
         }
 
-        return NextResponse.json(allFlights);
+        return NextResponse.json(scoredFlights);
 
     } catch (error) {
         console.error("🔥 SEARCH API POST HATASI:", error);
