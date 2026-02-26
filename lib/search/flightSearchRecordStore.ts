@@ -72,9 +72,13 @@ export async function persistFlightSearchRecords(
 
     if (rows.length === 0) return;
 
-    await prisma.flightSearchRecord.createMany({
-        data: rows,
-    });
+    try {
+        await prisma.flightSearchRecord.createMany({
+            data: rows,
+        });
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] persist skipped:', error?.message || error);
+    }
 }
 
 export async function getMedianPriceForRouteDate(
@@ -85,20 +89,26 @@ export async function getMedianPriceForRouteDate(
     const start = normalizeUtcDate(departureDate);
     const end = new Date(start.getTime() + DAY_MS);
 
-    const prices = await prisma.flightSearchRecord.findMany({
-        where: {
-            origin,
-            destination,
-            departureDate: {
-                gte: start,
-                lt: end,
+    let prices: Array<{ price: number }> = [];
+    try {
+        prices = await prisma.flightSearchRecord.findMany({
+            where: {
+                origin,
+                destination,
+                departureDate: {
+                    gte: start,
+                    lt: end,
+                },
+                price: {
+                    gt: 0,
+                },
             },
-            price: {
-                gt: 0,
-            },
-        },
-        select: { price: true },
-    });
+            select: { price: true },
+        });
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] median lookup skipped:', error?.message || error);
+        return null;
+    }
 
     if (prices.length === 0) {
         return null;
