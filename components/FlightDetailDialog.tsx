@@ -58,9 +58,6 @@ const toMinutes = (value: unknown): number => {
 };
 
 const segmentDurationMinutes = (segment: any): number => {
-    const direct = toMinutes(segment?.duration);
-    if (direct > 0) return direct;
-
     const depRaw = segment?.departing_at || segment?.departure;
     const arrRaw = segment?.arriving_at || segment?.arrival;
     const depMs = depRaw ? new Date(depRaw).getTime() : NaN;
@@ -69,6 +66,9 @@ const segmentDurationMinutes = (segment: any): number => {
     if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
         return Math.round((arrMs - depMs) / 60000);
     }
+
+    const direct = toMinutes(segment?.duration);
+    if (direct > 0) return direct;
 
     return 0;
 };
@@ -151,7 +151,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                         <div className="bg-red-50 border border-red-200 rounded p-3">
                             <h3 className="font-bold text-red-700 mb-1">⚠️ Veri Hatası</h3>
                             <p className="text-xs text-red-700">
-                                {flight.advancedScore.dataErrorReason || 'Bu uçuş verisi gerçekçi olmayan süre içeriyor, skorlamaya dahil edilmedi.'}
+                                {flight.advancedScore.dataErrorReason || 'Bu uçuş verisinde süre tutarsızlığı tespit edildi, sonuç işaretlendi.'}
                             </p>
                         </div>
                     )}

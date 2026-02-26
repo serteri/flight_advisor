@@ -454,21 +454,21 @@ export default function FlightResultCard({
                 <div className="w-full md:w-52 border-l pl-6 flex flex-col justify-between relative">
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
-                    <div className="h-24 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
+                    <div className="h-28 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 px-2">
                         {!hasPremiumAccess ? (
                             <div className="text-center opacity-70">
                                 <div className="text-5xl font-black text-slate-300 blur-sm">8.5</div>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analysis locked</span>
                             </div>
                         ) : (
-                            <div className="text-center">
-                                <div className={`text-5xl font-black tracking-tighter ${hasInvalidData ? 'text-red-600' : 'text-blue-600'}`}>
-                                    {hasInvalidData ? '!' : displayScore.toFixed(1)}
+                            <div className="text-center w-full">
+                                <div className={`text-4xl font-black leading-none ${hasInvalidData ? 'text-red-600' : 'text-blue-600'}`}>
+                                    {Number.isFinite(displayScore) ? displayScore.toFixed(1) : '0.0'}
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>
-                                <div className="text-xs leading-5 text-slate-600 mt-1 font-semibold">10-Criteria Engine</div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('agentScore')}</span>
+                                <div className="text-[11px] text-slate-600 mt-1 font-semibold leading-tight">10-Criteria Engine</div>
                                 {flight.advancedScore?.valueTag && (
-                                    <div className={`mt-1 inline-block text-xs leading-5 px-2.5 py-1 rounded-full font-semibold ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                    <div className={`mt-1 inline-block max-w-full text-[11px] leading-4 px-2 py-1 rounded-full font-semibold truncate ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
                                         {hasInvalidData ? 'Veri Hatası' : flight.advancedScore.valueTag}
                                     </div>
                                 )}
