@@ -40,6 +40,39 @@ const AIRCRAFT_AGE: Record<string, number> = {
 const EASY_AIRPORTS = new Set(['SIN', 'DOH', 'DXB', 'IST', 'AMS', 'MUC', 'ZRH', 'CPH']);
 const HARD_AIRPORTS = new Set(['CDG', 'LHR', 'LGW', 'JFK', 'EWR', 'FRA']);
 
+const TOP_AIRLINES = new Set([
+    'SINGAPORE AIRLINES',
+    'QATAR AIRWAYS',
+    'EMIRATES',
+    'ANA',
+    'ALL NIPPON AIRWAYS',
+    'JAPAN AIRLINES',
+    'CATHAY PACIFIC',
+    'EVA AIR',
+    'HONG KONG AIRLINES',
+    'HONG KONG AIRWAYS',
+    'LUFTHANSA',
+    'SWISS',
+    'AUSTRIAN AIRLINES',
+    'KLM',
+    'AIR FRANCE',
+    'TURKISH AIRLINES',
+    'QANTAS',
+    'ETIHAD AIRWAYS',
+    'BRITISH AIRWAYS',
+    'VIRGIN ATLANTIC',
+    'AIR NEW ZEALAND',
+    'DELTA AIR LINES',
+    'DELTA',
+    'UNITED AIRLINES',
+    'AMERICAN AIRLINES',
+    'KOREAN AIR',
+    'ASIANA AIRLINES',
+    'FINNAIR',
+    'IBERIA',
+    'AIR CANADA',
+]);
+
 const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
 
@@ -83,19 +116,27 @@ const hasSelfTransferRisk = (flight: FlightResult): boolean => {
     return false;
 };
 
-const resolveReliability = (airlineName: string): number => {
+const resolveReliability = (airlineName: string): { score: number; isTopAirline: boolean } => {
     const upper = airlineName.toUpperCase();
+    const isTopAirline = Array.from(TOP_AIRLINES).some((name) => upper.includes(name));
+
     const direct = RELIABILITY_BY_AIRLINE[upper];
-    if (direct) return direct;
+    if (direct) {
+        const boosted = isTopAirline ? 10 : Math.max(0, Math.round(direct) - 2);
+        return { score: boosted, isTopAirline };
+    }
 
     const matchedKey = Object.keys(RELIABILITY_BY_AIRLINE).find((name) =>
         upper.includes(name)
     );
     if (matchedKey) {
-        return RELIABILITY_BY_AIRLINE[matchedKey];
+        const base = RELIABILITY_BY_AIRLINE[matchedKey];
+        const boosted = isTopAirline ? 10 : Math.max(0, Math.round(base) - 2);
+        return { score: boosted, isTopAirline };
     }
 
-    return 7;
+    const fallback = isTopAirline ? 10 : 5;
+    return { score: fallback, isTopAirline };
 };
 
 const resolveAircraftCode = (flight: FlightResult): string => {
@@ -208,7 +249,13 @@ const scoreFlight = (
         breakdown.baggage = checkedBaggage > 0 ? 7 : 4;
     }
 
-    breakdown.reliability = clamp(Math.round(resolveReliability(flight.airline)), 0, 10);
+    const reliability = resolveReliability(flight.airline);
+    breakdown.reliability = clamp(reliability.score, 0, 10);
+    if (reliability.isTopAirline) {
+        comfortNotes.push('Top-tier havayolu itibarı');
+    } else {
+        riskFlags.push('Top-30 havayolu dışında');
+    }
     if (breakdown.reliability >= 8) {
         comfortNotes.push('Havayolu zamanında kalkış performansı güçlü');
     } else if (breakdown.reliability <= 6) {

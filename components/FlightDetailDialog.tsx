@@ -112,6 +112,53 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         no: isTr ? "Yok" : "No",
     };
 
+    const translateValueTag = (valueTag: string) => {
+        if (isTr) return valueTag;
+        const map: Record<string, string> = {
+            'En İyi Fiyat/Performans': 'Best Value',
+            'Dengeli Seçenek': 'Balanced Choice',
+            'Ekonomik Seçenek': 'Budget Option',
+            'En Konforlu Seçenek': 'Most Comfortable',
+            'Düşük Riskli Seçenek': 'Low Risk Choice',
+            'Veri Hatası': 'Data Error',
+        };
+        return map[valueTag] || valueTag;
+    };
+
+    const translateRiskFlag = (flag: string) => {
+        if (isTr) return flag;
+        const map: Record<string, string> = {
+            'Uzun toplam seyahat süresi': 'Long total travel time',
+            'Uzun aktarma beklemesi': 'Long layover wait',
+            'Çoklu aktarma': 'Multiple stops',
+            'Kısa Aktarma Riski': 'Short connection risk',
+            'Kendi Transferin': 'Self-transfer required',
+            'Sadece kabin bagajı': 'Cabin baggage only',
+            'On-time güvenilirliği düşük': 'Low on-time reliability',
+            'Eski Uçak': 'Older aircraft',
+            'Fiyat rota ortalamasına göre yüksek': 'Price above route average',
+            'Veri Hatası': 'Data Error',
+            'Top-30 havayolu dışında': 'Outside top-30 airline reputation list',
+            'BNE-IST için 14 saatin altındaki toplam süre gerçekçi değil.': 'Total duration under 14 hours for BNE-IST is not realistic.',
+        };
+        return map[flag] || flag;
+    };
+
+    const translateComfortNote = (note: string) => {
+        if (isTr) return note;
+        const map: Record<string, string> = {
+            'Fiyat rota ortalamasına göre çok avantajlı': 'Price is highly advantageous versus route average',
+            '23kg+ check-in bagaj dahil': '23kg+ checked baggage included',
+            'Havayolu zamanında kalkış performansı güçlü': 'Strong on-time departure performance',
+            'Yeni nesil uçak (A350/787 ailesi)': 'New-generation aircraft (A350/787 family)',
+            'WiFi mevcut': 'Wi-Fi available',
+            'IFE eğlence sistemi mevcut': 'IFE entertainment system available',
+            'Yemek servisi dahil': 'Meal service included',
+            'Top-tier havayolu itibarı': 'Top-tier airline reputation',
+        };
+        return map[note] || note;
+    };
+
     const segs = Array.isArray(flight.segments) ? flight.segments.filter(s => s) : [];
     const lays = Array.isArray(flight.layovers) ? flight.layovers : [];
 
@@ -163,7 +210,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     </div>
                     <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
                     {segs.length > 0 && (
-                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
+                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const segFrom = (s.origin || s.from || s.departure_airport?.id || s.departureAirport?.iata_code || 'XXX').toString(); const segTo = (s.destination || s.to || s.arrival_airport?.id || s.arrivalAirport?.iata_code || 'XXX').toString(); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}: {segFrom} → {segTo}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
                     )}
 
                     {flight.advancedScore && (
@@ -212,7 +259,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                 {flight.advancedScore.riskFlags.length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-rose-700">
                                         {flight.advancedScore.riskFlags.map((flag) => (
-                                            <li key={flag}>• {flag}</li>
+                                            <li key={flag}>• {translateRiskFlag(flag)}</li>
                                         ))}
                                     </ul>
                                 ) : (
@@ -224,7 +271,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                 {flight.advancedScore.comfortNotes.length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-emerald-700">
                                         {flight.advancedScore.comfortNotes.map((note) => (
-                                            <li key={note}>• {note}</li>
+                                            <li key={note}>• {translateComfortNote(note)}</li>
                                         ))}
                                     </ul>
                                 ) : (
@@ -237,7 +284,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     {flight.advancedScore && (
                         <div className="bg-indigo-50 p-3 rounded border border-indigo-200">
                             <div className="text-xs text-indigo-700 mb-1">💎 {labels.valueTag}</div>
-                            <div className="text-sm font-bold text-indigo-900">{flight.advancedScore.valueTag}</div>
+                            <div className="text-sm font-bold text-indigo-900">{translateValueTag(flight.advancedScore.valueTag)}</div>
                         </div>
                     )}
 

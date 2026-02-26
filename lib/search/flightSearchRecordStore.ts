@@ -129,19 +129,49 @@ export async function persistFlightSearchRecords(
             provider: (flight.source || 'UNKNOWN').toString(),
         }));
 
-    if (rows.length === 0) return;
+    const invalidRows = rows.filter((row) =>
+        !row.flightNumber || !row.origin || !row.destination || !Number.isFinite(row.price) || row.price <= 0 || !row.departureDate
+    );
+
+    if (invalidRows.length > 0) {
+        console.error('[FLIGHT_SEARCH_RECORD] invalid rows filtered:', invalidRows.slice(0, 3));
+    }
+
+    const validRows = rows.filter((row) =>
+        !!row.flightNumber &&
+        !!row.origin &&
+        !!row.destination &&
+        Number.isFinite(row.price) &&
+        row.price > 0 &&
+        !!row.departureDate
+    );
+
+    if (validRows.length === 0) {
+        console.error('[FLIGHT_SEARCH_RECORD] no valid rows to persist', {
+            flightsReceived: flights.length,
+            origin: options.origin,
+            destination: options.destination,
+            departureDate: options.departureDate,
+        });
+        return;
+    }
 
     const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
     if (!flightSearchRecordModel) {
+        console.error('[FLIGHT_SEARCH_RECORD] prisma model flightSearchRecord is unavailable (client/schema mismatch?)');
         return;
     }
 
     try {
         await flightSearchRecordModel.createMany({
-            data: rows,
+            data: validRows,
         });
     } catch (error: any) {
-        console.warn('[FLIGHT_SEARCH_RECORD] persist skipped:', error?.message || error);
+        console.error('[FLIGHT_SEARCH_RECORD] persist failed:', {
+            message: error?.message || String(error),
+            rows: validRows.length,
+            sample: validRows.slice(0, 2),
+        });
     }
 }
 

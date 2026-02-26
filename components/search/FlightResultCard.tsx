@@ -165,6 +165,21 @@ export default function FlightResultCard({
     const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : source === 'SERPAPI' ? 'SERPAPI' : 'KIWI';
     const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : source === 'SERPAPI' ? '🔎 SerpApi' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
+    const localizeValueTag = (tag: string) => {
+        const locale = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
+        const isEnglish = locale === 'en';
+        if (!isEnglish) return tag;
+
+        const map: Record<string, string> = {
+            'En İyi Fiyat/Performans': 'Best Value',
+            'Dengeli Seçenek': 'Balanced Choice',
+            'Ekonomik Seçenek': 'Budget Option',
+            'En Konforlu Seçenek': 'Most Comfortable',
+            'Düşük Riskli Seçenek': 'Low Risk Choice',
+            'Veri Hatası': 'Data Error',
+        };
+        return map[tag] || tag;
+    };
     const displayScore =
         typeof flight.agentScore === 'number' && Number.isFinite(flight.agentScore)
             ? flight.agentScore
@@ -483,7 +498,7 @@ export default function FlightResultCard({
                 <div className="w-full md:w-52 border-l pl-6 flex flex-col justify-between relative">
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
-                    <div className="h-28 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 px-2">
+                    <div className="h-32 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 px-3">
                         {!hasPremiumAccess ? (
                             <div className="text-center opacity-70">
                                 <div className="text-5xl font-black text-slate-300 blur-sm">8.5</div>
@@ -494,11 +509,11 @@ export default function FlightResultCard({
                                 <div className={`text-4xl font-black leading-none ${hasInvalidData ? 'text-red-600' : 'text-blue-600'}`}>
                                     {Number.isFinite(displayScore) ? displayScore.toFixed(1) : '0.0'}
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('agentScore')}</span>
-                                <div className="text-[11px] text-slate-600 mt-1 font-semibold leading-tight">10-Criteria Engine</div>
+                                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide leading-none mt-1 block">{t('agentScore')}</span>
+                                <div className="text-xs text-slate-600 mt-1 font-semibold leading-relaxed">10-Criteria Engine</div>
                                 {flight.advancedScore?.valueTag && (
-                                    <div className={`mt-1 inline-block max-w-full text-[11px] leading-4 px-2 py-1 rounded-full font-semibold truncate ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                                        {hasInvalidData ? 'Veri Hatası' : flight.advancedScore.valueTag}
+                                    <div className={`mt-2 inline-block max-w-full text-xs leading-5 px-2.5 py-1 rounded-full font-semibold ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                        {hasInvalidData ? localizeValueTag('Veri Hatası') : localizeValueTag(flight.advancedScore.valueTag)}
                                     </div>
                                 )}
                             </div>
