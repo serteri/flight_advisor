@@ -1,5 +1,5 @@
 import { FlightResult } from '@/types/hybridFlight';
-import { getMedianPriceForRouteDate, isInvalidBneIstDuration, toMinutes } from '@/lib/search/flightSearchRecordStore';
+import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 
 type ScoreBreakdown = {
     priceValue: number;
@@ -44,16 +44,7 @@ const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
 
 const resolveDurationMinutes = (flight: FlightResult): number => {
-    const base = toMinutes(flight.duration);
-    if (base > 0) return base;
-
-    const dep = new Date(flight.departTime).getTime();
-    const arr = new Date(flight.arriveTime).getTime();
-    if (Number.isFinite(dep) && Number.isFinite(arr) && arr > dep) {
-        return Math.round((arr - dep) / 60000);
-    }
-
-    return 0;
+    return resolveFlightDurationMinutes(flight);
 };
 
 const resolveLayovers = (flight: FlightResult) =>
@@ -121,38 +112,14 @@ const resolveAircraftCode = (flight: FlightResult): string => {
     return (segAircraft || '').toString().toUpperCase();
 };
 
-const invalidDataResult = (flight: FlightResult, reason: string): FlightResult => ({
-    ...flight,
-    agentScore: 0,
-    advancedScore: {
-        totalScore: 0,
-        displayScore: 0,
-        breakdown: {
-            priceValue: 0,
-            duration: 0,
-            stops: 0,
-            connection: 0,
-            selfTransfer: 0,
-            baggage: 0,
-            reliability: 0,
-            aircraft: 0,
-            amenities: 0,
-            airportIndex: 0,
-        },
-        riskFlags: ['Veri Hatası', reason],
-        comfortNotes: [],
-        valueTag: 'Veri Hatası',
-        dataQuality: 'invalid',
-        dataErrorReason: reason,
-    },
-});
-
 const scoreFlight = (
     flight: FlightResult,
     context: {
         avgPrice: number;
         fastestDuration: number;
         medianPrice: number | null;
+        markInvalidData: boolean;
+        invalidReason?: string;
     }
 ) => {
     const breakdown: ScoreBreakdown = {
@@ -304,17 +271,26 @@ const scoreFlight = (
             totalScore,
             displayScore,
             breakdown,
-            riskFlags: Array.from(new Set(riskFlags)),
+            riskFlags: Array.from(new Set([
+                ...riskFlags,
+                ...(context.markInvalidData ? ['Veri Hatası', context.invalidReason || 'Gerçekçi olmayan süre tespit edildi.'] : []),
+            ])),
             comfortNotes: Array.from(new Set(comfortNotes)),
-            valueTag,
-            dataQuality: 'valid',
+            valueTag: context.markInvalidData ? 'Veri Hatası' : valueTag,
+            dataQuality: context.markInvalidData ? 'invalid' : 'valid',
+            dataErrorReason: context.markInvalidData ? context.invalidReason : undefined,
         },
     } as FlightResult;
 };
 
 export async function applyAdvancedFlightScoring(
     flights: FlightResult[],
-    options?: { origin?: string; destination?: string; departureDate?: string }
+    options?: {
+        origin?: string;
+        destination?: string;
+        departureDate?: string;
+        useHistoricalMedian?: boolean;
+    }
 ): Promise<FlightResult[]> {
     const validPrices = flights
         .map((flight) => Number(flight.price))
@@ -329,7 +305,12 @@ export async function applyAdvancedFlightScoring(
     const fastestDuration = durations.length ? Math.min(...durations) : 1;
 
     let medianPrice: number | null = null;
-    if (options?.origin && options?.destination && options?.departureDate) {
+    if (
+        options?.useHistoricalMedian &&
+        options?.origin &&
+        options?.destination &&
+        options?.departureDate
+    ) {
         try {
             medianPrice = await getMedianPriceForRouteDate(
                 options.origin,
@@ -343,17 +324,17 @@ export async function applyAdvancedFlightScoring(
 
     return flights
         .map((flight) => {
-            if (isInvalidBneIstDuration(flight)) {
-                return invalidDataResult(
-                    flight,
-                    'BNE-IST için 18 saatin altındaki toplam süre gerçekçi değil.'
-                );
-            }
+            const markInvalidData = isInvalidBneIstDuration(flight);
+            const invalidReason = markInvalidData
+                ? 'BNE-IST için 14 saatin altındaki toplam süre gerçekçi değil.'
+                : undefined;
 
             return scoreFlight(flight, {
                 avgPrice,
                 fastestDuration,
                 medianPrice,
+                markInvalidData,
+                invalidReason,
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));

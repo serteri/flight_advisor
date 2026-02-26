@@ -94,6 +94,7 @@ export async function GET(request: Request) {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
+            useHistoricalMedian: viewerAccess.isPremium,
         });
 
         return NextResponse.json({

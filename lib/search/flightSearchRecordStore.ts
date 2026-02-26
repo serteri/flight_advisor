@@ -44,12 +44,63 @@ export const normalizeUtcDate = (dateInput: string): Date => {
     return new Date(`${datePart}T00:00:00.000Z`);
 };
 
+export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
+    const declaredDuration = toMinutes(flight.duration);
+
+    const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
+    const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+    const timestampDuration =
+        Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
+            ? Math.round((arrMs - depMs) / 60000)
+            : 0;
+
+    const segmentDuration = Array.isArray(flight.segments)
+        ? flight.segments
+              .map((segment: any) => {
+                  const direct = toMinutes(segment?.duration);
+                  if (direct > 0) return direct;
+
+                  const segDep = segment?.departing_at || segment?.departure || segment?.departure_time;
+                  const segArr = segment?.arriving_at || segment?.arrival || segment?.arrival_time;
+                  const segDepMs = segDep ? new Date(segDep).getTime() : NaN;
+                  const segArrMs = segArr ? new Date(segArr).getTime() : NaN;
+
+                  if (Number.isFinite(segDepMs) && Number.isFinite(segArrMs) && segArrMs > segDepMs) {
+                      return Math.round((segArrMs - segDepMs) / 60000);
+                  }
+
+                  return 0;
+              })
+              .reduce((sum, value) => sum + value, 0)
+        : 0;
+
+    const layoverDuration = Array.isArray(flight.layovers)
+        ? flight.layovers
+              .map((layover) => toMinutes(layover?.duration))
+              .reduce((sum, value) => sum + value, 0)
+        : 0;
+
+    const segmentPlusLayovers = segmentDuration + layoverDuration;
+
+    if (timestampDuration > 0) {
+        return timestampDuration;
+    }
+
+    if (segmentPlusLayovers > 0) {
+        return segmentPlusLayovers;
+    }
+
+    return Math.max(0, declaredDuration);
+};
+
 export const isInvalidBneIstDuration = (flight: FlightResult): boolean => {
-    const routeMatch = flight.from === 'BNE' && flight.to === 'IST';
+    const from = (flight.from || '').toString().toUpperCase();
+    const to = (flight.to || '').toString().toUpperCase();
+    const routeMatch = from === 'BNE' && to === 'IST';
     if (!routeMatch) return false;
 
-    const durationMins = toMinutes(flight.duration);
-    return durationMins > 0 && durationMins < 18 * 60;
+    const durationMins = resolveFlightDurationMinutes(flight);
+    return durationMins > 0 && durationMins < 14 * 60;
 };
 
 export async function persistFlightSearchRecords(
@@ -72,8 +123,13 @@ export async function persistFlightSearchRecords(
 
     if (rows.length === 0) return;
 
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return;
+    }
+
     try {
-        await prisma.flightSearchRecord.createMany({
+        await flightSearchRecordModel.createMany({
             data: rows,
         });
     } catch (error: any) {
@@ -89,9 +145,14 @@ export async function getMedianPriceForRouteDate(
     const start = normalizeUtcDate(departureDate);
     const end = new Date(start.getTime() + DAY_MS);
 
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return null;
+    }
+
     let prices: Array<{ price: number }> = [];
     try {
-        prices = await prisma.flightSearchRecord.findMany({
+        prices = await flightSearchRecordModel.findMany({
             where: {
                 origin,
                 destination,

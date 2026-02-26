@@ -147,7 +147,16 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
 
         const airlineName = firstSegment.airline || "Unknown";
         const airlineLogo = firstSegment.airline_logo || undefined;
+        const departAt = firstSegment.departure_airport?.time || params.date;
+        const arriveAt = lastSegment.arrival_airport?.time || params.date;
+        const depMs = new Date(departAt).getTime();
+        const arrMs = new Date(arriveAt).getTime();
+        const elapsedMinutes =
+          Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
+            ? Math.round((arrMs - depMs) / 60000)
+            : 0;
         const durationMins =
+          elapsedMinutes ||
           parseDurationMinutes(item.total_duration) ||
           parseDurationMinutes(item.duration) ||
           parseDurationMinutes(flightData.total_duration) ||
@@ -167,8 +176,8 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
           flightNumber: firstSegment.flight_number || "N/A",
           from: params.origin,
           to: params.destination,
-          departTime: firstSegment.departure_airport?.time || params.date,
-          arriveTime: lastSegment.arrival_airport?.time || params.date,
+          departTime: departAt,
+          arriveTime: arriveAt,
           duration: durationMins,
           durationLabel: formatDuration(durationMins),
           stops: stopCount,
