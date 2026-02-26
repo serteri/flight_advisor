@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { searchAllProviders } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';
 import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
+import { persistFlightSearchRecords } from '@/lib/search/flightSearchRecordStore';
 
 // Vercel Pro Ayarları
 export const maxDuration = 300;
@@ -38,7 +39,17 @@ export async function GET(request: Request) {
 
         console.log(`📡 Calling searchAllProviders...`);
         const allFlights = await searchAllProviders(queryParams);
-        const scoredFlights = applyAdvancedFlightScoring(allFlights);
+        await persistFlightSearchRecords(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
+
+        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
         console.log(`✅ searchAllProviders returned ${scoredFlights.length} scored flights`);
 
         if (scoredFlights.length === 0) {
@@ -76,7 +87,17 @@ export async function POST(request: Request) {
         };
 
         const allFlights = await searchAllProviders(queryParams);
-        const scoredFlights = applyAdvancedFlightScoring(allFlights);
+        await persistFlightSearchRecords(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
+
+        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
 
         if (scoredFlights.length === 0) {
             return NextResponse.json([], { status: 200 });

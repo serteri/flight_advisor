@@ -3,6 +3,35 @@ import { getAirportSettings } from "@/lib/airportDb";
 
 const API_KEY = process.env.SERPAPI_KEY;
 
+const parseDurationMinutes = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.round(value));
+  }
+
+  if (typeof value === 'string') {
+    const text = value.trim();
+
+    const hourMin = text.match(/(\d+)\s*(h|hr|hrs|hour|hours)\s*(\d+)?\s*(m|min|mins|minute|minutes)?/i);
+    if (hourMin) {
+      const h = parseInt(hourMin[1] || '0', 10);
+      const m = parseInt(hourMin[3] || '0', 10);
+      return Math.max(0, h * 60 + m);
+    }
+
+    const minOnly = text.match(/(\d+)\s*(m|min|mins|minute|minutes)/i);
+    if (minOnly) {
+      return Math.max(0, parseInt(minOnly[1], 10));
+    }
+
+    const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
+    if (Number.isFinite(numeric)) {
+      return Math.max(0, Math.round(numeric));
+    }
+  }
+
+  return 0;
+};
+
 // 🛠️ YARDIMCI FONKSİYON: "NAKED" SEARCH
 async function fetchSerpApi(
   params: HybridSearchParams,
@@ -118,7 +147,11 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
 
         const airlineName = firstSegment.airline || "Unknown";
         const airlineLogo = firstSegment.airline_logo || undefined;
-        const durationMins = item.total_duration || item.duration || 0;
+        const durationMins =
+          parseDurationMinutes(item.total_duration) ||
+          parseDurationMinutes(item.duration) ||
+          parseDurationMinutes(flightData.total_duration) ||
+          parseDurationMinutes(flightData.duration);
         const stopCount = (item.layovers || []).length;
         const currencyCode = item.__currency || localSettings.currency;
 
@@ -166,7 +199,7 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
           segments: segments.map((segment: any) => ({
             departure: segment.departure_airport?.time,
             arrival: segment.arrival_airport?.time,
-            duration: segment.duration || 0,
+            duration: parseDurationMinutes(segment.duration),
             airline: segment.airline,
             flightNumber: segment.flight_number,
             origin: segment.departure_airport?.id,

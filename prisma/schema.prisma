@@ -209,6 +209,21 @@ model SearchHistory {
   // Ham sonuçları (SearchResult) saklamak zorunda değiliz.
 }
 
+model FlightSearchRecord {
+  id            String   @id @default(cuid())
+  flightNumber  String
+  origin        String
+  destination   String
+  departureDate DateTime
+  price         Float
+  provider      String
+  createdAt     DateTime @default(now())
+
+  @@index([origin, destination, departureDate])
+  @@index([flightNumber, departureDate])
+  @@index([createdAt])
+}
+
 // ----------------------------
 // WATCHED FLIGHTS (User Tracking)
 // ----------------------------

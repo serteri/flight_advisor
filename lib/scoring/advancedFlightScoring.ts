@@ -1,4 +1,5 @@
 import { FlightResult } from '@/types/hybridFlight';
+import { getMedianPriceForRouteDate, isInvalidBneIstDuration, toMinutes } from '@/lib/search/flightSearchRecordStore';
 
 type ScoreBreakdown = {
     priceValue: number;
@@ -41,42 +42,6 @@ const HARD_AIRPORTS = new Set(['CDG', 'LHR', 'LGW', 'JFK', 'EWR', 'FRA']);
 
 const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
-
-const toMinutes = (value: unknown): number => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-        return Math.max(0, value);
-    }
-
-    if (typeof value === 'string') {
-        const trimmed = value.trim();
-
-        const isoMatch = trimmed.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
-        if (isoMatch) {
-            const hours = parseInt(isoMatch[1] || '0', 10);
-            const mins = parseInt(isoMatch[2] || '0', 10);
-            return Math.max(0, hours * 60 + mins);
-        }
-
-        const hoursMinsMatch = trimmed.match(/(\d+)\s*h\s*(\d+)?\s*m?/i);
-        if (hoursMinsMatch) {
-            const hours = parseInt(hoursMinsMatch[1] || '0', 10);
-            const mins = parseInt(hoursMinsMatch[2] || '0', 10);
-            return Math.max(0, hours * 60 + mins);
-        }
-
-        const minsOnlyMatch = trimmed.match(/(\d+)\s*m(in)?/i);
-        if (minsOnlyMatch) {
-            return Math.max(0, parseInt(minsOnlyMatch[1], 10));
-        }
-
-        const asNumber = parseFloat(trimmed);
-        if (Number.isFinite(asNumber)) {
-            return Math.max(0, asNumber);
-        }
-    }
-
-    return 0;
-};
 
 const resolveDurationMinutes = (flight: FlightResult): number => {
     const base = toMinutes(flight.duration);
@@ -156,11 +121,38 @@ const resolveAircraftCode = (flight: FlightResult): string => {
     return (segAircraft || '').toString().toUpperCase();
 };
 
+const invalidDataResult = (flight: FlightResult, reason: string): FlightResult => ({
+    ...flight,
+    agentScore: 0,
+    advancedScore: {
+        totalScore: 0,
+        displayScore: 0,
+        breakdown: {
+            priceValue: 0,
+            duration: 0,
+            stops: 0,
+            connection: 0,
+            selfTransfer: 0,
+            baggage: 0,
+            reliability: 0,
+            aircraft: 0,
+            amenities: 0,
+            airportIndex: 0,
+        },
+        riskFlags: ['Veri Hatası', reason],
+        comfortNotes: [],
+        valueTag: 'Veri Hatası',
+        dataQuality: 'invalid',
+        dataErrorReason: reason,
+    },
+});
+
 const scoreFlight = (
     flight: FlightResult,
     context: {
         avgPrice: number;
         fastestDuration: number;
+        medianPrice: number | null;
     }
 ) => {
     const breakdown: ScoreBreakdown = {
@@ -185,7 +177,11 @@ const scoreFlight = (
     const durationMinutes = resolveDurationMinutes(flight);
     const fastestDuration = Math.max(1, context.fastestDuration);
 
-    const priceDelta = context.avgPrice > 0 ? (validPrice - context.avgPrice) / context.avgPrice : 0;
+    const referencePrice =
+        typeof context.medianPrice === 'number' && context.medianPrice > 0
+            ? context.medianPrice
+            : context.avgPrice;
+    const priceDelta = referencePrice > 0 ? (validPrice - referencePrice) / referencePrice : 0;
     if (priceDelta <= -0.2) {
         breakdown.priceValue = 20;
         comfortNotes.push('Fiyat rota ortalamasına göre çok avantajlı');
@@ -311,11 +307,15 @@ const scoreFlight = (
             riskFlags: Array.from(new Set(riskFlags)),
             comfortNotes: Array.from(new Set(comfortNotes)),
             valueTag,
+            dataQuality: 'valid',
         },
     } as FlightResult;
 };
 
-export function applyAdvancedFlightScoring(flights: FlightResult[]): FlightResult[] {
+export async function applyAdvancedFlightScoring(
+    flights: FlightResult[],
+    options?: { origin?: string; destination?: string; departureDate?: string }
+): Promise<FlightResult[]> {
     const validPrices = flights
         .map((flight) => Number(flight.price))
         .filter((price) => Number.isFinite(price) && price > 0);
@@ -328,12 +328,33 @@ export function applyAdvancedFlightScoring(flights: FlightResult[]): FlightResul
         .filter((duration) => Number.isFinite(duration) && duration > 0);
     const fastestDuration = durations.length ? Math.min(...durations) : 1;
 
+    let medianPrice: number | null = null;
+    if (options?.origin && options?.destination && options?.departureDate) {
+        try {
+            medianPrice = await getMedianPriceForRouteDate(
+                options.origin,
+                options.destination,
+                options.departureDate
+            );
+        } catch (error) {
+            console.warn('[ADVANCED_SCORING] median lookup failed:', error);
+        }
+    }
+
     return flights
-        .map((flight) =>
-            scoreFlight(flight, {
+        .map((flight) => {
+            if (isInvalidBneIstDuration(flight)) {
+                return invalidDataResult(
+                    flight,
+                    'BNE-IST için 18 saatin altındaki toplam süre gerçekçi değil.'
+                );
+            }
+
+            return scoreFlight(flight, {
                 avgPrice,
                 fastestDuration,
-            })
-        )
+                medianPrice,
+            });
+        })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));
 }

@@ -147,6 +147,15 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                         </div>
                     )}
 
+                    {flight.advancedScore?.dataQuality === 'invalid' && (
+                        <div className="bg-red-50 border border-red-200 rounded p-3">
+                            <h3 className="font-bold text-red-700 mb-1">⚠️ Veri Hatası</h3>
+                            <p className="text-xs text-red-700">
+                                {flight.advancedScore.dataErrorReason || 'Bu uçuş verisi gerçekçi olmayan süre içeriyor, skorlamaya dahil edilmedi.'}
+                            </p>
+                        </div>
+                    )}
+
                     {flight.advancedScore && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="bg-rose-50 border border-rose-200 p-3 rounded">

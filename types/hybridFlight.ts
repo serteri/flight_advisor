@@ -143,5 +143,7 @@ export type FlightResult = {
         riskFlags: string[];
         comfortNotes: string[];
         valueTag: string;
+        dataQuality?: 'valid' | 'invalid';
+        dataErrorReason?: string;
     };
 };

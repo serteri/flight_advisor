@@ -1,6 +1,30 @@
 import { FlightResult, FlightSource } from '@/types/hybridFlight';
 
 export function mapDuffelToPremiumAgent(offer: any): FlightResult {
+        const parseDurationToMinutes = (value: unknown): number => {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return Math.max(0, value);
+            }
+
+            if (typeof value === 'string') {
+                const isoMatch = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+                if (isoMatch) {
+                    const hours = parseInt(isoMatch[1] || '0', 10);
+                    const mins = parseInt(isoMatch[2] || '0', 10);
+                    return Math.max(0, hours * 60 + mins);
+                }
+
+                const hrMinMatch = value.match(/(\d+)\s*(h|hr|hrs|hour|hours)\s*(\d+)?\s*(m|min|mins|minute|minutes)?/i);
+                if (hrMinMatch) {
+                    const hours = parseInt(hrMinMatch[1] || '0', 10);
+                    const mins = parseInt(hrMinMatch[3] || '0', 10);
+                    return Math.max(0, hours * 60 + mins);
+                }
+            }
+
+            return 0;
+        };
+
     const firstSlice = offer.slices[0];
     const firstSegment = firstSlice.segments[0];
     const lastSegment = firstSlice.segments[firstSlice.segments.length - 1];
@@ -25,17 +49,25 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
     const departureDate = firstSegment.departing_at || new Date().toISOString();
     const arrivalDate = lastSegment.arriving_at || new Date().toISOString();
 
-    let durationMins = 0;
+    let durationMins = parseDurationToMinutes(firstSlice.duration || offer.total_duration || offer.duration);
     let durationText = "Bilinmiyor";
-    try {
-        const dep = new Date(departureDate).getTime();
-        const arr = new Date(arrivalDate).getTime();
-        const diffMins = (arr - dep) / 60000;
-        durationMins = Math.floor(diffMins);
-        const h = Math.floor(diffMins / 60);
-        const m = Math.round(diffMins % 60);
+    if (durationMins <= 0) {
+        try {
+            // UTC-safe fallback (ISO timestamps include timezone offsets)
+            const dep = new Date(departureDate).getTime();
+            const arr = new Date(arrivalDate).getTime();
+            const diffMins = Math.floor((arr - dep) / 60000);
+            durationMins = Math.max(0, diffMins);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    if (durationMins > 0) {
+        const h = Math.floor(durationMins / 60);
+        const m = Math.round(durationMins % 60);
         durationText = `${h}s ${m}dk`;
-    } catch (e) { console.error(e); }
+    }
 
     // 🚫 AVIASALES LİNK KURULUMU KALDIRILDI
     // Artık Aviasales'e zorlama yönlendirmesi yapılmıyor

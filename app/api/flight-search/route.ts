@@ -4,6 +4,7 @@ import { HybridSearchParams } from '@/types/hybridFlight';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
+import { persistFlightSearchRecords } from '@/lib/search/flightSearchRecordStore';
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -83,7 +84,17 @@ export async function GET(request: Request) {
         const queryParams = buildQueryParams(searchParams);
         const viewerAccess = await resolveViewerAccess();
         const allFlights = await searchAllProviders(queryParams);
-        const scoredFlights = applyAdvancedFlightScoring(allFlights);
+        await persistFlightSearchRecords(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
+
+        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
 
         return NextResponse.json({
             results: scoredFlights,

@@ -135,6 +135,7 @@ export default function FlightResultCard({
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
     const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : source === 'SERPAPI' ? 'SERPAPI' : 'KIWI';
     const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : source === 'SERPAPI' ? '🔎 SerpApi' : '🌐 Kiwi';
+    const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
     const displayScore =
         typeof flight.agentScore === 'number' && Number.isFinite(flight.agentScore)
             ? flight.agentScore
@@ -461,12 +462,14 @@ export default function FlightResultCard({
                             </div>
                         ) : (
                             <div className="text-center">
-                                <div className="text-5xl font-black text-blue-600 tracking-tighter">{displayScore.toFixed(1)}</div>
+                                <div className={`text-5xl font-black tracking-tighter ${hasInvalidData ? 'text-red-600' : 'text-blue-600'}`}>
+                                    {hasInvalidData ? '!' : displayScore.toFixed(1)}
+                                </div>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('agentScore')}</span>
-                                <div className="text-[10px] text-slate-500 mt-1 font-medium">10-Criteria Engine</div>
+                                <div className="text-xs leading-5 text-slate-600 mt-1 font-semibold">10-Criteria Engine</div>
                                 {flight.advancedScore?.valueTag && (
-                                    <div className="mt-1 inline-block text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-                                        {flight.advancedScore.valueTag}
+                                    <div className={`mt-1 inline-block text-xs leading-5 px-2.5 py-1 rounded-full font-semibold ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                        {hasInvalidData ? 'Veri Hatası' : flight.advancedScore.valueTag}
                                     </div>
                                 )}
                             </div>
