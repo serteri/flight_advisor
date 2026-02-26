@@ -76,6 +76,27 @@ export default function FlightResultCard({
         return `${h}h ${m}m`;
     };
 
+    const parseMinutes = (value: unknown): number => {
+        if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, value);
+        if (typeof value === 'string') {
+            const iso = value.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+            if (iso) {
+                const h = parseInt(iso[1] || '0', 10);
+                const m = parseInt(iso[2] || '0', 10);
+                return h * 60 + m;
+            }
+            const hm = value.match(/(\d+)\s*h\s*(\d+)?\s*m?/i);
+            if (hm) {
+                const h = parseInt(hm[1] || '0', 10);
+                const m = parseInt(hm[2] || '0', 10);
+                return h * 60 + m;
+            }
+            const mins = value.match(/(\d+)\s*m(in)?/i);
+            if (mins) return parseInt(mins[1], 10);
+        }
+        return 0;
+    };
+
     const getSegmentDurationMinutes = (seg: any, fallbackMinutes: number) => {
         const dep = seg?.departure || seg?.departing_at || seg?.departure_time || seg?.departure_at;
         const arr = seg?.arrival || seg?.arriving_at || seg?.arrival_time || seg?.arrival_at;
@@ -110,9 +131,17 @@ export default function FlightResultCard({
     };
 
     const segments = Array.isArray(flight.segments) ? flight.segments : [];
-    const totalDurationMinutes = duration > 0
-        ? duration
-        : Math.max(0, Math.round((new Date(arrivalTime).getTime() - new Date(departureTime).getTime()) / 60000));
+    const segmentsTotalMinutes = segments.reduce((sum: number, seg: any) => sum + getSegmentDurationMinutes(seg, 0), 0);
+    const layoversTotalMinutes = Array.isArray(flight.layovers)
+        ? flight.layovers.reduce((sum: number, layover: any) => sum + parseMinutes(layover?.duration), 0)
+        : 0;
+    const assembledTotalMinutes = segmentsTotalMinutes + layoversTotalMinutes;
+    const endpointTotalMinutes = Math.max(0, Math.round((new Date(arrivalTime).getTime() - new Date(departureTime).getTime()) / 60000));
+    const totalDurationMinutes = assembledTotalMinutes > 0
+        ? assembledTotalMinutes
+        : duration > 0
+            ? duration
+            : endpointTotalMinutes;
 
     const totalDurationLabel = (() => {
         const label = t('total_duration');
@@ -252,7 +281,7 @@ export default function FlightResultCard({
                                     <div className="space-y-1.5">
                                         {flight.layovers.map((l: any, idx: number) => {
                                             const airportCode = typeof l.airport === 'string' ? l.airport : (l.airport?.iataCode || l.airport?.code || 'XXX');
-                                            const durationNum = typeof l.duration === 'number' ? l.duration : parseInt(l.duration) || 0;
+                                            const durationNum = parseMinutes(l.duration);
                                             const hrs = Math.floor(durationNum / 60);
                                             const mins = durationNum % 60;
                                             const cityName = toText(l.city, airportCode);

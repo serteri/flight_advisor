@@ -6,6 +6,7 @@ import { groupFlights } from "@/lib/flightGrouping";
 import { generateMockFlights } from "@/lib/mockFlights";
 import { findVirtualInterlineFlights } from "@/lib/virtualInterlining";
 import { getAllFlights } from "@/lib/flightAggregator";
+import { persistFlightSearchRecords } from "@/lib/search/flightSearchRecordStore";
 
 // Currency Mapping Helper
 function getCurrencyForCountry(country?: string): string {
@@ -139,6 +140,32 @@ export async function POST(req: NextRequest) {
         // PERSIST TO DATABASE (Historical Data)
         // ---------------------------------------------------------
         const allFlights = results.flatMap((g: any) => g.options);
+
+        await persistFlightSearchRecords(
+            allFlights.map((flight: any) => ({
+                id: String(flight.id || `${flight.flightNumber || "UNKNOWN"}-${from}-${to}`),
+                source: String(flight.source || "UNKNOWN") as any,
+                airline: String(flight.airline || "Unknown Airline"),
+                flightNumber: String(flight.flightNumber || "UNKNOWN"),
+                from: String(flight.from || from),
+                to: String(flight.to || to),
+                departTime: String(flight.departTime || flight.departureTime || flight.segments?.[0]?.departure || departureDate),
+                arriveTime: String(flight.arriveTime || flight.arrivalTime || flight.segments?.[flight.segments?.length - 1]?.arrival || departureDate),
+                duration: Number(flight.duration) || 0,
+                stops: Number(flight.stops) || Math.max(0, (flight.segments?.length || 1) - 1),
+                layovers: Array.isArray(flight.layovers) ? flight.layovers : [],
+                segments: Array.isArray(flight.segments) ? flight.segments : [],
+                price: Number(flight.effectivePrice || flight.price) || 0,
+                currency: String(flight.currency || targetCurrency || "USD"),
+                cabinClass: "economy",
+            })),
+            {
+                origin: from,
+                destination: to,
+                departureDate,
+            }
+        );
+
         // searchResultsData removed (Legacy table dropped)
 
         try {

@@ -5,6 +5,7 @@ import { FlightResult } from "@/types/hybridFlight";
 import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
+import { useLocale } from "next-intl";
 
 interface FlightDetailDialogProps {
     flight: FlightResult | null;
@@ -75,9 +76,46 @@ const segmentDurationMinutes = (segment: any): number => {
 
 export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: FlightDetailDialogProps) {
     if (!flight) return null;
+    const locale = useLocale();
+    const isTr = locale?.toLowerCase().startsWith("tr");
+
+    const labels = {
+        departure: isTr ? "Kalkış" : "Departure",
+        arrival: isTr ? "Varış" : "Arrival",
+        direct: isTr ? "Direkt" : "Direct",
+        stops: isTr ? "Aktarma" : "Stops",
+        baggage: isTr ? "Bagaj" : "Baggage",
+        cabin: isTr ? "Kabin" : "Cabin",
+        checked: isTr ? "Kontrol" : "Checked",
+        segments: isTr ? "Segmentler" : "Segments",
+        segment: isTr ? "Seg" : "Seg",
+        depShort: "Dep",
+        arrShort: "Arr",
+        durShort: "Dur",
+        scoreBreakdown: isTr ? "Skor Dağılımı" : "Score Breakdown",
+        total: isTr ? "Toplam" : "Total",
+        dataError: isTr ? "Veri Hatası" : "Data Error",
+        dataErrorFallback: isTr
+            ? "Bu uçuş verisinde süre tutarsızlığı tespit edildi, sonuç işaretlendi."
+            : "Duration inconsistency detected for this flight; result has been flagged.",
+        riskFlags: isTr ? "Risk İşaretleri" : "Risk Flags",
+        noRisk: isTr ? "Belirgin risk işareti yok." : "No significant risk flags.",
+        comfortNotes: isTr ? "Konfor Notları" : "Comfort Notes",
+        noComfort: isTr ? "Ekstra konfor notu bulunamadı." : "No extra comfort notes.",
+        valueTag: "Value Tag",
+        amenities: isTr ? "Hizmetler" : "Amenities",
+        meal: isTr ? "Yemek" : "Meal",
+        yes: isTr ? "Var" : "Yes",
+        no: isTr ? "Yok" : "No",
+    };
 
     const segs = Array.isArray(flight.segments) ? flight.segments.filter(s => s) : [];
     const lays = Array.isArray(flight.layovers) ? flight.layovers : [];
+
+    const totalSegmentMinutes = segs.reduce((sum, s) => sum + segmentDurationMinutes(s), 0);
+    const totalLayoverMinutes = lays.reduce((sum, l: any) => sum + toMinutes(l?.duration), 0);
+    const calculatedTotalDuration = totalSegmentMinutes + totalLayoverMinutes;
+    const displayTotalDuration = calculatedTotalDuration > 0 ? calculatedTotalDuration : toMinutes(flight.duration || 0);
 
     const formatDuration = (minutes: number | string | undefined) => {
         const resolved = toMinutes(minutes);
@@ -115,31 +153,31 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                 <div className="space-y-3 text-sm">
                     <div className="bg-slate-50 p-3 rounded border">
                         <div className="grid grid-cols-3 gap-4">
-                            <div><div className="text-xs text-slate-500">Kalkis</div><div className="font-bold text-lg">{safeDate(flight.departTime)}</div><div className="text-xs text-slate-600">{flight.from || "XXX"}</div></div>
-                            <div className="text-center"><Clock className="w-5 h-5 mx-auto text-slate-400" /><div className="font-bold">{formatDuration(flight.duration || 0)}</div><div className="text-xs bg-blue-100 text-blue-700 w-fit mx-auto px-2 py-1 rounded my-1 font-bold">{flight.stops === 0 ? "Direkt" : flight.stops + " Aktarma"}</div></div>
-                            <div className="text-right"><div className="text-xs text-slate-500">Varis</div><div className="font-bold text-lg">{safeDate(flight.arriveTime)}</div><div className="text-xs text-slate-600">{flight.to || "XXX"}</div></div>
+                            <div><div className="text-xs text-slate-500">{labels.departure}</div><div className="font-bold text-lg">{safeDate(flight.departTime)}</div><div className="text-xs text-slate-600">{flight.from || "XXX"}</div></div>
+                            <div className="text-center"><Clock className="w-5 h-5 mx-auto text-slate-400" /><div className="font-bold">{formatDuration(displayTotalDuration)}</div><div className="text-xs bg-blue-100 text-blue-700 w-fit mx-auto px-2 py-1 rounded my-1 font-bold">{flight.stops === 0 ? labels.direct : `${flight.stops} ${labels.stops}`}</div></div>
+                            <div className="text-right"><div className="text-xs text-slate-500">{labels.arrival}</div><div className="font-bold text-lg">{safeDate(flight.arriveTime)}</div><div className="text-xs text-slate-600">{flight.to || "XXX"}</div></div>
                         </div>
                     </div>
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> Bagaj</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">Kabin</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">Kontrol</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
                     {segs.length > 0 && (
-                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> Segmentler ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {name: "Havayolu"}; const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={c.iata_code || "XX"} airlineName={c.name} className="w-5 h-5" /><div className="text-xs font-bold flex-1">{c.name}</div><div className="text-xs text-slate-500">Seg {i+1}</div></div><div className="grid grid-cols-3 gap-2 text-xs"><div><div className="text-slate-500">Kal</div><div className="font-bold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">S</div><div className="font-bold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">Var</div><div className="font-bold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-xs bg-amber-50 border border-amber-200 p-1 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
+                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
                     )}
 
                     {flight.advancedScore && (
                         <div className="bg-white p-3 rounded border space-y-3">
                             <div className="flex items-center justify-between">
-                                <h3 className="font-bold">Score Breakdown</h3>
+                                <h3 className="font-bold text-base">{labels.scoreBreakdown}</h3>
                                 <div className="text-right">
-                                    <div className="text-xs text-slate-500">Total</div>
-                                    <div className="text-xl font-black text-blue-700">
+                                    <div className="text-sm text-slate-500">{labels.total}</div>
+                                    <div className="text-2xl font-black text-blue-700">
                                         {flight.advancedScore.displayScore.toFixed(1)} / 10
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                                 {breakdownRows.map((row) => (
                                     <div key={row.label} className="flex justify-between bg-slate-50 rounded px-2 py-1.5">
-                                        <span className="font-medium text-slate-600">{row.label}</span>
+                                        <span className="font-semibold text-slate-600">{row.label}</span>
                                         <span className="font-bold text-slate-900">{row.value}</span>
                                     </div>
                                 ))}
@@ -149,9 +187,9 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
 
                     {flight.advancedScore?.dataQuality === 'invalid' && (
                         <div className="bg-red-50 border border-red-200 rounded p-3">
-                            <h3 className="font-bold text-red-700 mb-1">⚠️ Veri Hatası</h3>
+                            <h3 className="font-bold text-red-700 mb-1 text-base">⚠️ {labels.dataError}</h3>
                             <p className="text-xs text-red-700">
-                                {flight.advancedScore.dataErrorReason || 'Bu uçuş verisinde süre tutarsızlığı tespit edildi, sonuç işaretlendi.'}
+                                {flight.advancedScore.dataErrorReason || labels.dataErrorFallback}
                             </p>
                         </div>
                     )}
@@ -159,27 +197,27 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     {flight.advancedScore && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="bg-rose-50 border border-rose-200 p-3 rounded">
-                                <h3 className="font-bold text-rose-700 mb-2">🚩 Risk Flags</h3>
+                                <h3 className="font-bold text-rose-700 mb-2 text-base">🚩 {labels.riskFlags}</h3>
                                 {flight.advancedScore.riskFlags.length > 0 ? (
-                                    <ul className="space-y-1 text-xs text-rose-700">
+                                    <ul className="space-y-1.5 text-sm text-rose-700">
                                         {flight.advancedScore.riskFlags.map((flag) => (
                                             <li key={flag}>• {flag}</li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-xs text-rose-600">Belirgin risk flag yok.</p>
+                                    <p className="text-sm text-rose-600">{labels.noRisk}</p>
                                 )}
                             </div>
                             <div className="bg-emerald-50 border border-emerald-200 p-3 rounded">
-                                <h3 className="font-bold text-emerald-700 mb-2">🛡️ Comfort Notes</h3>
+                                <h3 className="font-bold text-emerald-700 mb-2 text-base">🛡️ {labels.comfortNotes}</h3>
                                 {flight.advancedScore.comfortNotes.length > 0 ? (
-                                    <ul className="space-y-1 text-xs text-emerald-700">
+                                    <ul className="space-y-1.5 text-sm text-emerald-700">
                                         {flight.advancedScore.comfortNotes.map((note) => (
                                             <li key={note}>• {note}</li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-xs text-emerald-600">Ekstra konfor notu bulunamadı.</p>
+                                    <p className="text-sm text-emerald-600">{labels.noComfort}</p>
                                 )}
                             </div>
                         </div>
@@ -187,13 +225,13 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
 
                     {flight.advancedScore && (
                         <div className="bg-indigo-50 p-3 rounded border border-indigo-200">
-                            <div className="text-xs text-indigo-700 mb-1">💎 Value Tag</div>
+                            <div className="text-xs text-indigo-700 mb-1">💎 {labels.valueTag}</div>
                             <div className="text-sm font-bold text-indigo-900">{flight.advancedScore.valueTag}</div>
                         </div>
                     )}
 
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">Hizmetler</h3><div className="grid grid-cols-3 gap-2 text-xs"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${flight.amenities?.hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasMeal ? "Yemek" : "Yok"}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : "Yok"}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
-                    <div className="bg-blue-50 p-3 rounded border border-blue-200"><div className="text-xs text-blue-700 mb-1">Toplam</div><div className="text-3xl font-bold text-blue-900">${flight.price}</div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${flight.amenities?.hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasMeal ? labels.meal : labels.no}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
+                    <div className="bg-blue-50 p-3 rounded border border-blue-200"><div className="text-xs text-blue-700 mb-1">{labels.total}</div><div className="text-3xl font-bold text-blue-900">${flight.price}</div></div>
                     {canTrack && (
                         <div className="pt-2">
                             <TrackButton

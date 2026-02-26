@@ -85,7 +85,7 @@ export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
     if (timestampDuration > 0 && segmentPlusLayovers > 0) {
         const mismatch = Math.abs(timestampDuration - segmentPlusLayovers);
         if (mismatch > 90) {
-            return Math.max(timestampDuration, segmentPlusLayovers);
+            return segmentPlusLayovers;
         }
         return timestampDuration;
     }
