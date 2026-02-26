@@ -93,6 +93,9 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         arrShort: "Arr",
         durShort: "Dur",
         scoreBreakdown: isTr ? "Skor Dağılımı" : "Score Breakdown",
+        priceReference: isTr ? "Price Value Referansı" : "Price Value Reference",
+        historicalMedianUsed: isTr ? "Historical median kullanıldı" : "Historical median used",
+        liveAverageUsed: isTr ? "Canlı ortalama kullanıldı" : "Live average used",
         total: isTr ? "Toplam" : "Total",
         dataError: isTr ? "Veri Hatası" : "Data Error",
         dataErrorFallback: isTr
@@ -182,6 +185,14 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                     </div>
                                 ))}
                             </div>
+                            {flight.advancedScore.priceReference && (
+                                <div className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-1.5">
+                                    {labels.priceReference}: {flight.advancedScore.priceReference.source === 'historicalMedian' ? labels.historicalMedianUsed : labels.liveAverageUsed}
+                                    {Number.isFinite(flight.advancedScore.priceReference.amount) && flight.advancedScore.priceReference.amount > 0
+                                        ? ` (${Math.round(flight.advancedScore.priceReference.amount)} ${flight.currency || 'USD'})`
+                                        : ''}
+                                </div>
+                            )}
                         </div>
                     )}
 

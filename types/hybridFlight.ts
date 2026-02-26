@@ -128,6 +128,10 @@ export type FlightResult = {
     advancedScore?: {
         totalScore: number;
         displayScore: number;
+        priceReference?: {
+            source: 'historicalMedian' | 'liveAverage';
+            amount: number;
+        };
         breakdown: {
             priceValue: number;
             duration: number;

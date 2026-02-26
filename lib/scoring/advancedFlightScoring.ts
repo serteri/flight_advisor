@@ -148,6 +148,10 @@ const scoreFlight = (
         typeof context.medianPrice === 'number' && context.medianPrice > 0
             ? context.medianPrice
             : context.avgPrice;
+    const priceReferenceSource =
+        typeof context.medianPrice === 'number' && context.medianPrice > 0
+            ? 'historicalMedian'
+            : 'liveAverage';
     const priceDelta = referencePrice > 0 ? (validPrice - referencePrice) / referencePrice : 0;
     if (priceDelta <= -0.2) {
         breakdown.priceValue = 20;
@@ -270,6 +274,10 @@ const scoreFlight = (
         advancedScore: {
             totalScore,
             displayScore,
+            priceReference: {
+                source: priceReferenceSource,
+                amount: Number.isFinite(referencePrice) ? referencePrice : 0,
+            },
             breakdown,
             riskFlags: Array.from(new Set([
                 ...riskFlags,
