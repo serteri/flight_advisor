@@ -76,6 +76,47 @@ export default function FlightResultCard({
         return `${h}h ${m}m`;
     };
 
+    const airportUtcOffsetMinutes: Record<string, number> = {
+        BNE: 600, SYD: 600, MEL: 600, PER: 480, ADL: 570,
+        SIN: 480, DOH: 180, DXB: 240, AUH: 240, IST: 180,
+        LHR: 0, FRA: 60, CDG: 60, AMS: 60,
+        PVG: 480, PEK: 480, CAN: 480, PKX: 480,
+        JFK: -300, EWR: -300, LAX: -480, SFO: -480,
+    };
+
+    const hasExplicitTimezone = (value: string) => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
+
+    const toCode = (value: any): string => {
+        if (!value) return '';
+        if (typeof value === 'string') return value.toUpperCase();
+        if (typeof value === 'object') {
+            const code = value.iata || value.iata_code || value.iataCode || value.code || value.id;
+            if (code) return String(code).toUpperCase();
+        }
+        return '';
+    };
+
+    const parseNaiveDateToUtcMs = (value: string, airportCode: string): number => {
+        const text = value.trim();
+        if (!text) return NaN;
+        if (hasExplicitTimezone(text)) return new Date(text).getTime();
+
+        const match = text.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (!match) return new Date(text).getTime();
+
+        const offset = airportUtcOffsetMinutes[airportCode];
+        if (typeof offset !== 'number') return new Date(text).getTime();
+
+        const year = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1;
+        const day = parseInt(match[3], 10);
+        const hour = parseInt(match[4], 10);
+        const minute = parseInt(match[5], 10);
+        const second = parseInt(match[6] || '0', 10);
+
+        return Date.UTC(year, month, day, hour, minute, second) - offset * 60000;
+    };
+
     const parseMinutes = (value: unknown): number => {
         if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, value);
         if (typeof value === 'string') {
@@ -101,8 +142,10 @@ export default function FlightResultCard({
         const dep = seg?.departure || seg?.departing_at || seg?.departure_time || seg?.departure_at;
         const arr = seg?.arrival || seg?.arriving_at || seg?.arrival_time || seg?.arrival_at;
         if (dep && arr) {
-            const depMs = new Date(dep).getTime();
-            const arrMs = new Date(arr).getTime();
+            const segFrom = toCode(seg?.origin || seg?.from || seg?.departure_airport || seg?.departureAirport || seg?.origin_airport);
+            const segTo = toCode(seg?.destination || seg?.to || seg?.arrival_airport || seg?.arrivalAirport || seg?.destination_airport);
+            const depMs = parseNaiveDateToUtcMs(String(dep), segFrom);
+            const arrMs = parseNaiveDateToUtcMs(String(arr), segTo);
             if (!Number.isNaN(depMs) && !Number.isNaN(arrMs)) {
                 return Math.max(0, Math.round((arrMs - depMs) / 60000));
             }

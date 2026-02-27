@@ -3,6 +3,80 @@ import { FlightResult } from '@/types/hybridFlight';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const AIRPORT_UTC_OFFSET_MINUTES: Record<string, number> = {
+    BNE: 600,
+    SYD: 600,
+    MEL: 600,
+    PER: 480,
+    ADL: 570,
+    AKL: 780,
+    CHC: 780,
+    SIN: 480,
+    DOH: 180,
+    DXB: 240,
+    AUH: 240,
+    IST: 180,
+    SAW: 180,
+    LHR: 0,
+    LGW: 0,
+    FRA: 60,
+    MUC: 60,
+    AMS: 60,
+    CDG: 60,
+    JFK: -300,
+    EWR: -300,
+    LAX: -480,
+    SFO: -480,
+    HND: 540,
+    NRT: 540,
+    ICN: 540,
+    PVG: 480,
+    PEK: 480,
+    CAN: 480,
+    PKX: 480,
+};
+
+const hasExplicitTimezone = (value: string): boolean =>
+    /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
+
+const toIataCode = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value.toUpperCase();
+    if (typeof value === 'object') {
+        const code = value.iata || value.iata_code || value.iataCode || value.code || value.id;
+        if (code) return String(code).toUpperCase();
+    }
+    return '';
+};
+
+const parseNaiveDateToUtcMs = (value: string, airportCode: string): number => {
+    const text = value.trim();
+    if (!text) return NaN;
+
+    if (hasExplicitTimezone(text)) {
+        return new Date(text).getTime();
+    }
+
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!match) {
+        return new Date(text).getTime();
+    }
+
+    const offsetMinutes = AIRPORT_UTC_OFFSET_MINUTES[airportCode];
+    if (typeof offsetMinutes !== 'number') {
+        return new Date(text).getTime();
+    }
+
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const day = parseInt(match[3], 10);
+    const hour = parseInt(match[4], 10);
+    const minute = parseInt(match[5], 10);
+    const second = parseInt(match[6] || '0', 10);
+
+    return Date.UTC(year, month, day, hour, minute, second) - offsetMinutes * 60 * 1000;
+};
+
 export const toMinutes = (value: unknown): number => {
     if (typeof value === 'number' && Number.isFinite(value)) {
         return Math.max(0, value);
@@ -47,8 +121,10 @@ export const normalizeUtcDate = (dateInput: string): Date => {
 export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
     const declaredDuration = toMinutes(flight.duration);
 
-    const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
-    const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+    const routeFrom = toIataCode(flight.from);
+    const routeTo = toIataCode(flight.to);
+    const depMs = flight.departTime ? parseNaiveDateToUtcMs(String(flight.departTime), routeFrom) : NaN;
+    const arrMs = flight.arriveTime ? parseNaiveDateToUtcMs(String(flight.arriveTime), routeTo) : NaN;
     const timestampDuration =
         Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
             ? Math.round((arrMs - depMs) / 60000)
@@ -57,17 +133,19 @@ export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
     const segmentDuration = Array.isArray(flight.segments)
         ? flight.segments
               .map((segment: any) => {
-                  const direct = toMinutes(segment?.duration);
-                  if (direct > 0) return direct;
-
+                  const segFrom = toIataCode(segment?.origin || segment?.from || segment?.departure_airport || segment?.departureAirport || segment?.origin_airport);
+                  const segTo = toIataCode(segment?.destination || segment?.to || segment?.arrival_airport || segment?.arrivalAirport || segment?.destination_airport);
                   const segDep = segment?.departing_at || segment?.departure || segment?.departure_time;
                   const segArr = segment?.arriving_at || segment?.arrival || segment?.arrival_time;
-                  const segDepMs = segDep ? new Date(segDep).getTime() : NaN;
-                  const segArrMs = segArr ? new Date(segArr).getTime() : NaN;
+                  const segDepMs = segDep ? parseNaiveDateToUtcMs(String(segDep), segFrom) : NaN;
+                  const segArrMs = segArr ? parseNaiveDateToUtcMs(String(segArr), segTo) : NaN;
 
                   if (Number.isFinite(segDepMs) && Number.isFinite(segArrMs) && segArrMs > segDepMs) {
                       return Math.round((segArrMs - segDepMs) / 60000);
                   }
+
+                  const direct = toMinutes(segment?.duration);
+                  if (direct > 0) return direct;
 
                   return 0;
               })
