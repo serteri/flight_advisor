@@ -243,6 +243,43 @@ function SearchPageContent() {
     const sortFlights = (flights: FlightResult[], sortBy: SortOption): FlightResult[] => {
         const sorted = [...flights];
 
+        const parseNumeric = (value: unknown): number => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string') {
+                const numeric = Number(value.replace(/[^0-9.]/g, ''));
+                if (Number.isFinite(numeric)) return numeric;
+            }
+            return 0;
+        };
+
+        const resolvePrice = (flight: FlightResult) => {
+            const direct = parseNumeric((flight as any).price);
+            if (direct > 0) return direct;
+
+            const providerPrice = Array.isArray((flight as any).bookingProviders)
+                ? Math.min(
+                    ...((flight as any).bookingProviders as any[])
+                        .map((provider) => parseNumeric(provider?.price))
+                        .filter((price) => price > 0)
+                )
+                : Infinity;
+
+            return Number.isFinite(providerPrice) && providerPrice > 0 ? providerPrice : Number.MAX_SAFE_INTEGER;
+        };
+
+        const resolveDuration = (flight: FlightResult) => {
+            const direct = parseNumeric((flight as any).duration);
+            if (direct > 0) return direct;
+
+            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
+            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
+                return Math.round((arrMs - depMs) / 60000);
+            }
+
+            return Number.MAX_SAFE_INTEGER;
+        };
+
         const resolveAgentScore = (flight: FlightResult) => {
             const score = Number(flight.agentScore ?? flight.advancedScore?.displayScore ?? flight.score ?? 0);
             return Number.isFinite(score) ? score : 0;
@@ -255,9 +292,9 @@ function SearchPageContent() {
         
         switch (sortBy) {
             case "cheapest":
-                return sorted.sort((a, b) => a.price - b.price);
+                return sorted.sort((a, b) => resolvePrice(a) - resolvePrice(b));
             case "fastest":
-                return sorted.sort((a, b) => a.duration - b.duration);
+                return sorted.sort((a, b) => resolveDuration(a) - resolveDuration(b));
             case "best":
             default:
                 // Best (default): Agent Score priority (high -> low),
@@ -276,7 +313,7 @@ function SearchPageContent() {
                         return agentB - agentA;
                     }
 
-                    return a.price - b.price;
+                    return resolvePrice(a) - resolvePrice(b);
                 });
         }
     };
