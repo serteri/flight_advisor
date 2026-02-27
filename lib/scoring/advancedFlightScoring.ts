@@ -243,11 +243,20 @@ const scoreFlight = (
     if (priceDelta <= -0.2) {
         breakdown.priceValue = 20;
         comfortNotes.push('Fiyat rota ortalamasına göre çok avantajlı');
+    } else if (priceDelta <= -0.1) {
+        // 10% - 20% indirim bandı: 11..19 puan
+        const discountRatio = Math.min(1, Math.max(0, ((-priceDelta) - 0.1) / 0.1));
+        breakdown.priceValue = clamp(Math.round(11 + discountRatio * 8), 11, 19);
+        comfortNotes.push('Fiyat rota ortalamasına göre avantajlı');
+    } else if (priceDelta < 0) {
+        // 0% - 10% indirim bandı: en fazla 10 puan
+        const discountRatio = Math.min(1, Math.max(0, (-priceDelta) / 0.1));
+        breakdown.priceValue = clamp(Math.round(6 + discountRatio * 4), 6, 10);
     } else if (priceDelta >= 0.3) {
         breakdown.priceValue = 4;
         riskFlags.push('Fiyat rota ortalamasına göre yüksek');
     } else {
-        breakdown.priceValue = clamp(Math.round(20 - Math.max(0, priceDelta) * 40 + Math.max(0, -priceDelta) * 30), 0, 20);
+        breakdown.priceValue = clamp(Math.round(10 - priceDelta * 20), 0, 10);
     }
 
     const durationRatio = durationMinutes > 0 ? durationMinutes / expectedRouteDuration : 2;
