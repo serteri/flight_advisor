@@ -242,6 +242,16 @@ function SearchPageContent() {
 
     const sortFlights = (flights: FlightResult[], sortBy: SortOption): FlightResult[] => {
         const sorted = [...flights];
+
+        const resolveAgentScore = (flight: FlightResult) => {
+            const score = Number(flight.agentScore ?? flight.advancedScore?.displayScore ?? flight.score ?? 0);
+            return Number.isFinite(score) ? score : 0;
+        };
+
+        const isBestValue = (flight: FlightResult) => {
+            const tag = (flight.advancedScore?.valueTag || '').toString().toLowerCase();
+            return tag.includes('en i̇yi fiyat/performans') || tag.includes('en iyi fiyat/performans') || tag.includes('best value');
+        };
         
         switch (sortBy) {
             case "cheapest":
@@ -250,11 +260,23 @@ function SearchPageContent() {
                 return sorted.sort((a, b) => a.duration - b.duration);
             case "best":
             default:
-                // Best = combination of price and duration with agent score
+                // Best (default): Agent Score priority (high -> low),
+                // with Best Value + 8.5+ flights pinned to the very top.
                 return sorted.sort((a, b) => {
-                    const scoreA = (a.agentScore || a.score || 7) + (1000 / a.price) * 10 + (1000 / a.duration) * 5;
-                    const scoreB = (b.agentScore || b.score || 7) + (1000 / b.price) * 10 + (1000 / b.duration) * 5;
-                    return scoreB - scoreA;
+                    const agentA = resolveAgentScore(a);
+                    const agentB = resolveAgentScore(b);
+
+                    const premiumBestA = Number(agentA >= 8.5) + Number(isBestValue(a));
+                    const premiumBestB = Number(agentB >= 8.5) + Number(isBestValue(b));
+                    if (premiumBestA !== premiumBestB) {
+                        return premiumBestB - premiumBestA;
+                    }
+
+                    if (agentA !== agentB) {
+                        return agentB - agentA;
+                    }
+
+                    return a.price - b.price;
                 });
         }
     };
