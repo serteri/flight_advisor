@@ -532,7 +532,7 @@ export default function FlightResultCard({
                                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide leading-none mt-1 block">{t('agentScore')}</span>
                                 <div className="text-xs text-slate-600 mt-1 font-semibold leading-relaxed">10-Criteria Engine</div>
                                 {flight.advancedScore?.valueTag && (
-                                    <div className={`mt-2 inline-block max-w-full text-xs leading-5 px-2.5 py-1 rounded-full font-semibold ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                    <div className={`mt-2 inline-flex max-w-[150px] text-center text-[11px] leading-snug px-2.5 py-1 rounded-full font-semibold whitespace-normal break-words ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
                                         {hasInvalidData ? localizeValueTag('Veri Hatası') : localizeValueTag(flight.advancedScore.valueTag)}
                                     </div>
                                 )}

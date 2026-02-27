@@ -6,16 +6,6 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const hasExplicitTimezone = (value: string): boolean =>
     /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
-const toIataCode = (value: any): string => {
-    if (!value) return '';
-    if (typeof value === 'string') return value.toUpperCase();
-    if (typeof value === 'object') {
-        const code = value.iata || value.iata_code || value.iataCode || value.code || value.id;
-        if (code) return String(code).toUpperCase();
-    }
-    return '';
-};
-
 const parseIsoDateToUtcMs = (value: string): number => {
     const text = value.trim();
     if (!text) return NaN;
@@ -105,7 +95,13 @@ export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
 
     const segmentPlusLayovers = segmentDuration + layoverDuration;
 
-    if (providerDuration > 0) {
+    const providerLooksBroken =
+        providerDuration > 0 &&
+        segmentPlusLayovers > 0 &&
+        (providerDuration < Math.round(segmentPlusLayovers * 0.7) ||
+            providerDuration > Math.round(segmentPlusLayovers * 1.4));
+
+    if (!providerLooksBroken && providerDuration > 0) {
         return providerDuration;
     }
 

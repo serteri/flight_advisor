@@ -1,6 +1,9 @@
 import { FlightResult } from '@/types/hybridFlight';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 
+// @ts-ignore
+import airports from 'airports';
+
 type ScoreBreakdown = {
     priceValue: number;
     duration: number;
@@ -75,6 +78,49 @@ const TOP_AIRLINES = new Set([
 
 const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
+
+const EARTH_RADIUS_KM = 6371;
+const CRUISE_SPEED_KMH = 850;
+
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+const getAirportCoords = (iataCode?: string): { lat: number; lon: number } | null => {
+    if (!iataCode) return null;
+    const code = iataCode.toUpperCase();
+    const airport = (airports as any[]).find((item: any) => item?.iata === code);
+    if (!airport) return null;
+
+    const lat = Number(airport.lat);
+    const lon = Number(airport.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+    return { lat, lon };
+};
+
+const getGreatCircleDistanceKm = (origin?: string, destination?: string): number | null => {
+    const from = getAirportCoords(origin);
+    const to = getAirportCoords(destination);
+    if (!from || !to) return null;
+
+    const dLat = toRadians(to.lat - from.lat);
+    const dLon = toRadians(to.lon - from.lon);
+    const fromLat = toRadians(from.lat);
+    const toLat = toRadians(to.lat);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(fromLat) * Math.cos(toLat);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return EARTH_RADIUS_KM * c;
+};
+
+const getExpectedRouteDurationMinutes = (origin?: string, destination?: string): number => {
+    const distanceKm = getGreatCircleDistanceKm(origin, destination);
+    if (!distanceKm || !Number.isFinite(distanceKm) || distanceKm <= 0) {
+        return 0;
+    }
+    return Math.max(60, Math.round((distanceKm / CRUISE_SPEED_KMH) * 60));
+};
 
 const resolveDurationMinutes = (flight: FlightResult): number => {
     return resolveFlightDurationMinutes(flight);
@@ -157,8 +203,8 @@ const scoreFlight = (
     flight: FlightResult,
     context: {
         avgPrice: number;
-        fastestDuration: number;
         medianPrice: number | null;
+        expectedRouteDuration: number;
         markInvalidData: boolean;
         invalidReason?: string;
     }
@@ -183,7 +229,7 @@ const scoreFlight = (
     const validPrice = Number.isFinite(price) && price > 0 ? price : context.avgPrice;
 
     const durationMinutes = resolveDurationMinutes(flight);
-    const fastestDuration = Math.max(1, context.fastestDuration);
+    const expectedRouteDuration = Math.max(1, context.expectedRouteDuration || durationMinutes || 1);
 
     const referencePrice =
         typeof context.medianPrice === 'number' && context.medianPrice > 0
@@ -204,13 +250,15 @@ const scoreFlight = (
         breakdown.priceValue = clamp(Math.round(20 - Math.max(0, priceDelta) * 40 + Math.max(0, -priceDelta) * 30), 0, 20);
     }
 
-    const durationPenaltyRatio = durationMinutes > 0 ? (durationMinutes - fastestDuration) / fastestDuration : 1;
-    if (durationPenaltyRatio >= 0.25) {
-        const penalty = Math.min(10, Math.round((durationPenaltyRatio - 0.25) * 20) + 4);
+    const durationRatio = durationMinutes > 0 ? durationMinutes / expectedRouteDuration : 2;
+    if (durationRatio <= 1) {
+        breakdown.duration = 15;
+    } else if (durationRatio <= 1.25) {
+        breakdown.duration = clamp(Math.round(15 - (durationRatio - 1) * 20), 10, 15);
+    } else {
+        const penalty = Math.min(10, Math.round((durationRatio - 1.25) * 20) + 4);
         breakdown.duration = clamp(15 - penalty, 0, 15);
         riskFlags.push('Uzun toplam seyahat süresi');
-    } else {
-        breakdown.duration = clamp(15 - Math.round(Math.max(0, durationPenaltyRatio) * 8), 0, 15);
     }
 
     breakdown.stops = flight.stops <= 0 ? 10 : flight.stops === 1 ? 8 : 4;
@@ -354,10 +402,7 @@ export async function applyAdvancedFlightScoring(
         ? validPrices.reduce((sum, price) => sum + price, 0) / validPrices.length
         : 0;
 
-    const durations = flights
-        .map(resolveDurationMinutes)
-        .filter((duration) => Number.isFinite(duration) && duration > 0);
-    const fastestDuration = durations.length ? Math.min(...durations) : 1;
+    const expectedRouteDuration = getExpectedRouteDurationMinutes(options?.origin, options?.destination);
 
     let medianPrice: number | null = null;
     if (
@@ -386,8 +431,8 @@ export async function applyAdvancedFlightScoring(
 
             return scoreFlight(flight, {
                 avgPrice,
-                fastestDuration,
                 medianPrice,
+                expectedRouteDuration,
                 markInvalidData,
                 invalidReason,
             });
