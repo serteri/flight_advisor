@@ -74,6 +74,24 @@ const segmentDurationMinutes = (segment: any): number => {
     return 0;
 };
 
+const toCode = (value: any): string => {
+    if (!value) return 'XXX';
+    if (typeof value === 'string') return value.toUpperCase();
+    if (typeof value === 'object') {
+        const candidate =
+            value.iata ||
+            value.iata_code ||
+            value.iataCode ||
+            value.code ||
+            value.id ||
+            value.airport_code;
+        if (candidate) {
+            return String(candidate).toUpperCase();
+        }
+    }
+    return String(value).toUpperCase();
+};
+
 export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: FlightDetailDialogProps) {
     if (!flight) return null;
     const locale = useLocale();
@@ -210,7 +228,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     </div>
                     <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
                     {segs.length > 0 && (
-                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const segFrom = (s.origin || s.from || s.departure_airport?.id || s.departureAirport?.iata_code || 'XXX').toString(); const segTo = (s.destination || s.to || s.arrival_airport?.id || s.arrivalAirport?.iata_code || 'XXX').toString(); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}: {segFrom} → {segTo}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {lays[i].airport} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
+                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const segFrom = toCode(s.origin || s.from || s.departure_airport || s.departureAirport || s.origin_airport); const segTo = toCode(s.destination || s.to || s.arrival_airport || s.arrivalAirport || s.destination_airport); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}: {segFrom} → {segTo}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {toCode(lays[i].airport)} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
                     )}
 
                     {flight.advancedScore && (

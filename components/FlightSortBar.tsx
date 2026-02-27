@@ -50,6 +50,7 @@ export function FlightSortBar({ onSortChange, currentSort, resultCount }: Flight
                     return (
                         <button
                             key={option.value}
+                            type="button"
                             onClick={() => onSortChange(option.value)}
                             className={`relative p-4 rounded-xl border-2 transition-all ${
                                 isActive

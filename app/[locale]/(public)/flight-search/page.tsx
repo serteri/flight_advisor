@@ -449,9 +449,9 @@ function SearchPageContent() {
                         
                         <ErrorBoundary>
                             <div className="space-y-4">
-                                {sortedResults.slice(0, visibleCount).map((flight) => (
+                                {sortedResults.slice(0, visibleCount).map((flight, index) => (
                                     <FlightResultCard
-                                        key={flight.id}
+                                        key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
                                         flight={flight}
                                         isPremium={hasPremiumAccess}
                                         userTier={viewerTier}
