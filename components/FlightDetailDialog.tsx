@@ -58,51 +58,28 @@ const toMinutes = (value: unknown): number => {
     return 0;
 };
 
-const AIRPORT_UTC_OFFSET_MINUTES: Record<string, number> = {
-    BNE: 600, SYD: 600, MEL: 600, PER: 480, ADL: 570,
-    SIN: 480, DOH: 180, DXB: 240, AUH: 240, IST: 180,
-    LHR: 0, FRA: 60, CDG: 60, AMS: 60,
-    PVG: 480, PEK: 480, CAN: 480, PKX: 480,
-    JFK: -300, EWR: -300, LAX: -480, SFO: -480,
-};
-
 const hasExplicitTimezone = (value: string): boolean => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
-const parseNaiveDateToUtcMs = (value: string, airportCode: string): number => {
+const parseIsoDateToUtcMs = (value: string): number => {
     const text = value.trim();
     if (!text) return NaN;
-    if (hasExplicitTimezone(text)) return new Date(text).getTime();
-
-    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
-    if (!match) return new Date(text).getTime();
-
-    const offset = AIRPORT_UTC_OFFSET_MINUTES[airportCode];
-    if (typeof offset !== 'number') return new Date(text).getTime();
-
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1;
-    const day = parseInt(match[3], 10);
-    const hour = parseInt(match[4], 10);
-    const minute = parseInt(match[5], 10);
-    const second = parseInt(match[6] || '0', 10);
-
-    return Date.UTC(year, month, day, hour, minute, second) - offset * 60000;
+    if (!hasExplicitTimezone(text)) return NaN;
+    const timestamp = new Date(text).getTime();
+    return Number.isFinite(timestamp) ? timestamp : NaN;
 };
 
 const segmentDurationMinutes = (segment: any): number => {
+    const direct = toMinutes(segment?.duration);
+    if (direct > 0) return direct;
+
     const depRaw = segment?.departing_at || segment?.departure;
     const arrRaw = segment?.arriving_at || segment?.arrival;
-    const segFrom = toCode(segment?.origin || segment?.from || segment?.departure_airport || segment?.departureAirport || segment?.origin_airport);
-    const segTo = toCode(segment?.destination || segment?.to || segment?.arrival_airport || segment?.arrivalAirport || segment?.destination_airport);
-    const depMs = depRaw ? parseNaiveDateToUtcMs(String(depRaw), segFrom) : NaN;
-    const arrMs = arrRaw ? parseNaiveDateToUtcMs(String(arrRaw), segTo) : NaN;
+    const depMs = depRaw ? parseIsoDateToUtcMs(String(depRaw)) : NaN;
+    const arrMs = arrRaw ? parseIsoDateToUtcMs(String(arrRaw)) : NaN;
 
     if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
         return Math.round((arrMs - depMs) / 60000);
     }
-
-    const direct = toMinutes(segment?.duration);
-    if (direct > 0) return direct;
 
     return 0;
 };
@@ -216,7 +193,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
     const totalSegmentMinutes = segs.reduce((sum, s) => sum + segmentDurationMinutes(s), 0);
     const totalLayoverMinutes = lays.reduce((sum, l: any) => sum + toMinutes(l?.duration), 0);
     const calculatedTotalDuration = totalSegmentMinutes + totalLayoverMinutes;
-    const displayTotalDuration = calculatedTotalDuration > 0 ? calculatedTotalDuration : toMinutes(flight.duration || 0);
+    const displayTotalDuration = toMinutes(flight.duration || 0) || calculatedTotalDuration;
 
     const formatDuration = (minutes: number | string | undefined) => {
         const resolved = toMinutes(minutes);

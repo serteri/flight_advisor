@@ -49,21 +49,21 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
     const departureDate = firstSegment.departing_at || new Date().toISOString();
     const arrivalDate = lastSegment.arriving_at || new Date().toISOString();
 
-    let durationMins = 0;
-    let durationText = "Bilinmiyor";
-    try {
-        // UTC-safe duration: total elapsed from first departure to final arrival
-        const dep = new Date(departureDate).getTime();
-        const arr = new Date(arrivalDate).getTime();
-        const diffMins = Math.floor((arr - dep) / 60000);
-        durationMins = Math.max(0, diffMins);
-    } catch (e) {
-        console.error(e);
-    }
+    const hasExplicitTimezone = (value: string) => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
+    let durationMins = parseDurationToMinutes(firstSlice.duration || offer.total_duration || offer.duration);
+    let durationText = "Bilinmiyor";
     if (durationMins <= 0) {
-        // Fallback only if UTC timestamps are unexpectedly missing/invalid
-        durationMins = parseDurationToMinutes(firstSlice.duration || offer.total_duration || offer.duration);
+        try {
+            if (hasExplicitTimezone(departureDate) && hasExplicitTimezone(arrivalDate)) {
+                const dep = new Date(departureDate).getTime();
+                const arr = new Date(arrivalDate).getTime();
+                const diffMins = Math.floor((arr - dep) / 60000);
+                durationMins = Math.max(0, diffMins);
+            }
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     if (durationMins > 0) {

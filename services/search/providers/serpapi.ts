@@ -149,18 +149,20 @@ export async function searchSerpApi(params: HybridSearchParams): Promise<FlightR
         const airlineLogo = firstSegment.airline_logo || undefined;
         const departAt = firstSegment.departure_airport?.time || params.date;
         const arriveAt = lastSegment.arrival_airport?.time || params.date;
-        const depMs = new Date(departAt).getTime();
-        const arrMs = new Date(arriveAt).getTime();
-        const elapsedMinutes =
-          Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
-            ? Math.round((arrMs - depMs) / 60000)
-            : 0;
+        const hasExplicitTimezone = (value: string) => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
         const durationMins =
-          elapsedMinutes ||
           parseDurationMinutes(item.total_duration) ||
           parseDurationMinutes(item.duration) ||
           parseDurationMinutes(flightData.total_duration) ||
-          parseDurationMinutes(flightData.duration);
+          parseDurationMinutes(flightData.duration) ||
+          (() => {
+            if (!hasExplicitTimezone(departAt) || !hasExplicitTimezone(arriveAt)) return 0;
+            const depMs = new Date(departAt).getTime();
+            const arrMs = new Date(arriveAt).getTime();
+            return Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
+              ? Math.round((arrMs - depMs) / 60000)
+              : 0;
+          })();
         const stopCount = (item.layovers || []).length;
         const currencyCode = item.__currency || localSettings.currency;
 
