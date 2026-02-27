@@ -61,10 +61,11 @@ export function DatePicker({
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
-    const [popoverStyle, setPopoverStyle] = useState<{ top: number; left: number; width: number }>({
+    const [popoverStyle, setPopoverStyle] = useState<{ top: number; left: number; width: number; maxHeight: number }>({
         top: 0,
         left: 0,
         width: 320,
+        maxHeight: 560,
     });
 
     // Fallback to enUS if locale is not found
@@ -102,18 +103,35 @@ export function DatePicker({
 
             const viewportWidth = window.innerWidth;
             const preferredWidth = viewportWidth >= 1280 ? 670 : 320;
+            const usableWidth = Math.min(preferredWidth, viewportWidth - 24);
             const margin = 12;
-            const maxLeft = viewportWidth - preferredWidth - margin;
+            const maxLeft = viewportWidth - usableWidth - margin;
             const computedLeft = Math.min(Math.max(margin, triggerRect.left), Math.max(margin, maxLeft));
 
+            const viewportHeight = window.innerHeight;
+            const estimatedHeight = popoverRef.current?.offsetHeight || (viewportWidth >= 1280 ? 520 : 460);
+            const spaceBelow = viewportHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+            const shouldFlipUp = spaceBelow < estimatedHeight + 16 && spaceAbove > spaceBelow;
+
+            const top = shouldFlipUp
+                ? Math.max(margin + window.scrollY, triggerRect.top + window.scrollY - estimatedHeight - 8)
+                : triggerRect.bottom + window.scrollY + 12;
+
+            const maxHeight = shouldFlipUp
+                ? Math.max(280, Math.floor(spaceAbove - 16))
+                : Math.max(280, Math.floor(spaceBelow - 16));
+
             setPopoverStyle({
-                top: triggerRect.bottom + window.scrollY + 12,
+                top,
                 left: computedLeft + window.scrollX,
-                width: preferredWidth,
+                width: usableWidth,
+                maxHeight,
             });
         };
 
         updatePosition();
+        requestAnimationFrame(updatePosition);
         window.addEventListener("resize", updatePosition);
         window.addEventListener("scroll", updatePosition, true);
 
@@ -166,7 +184,7 @@ export function DatePicker({
         <div
             ref={popoverRef}
             className="datepicker-portal absolute top-full right-0 md:right-0 md:translate-x-1/4 z-[9999] mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-right xl:w-[670px] w-[320px] overflow-hidden"
-            style={appendToBody ? { position: 'absolute', top: popoverStyle.top, left: popoverStyle.left, width: popoverStyle.width, zIndex: 9999 } : undefined}
+            style={appendToBody ? { position: 'absolute', top: popoverStyle.top, left: popoverStyle.left, width: popoverStyle.width, maxHeight: popoverStyle.maxHeight, overflowY: 'auto', zIndex: 9999 } : undefined}
         >
             {/* Header Controls */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
