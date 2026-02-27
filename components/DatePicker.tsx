@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay } from "date-fns";
 import { tr, de, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -19,6 +20,8 @@ interface DatePickerProps {
     date?: Date | undefined;
     setDate?: (date: Date | undefined) => void;
     className?: string;
+    portalId?: string;
+    appendToBody?: boolean;
 }
 
 const localeMap = {
@@ -45,7 +48,9 @@ export function DatePicker({
     variant = "default",
     date,
     setDate,
-    className
+    className,
+    portalId = "root-portal",
+    appendToBody = true,
 }: DatePickerProps) {
     const t = useTranslations('DatePicker');
     const [selected, setSelected] = useState<Date | undefined>(
@@ -54,6 +59,13 @@ export function DatePicker({
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(date || (value ? new Date(value) : new Date()));
     const containerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const [popoverStyle, setPopoverStyle] = useState<{ top: number; left: number; width: number }>({
+        top: 0,
+        left: 0,
+        width: 320,
+    });
 
     // Fallback to enUS if locale is not found
     const dateLocale = localeMap[locale] || localeMap.en;
@@ -70,13 +82,46 @@ export function DatePicker({
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const isInsideContainer = !!containerRef.current?.contains(target);
+            const isInsidePopover = !!popoverRef.current?.contains(target);
+            if (!isInsideContainer && !isInsidePopover) {
                 setIsOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (!isOpen || !appendToBody) return;
+
+        const updatePosition = () => {
+            const triggerRect = triggerRef.current?.getBoundingClientRect();
+            if (!triggerRect) return;
+
+            const viewportWidth = window.innerWidth;
+            const preferredWidth = viewportWidth >= 1280 ? 670 : 320;
+            const margin = 12;
+            const maxLeft = viewportWidth - preferredWidth - margin;
+            const computedLeft = Math.min(Math.max(margin, triggerRect.left), Math.max(margin, maxLeft));
+
+            setPopoverStyle({
+                top: triggerRect.bottom + window.scrollY + 12,
+                left: computedLeft + window.scrollX,
+                width: preferredWidth,
+            });
+        };
+
+        updatePosition();
+        window.addEventListener("resize", updatePosition);
+        window.addEventListener("scroll", updatePosition, true);
+
+        return () => {
+            window.removeEventListener("resize", updatePosition);
+            window.removeEventListener("scroll", updatePosition, true);
+        };
+    }, [isOpen, appendToBody]);
 
     const handleSelect = (selectedDate: Date) => {
         const newDate = startOfDay(selectedDate);
@@ -117,6 +162,151 @@ export function DatePicker({
         return isBefore(date, minDateToUse);
     };
 
+    const popoverContent = (
+        <div
+            ref={popoverRef}
+            className="datepicker-portal absolute top-full right-0 md:right-0 md:translate-x-1/4 z-[9999] mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-right xl:w-[670px] w-[320px] overflow-hidden"
+            style={appendToBody ? { position: 'absolute', top: popoverStyle.top, left: popoverStyle.left, width: popoverStyle.width, zIndex: 9999 } : undefined}
+        >
+            {/* Header Controls */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+                <button
+                    type="button"
+                    onClick={() => setCurrentMonth(prev => addMonths(prev, -1))}
+                    className="p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-500 hover:text-blue-600 disabled:opacity-30"
+                    disabled={isBefore(addMonths(currentMonth, -1), startOfMonth(minDateToUse))}
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <div className="flex-1 flex justify-center md:justify-start md:pl-10 font-bold text-slate-800 text-lg">
+                    {/* Mobile view only shows one title, desktop shows 2 via grid below, but we can simplify header logic */}
+                    <span className="xl:hidden">
+                        {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                    className="p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-500 hover:text-blue-600"
+                >
+                    <ChevronRight className="h-5 w-5" />
+                </button>
+            </div>
+
+            <div className="flex flex-col xl:flex-row">
+                {/* Month 1 */}
+                <div className="p-4 w-full xl:w-1/2 xl:border-r border-slate-100">
+                    <div className="text-center font-bold text-slate-800 mb-4 hidden xl:block">
+                        {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
+                    </div>
+
+                    {/* Weekdays */}
+                    <div className="grid grid-cols-7 mb-2">
+                        {days.map(day => (
+                            <div key={day} className="h-8 flex items-center justify-center text-xs font-bold text-slate-400">
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Days */}
+                    <div className="grid grid-cols-7 gap-1">
+                        {currentMonthDays.map((day, idx) => (
+                            <div key={idx} className="aspect-square relative flex items-center justify-center">
+                                {day ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => !isDateDisabled(day) && handleSelect(day)}
+                                        disabled={isDateDisabled(day)}
+                                        className={`
+                                        w-9 h-9 rounded-full text-sm font-medium transition-all
+                                        ${selected && isSameDay(day, selected)
+                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                                                : isDateDisabled(day)
+                                                    ? 'text-slate-300 cursor-not-allowed'
+                                                    : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
+                                            }
+                                        ${isToday(day) && !selected ? 'ring-1 ring-blue-600 text-blue-600 font-bold' : ''}
+                                    `}
+                                    >
+                                        {format(day, "d")}
+                                    </button>
+                                ) : null}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Month 2 (Hidden on Mobile/Tablet/Small Laptop) */}
+                <div className="p-4 w-full xl:w-1/2 hidden xl:block">
+                    <div className="text-center font-bold text-slate-800 mb-4">
+                        {format(nextMonthDate, "MMMM yyyy", { locale: dateLocale })}
+                    </div>
+
+                    {/* Weekdays */}
+                    <div className="grid grid-cols-7 mb-2">
+                        {days.map(day => (
+                            <div key={day} className="h-8 flex items-center justify-center text-xs font-bold text-slate-400">
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Days */}
+                    <div className="grid grid-cols-7 gap-1">
+                        {nextMonthDays.map((day, idx) => (
+                            <div key={idx} className="aspect-square relative flex items-center justify-center">
+                                {day ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => !isDateDisabled(day) && handleSelect(day)}
+                                        disabled={isDateDisabled(day)}
+                                        className={`
+                                        w-9 h-9 rounded-full text-sm font-medium transition-all
+                                        ${selected && isSameDay(day, selected)
+                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                                                : isDateDisabled(day)
+                                                    ? 'text-slate-300 cursor-not-allowed'
+                                                    : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
+                                            }
+                                        ${isToday(day) && !selected ? 'ring-1 ring-blue-600 text-blue-600 font-bold' : ''}
+                                    `}
+                                    >
+                                        {format(day, "d")}
+                                    </button>
+                                ) : null}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between p-3 border-t border-slate-100 bg-slate-50/50">
+                <button
+                    type="button"
+                    onClick={() => handleSelect(new Date())}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                    {t('today')}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                    {t('close')}
+                </button>
+            </div>
+        </div>
+    );
+
+    const portalTarget = typeof document !== 'undefined'
+        ? document.getElementById(portalId) || document.body
+        : null;
+
     return (
         <div className="relative" ref={containerRef}>
             {label && variant === "default" && (
@@ -127,6 +317,7 @@ export function DatePicker({
 
             {/* Input trigger */}
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
@@ -175,144 +366,11 @@ export function DatePicker({
             </button>
 
             {/* Calendar Popover */}
-            {
-                isOpen && (
-                    <div className="absolute top-full right-0 md:right-0 md:translate-x-1/4 z-[60] mt-4 bg-white rounded-3xl shadow-2xl shadow-blue-900/20 border border-slate-100 animate-in fade-in zoom-in-95 origin-top-right xl:w-[670px] w-[320px] overflow-hidden">
-                        {/* Header Controls */}
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-                            <button
-                                type="button"
-                                onClick={() => setCurrentMonth(prev => addMonths(prev, -1))}
-                                className="p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-500 hover:text-blue-600 disabled:opacity-30"
-                                disabled={isBefore(addMonths(currentMonth, -1), startOfMonth(minDateToUse))}
-                            >
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-
-                            <div className="flex-1 flex justify-center md:justify-start md:pl-10 font-bold text-slate-800 text-lg">
-                                {/* Mobile view only shows one title, desktop shows 2 via grid below, but we can simplify header logic */}
-                                <span className="xl:hidden">
-                                    {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
-                                </span>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
-                                className="p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-500 hover:text-blue-600"
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col xl:flex-row">
-                            {/* Month 1 */}
-                            <div className="p-4 w-full xl:w-1/2 xl:border-r border-slate-100">
-                                <div className="text-center font-bold text-slate-800 mb-4 hidden xl:block">
-                                    {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
-                                </div>
-
-                                {/* Weekdays */}
-                                <div className="grid grid-cols-7 mb-2">
-                                    {days.map(day => (
-                                        <div key={day} className="h-8 flex items-center justify-center text-xs font-bold text-slate-400">
-                                            {day}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Days */}
-                                <div className="grid grid-cols-7 gap-1">
-                                    {currentMonthDays.map((day, idx) => (
-                                        <div key={idx} className="aspect-square relative flex items-center justify-center">
-                                            {day ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => !isDateDisabled(day) && handleSelect(day)}
-                                                    disabled={isDateDisabled(day)}
-                                                    className={`
-                                                    w-9 h-9 rounded-full text-sm font-medium transition-all
-                                                    ${selected && isSameDay(day, selected)
-                                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                                                            : isDateDisabled(day)
-                                                                ? 'text-slate-300 cursor-not-allowed'
-                                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
-                                                        }
-                                                    ${isToday(day) && !selected ? 'ring-1 ring-blue-600 text-blue-600 font-bold' : ''}
-                                                `}
-                                                >
-                                                    {format(day, "d")}
-                                                </button>
-                                            ) : null}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Month 2 (Hidden on Mobile/Tablet/Small Laptop) */}
-                            <div className="p-4 w-full xl:w-1/2 hidden xl:block">
-                                <div className="text-center font-bold text-slate-800 mb-4">
-                                    {format(nextMonthDate, "MMMM yyyy", { locale: dateLocale })}
-                                </div>
-
-                                {/* Weekdays */}
-                                <div className="grid grid-cols-7 mb-2">
-                                    {days.map(day => (
-                                        <div key={day} className="h-8 flex items-center justify-center text-xs font-bold text-slate-400">
-                                            {day}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Days */}
-                                <div className="grid grid-cols-7 gap-1">
-                                    {nextMonthDays.map((day, idx) => (
-                                        <div key={idx} className="aspect-square relative flex items-center justify-center">
-                                            {day ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => !isDateDisabled(day) && handleSelect(day)}
-                                                    disabled={isDateDisabled(day)}
-                                                    className={`
-                                                    w-9 h-9 rounded-full text-sm font-medium transition-all
-                                                    ${selected && isSameDay(day, selected)
-                                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                                                            : isDateDisabled(day)
-                                                                ? 'text-slate-300 cursor-not-allowed'
-                                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-600'
-                                                        }
-                                                    ${isToday(day) && !selected ? 'ring-1 ring-blue-600 text-blue-600 font-bold' : ''}
-                                                `}
-                                                >
-                                                    {format(day, "d")}
-                                                </button>
-                                            ) : null}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between p-3 border-t border-slate-100 bg-slate-50/50">
-                            <button
-                                type="button"
-                                onClick={() => handleSelect(new Date())}
-                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
-                            >
-                                {t('today')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsOpen(false)}
-                                className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-                            >
-                                {t('close')}
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
+            {isOpen && (
+                appendToBody && portalTarget
+                    ? createPortal(popoverContent, portalTarget)
+                    : popoverContent
+            )}
 
             {
                 error && (

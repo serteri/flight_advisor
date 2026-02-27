@@ -132,3 +132,11 @@
   animation: fade-in 0.5s ease-out forwards;
 }
 
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+.datepicker-portal {
+  z-index: 9999 !important;
+}
+

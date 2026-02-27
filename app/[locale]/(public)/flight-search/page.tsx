@@ -296,7 +296,7 @@ function SearchPageContent() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* Hero Section with Search */}
-            <div className="relative">
+            <div className="relative z-50">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
@@ -315,7 +315,7 @@ function SearchPageContent() {
                     </div>
 
                     {/* Search Card */}
-                    <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
+                    <div className="relative z-50 overflow-visible bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
                         <form onSubmit={handleSearch} className="space-y-6">
                             {/* Trip Type Toggle */}
                             <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
@@ -384,7 +384,7 @@ function SearchPageContent() {
 
             {/* Skeleton Loading State */}
             {loading && (
-                <div className="bg-slate-50 min-h-screen py-8">
+                <div className="relative z-10 bg-slate-50 min-h-screen py-8">
                     <div className="container mx-auto px-4 max-w-5xl text-center">
                         <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
                         <p className="text-lg text-slate-600 font-medium">{t('searchingDesc')}</p>
