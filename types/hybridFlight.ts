@@ -125,6 +125,7 @@ export type FlightResult = {
     scoreReason?: string; // OpenClaw reason
     scorePros?: string[];
     scoreCons?: string[];
+    durationDebug?: unknown;
     advancedScore?: {
         totalScore: number;
         displayScore: number;

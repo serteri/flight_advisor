@@ -6,7 +6,7 @@ import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
 import { useLocale } from "next-intl";
-import { hasIncludedMeal } from "@/lib/meal-utils";
+import { getMealStatus, hasAnyMeal } from "@/lib/meal-utils";
 
 interface FlightDetailDialogProps {
     flight: FlightResult | null;
@@ -107,7 +107,8 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
     if (!flight) return null;
     const locale = useLocale();
     const isTr = locale?.toLowerCase().startsWith("tr");
-    const mealIncluded = hasIncludedMeal(flight);
+    const mealStatus = getMealStatus(flight);
+    const hasMeal = hasAnyMeal(flight);
 
     const labels = {
         departure: isTr ? "Kalkış" : "Departure",
@@ -138,9 +139,20 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         valueTag: "Value Tag",
         amenities: isTr ? "Hizmetler" : "Amenities",
         meal: isTr ? "Yemek" : "Meal",
+        mealIncluded: isTr ? "Yemek Dahil" : "Meal Included",
+        mealPaid: isTr ? "Yemek Ücretli" : "Meal Paid",
+        mealNone: isTr ? "Yemek Yok" : "No Meal",
+        durationDebug: isTr ? "Süre Debug" : "Duration Debug",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
     };
+
+    const mealText =
+        mealStatus === "included"
+            ? labels.mealIncluded
+            : mealStatus === "paid"
+              ? labels.mealPaid
+              : labels.mealNone;
 
     const translateValueTag = (valueTag: string) => {
         if (isTr) return valueTag;
@@ -318,7 +330,13 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                         </div>
                     )}
 
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${mealIncluded ? "text-emerald-600" : "text-slate-300"}`} /><span>{mealIncluded ? labels.meal : labels.no}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{mealText}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
+                    {!!flight.durationDebug && (
+                        <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                            <h3 className="font-bold mb-2 text-slate-700">🧪 {labels.durationDebug}</h3>
+                            <pre className="text-[11px] leading-4 whitespace-pre-wrap break-all text-slate-700">{typeof flight.durationDebug === 'string' ? flight.durationDebug : JSON.stringify(flight.durationDebug, null, 2)}</pre>
+                        </div>
+                    )}
                     <div className="bg-blue-50 p-3 rounded border border-blue-200"><div className="text-xs text-blue-700 mb-1">{labels.total}</div><div className="text-3xl font-bold text-blue-900">${flight.price}</div></div>
                     {canTrack && (
                         <div className="pt-2">
