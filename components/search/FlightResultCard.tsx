@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
 import type { UserTier } from '@/lib/tierUtils';
+import { hasIncludedMeal } from '@/lib/meal-utils';
 
 export default function FlightResultCard({ 
     flight, 
@@ -43,6 +44,7 @@ export default function FlightResultCard({
     const price = flight.price || 0;
     const stops = flight.stops ?? 0;
     const duration = flight.duration || 0;
+    const mealIncluded = hasIncludedMeal(flight);
 
     const toText = (value: any, fallback: string) => {
         if (typeof value === 'string') return value;
@@ -383,9 +385,9 @@ export default function FlightResultCard({
                         {/* Amenity Content (blurred for FREE, visible for PRO) */}
                         <div className={`flex flex-wrap gap-4 ${!hasPremiumAccess ? 'filter blur-sm opacity-50 select-none pointer-events-none' : ''}`}>
                             <div className="flex items-center gap-1.5">
-                                <Utensils className={`w-3.5 h-3.5 ${flight.amenities?.hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
+                                <Utensils className={`w-3.5 h-3.5 ${mealIncluded ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {flight.amenities?.hasMeal ? t('included') : t('paid')}
+                                    {mealIncluded ? t('included') : t('paid')}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">

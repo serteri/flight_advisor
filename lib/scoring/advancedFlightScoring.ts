@@ -1,5 +1,6 @@
 import { FlightResult } from '@/types/hybridFlight';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
+import { hasIncludedMeal } from '@/lib/meal-utils';
 
 // @ts-ignore
 import airports from 'airports';
@@ -332,6 +333,8 @@ const scoreFlight = (
     }
     breakdown.aircraft = clamp(aircraftScore, 0, 5);
 
+    const mealIncluded = hasIncludedMeal(flight);
+
     let amenitiesScore = 0;
     if (flight.amenities?.hasWifi || flight.wifi) {
         amenitiesScore += 2;
@@ -341,7 +344,7 @@ const scoreFlight = (
         amenitiesScore += 1.5;
         comfortNotes.push('IFE eğlence sistemi mevcut');
     }
-    if (flight.amenities?.hasMeal || flight.meal === 'included') {
+    if (mealIncluded) {
         amenitiesScore += 1.5;
         comfortNotes.push('Yemek servisi dahil');
     }

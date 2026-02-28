@@ -97,6 +97,62 @@ export interface CityData {
     lon: number;
 }
 
+const COMMERCIAL_TYPES = ['large_airport', 'medium_airport', 'small_airport', 'regional_airport'];
+
+const normalizeSearchText = (value: string): string =>
+    value
+        .toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/İ/g, 'i')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const getBigrams = (value: string): Set<string> => {
+    const text = value.replace(/\s+/g, '');
+    if (text.length < 2) {
+        return new Set(text ? [text] : []);
+    }
+
+    const grams: string[] = [];
+    for (let index = 0; index < text.length - 1; index += 1) {
+        grams.push(text.slice(index, index + 2));
+    }
+
+    return new Set(grams);
+};
+
+const diceSimilarity = (a: string, b: string): number => {
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+
+    const gramsA = getBigrams(a);
+    const gramsB = getBigrams(b);
+    if (gramsA.size === 0 || gramsB.size === 0) return 0;
+
+    let overlap = 0;
+    gramsA.forEach((gram) => {
+        if (gramsB.has(gram)) overlap += 1;
+    });
+
+    return (2 * overlap) / (gramsA.size + gramsB.size);
+};
+
+const airportTypePriority = (type: string): number => {
+    switch (type) {
+        case 'large_airport':
+            return 3;
+        case 'medium_airport':
+            return 2;
+        case 'small_airport':
+            return 1;
+        default:
+            return 0;
+    }
+};
+
 // Helper to convert airports entry to our CityData format
 function mapAirportToCityData(airport: any): CityData {
     return {
@@ -114,7 +170,13 @@ function mapAirportToCityData(airport: any): CityData {
 export function searchFallbackCities(keyword: string): CityData[] {
     if (!keyword) return [];
 
-    const term = keyword.toLowerCase();
+    const termRaw = keyword.trim();
+    const term = normalizeSearchText(termRaw);
+    if (!term) return [];
+
+    const iataTerm = termRaw.toUpperCase();
+    const isThreeLetterIataQuery = /^[A-Za-z]{3}$/.test(termRaw);
+    const fuzzyThreshold = 0.75;
     const airports = loadAirports();
     
     if (!airports || airports.length === 0) {
@@ -122,35 +184,86 @@ export function searchFallbackCities(keyword: string): CityData[] {
         return [];
     }
     
-    // Commercial airport types (passenger flights only)
-    const COMMERCIAL_TYPES = ['large_airport', 'medium_airport', 'small_airport', 'regional_airport'];
-
-    // Search in the library
-    const results = airports.filter((airport: any) => {
-        // Must have IATA code
-        if (!airport || !airport.iata || airport.iata === "") return false;
-        
-        // Filter by airport type - only commercial/passenger airports
-        // If type not specified, include it (gives benefit of doubt)
-        if (airport.type && !COMMERCIAL_TYPES.includes(airport.type)) return false;
-
-        // Safely check properties
-        const cityName = airport.city?.toLowerCase() || '';
-        const airportName = airport.name?.toLowerCase() || '';
-        const iataCode = airport.iata?.toLowerCase() || '';
-
-        // Match name/city/iata
-        return (
-            cityName.includes(term) ||
-            airportName.includes(term) ||
-            iataCode === term
-        );
+    const exactIataMatches = airports.filter((airport: any) => {
+        const iataCode = (airport?.iata || '').toString().toUpperCase();
+        return iataCode === iataTerm;
     });
 
-    console.log(`[searchFallbackCities] Query: "${keyword}" -> Found ${results.length} airports`);
+    if (isThreeLetterIataQuery && exactIataMatches.length > 0) {
+        return exactIataMatches.slice(0, 10).map(mapAirportToCityData);
+    }
 
-    // Return up to 100 for better search coverage
-    return results.slice(0, 100).map(mapAirportToCityData);
+    const scored = airports
+        .map((airport: any) => {
+            if (!airport || !airport.iata || airport.iata === '') return null;
+            if (airport.type && !COMMERCIAL_TYPES.includes(airport.type)) return null;
+
+            const iataCode = (airport.iata || '').toString().toUpperCase();
+            const cityNameRaw = (airport.city || '').toString();
+            const airportNameRaw = (airport.name || '').toString();
+            const cityName = normalizeSearchText(cityNameRaw);
+            const airportName = normalizeSearchText(airportNameRaw);
+
+            const cityStarts = cityName.startsWith(term);
+            const airportStarts = airportName.startsWith(term);
+            const cityTokenStarts = cityName.split(' ').some((part) => part.startsWith(term));
+            const airportTokenStarts = airportName.split(' ').some((part) => part.startsWith(term));
+            const iataStarts = iataCode.startsWith(iataTerm);
+            const cityIncludes = term.length >= 3 && cityName.includes(term);
+            const airportIncludes = term.length >= 3 && airportName.includes(term);
+
+            const citySimilarity = diceSimilarity(term, cityName);
+            const airportSimilarity = diceSimilarity(term, airportName);
+            const bestSimilarity = Math.max(citySimilarity, airportSimilarity);
+            const fuzzyMatch = bestSimilarity >= fuzzyThreshold;
+
+            const hasStrongMatch =
+                iataStarts || cityStarts || airportStarts || cityTokenStarts || airportTokenStarts || fuzzyMatch || cityIncludes || airportIncludes;
+
+            if (!hasStrongMatch) {
+                return null;
+            }
+
+            let score = 0;
+            if (iataCode === iataTerm) score += 1000;
+            else if (iataStarts) score += 700;
+
+            if (cityStarts) score += 500;
+            if (airportStarts) score += 420;
+            if (cityTokenStarts) score += 320;
+            if (airportTokenStarts) score += 260;
+            if (cityIncludes) score += 120;
+            if (airportIncludes) score += 80;
+            if (fuzzyMatch) score += Math.round(bestSimilarity * 140);
+
+            score += airportTypePriority(airport.type) * 15;
+
+            return { airport, score };
+        })
+        .filter((item): item is { airport: any; score: number } => item !== null);
+
+    scored.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+
+        const typeDelta = airportTypePriority((b.airport.type || '').toString()) - airportTypePriority((a.airport.type || '').toString());
+        if (typeDelta !== 0) return typeDelta;
+
+        const cityA = normalizeSearchText((a.airport.city || '').toString());
+        const cityB = normalizeSearchText((b.airport.city || '').toString());
+        return cityA.localeCompare(cityB);
+    });
+
+    const uniqueByIata = new Set<string>();
+    const deduped = scored.filter(({ airport }) => {
+        const code = (airport.iata || '').toString().toUpperCase();
+        if (!code || uniqueByIata.has(code)) return false;
+        uniqueByIata.add(code);
+        return true;
+    });
+
+    console.log(`[searchFallbackCities] Query: "${keyword}" -> Found ${deduped.length} ranked airports`);
+
+    return deduped.slice(0, 25).map(({ airport }) => mapAirportToCityData(airport));
 }
 
 export function getNearestFallbackCity(lat: number, lon: number): CityData | null {
@@ -163,8 +276,6 @@ export function getNearestFallbackCity(lat: number, lon: number): CityData | nul
         return null;
     }
     
-    const COMMERCIAL_TYPES = ['large_airport', 'medium_airport', 'small_airport', 'regional_airport'];
-
     // Iterate all airports
     for (const airport of airports) {
         const airportData = airport as any;

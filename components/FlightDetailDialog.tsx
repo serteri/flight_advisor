@@ -6,6 +6,7 @@ import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
 import { useLocale } from "next-intl";
+import { hasIncludedMeal } from "@/lib/meal-utils";
 
 interface FlightDetailDialogProps {
     flight: FlightResult | null;
@@ -106,6 +107,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
     if (!flight) return null;
     const locale = useLocale();
     const isTr = locale?.toLowerCase().startsWith("tr");
+    const mealIncluded = hasIncludedMeal(flight);
 
     const labels = {
         departure: isTr ? "Kalkış" : "Departure",
@@ -316,7 +318,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                         </div>
                     )}
 
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${flight.amenities?.hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasMeal ? labels.meal : labels.no}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${mealIncluded ? "text-emerald-600" : "text-slate-300"}`} /><span>{mealIncluded ? labels.meal : labels.no}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
                     <div className="bg-blue-50 p-3 rounded border border-blue-200"><div className="text-xs text-blue-700 mb-1">{labels.total}</div><div className="text-3xl font-bold text-blue-900">${flight.price}</div></div>
                     {canTrack && (
                         <div className="pt-2">
