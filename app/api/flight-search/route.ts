@@ -1,13 +1,28 @@
 import { NextResponse } from 'next/server';
-import { searchAllProviders } from '@/services/search/searchService';
+import { searchAllProvidersWithMeta } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
-import { persistFlightSearchRecords } from '@/lib/search/flightSearchRecordStore';
+import { hasRecentRouteSearchRecords, persistFlightSearchRecords } from '@/lib/search/flightSearchRecordStore';
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
+
+const SEARCH_CACHE_TTL_MS = 15 * 60 * 1000;
+const flightSearchResponseCache = new Map<string, { expiresAt: number; results: any[] }>();
+
+const buildCacheKey = (params: HybridSearchParams): string =>
+    [
+        params.origin.toUpperCase(),
+        params.destination.toUpperCase(),
+        params.date.split('T')[0],
+        params.adults,
+        params.children || 0,
+        params.infants || 0,
+        params.cabin || 'economy',
+        params.currency || 'USD',
+    ].join('|');
 
 type ViewerAccess = {
     isPremium: boolean;
@@ -82,13 +97,41 @@ export async function GET(request: Request) {
 
     try {
         const queryParams = buildQueryParams(searchParams);
+        const cacheKey = buildCacheKey(queryParams);
         const viewerAccess = await resolveViewerAccess();
-        const allFlights = await searchAllProviders(queryParams);
+        const hasRecentDbRecords = await hasRecentRouteSearchRecords(
+            queryParams.origin,
+            queryParams.destination,
+            queryParams.date,
+            15
+        );
+
+        const cached = flightSearchResponseCache.get(cacheKey);
+        if (hasRecentDbRecords && cached && cached.expiresAt > Date.now()) {
+            return NextResponse.json({
+                results: cached.results,
+                viewerAccess,
+                cache: { hit: true, source: 'FlightSearchRecord-15m' },
+            });
+        }
+
+        const providerMeta = await searchAllProvidersWithMeta(queryParams);
+        const allFlights = providerMeta.flights;
         await persistFlightSearchRecords(allFlights, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
         });
+
+        if (providerMeta.rateLimited && allFlights.length === 0) {
+            return NextResponse.json(
+                {
+                    error: 'Hızlı Arama Limiti Doldu',
+                    warnings: providerMeta.warnings,
+                },
+                { status: 429 }
+            );
+        }
 
         const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
             origin: queryParams.origin,
@@ -97,9 +140,16 @@ export async function GET(request: Request) {
             useHistoricalMedian: viewerAccess.isPremium,
         });
 
+        flightSearchResponseCache.set(cacheKey, {
+            expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
+            results: scoredFlights,
+        });
+
         return NextResponse.json({
             results: scoredFlights,
             viewerAccess,
+            warnings: providerMeta.warnings,
+            cache: { hit: false, source: 'live' },
         });
     } catch (error) {
         console.error('[FLIGHT_SEARCH_API] Error:', error);

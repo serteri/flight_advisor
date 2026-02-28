@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
     console.log(`🔍 [DIAGNOSTIC] Search: ${origin} -> ${destination} [${date}]`);
     console.log(`🔑 [DIAGNOSTIC] RAPID_API_KEY: ${process.env.RAPID_API_KEY ? process.env.RAPID_API_KEY.substring(0, 10) + '...' : 'NOT SET'}`);
-    console.log(`🔑 [DIAGNOSTIC] RAPID_API_HOST_FLIGHT: ${process.env.RAPID_API_HOST_FLIGHT || 'NOT SET'}`);
+    console.log(`🔑 [DIAGNOSTIC] RAPID_API_HOST_PRICELINE: ${process.env.RAPID_API_HOST_PRICELINE || 'NOT SET'}`);
     console.log(`🔑 [DIAGNOSTIC] DUFFEL_ACCESS_TOKEN: ${process.env.DUFFEL_ACCESS_TOKEN ? process.env.DUFFEL_ACCESS_TOKEN.substring(0, 10) + '...' : 'NOT SET'}`);
 
     try {

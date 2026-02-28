@@ -29,9 +29,9 @@ export function DataSourceIndicator({ flights }: { flights: any[] }) {
                 color: 'emerald'
             },
             {
-                name: 'SERPAPI',
-                status: sourceCounts['SERPAPI'] > 0 ? 'active' : 'inactive',
-                count: sourceCounts['SERPAPI'] || 0,
+                name: 'PRICELINE',
+                status: (sourceCounts['PRICELINE'] || sourceCounts['SERPAPI']) > 0 ? 'active' : 'inactive',
+                count: (sourceCounts['PRICELINE'] || 0) + (sourceCounts['SERPAPI'] || 0),
                 color: 'violet'
             }
         ];

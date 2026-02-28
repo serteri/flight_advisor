@@ -1,6 +1,6 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
-import { searchSerpApi } from "./providers/serpapi";
+import { searchPricelineProvider } from "./providers/priceline";
 import { scoreFlightV3 } from "@/lib/scoring/flightScoreEngine";
 import { scoreBatchFlights, calculateMarketContext } from "@/lib/masterFlightScore";
 import { FlightForScoring } from "@/lib/flightTypes";
@@ -9,21 +9,21 @@ export async function getHybridFlights(params: HybridSearchParams): Promise<Flig
     console.log(`\n🚀 [HybridSearch] Starting search for: ${params.origin} -> ${params.destination}`);
     console.log(`   Date: ${params.date}`);
 
-    // ✅ DUFFEL + SERPAPI (Parallel execution)
+    // ✅ DUFFEL + PRICELINE (Parallel execution)
     const searchResults = await Promise.allSettled([
         searchDuffel(params),
-        searchSerpApi(params)
+        searchPricelineProvider(params)
     ]);
 
     const duffelResults = searchResults[0].status === 'fulfilled' ? searchResults[0].value : [];
-    const serpApiResults = searchResults[1].status === 'fulfilled' ? searchResults[1].value : [];
+    const pricelineResults = searchResults[1].status === 'fulfilled' ? searchResults[1].value : [];
 
-    console.log(`✅ [HybridSearch] Results -> Duffel: ${duffelResults.length}, SERPAPI: ${serpApiResults.length}`);
+    console.log(`✅ [HybridSearch] Results -> Duffel: ${duffelResults.length}, PRICELINE: ${pricelineResults.length}`);
 
     // Hepsini birleştir
     let rawFlights: any[] = [
         ...duffelResults,
-        ...serpApiResults
+        ...pricelineResults
     ];
 
     if (rawFlights.length === 0) {

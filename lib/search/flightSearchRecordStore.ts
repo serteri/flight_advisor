@@ -243,3 +243,42 @@ export async function getMedianPriceForRouteDate(
     }
     return values[mid];
 }
+
+export async function hasRecentRouteSearchRecords(
+    origin: string,
+    destination: string,
+    departureDate: string,
+    windowMinutes = 15
+): Promise<boolean> {
+    const start = normalizeUtcDate(departureDate);
+    const end = new Date(start.getTime() + DAY_MS);
+    const recentFrom = new Date(Date.now() - windowMinutes * 60 * 1000);
+
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return false;
+    }
+
+    try {
+        const record = await flightSearchRecordModel.findFirst({
+            where: {
+                origin,
+                destination,
+                departureDate: {
+                    gte: start,
+                    lt: end,
+                },
+                createdAt: {
+                    gte: recentFrom,
+                },
+            },
+            select: { id: true },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return !!record;
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] recency lookup skipped:', error?.message || error);
+        return false;
+    }
+}

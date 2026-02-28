@@ -186,8 +186,8 @@ export default function FlightResultCard({
     const hasEliteAccess = userTier === 'ELITE';
     const displayPrice = Number.isFinite(price) && price > 0 ? Math.max(1, Math.round(price)) : null;
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
-    const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : source === 'SERPAPI' ? 'SERPAPI' : 'KIWI';
-    const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : source === 'SERPAPI' ? '🔎 SerpApi' : '🌐 Kiwi';
+    const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : (source === 'PRICELINE' || source === 'SERPAPI') ? 'PRICELINE' : 'KIWI';
+    const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : (source === 'PRICELINE' || source === 'SERPAPI') ? '⚡ Priceline' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
     const localizeValueTag = (tag: string) => {
         const locale = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
