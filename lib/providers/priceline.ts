@@ -323,6 +323,16 @@ export class PricelineRateLimitError extends Error {
     }
 }
 
+export class PricelineEndpointNotFoundError extends Error {
+    code = 'PRICELINE_ENDPOINT_NOT_FOUND';
+    status = 404;
+
+    constructor(message = 'Priceline endpoint not found for configured host') {
+        super(message);
+        this.name = 'PricelineEndpointNotFoundError';
+    }
+}
+
 export async function searchPriceline(params: HybridSearchParams): Promise<FlightResult[]> {
     if (!RAPID_API_KEY) {
         console.warn('[PRICELINE] RAPID_API_KEY missing, provider skipped');
@@ -368,6 +378,13 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
 
             if (response.status === 429) {
                 throw new PricelineRateLimitError();
+            }
+
+            if (response.status === 404) {
+                const responseText = await response.text();
+                throw new PricelineEndpointNotFoundError(
+                    `[PRICELINE] ${RAPID_API_HOST}${endpoint.path} -> 404 (${responseText.slice(0, 120)})`
+                );
             }
 
             if (!response.ok) {

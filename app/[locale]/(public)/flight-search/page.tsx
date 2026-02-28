@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { SmartCitySearch } from "@/components/SmartCitySearch";
 import { DatePicker } from "@/components/DatePicker";
@@ -17,7 +17,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
 import { DataSourceIndicator } from "@/components/DataSourceIndicator";
 import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
-import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -88,9 +87,6 @@ function SearchPageContent() {
         setToCity(tempCity);
         setToIata(tempIata);
     };
-
-    // URL params handling
-    const searchParams = useSearchParams();
 
     // Unified Search Logic
     const executeSearch = async (params: {
@@ -172,12 +168,13 @@ function SearchPageContent() {
 
     // Initial load from URL
     useEffect(() => {
-        const urlOrigin = searchParams.get('origin');
-        const urlDestination = searchParams.get('destination');
-        const urlDate = searchParams.get('date');
-        const urlReturnDate = searchParams.get('returnDate');
-        const urlAdults = searchParams.get('adults');
-        const urlCabin = searchParams.get('cabin');
+        const initialParams = new URLSearchParams(window.location.search);
+        const urlOrigin = initialParams.get('origin');
+        const urlDestination = initialParams.get('destination');
+        const urlDate = initialParams.get('date');
+        const urlReturnDate = initialParams.get('returnDate');
+        const urlAdults = initialParams.get('adults');
+        const urlCabin = initialParams.get('cabin');
 
         if (urlOrigin && urlDestination && urlDate) {
             const searchKey = [urlOrigin, urlDestination, urlDate, urlReturnDate || '', urlAdults || '1', urlCabin || 'economy'].join('|');
@@ -213,7 +210,7 @@ function SearchPageContent() {
                 cabin: urlCabin || 'economy'
             });
         }
-    }, [searchParams]);
+    }, []);
 
     useEffect(() => {
         const plan = (session?.user as any)?.subscriptionPlan;
@@ -237,6 +234,16 @@ function SearchPageContent() {
             cabin: cabin
         });
     }
+
+    const handleFromChange = useCallback((city: string, iata: string) => {
+        setFromCity(city);
+        setFromIata(iata);
+    }, []);
+
+    const handleToChange = useCallback((city: string, iata: string) => {
+        setToCity(city);
+        setToIata(iata);
+    }, []);
 
     const selectDestination = (dest: typeof popularDestinations[0]) => {
         setToCity(dest.city);
@@ -369,10 +376,7 @@ function SearchPageContent() {
                                     placeholder={t('from')} 
                                     value={fromCity} 
                                     iataCode={fromIata}
-                                    onChange={(city, iata) => {
-                                        setFromCity(city);
-                                        setFromIata(iata);
-                                    }}
+                                    onChange={handleFromChange}
                                     isDestination={false}
                                 />
                                 <button 
@@ -386,10 +390,7 @@ function SearchPageContent() {
                                     placeholder={t('to')} 
                                     value={toCity} 
                                     iataCode={toIata}
-                                    onChange={(city, iata) => {
-                                        setToCity(city);
-                                        setToIata(iata);
-                                    }}
+                                    onChange={handleToChange}
                                     isDestination={true}
                                 />
                             </div>

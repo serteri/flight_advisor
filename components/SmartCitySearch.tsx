@@ -45,6 +45,9 @@ interface CityOption {
     isMajor?: boolean;
 }
 
+let originAutofillInitialized = false;
+const ORIGIN_AUTOFILL_SESSION_KEY = 'smartCitySearch.origin.autofill.initialized';
+
 export function SmartCitySearch({
     placeholder = 'From',
     value,
@@ -62,44 +65,82 @@ export function SmartCitySearch({
     const [geoLoading, setGeoLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
+    const onChangeRef = useRef(onChange);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
 
     // Try to get geolocation on mount (for origin field)
     useEffect(() => {
-        if (!isDestination) {
-            console.log('[SmartCitySearch] Mounting - attempting geolocation for origin field');
-            
-            // Try localStorage first (remember last search)
-            const lastOrigin = localStorage.getItem('lastFlightOrigin');
-            const lastOriginIata = localStorage.getItem('lastFlightOriginIata');
-            
-            if (lastOrigin && lastOriginIata) {
-                console.log('[SmartCitySearch] Found lastOrigin in localStorage:', lastOrigin);
-                setInputValue(lastOrigin);
-                onChange(lastOrigin, lastOriginIata);
-            } else {
-                // Only try geolocation if no stored value
-                tryGetMemoizedGeolocation().then(result => {
-                    console.log('[SmartCitySearch] Geolocation result:', result);
-                    if (result && !('error' in result) && result.city && result.iataCode) {
-                        setInputValue(result.city);
-                        onChange(result.city, result.iataCode);
-                        localStorage.setItem('lastFlightOrigin', result.city);
-                        localStorage.setItem('lastFlightOriginIata', result.iataCode);
-                        setGeoLocation(result);
-                    }
-                });
+        if (isDestination) {
+            return;
+        }
+
+        if (originAutofillInitialized) {
+            return;
+        }
+
+        if (typeof window !== 'undefined') {
+            const alreadyInitializedInSession = sessionStorage.getItem(ORIGIN_AUTOFILL_SESSION_KEY) === '1';
+            if (alreadyInitializedInSession) {
+                originAutofillInitialized = true;
+                return;
             }
         }
-    }, [isDestination, onChange]);
+
+        if (value && iataCode) {
+            originAutofillInitialized = true;
+            if (typeof window !== 'undefined') {
+                sessionStorage.setItem(ORIGIN_AUTOFILL_SESSION_KEY, '1');
+            }
+            return;
+        }
+
+        const bootstrapOrigin = async () => {
+            try {
+                const lastOrigin = localStorage.getItem('lastFlightOrigin');
+                const lastOriginIata = localStorage.getItem('lastFlightOriginIata');
+
+                if (lastOrigin && lastOriginIata) {
+                    setInputValue(lastOrigin);
+                    if (lastOrigin !== value || lastOriginIata !== iataCode) {
+                        onChangeRef.current(lastOrigin, lastOriginIata);
+                    }
+                    return;
+                }
+
+                const result = await tryGetMemoizedGeolocation();
+                if (result && !('error' in result) && result.city && result.iataCode) {
+                    setInputValue(result.city);
+                    onChangeRef.current(result.city, result.iataCode);
+                    localStorage.setItem('lastFlightOrigin', result.city);
+                    localStorage.setItem('lastFlightOriginIata', result.iataCode);
+                    setGeoLocation(result);
+                }
+            } catch {
+                // no-op: silent fallback for bootstrap
+            } finally {
+                originAutofillInitialized = true;
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem(ORIGIN_AUTOFILL_SESSION_KEY, '1');
+                }
+            }
+        };
+
+        void bootstrapOrigin();
+    }, [isDestination, value, iataCode]);
+
+    useEffect(() => {
+        setInputValue(value);
+    }, [value]);
 
     // Handle input changes and suggest cities
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        console.log('[SmartCitySearch] Input changed:', val);
         setInputValue(val);
 
         if (val.length < 2) {
-            console.log('[SmartCitySearch] Input too short (<2 chars), clearing suggestions');
             setSuggestions([]);
             setShowSuggestions(false);
             return;
@@ -111,15 +152,12 @@ export function SmartCitySearch({
             const response = await fetch(`/api/airports/search?q=${encodeURIComponent(val)}`);
             
             if (!response.ok) {
-                console.error(`[SmartCitySearch] API error: ${response.status}`);
                 throw new Error(`API error: ${response.status}`);
             }
             
             const results = await response.json();
-            console.log('[SmartCitySearch] API results for', val, ':', results);
             
             if (!Array.isArray(results)) {
-                console.error('[SmartCitySearch] Invalid API response (not an array):', results);
                 setSuggestions([]);
                 setShowSuggestions(true);
                 return;
@@ -132,7 +170,6 @@ export function SmartCitySearch({
                 return bMajor - aMajor;
             });
 
-            console.log('[SmartCitySearch] Sorted options:', sorted);
             setSuggestions(sorted);
             setShowSuggestions(true);
         } catch (error) {
@@ -146,7 +183,6 @@ export function SmartCitySearch({
 
     // Handle city selection
     const handleSelectCity = (city: CityOption) => {
-        console.log('[SmartCitySearch] Selected city:', city);
         setInputValue(city.city);
         onChange(city.city, city.iata);
         
@@ -154,7 +190,6 @@ export function SmartCitySearch({
         if (!isDestination) {
             localStorage.setItem('lastFlightOrigin', city.city);
             localStorage.setItem('lastFlightOriginIata', city.iata);
-            console.log('[SmartCitySearch] Saved to localStorage:', city);
         }
         
         setShowSuggestions(false);

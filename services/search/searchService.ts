@@ -1,7 +1,7 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
 import { searchPricelineProvider } from './providers/priceline';
-import { PricelineRateLimitError } from '@/lib/providers/priceline';
+import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
 // Kiwi (auth required), Travelpayouts (unreliable), RapidAPI (removed)
 
 export type SearchProvidersMeta = {
@@ -76,6 +76,8 @@ async function searchAllProvidersInternal(params: HybridSearchParams): Promise<S
         if (result.reason instanceof PricelineRateLimitError || result.reason?.code === 'PRICELINE_RATE_LIMIT') {
           rateLimited = true;
           warnings.push('Hızlı Arama Limiti Doldu');
+        } else if (result.reason instanceof PricelineEndpointNotFoundError || result.reason?.code === 'PRICELINE_ENDPOINT_NOT_FOUND') {
+          warnings.push('Priceline endpoint yapılandırması geçersiz (404)');
         }
       }
     });
