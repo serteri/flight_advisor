@@ -20,6 +20,9 @@
         "today": "Zu Heute",
         "close": "Schließen"
     },
+    "Results": {
+        "total_duration": "Gesamtdauer"
+    },
     "HomePage": {
         "hero": {
             "title": "Ihr persönlicher",

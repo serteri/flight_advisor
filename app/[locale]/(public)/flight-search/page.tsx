@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { SmartCitySearch } from "@/components/SmartCitySearch";
 import { DatePicker } from "@/components/DatePicker";
@@ -57,7 +57,8 @@ function SearchPageContent() {
     const [error, setError] = useState<string | null>(null);
     const [viewerTier, setViewerTier] = useState<UserTier>('FREE');
     const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
-    const { data: session, update } = useSession();
+    const { data: session } = useSession();
+    const lastBootSearchRef = useRef<string>('');
 
     // Form state
     const [fromCity, setFromCity] = useState("");
@@ -179,6 +180,12 @@ function SearchPageContent() {
         const urlCabin = searchParams.get('cabin');
 
         if (urlOrigin && urlDestination && urlDate) {
+            const searchKey = [urlOrigin, urlDestination, urlDate, urlReturnDate || '', urlAdults || '1', urlCabin || 'economy'].join('|');
+            if (lastBootSearchRef.current === searchKey) {
+                return;
+            }
+            lastBootSearchRef.current = searchKey;
+
             // Populate Form State
             setFromIata(urlOrigin);
             setFromCity(urlOrigin); // Set City to IATA so input isn't empty
@@ -207,10 +214,6 @@ function SearchPageContent() {
             });
         }
     }, [searchParams]);
-
-    useEffect(() => {
-        void update();
-    }, [update]);
 
     useEffect(() => {
         const plan = (session?.user as any)?.subscriptionPlan;

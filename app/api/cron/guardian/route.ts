@@ -18,26 +18,30 @@ export async function GET(request: NextRequest) {
     // Security: Verify cron secret
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    const isDev = process.env.NODE_ENV !== 'production';
     
     // Check 1: Bearer token validation
     if (!cronSecret) {
-        console.error("❌ [CRON] CRON_SECRET is not set in environment");
-        return NextResponse.json(
-            { error: "Cron secret not configured" },
-            { status: 500 }
-        );
+        if (!isDev) {
+            console.error("❌ [CRON] CRON_SECRET is not set in environment");
+            return NextResponse.json(
+                { error: "Cron secret not configured. Set CRON_SECRET in Vercel Environment Variables." },
+                { status: 500 }
+            );
+        }
+        console.warn("⚠️ [CRON] CRON_SECRET missing, allowing request in development mode");
     }
-    
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+
+    if (cronSecret && (!authHeader || !authHeader.startsWith("Bearer "))) {
         console.warn("❌ [CRON] Unauthorized request - no Bearer token");
         return NextResponse.json(
             { error: "Unauthorized" },
             { status: 401 }
         );
     }
-    
-    const token = authHeader.substring("Bearer ".length);
-    if (token !== cronSecret) {
+
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring("Bearer ".length) : null;
+    if (cronSecret && token !== cronSecret) {
         console.warn("❌ [CRON] Unauthorized request - invalid token");
         return NextResponse.json(
             { error: "Invalid token" },
@@ -91,16 +95,24 @@ export async function POST(request: NextRequest) {
     // Same security checks as GET
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    
-    if (!cronSecret || !authHeader || !authHeader.startsWith("Bearer ")) {
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    if (!cronSecret && !isDev) {
+        return NextResponse.json(
+            { error: "Cron secret not configured. Set CRON_SECRET in Vercel Environment Variables." },
+            { status: 500 }
+        );
+    }
+
+    if (cronSecret && (!authHeader || !authHeader.startsWith("Bearer "))) {
         return NextResponse.json(
             { error: "Unauthorized" },
             { status: 401 }
         );
     }
-    
-    const token = authHeader.substring("Bearer ".length);
-    if (token !== cronSecret) {
+
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring("Bearer ".length) : null;
+    if (cronSecret && token !== cronSecret) {
         return NextResponse.json(
             { error: "Invalid token" },
             { status: 401 }
