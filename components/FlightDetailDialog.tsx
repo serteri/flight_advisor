@@ -6,7 +6,7 @@ import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
 import { useLocale } from "next-intl";
-import { getMealStatus, hasAnyMeal } from "@/lib/meal-utils";
+import { getMealStatus, getWifiStatus, hasAnyMeal } from "@/lib/meal-utils";
 
 interface FlightDetailDialogProps {
     flight: FlightResult | null;
@@ -109,6 +109,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
     const isTr = locale?.toLowerCase().startsWith("tr");
     const mealStatus = getMealStatus(flight);
     const hasMeal = hasAnyMeal(flight);
+    const wifiStatus = getWifiStatus(flight);
 
     const labels = {
         departure: isTr ? "Kalkış" : "Departure",
@@ -140,8 +141,14 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         amenities: isTr ? "Hizmetler" : "Amenities",
         meal: isTr ? "Yemek" : "Meal",
         mealIncluded: isTr ? "Yemek Dahil" : "Meal Included",
+        mealLikelyIncluded: isTr ? "Muhtemelen dahil (havayolu teyidi önerilir)" : "Likely included (check with airline)",
+        mealUnknown: isTr ? "Bilgi mevcut değil" : "Info unavailable",
         mealPaid: isTr ? "Yemek Ücretli" : "Meal Paid",
         mealNone: isTr ? "Yemek Yok" : "No Meal",
+        wifiAvailable: isTr ? "Wi-Fi Var" : "Wi-Fi Available",
+        wifiUnavailable: isTr ? "Wi-Fi Yok" : "No Wi-Fi",
+        wifiUnknown: isTr ? "Wi-Fi bilgisi yok" : "Wi-Fi info unavailable",
+        wifiCheckAirline: isTr ? "Wi-Fi için havayoluna danış" : "Check with airline",
         durationDebug: isTr ? "Süre Debug" : "Duration Debug",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
@@ -150,9 +157,22 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
     const mealText =
         mealStatus === "included"
             ? labels.mealIncluded
+                        : mealStatus === "assumed_included"
+                            ? labels.mealLikelyIncluded
             : mealStatus === "paid"
               ? labels.mealPaid
-              : labels.mealNone;
+                            : mealStatus === "unknown"
+                                ? labels.mealUnknown
+                                : labels.mealNone;
+
+        const wifiText =
+                wifiStatus === 'available'
+                        ? labels.wifiAvailable
+                        : wifiStatus === 'unavailable'
+                            ? labels.wifiUnavailable
+                            : wifiStatus === 'check_with_airline'
+                                ? labels.wifiCheckAirline
+                                : labels.wifiUnknown;
 
     const translateValueTag = (valueTag: string) => {
         if (isTr) return valueTag;
@@ -330,7 +350,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                         </div>
                     )}
 
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{mealText}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${flight.amenities?.hasWifi ? "text-blue-600" : "text-slate-300"}`} /><span>{flight.amenities?.hasWifi ? "WiFi" : labels.no}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2">{labels.amenities}</h3><div className="grid grid-cols-3 gap-2 text-sm"><div className="flex items-center gap-1"><Utensils className={`w-4 h-4 ${hasMeal ? "text-emerald-600" : "text-slate-300"}`} /><span>{mealText}</span></div><div className="flex items-center gap-1"><Wifi className={`w-4 h-4 ${wifiStatus === 'available' ? "text-blue-600" : wifiStatus === 'check_with_airline' ? "text-amber-500" : "text-slate-300"}`} /><span>{wifiText}</span></div><div className="flex items-center gap-1"><Info className="w-4 h-4 text-slate-400" /><span>{flight.cabinClass || "Economy"}</span></div></div></div>
                     {!!flight.durationDebug && (
                         <div className="bg-slate-50 p-3 rounded border border-slate-200">
                             <h3 className="font-bold mb-2 text-slate-700">🧪 {labels.durationDebug}</h3>

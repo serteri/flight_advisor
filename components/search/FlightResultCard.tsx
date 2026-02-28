@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
 import type { UserTier } from '@/lib/tierUtils';
-import { getMealStatus, hasAnyMeal } from '@/lib/meal-utils';
+import { getMealStatus, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
 
 export default function FlightResultCard({ 
     flight, 
@@ -46,7 +46,7 @@ export default function FlightResultCard({
     const duration = flight.duration || 0;
     const mealStatus = getMealStatus(flight);
     const hasMeal = hasAnyMeal(flight);
-    const mealLabel = mealStatus === 'included' ? t('included') : mealStatus === 'paid' ? t('paid') : 'No meal';
+    const wifiStatus = getWifiStatus(flight);
 
     const toText = (value: any, fallback: string) => {
         if (typeof value === 'string') return value;
@@ -212,6 +212,29 @@ export default function FlightResultCard({
                 : typeof flight.score === 'number' && Number.isFinite(flight.score)
                     ? flight.score
                     : 0;
+
+        const localeCode = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
+        const isTrLocale = localeCode === 'tr';
+
+        const mealLabel =
+                mealStatus === 'included'
+                        ? t('included')
+                        : mealStatus === 'assumed_included'
+                            ? (isTrLocale ? 'Muhtemelen dahil' : 'Likely included')
+                            : mealStatus === 'paid'
+                                ? t('paid')
+                                : mealStatus === 'unknown'
+                                    ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
+                                    : (isTrLocale ? 'Yemek yok' : 'No meal');
+
+        const wifiLabel =
+                wifiStatus === 'available'
+                        ? t('wifi_available')
+                        : wifiStatus === 'check_with_airline'
+                            ? (isTrLocale ? 'Havayoluna sor' : 'Check airline')
+                            : wifiStatus === 'unknown'
+                                ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
+                                : t('wifi_none');
 
     const handleLockClick = () => {
         if (!hasPremiumAccess) {
@@ -393,9 +416,9 @@ export default function FlightResultCard({
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <Wifi className={`w-3.5 h-3.5 ${flight.amenities?.hasWifi ? 'text-blue-600' : 'text-slate-300'}`} />
+                                <Wifi className={`w-3.5 h-3.5 ${wifiStatus === 'available' ? 'text-blue-600' : wifiStatus === 'check_with_airline' ? 'text-amber-500' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {flight.amenities?.hasWifi ? t('wifi_available') : t('wifi_none')}
+                                    {wifiLabel}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
