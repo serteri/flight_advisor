@@ -168,8 +168,10 @@ export default function FlightResultCard({
             : endpointTotalMinutes;
 
     const totalDurationLabel = (() => {
-        const label = t('total_duration');
-        return label.includes('.') ? 'Total duration' : label;
+        const localeCode = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
+        if (localeCode === 'tr') return 'Toplam süre';
+        if (localeCode === 'de') return 'Gesamtdauer';
+        return 'Total duration';
     })();
 
     // Validate critical date fields

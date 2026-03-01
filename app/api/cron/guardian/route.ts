@@ -19,17 +19,19 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
     const isDev = process.env.NODE_ENV !== 'production';
+    const isVercelProd = process.env.VERCEL_ENV === 'production';
+    const isStrictMode = !isDev && isVercelProd;
     
     // Check 1: Bearer token validation
     if (!cronSecret) {
-        if (!isDev) {
+        if (isStrictMode) {
             console.error("❌ [CRON] CRON_SECRET is not set in environment");
             return NextResponse.json(
                 { error: "Cron secret not configured. Set CRON_SECRET in Vercel Environment Variables." },
                 { status: 500 }
             );
         }
-        console.warn("⚠️ [CRON] CRON_SECRET missing, allowing request in development mode");
+        console.warn("⚠️ [CRON] CRON_SECRET missing, allowing request in development/preview mode");
     }
 
     if (cronSecret && (!authHeader || !authHeader.startsWith("Bearer "))) {
@@ -96,8 +98,10 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
     const isDev = process.env.NODE_ENV !== 'production';
+    const isVercelProd = process.env.VERCEL_ENV === 'production';
+    const isStrictMode = !isDev && isVercelProd;
 
-    if (!cronSecret && !isDev) {
+    if (!cronSecret && isStrictMode) {
         return NextResponse.json(
             { error: "Cron secret not configured. Set CRON_SECRET in Vercel Environment Variables." },
             { status: 500 }
