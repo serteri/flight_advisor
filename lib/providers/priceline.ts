@@ -142,7 +142,7 @@ const unwrapResults = (json: any): any[] => {
 };
 
 const extractListings = (json: any): any[] => {
-    const listings = json?.data?.listings;
+    const listings = json?.data?.data?.listings ?? json?.data?.listings;
     if (Array.isArray(listings)) {
         return listings;
     }
@@ -387,6 +387,8 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     const numberOfAdults = String(params.adults || 1);
 
     const query = new URLSearchParams({
+        itinerary_type: 'ONE_WAY',
+        class_type: 'ECO',
         departure_airport_code: departureAirportCode,
         arrival_airport_code: arrivalAirportCode,
         departure_date: date,
@@ -399,6 +401,8 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     try {
         console.log('[PRICELINE][DIAG] Request URL:', requestUrl);
         console.log('[PRICELINE][DIAG] Request params:', {
+            itinerary_type: 'ONE_WAY',
+            class_type: 'ECO',
             departure_airport_code: departureAirportCode,
             arrival_airport_code: arrivalAirportCode,
             departure_date: date,
@@ -419,6 +423,16 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
 
         if (response.status === 401) {
             lastError = new Error(`[PRICELINE] Unauthorized (401): ${responseText.slice(0, 160)}`);
+        } else if (response.status === 403) {
+            const invalidHost = /invalid\s*host/i.test(responseText);
+            console.error('[PRICELINE][DIAG] 403 Forbidden', {
+                hostSent: RAPID_API_HOST,
+                expectedHost: 'priceline-com2.p.rapidapi.com',
+                hostMatchesEnv: RAPID_API_HOST === 'priceline-com2.p.rapidapi.com',
+                invalidHost,
+                first200: responseText.slice(0, 200),
+            });
+            lastError = new Error(`[PRICELINE] Forbidden (403): ${responseText.slice(0, 160)}`);
         } else if (response.status === 429) {
             throw new PricelineRateLimitError();
         } else if (response.status === 404) {
@@ -446,7 +460,19 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         }
 
         const entries = extractListings(json);
-        console.log('[PRICELINE][DIAG] data.listings entries:', entries.length);
+        console.log('[PRICELINE][DIAG] listings path stats:', {
+            data_data_listings: Array.isArray(json?.data?.data?.listings)
+                ? json.data.data.listings.length
+                : json?.data?.data?.listings && typeof json.data.data.listings === 'object'
+                    ? Object.keys(json.data.data.listings).length
+                    : 0,
+            data_listings: Array.isArray(json?.data?.listings)
+                ? json.data.listings.length
+                : json?.data?.listings && typeof json.data.listings === 'object'
+                    ? Object.keys(json.data.listings).length
+                    : 0,
+            selected_entries: entries.length,
+        });
         if (entries.length === 0) {
             return [];
         }
