@@ -108,6 +108,10 @@ const unwrapResults = (json: any): any[] => {
         json?.flights,
         json?.results,
         json?.data,
+        json?.data?.results,
+        json?.data?.flights,
+        json?.data?.itineraries,
+        json?.data?.listings,
         json?.itineraries,
         json?.flightOffers,
         json?.tripset,
@@ -119,6 +123,13 @@ const unwrapResults = (json: any): any[] => {
     for (const candidate of directCandidates) {
         if (Array.isArray(candidate) && candidate.length > 0) {
             return candidate;
+        }
+    }
+
+    if (json?.data?.listings && typeof json.data.listings === 'object') {
+        const objectValues = Object.values(json.data.listings).filter((entry) => !!entry);
+        if (objectValues.length > 0) {
+            return objectValues as any[];
         }
     }
 
@@ -343,9 +354,32 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     const payload = {
         origin: params.origin,
         destination: params.destination,
+        originAirportCode: params.origin,
+        destinationAirportCode: params.destination,
         departureDate: date,
+        departure_date: date,
         adults: params.adults || 1,
+        adultsCount: params.adults || 1,
         cabinClass: params.cabin || 'economy',
+        cabin_class: params.cabin || 'economy',
+        itinerary_type: 'ONE_WAY',
+        itineraryType: 'ONE_WAY',
+        currency: params.currency || 'USD',
+    };
+
+    const queryBase = {
+        origin: params.origin,
+        destination: params.destination,
+        originAirportCode: params.origin,
+        destinationAirportCode: params.destination,
+        departureDate: date,
+        departure_date: date,
+        adults: String(params.adults || 1),
+        adultsCount: String(params.adults || 1),
+        cabinClass: params.cabin || 'economy',
+        cabin_class: params.cabin || 'economy',
+        itinerary_type: 'ONE_WAY',
+        itineraryType: 'ONE_WAY',
         currency: params.currency || 'USD',
     };
 
@@ -357,7 +391,11 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         },
         {
             method: 'GET',
-            path: `/flights/searchFlights?origin=${encodeURIComponent(params.origin)}&destination=${encodeURIComponent(params.destination)}&departureDate=${encodeURIComponent(date)}&adults=${encodeURIComponent(String(params.adults || 1))}&currency=${encodeURIComponent(params.currency || 'USD')}`,
+            path: `/flights/searchFlights?${new URLSearchParams(queryBase).toString()}`,
+        },
+        {
+            method: 'GET',
+            path: `/flights/search-one-way?${new URLSearchParams(queryBase).toString()}`,
         },
     ];
 
@@ -365,7 +403,19 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
 
     for (const endpoint of endpoints) {
         try {
-            const response = await fetch(`${RAPID_API_BASE}${endpoint.path}`, {
+            const requestUrl = `${RAPID_API_BASE}${endpoint.path}`;
+            const queryPart = requestUrl.includes('?') ? requestUrl.split('?')[1] : '';
+
+            console.log('[PRICELINE][DIAG] Request URL:', requestUrl);
+            console.log('[PRICELINE][DIAG] Request params:', queryPart || endpoint.body || {});
+            console.log('[PRICELINE][DIAG] Route check:', {
+                origin: params.origin,
+                destination: params.destination,
+                departureDate: date,
+                dateFormatValid: /^\d{4}-\d{2}-\d{2}$/.test(date),
+            });
+
+            const response = await fetch(requestUrl, {
                 method: endpoint.method,
                 headers: {
                     'X-RapidAPI-Key': RAPID_API_KEY,
@@ -376,32 +426,62 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                 body: endpoint.method === 'POST' ? JSON.stringify(endpoint.body) : undefined,
             });
 
+            const responseText = await response.text();
+            console.log('[PRICELINE][DIAG] Raw response:', {
+                status: response.status,
+                ok: response.ok,
+                first200: responseText.slice(0, 200),
+            });
+
+            if (response.status === 401) {
+                lastError = new Error(`[PRICELINE] Unauthorized (401): ${responseText.slice(0, 160)}`);
+                continue;
+            }
+
             if (response.status === 429) {
                 throw new PricelineRateLimitError();
             }
 
             if (response.status === 404) {
-                const responseText = await response.text();
                 throw new PricelineEndpointNotFoundError(
                     `[PRICELINE] ${RAPID_API_HOST}${endpoint.path} -> 404 (${responseText.slice(0, 120)})`
                 );
             }
 
             if (!response.ok) {
-                lastError = new Error(`Priceline request failed (${response.status})`);
+                lastError = new Error(`Priceline request failed (${response.status}) - ${responseText.slice(0, 120)}`);
                 continue;
             }
 
-            const json = await response.json();
+            let json: any = null;
+            try {
+                json = responseText ? JSON.parse(responseText) : null;
+            } catch (parseError: any) {
+                lastError = new Error(`[PRICELINE] JSON parse error: ${parseError?.message || parseError}`);
+                continue;
+            }
+
+            const providerError = json?.errors || json?.error || json?.data?.error;
+            if (providerError) {
+                console.warn('[PRICELINE][DIAG] Provider-side error payload:', providerError);
+            }
+
             const entries = unwrapResults(json);
+            console.log('[PRICELINE][DIAG] Unwrapped entries:', entries.length);
             if (entries.length === 0) {
                 continue;
             }
 
+            let droppedNoSegments = 0;
+            let droppedNoPrice = 0;
+
             const mappedFlights = entries
                 .map((item: any, idx: number): FlightResult | null => {
                     const segments = extractSegments(item);
-                    if (segments.length === 0) return null;
+                    if (segments.length === 0) {
+                        droppedNoSegments += 1;
+                        return null;
+                    }
 
                     const airline = firstString(
                         item?.airline,
@@ -428,6 +508,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                         parsePositivePrice(item?.fare?.total);
 
                     if (!price || price <= 0) {
+                        droppedNoPrice += 1;
                         return null;
                     }
 
@@ -502,11 +583,23 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                 })
                 .filter((flight): flight is FlightResult => flight !== null);
 
+            console.log('[PRICELINE][DIAG] Mapping stats:', {
+                rawEntries: entries.length,
+                mappedFlights: mappedFlights.length,
+                droppedNoSegments,
+                droppedNoPrice,
+            });
+
+            if (mappedFlights.length === 0 && entries.length > 0) {
+                console.warn('[PRICELINE][DIAG] Data exists but all flights dropped during mapping');
+            }
+
             return mappedFlights;
         } catch (error: any) {
             if (error instanceof PricelineRateLimitError) {
                 throw error;
             }
+            console.error('[PRICELINE][DIAG] Request failed:', error?.message || error);
             lastError = error;
         }
     }
