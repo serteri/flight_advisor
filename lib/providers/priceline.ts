@@ -24,6 +24,10 @@ const FULL_SERVICE_CARRIERS = [
     'AIR CANADA',
 ];
 
+const FULL_SERVICE_CARRIER_CODES = new Set([
+    'SQ', 'QR', 'EK', 'LH', 'TK', 'AF', 'KL', 'BA', 'NH', 'JL', 'CX', 'BR', 'EY', 'QF', 'LX', 'AC'
+]);
+
 const normalizeCarrier = (value: unknown): string =>
     String(value || '')
         .toUpperCase()
@@ -33,9 +37,10 @@ const normalizeCarrier = (value: unknown): string =>
         .replace(/\s+/g, ' ')
         .trim();
 
-const isFullServiceCarrier = (airlineName: unknown): boolean => {
+const isFullServiceCarrier = (airlineName: unknown, airlineCode?: unknown): boolean => {
     const normalized = normalizeCarrier(airlineName);
-    return FULL_SERVICE_CARRIERS.some((name) => normalized.includes(name));
+    const normalizedCode = normalizeCarrier(airlineCode);
+    return FULL_SERVICE_CARRIERS.some((name) => normalized.includes(name)) || FULL_SERVICE_CARRIER_CODES.has(normalizedCode);
 };
 
 const hasExplicitTimezone = (value: string): boolean => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
@@ -136,6 +141,21 @@ const unwrapResults = (json: any): any[] => {
     return [];
 };
 
+const extractListings = (json: any): any[] => {
+    const listings = json?.data?.listings;
+    if (Array.isArray(listings)) {
+        return listings;
+    }
+
+    if (listings && typeof listings === 'object') {
+        return Object.values(listings)
+            .flatMap((entry: any) => (Array.isArray(entry) ? entry : [entry]))
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
 const extractSegments = (item: any): any[] => {
     const candidates = [
         item?.segments,
@@ -160,7 +180,17 @@ const extractSegments = (item: any): any[] => {
     return [];
 };
 
-const resolveMeal = (item: any, airline: string): 'included' | 'paid' | 'none' => {
+const extractSegmentsFromSlices = (item: any): any[] => {
+    const slices = extractArray(item?.slices);
+    const flattened = slices.flatMap((slice: any) => extractArray(slice?.segments));
+    if (flattened.length > 0) {
+        return flattened;
+    }
+
+    return extractSegments(item);
+};
+
+const resolveMeal = (item: any, airline: string, airlineCode?: string): 'included' | 'paid' | 'none' => {
     const mealSignals = [
         item?.meal,
         item?.amenities?.meal,
@@ -191,7 +221,7 @@ const resolveMeal = (item: any, airline: string): 'included' | 'paid' | 'none' =
 
     if (explicitFalse) return 'none';
 
-    return isFullServiceCarrier(airline) ? 'included' : 'none';
+    return isFullServiceCarrier(airline, airlineCode) ? 'included' : 'none';
 };
 
 const resolveBaggage = (item: any, airline: string): { baggageText: string; checkedKg: number; cabinKg: number } => {
@@ -351,257 +381,218 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     }
 
     const date = params.date.split('T')[0];
-    const payload = {
-        origin: params.origin,
-        destination: params.destination,
-        originAirportCode: params.origin,
-        destinationAirportCode: params.destination,
-        departureDate: date,
+
+    const departureAirportCode = String(params.origin || '').toUpperCase();
+    const arrivalAirportCode = String(params.destination || '').toUpperCase();
+    const numberOfAdults = String(params.adults || 1);
+
+    const query = new URLSearchParams({
+        departure_airport_code: departureAirportCode,
+        arrival_airport_code: arrivalAirportCode,
         departure_date: date,
-        adults: params.adults || 1,
-        adultsCount: params.adults || 1,
-        cabinClass: params.cabin || 'economy',
-        cabin_class: params.cabin || 'economy',
-        itinerary_type: 'ONE_WAY',
-        itineraryType: 'ONE_WAY',
-        currency: params.currency || 'USD',
-    };
+        number_of_adults: numberOfAdults,
+    });
 
-    const queryBase = {
-        origin: params.origin,
-        destination: params.destination,
-        originAirportCode: params.origin,
-        destinationAirportCode: params.destination,
-        departureDate: date,
-        departure_date: date,
-        adults: String(params.adults || 1),
-        adultsCount: String(params.adults || 1),
-        cabinClass: params.cabin || 'economy',
-        cabin_class: params.cabin || 'economy',
-        itinerary_type: 'ONE_WAY',
-        itineraryType: 'ONE_WAY',
-        currency: params.currency || 'USD',
-    };
-
-    const endpoints = [
-        {
-            method: 'POST',
-            path: '/flights/searchFlights',
-            body: payload,
-        },
-        {
-            method: 'GET',
-            path: `/flights/searchFlights?${new URLSearchParams(queryBase).toString()}`,
-        },
-        {
-            method: 'GET',
-            path: `/flights/search-one-way?${new URLSearchParams(queryBase).toString()}`,
-        },
-    ];
-
+    const requestUrl = `${RAPID_API_BASE}/flights/search-one-way?${query.toString()}`;
     let lastError: any = null;
 
-    for (const endpoint of endpoints) {
-        try {
-            const requestUrl = `${RAPID_API_BASE}${endpoint.path}`;
-            const queryPart = requestUrl.includes('?') ? requestUrl.split('?')[1] : '';
+    try {
+        console.log('[PRICELINE][DIAG] Request URL:', requestUrl);
+        console.log('[PRICELINE][DIAG] Request params:', {
+            departure_airport_code: departureAirportCode,
+            arrival_airport_code: arrivalAirportCode,
+            departure_date: date,
+            number_of_adults: numberOfAdults,
+        });
 
-            console.log('[PRICELINE][DIAG] Request URL:', requestUrl);
-            console.log('[PRICELINE][DIAG] Request params:', queryPart || endpoint.body || {});
-            console.log('[PRICELINE][DIAG] Route check:', {
-                origin: params.origin,
-                destination: params.destination,
-                departureDate: date,
-                dateFormatValid: /^\d{4}-\d{2}-\d{2}$/.test(date),
-            });
+        const response = await fetch(requestUrl, {
+            method: 'GET',
+            headers: {
+                'X-RapidAPI-Key': RAPID_API_KEY,
+                'X-RapidAPI-Host': RAPID_API_HOST,
+                Accept: 'application/json',
+            },
+        });
 
-            const response = await fetch(requestUrl, {
-                method: endpoint.method,
-                headers: {
-                    'X-RapidAPI-Key': RAPID_API_KEY,
-                    'X-RapidAPI-Host': RAPID_API_HOST,
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: endpoint.method === 'POST' ? JSON.stringify(endpoint.body) : undefined,
-            });
+        const responseText = await response.text();
+        console.log('[PRICELINE][DIAG] Raw JSON first500:', responseText.slice(0, 500));
 
-            const responseText = await response.text();
-            console.log('[PRICELINE][DIAG] Raw response:', {
-                status: response.status,
-                ok: response.ok,
-                first200: responseText.slice(0, 200),
-            });
-
-            if (response.status === 401) {
-                lastError = new Error(`[PRICELINE] Unauthorized (401): ${responseText.slice(0, 160)}`);
-                continue;
-            }
-
-            if (response.status === 429) {
-                throw new PricelineRateLimitError();
-            }
-
-            if (response.status === 404) {
-                throw new PricelineEndpointNotFoundError(
-                    `[PRICELINE] ${RAPID_API_HOST}${endpoint.path} -> 404 (${responseText.slice(0, 120)})`
-                );
-            }
-
-            if (!response.ok) {
-                lastError = new Error(`Priceline request failed (${response.status}) - ${responseText.slice(0, 120)}`);
-                continue;
-            }
-
-            let json: any = null;
-            try {
-                json = responseText ? JSON.parse(responseText) : null;
-            } catch (parseError: any) {
-                lastError = new Error(`[PRICELINE] JSON parse error: ${parseError?.message || parseError}`);
-                continue;
-            }
-
-            const providerError = json?.errors || json?.error || json?.data?.error;
-            if (providerError) {
-                console.warn('[PRICELINE][DIAG] Provider-side error payload:', providerError);
-            }
-
-            const entries = unwrapResults(json);
-            console.log('[PRICELINE][DIAG] Unwrapped entries:', entries.length);
-            if (entries.length === 0) {
-                continue;
-            }
-
-            let droppedNoSegments = 0;
-            let droppedNoPrice = 0;
-
-            const mappedFlights = entries
-                .map((item: any, idx: number): FlightResult | null => {
-                    const segments = extractSegments(item);
-                    if (segments.length === 0) {
-                        droppedNoSegments += 1;
-                        return null;
-                    }
-
-                    const airline = firstString(
-                        item?.airline,
-                        item?.carrier,
-                        item?.marketingCarrier,
-                        segments[0]?.airline,
-                        segments[0]?.carrier,
-                        'Unknown Airline'
-                    );
-
-                    const layovers = extractArray(item?.layovers).map((layover: any) => ({
-                        city: firstString(layover?.city, layover?.name),
-                        airport: firstString(layover?.airport, layover?.code, layover?.iata),
-                        duration: toMinutes(layover?.duration || layover?.durationMinutes),
-                    }));
-
-                    const duration = resolveDuration(item, segments, layovers);
-                    const meal = resolveMeal(item, airline);
-                    const baggage = resolveBaggage(item, airline);
-                    const price =
-                        parsePositivePrice(item?.price) ||
-                        parsePositivePrice(item?.amount) ||
-                        parsePositivePrice(item?.totalPrice) ||
-                        parsePositivePrice(item?.fare?.total);
-
-                    if (!price || price <= 0) {
-                        droppedNoPrice += 1;
-                        return null;
-                    }
-
-                    const fromCode = firstString(
-                        item?.from,
-                        item?.origin,
-                        item?.originCode,
-                        segments[0]?.from,
-                        segments[0]?.origin,
-                        segments[0]?.departureAirport,
-                        params.origin
-                    ).toUpperCase();
-
-                    const toCode = firstString(
-                        item?.to,
-                        item?.destination,
-                        item?.destinationCode,
-                        segments[segments.length - 1]?.to,
-                        segments[segments.length - 1]?.destination,
-                        segments[segments.length - 1]?.arrivalAirport,
-                        params.destination
-                    ).toUpperCase();
-
-                    const sourceId = firstString(item?.id, item?.offerId, item?.token, `priceline_${idx}`);
-                    const flightNumber = firstString(
-                        item?.flightNumber,
-                        item?.flightNo,
-                        segments[0]?.flightNumber,
-                        segments[0]?.flight_no,
-                        'N/A'
-                    );
-
-                    return {
-                        id: `PRICELINE_${sourceId}`,
-                        source: 'PRICELINE' as any,
-                        airline,
-                        airlineLogo: firstString(item?.airlineLogo, item?.logo, segments[0]?.airlineLogo) || undefined,
-                        flightNumber,
-                        from: fromCode || params.origin,
-                        to: toCode || params.destination,
-                        departTime: duration.departTime || params.date,
-                        arriveTime: duration.arriveTime || params.date,
-                        duration: duration.resolved,
-                        durationLabel: `${Math.floor(duration.resolved / 60)}h ${duration.resolved % 60}m`,
-                        stops: Math.max(0, segments.length - 1),
-                        price,
-                        currency: firstString(item?.currency, item?.priceCurrency, params.currency, 'USD'),
-                        cabinClass: (params.cabin || 'economy') as any,
-                        layovers,
-                        segments: segments.map((segment: any) => ({
-                            departure: firstString(segment?.departure, segment?.departTime, segment?.departing_at, segment?.departure_time),
-                            arrival: firstString(segment?.arrival, segment?.arriveTime, segment?.arriving_at, segment?.arrival_time),
-                            duration: parseDurationMinutes(segment?.duration || segment?.durationMinutes),
-                            airline: firstString(segment?.airline, segment?.carrier, airline),
-                            flightNumber: firstString(segment?.flightNumber, segment?.flight_no, flightNumber),
-                            origin: firstString(segment?.origin, segment?.from, segment?.departureAirport, fromCode),
-                            destination: firstString(segment?.destination, segment?.to, segment?.arrivalAirport, toCode),
-                            aircraft: firstString(segment?.aircraft, segment?.equipment),
-                        })),
-                        meal,
-                        amenities: {
-                            hasMeal: meal === 'included',
-                            hasWifi: typeof item?.amenities?.hasWifi === 'boolean' ? item.amenities.hasWifi : undefined,
-                            baggage: baggage.baggageText,
-                        } as any,
-                        policies: {
-                            baggageKg: baggage.checkedKg,
-                            cabinBagKg: baggage.cabinKg,
-                        },
-                        durationDebug: duration.debug,
-                    } as FlightResult;
-                })
-                .filter((flight): flight is FlightResult => flight !== null);
-
-            console.log('[PRICELINE][DIAG] Mapping stats:', {
-                rawEntries: entries.length,
-                mappedFlights: mappedFlights.length,
-                droppedNoSegments,
-                droppedNoPrice,
-            });
-
-            if (mappedFlights.length === 0 && entries.length > 0) {
-                console.warn('[PRICELINE][DIAG] Data exists but all flights dropped during mapping');
-            }
-
-            return mappedFlights;
-        } catch (error: any) {
-            if (error instanceof PricelineRateLimitError) {
-                throw error;
-            }
-            console.error('[PRICELINE][DIAG] Request failed:', error?.message || error);
-            lastError = error;
+        if (response.status === 401) {
+            lastError = new Error(`[PRICELINE] Unauthorized (401): ${responseText.slice(0, 160)}`);
+        } else if (response.status === 429) {
+            throw new PricelineRateLimitError();
+        } else if (response.status === 404) {
+            throw new PricelineEndpointNotFoundError(
+                `[PRICELINE] ${RAPID_API_HOST}/flights/search-one-way -> 404 (${responseText.slice(0, 120)})`
+            );
+        } else if (!response.ok) {
+            lastError = new Error(`Priceline request failed (${response.status}) - ${responseText.slice(0, 120)}`);
         }
+
+        if (lastError) {
+            throw lastError;
+        }
+
+        let json: any = null;
+        try {
+            json = responseText ? JSON.parse(responseText) : null;
+        } catch (parseError: any) {
+            throw new Error(`[PRICELINE] JSON parse error: ${parseError?.message || parseError}`);
+        }
+
+        const providerError = json?.errors || json?.error || json?.data?.error;
+        if (providerError) {
+            console.warn('[PRICELINE][DIAG] Provider-side error payload:', providerError);
+        }
+
+        const entries = extractListings(json);
+        console.log('[PRICELINE][DIAG] data.listings entries:', entries.length);
+        if (entries.length === 0) {
+            return [];
+        }
+
+        let droppedNoSegments = 0;
+        let droppedNoPrice = 0;
+
+        const mappedFlights = entries
+            .map((item: any, idx: number): FlightResult | null => {
+                const segments = extractSegmentsFromSlices(item);
+                if (segments.length === 0) {
+                    droppedNoSegments += 1;
+                    return null;
+                }
+
+                const airlineCode = firstString(
+                    item?.airlineCode,
+                    item?.marketingAirlineCode,
+                    segments[0]?.airlineCode,
+                    segments[0]?.marketingAirlineCode,
+                    segments[0]?.carrierCode,
+                );
+
+                const airline = firstString(
+                    item?.airline,
+                    item?.carrier,
+                    item?.marketingCarrier,
+                    segments[0]?.airline,
+                    segments[0]?.carrier,
+                    airlineCode,
+                    'Unknown Airline'
+                );
+
+                const layovers = extractArray(item?.layovers).map((layover: any) => ({
+                    city: firstString(layover?.city, layover?.name),
+                    airport: firstString(layover?.airport, layover?.code, layover?.iata),
+                    duration: toMinutes(layover?.duration || layover?.durationMinutes),
+                }));
+
+                const duration = resolveDuration(item, segments, layovers);
+                const meal = resolveMeal(item, airline, airlineCode);
+                const baggage = resolveBaggage(item, airline);
+
+                const firstPrice = Array.isArray(item?.price) ? item.price[0] : null;
+                const price = parsePositivePrice(firstPrice?.amount);
+                const priceCurrency = firstString(firstPrice?.currencyCode, params.currency, 'USD');
+
+                if (!price || price <= 0) {
+                    droppedNoPrice += 1;
+                    return null;
+                }
+
+                const fromCode = firstString(
+                    item?.departure_airport_code,
+                    item?.from,
+                    item?.origin,
+                    item?.originCode,
+                    segments[0]?.departure_airport_code,
+                    segments[0]?.departureAirportCode,
+                    segments[0]?.from,
+                    segments[0]?.origin,
+                    departureAirportCode
+                ).toUpperCase();
+
+                const toCode = firstString(
+                    item?.arrival_airport_code,
+                    item?.to,
+                    item?.destination,
+                    item?.destinationCode,
+                    segments[segments.length - 1]?.arrival_airport_code,
+                    segments[segments.length - 1]?.arrivalAirportCode,
+                    segments[segments.length - 1]?.to,
+                    segments[segments.length - 1]?.destination,
+                    arrivalAirportCode
+                ).toUpperCase();
+
+                const sourceId = firstString(item?.id, item?.listingId, item?.offerId, item?.token, `priceline_${idx}`);
+                const flightNumber = firstString(
+                    item?.flightNumber,
+                    item?.flightNo,
+                    segments[0]?.flightNumber,
+                    segments[0]?.flight_no,
+                    segments[0]?.flightNumberText,
+                    'N/A'
+                );
+
+                return {
+                    id: `PRICELINE_${sourceId}`,
+                    source: 'PRICELINE' as any,
+                    airline,
+                    airlineLogo: firstString(item?.airlineLogo, item?.logo, segments[0]?.airlineLogo) || undefined,
+                    flightNumber,
+                    from: fromCode || departureAirportCode,
+                    to: toCode || arrivalAirportCode,
+                    departTime: duration.departTime || params.date,
+                    arriveTime: duration.arriveTime || params.date,
+                    duration: duration.resolved,
+                    durationLabel: `${Math.floor(duration.resolved / 60)}h ${duration.resolved % 60}m`,
+                    stops: Math.max(0, segments.length - 1),
+                    price,
+                    currency: priceCurrency,
+                    cabinClass: (params.cabin || 'economy') as any,
+                    layovers,
+                    segments: segments.map((segment: any) => ({
+                        departure: firstString(segment?.departure, segment?.departTime, segment?.departing_at, segment?.departure_time, segment?.departureDateTime),
+                        arrival: firstString(segment?.arrival, segment?.arriveTime, segment?.arriving_at, segment?.arrival_time, segment?.arrivalDateTime),
+                        duration: parseDurationMinutes(segment?.duration || segment?.durationMinutes),
+                        airline: firstString(segment?.airline, segment?.carrier, airline),
+                        flightNumber: firstString(segment?.flightNumber, segment?.flight_no, flightNumber),
+                        origin: firstString(segment?.origin, segment?.from, segment?.departureAirport, segment?.departure_airport_code, segment?.departureAirportCode, fromCode),
+                        destination: firstString(segment?.destination, segment?.to, segment?.arrivalAirport, segment?.arrival_airport_code, segment?.arrivalAirportCode, toCode),
+                        aircraft: firstString(segment?.aircraft, segment?.equipment),
+                    })),
+                    meal,
+                    amenities: {
+                        hasMeal: meal === 'included',
+                        hasWifi: typeof item?.amenities?.hasWifi === 'boolean' ? item.amenities.hasWifi : undefined,
+                        baggage: baggage.baggageText,
+                    } as any,
+                    policies: {
+                        baggageKg: baggage.checkedKg,
+                        cabinBagKg: baggage.cabinKg,
+                    },
+                    durationDebug: duration.debug,
+                } as FlightResult;
+            })
+            .filter((flight): flight is FlightResult => flight !== null);
+
+        console.log('[PRICELINE][DIAG] Mapping stats:', {
+            rawEntries: entries.length,
+            mappedFlights: mappedFlights.length,
+            droppedNoSegments,
+            droppedNoPrice,
+        });
+
+        if (mappedFlights.length === 0 && entries.length > 0) {
+            console.warn('[PRICELINE][DIAG] data.listings exists but all rows dropped during mapping');
+        }
+
+        return mappedFlights;
+    } catch (error: any) {
+        if (error instanceof PricelineRateLimitError) {
+            throw error;
+        }
+        console.error('[PRICELINE][DIAG] Request failed:', error?.message || error);
+        lastError = error;
     }
 
     if (lastError) {
