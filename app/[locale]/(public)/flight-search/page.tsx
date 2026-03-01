@@ -225,6 +225,12 @@ function SearchPageContent() {
 
     async function handleSearch(e: React.FormEvent) {
         e.preventDefault();
+
+        if (fromCity && fromIata) {
+            localStorage.setItem('lastFlightOrigin', fromCity);
+            localStorage.setItem('lastFlightOriginIata', fromIata.toUpperCase());
+        }
+
         executeSearch({
             origin: fromIata,
             destination: toIata,
@@ -372,13 +378,16 @@ function SearchPageContent() {
 
                             {/* From & To with Swap Button */}
                             <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-4 items-end">
-                                <SmartCitySearch 
-                                    placeholder={t('from')} 
-                                    value={fromCity} 
-                                    iataCode={fromIata}
-                                    onChange={handleFromChange}
-                                    isDestination={false}
-                                />
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-slate-700">{t('from')}</label>
+                                    <SmartCitySearch 
+                                        placeholder={t('from')} 
+                                        value={fromCity} 
+                                        iataCode={fromIata}
+                                        onChange={handleFromChange}
+                                        isDestination={false}
+                                    />
+                                </div>
                                 <button 
                                     type="button" 
                                     onClick={swapCities} 
@@ -386,13 +395,16 @@ function SearchPageContent() {
                                 >
                                     <ArrowRightLeft className="h-5 w-5" />
                                 </button>
-                                <SmartCitySearch 
-                                    placeholder={t('to')} 
-                                    value={toCity} 
-                                    iataCode={toIata}
-                                    onChange={handleToChange}
-                                    isDestination={true}
-                                />
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-slate-700">{t('to')}</label>
+                                    <SmartCitySearch 
+                                        placeholder={t('to')} 
+                                        value={toCity} 
+                                        iataCode={toIata}
+                                        onChange={handleToChange}
+                                        isDestination={true}
+                                    />
+                                </div>
                             </div>
 
                             {/* Dates */}

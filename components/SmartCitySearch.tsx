@@ -45,9 +45,6 @@ interface CityOption {
     isMajor?: boolean;
 }
 
-let originAutofillInitialized = false;
-const ORIGIN_AUTOFILL_SESSION_KEY = 'smartCitySearch.origin.autofill.initialized';
-
 export function SmartCitySearch({
     placeholder = 'From',
     value,
@@ -66,6 +63,7 @@ export function SmartCitySearch({
     const inputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const onChangeRef = useRef(onChange);
+    const didBootstrapOriginRef = useRef(false);
 
     useEffect(() => {
         onChangeRef.current = onChange;
@@ -77,23 +75,12 @@ export function SmartCitySearch({
             return;
         }
 
-        if (originAutofillInitialized) {
+        if (didBootstrapOriginRef.current) {
             return;
         }
-
-        if (typeof window !== 'undefined') {
-            const alreadyInitializedInSession = sessionStorage.getItem(ORIGIN_AUTOFILL_SESSION_KEY) === '1';
-            if (alreadyInitializedInSession) {
-                originAutofillInitialized = true;
-                return;
-            }
-        }
+        didBootstrapOriginRef.current = true;
 
         if (value && iataCode) {
-            originAutofillInitialized = true;
-            if (typeof window !== 'undefined') {
-                sessionStorage.setItem(ORIGIN_AUTOFILL_SESSION_KEY, '1');
-            }
             return;
         }
 
@@ -120,11 +107,6 @@ export function SmartCitySearch({
                 }
             } catch {
                 // no-op: silent fallback for bootstrap
-            } finally {
-                originAutofillInitialized = true;
-                if (typeof window !== 'undefined') {
-                    sessionStorage.setItem(ORIGIN_AUTOFILL_SESSION_KEY, '1');
-                }
             }
         };
 

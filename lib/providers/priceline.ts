@@ -393,6 +393,9 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         arrival_airport_code: arrivalAirportCode,
         departure_date: date,
         number_of_adults: numberOfAdults,
+        originAirportCode: departureAirportCode,
+        destinationAirportCode: arrivalAirportCode,
+        departureDate: date,
     });
 
     const requestUrl = `${RAPID_API_BASE}/flights/search-one-way?${query.toString()}`;
@@ -407,6 +410,9 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
             arrival_airport_code: arrivalAirportCode,
             departure_date: date,
             number_of_adults: numberOfAdults,
+            originAirportCode: departureAirportCode,
+            destinationAirportCode: arrivalAirportCode,
+            departureDate: date,
         });
 
         const response = await fetch(requestUrl, {
@@ -460,6 +466,13 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         }
 
         const entries = extractListings(json);
+        const airlineCatalog = new Map<string, string>(
+            extractArray(json?.data?.airline).map((airline: any) => [
+                String(airline?.code || '').toUpperCase(),
+                String(airline?.name || '').trim(),
+            ])
+        );
+
         console.log('[PRICELINE][DIAG] listings path stats:', {
             data_data_listings: Array.isArray(json?.data?.data?.listings)
                 ? json.data.data.listings.length
@@ -491,6 +504,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                 const airlineCode = firstString(
                     item?.airlineCode,
                     item?.marketingAirlineCode,
+                    segments[0]?.marketingAirline,
                     segments[0]?.airlineCode,
                     segments[0]?.marketingAirlineCode,
                     segments[0]?.carrierCode,
@@ -500,6 +514,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     item?.airline,
                     item?.carrier,
                     item?.marketingCarrier,
+                    airlineCatalog.get(String(airlineCode || '').toUpperCase()),
                     segments[0]?.airline,
                     segments[0]?.carrier,
                     airlineCode,
@@ -517,8 +532,18 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                 const baggage = resolveBaggage(item, airline);
 
                 const firstPrice = Array.isArray(item?.price) ? item.price[0] : null;
-                const price = parsePositivePrice(firstPrice?.amount);
-                const priceCurrency = firstString(firstPrice?.currencyCode, params.currency, 'USD');
+                const price =
+                    parsePositivePrice(firstPrice?.amount) ||
+                    parsePositivePrice(item?.totalPriceWithDecimal?.price) ||
+                    parsePositivePrice(item?.totalPrice?.price) ||
+                    parsePositivePrice(item?.totalPrice);
+                const priceCurrency = firstString(
+                    firstPrice?.currencyCode,
+                    item?.totalPriceWithDecimal?.currencyCode,
+                    item?.totalPrice?.currencyCode,
+                    params.currency,
+                    'USD'
+                );
 
                 if (!price || price <= 0) {
                     droppedNoPrice += 1;
@@ -530,6 +555,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     item?.from,
                     item?.origin,
                     item?.originCode,
+                    segments[0]?.departInfo?.airport?.code,
                     segments[0]?.departure_airport_code,
                     segments[0]?.departureAirportCode,
                     segments[0]?.from,
@@ -542,6 +568,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     item?.to,
                     item?.destination,
                     item?.destinationCode,
+                    segments[segments.length - 1]?.arrivalInfo?.airport?.code,
                     segments[segments.length - 1]?.arrival_airport_code,
                     segments[segments.length - 1]?.arrivalAirportCode,
                     segments[segments.length - 1]?.to,
@@ -577,13 +604,48 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     cabinClass: (params.cabin || 'economy') as any,
                     layovers,
                     segments: segments.map((segment: any) => ({
-                        departure: firstString(segment?.departure, segment?.departTime, segment?.departing_at, segment?.departure_time, segment?.departureDateTime),
-                        arrival: firstString(segment?.arrival, segment?.arriveTime, segment?.arriving_at, segment?.arrival_time, segment?.arrivalDateTime),
+                        departure: firstString(
+                            segment?.departure,
+                            segment?.departTime,
+                            segment?.departing_at,
+                            segment?.departure_time,
+                            segment?.departureDateTime,
+                            segment?.departInfo?.time?.dateTime
+                        ),
+                        arrival: firstString(
+                            segment?.arrival,
+                            segment?.arriveTime,
+                            segment?.arriving_at,
+                            segment?.arrival_time,
+                            segment?.arrivalDateTime,
+                            segment?.arrivalInfo?.time?.dateTime
+                        ),
                         duration: parseDurationMinutes(segment?.duration || segment?.durationMinutes),
-                        airline: firstString(segment?.airline, segment?.carrier, airline),
+                        airline: firstString(
+                            segment?.airline,
+                            segment?.carrier,
+                            airlineCatalog.get(String(segment?.marketingAirline || '').toUpperCase()),
+                            airline
+                        ),
                         flightNumber: firstString(segment?.flightNumber, segment?.flight_no, flightNumber),
-                        origin: firstString(segment?.origin, segment?.from, segment?.departureAirport, segment?.departure_airport_code, segment?.departureAirportCode, fromCode),
-                        destination: firstString(segment?.destination, segment?.to, segment?.arrivalAirport, segment?.arrival_airport_code, segment?.arrivalAirportCode, toCode),
+                        origin: firstString(
+                            segment?.origin,
+                            segment?.from,
+                            segment?.departureAirport,
+                            segment?.departure_airport_code,
+                            segment?.departureAirportCode,
+                            segment?.departInfo?.airport?.code,
+                            fromCode
+                        ),
+                        destination: firstString(
+                            segment?.destination,
+                            segment?.to,
+                            segment?.arrivalAirport,
+                            segment?.arrival_airport_code,
+                            segment?.arrivalAirportCode,
+                            segment?.arrivalInfo?.airport?.code,
+                            toCode
+                        ),
                         aircraft: firstString(segment?.aircraft, segment?.equipment),
                     })),
                     meal,
