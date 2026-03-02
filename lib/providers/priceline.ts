@@ -63,6 +63,36 @@ const parsePositivePrice = (value: unknown): number => {
     return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
 };
 
+const DEFAULT_AIRLINE_LOGO = '/airlines/default.png';
+
+const toAbsoluteUrl = (baseUrl: unknown, imagePath: unknown): string => {
+    const rawPath = String(imagePath || '').trim();
+    if (!rawPath) return '';
+    if (/^https?:\/\//i.test(rawPath)) return rawPath;
+    if (rawPath.startsWith('//')) return `https:${rawPath}`;
+
+    const rawBase = String(baseUrl || '').trim();
+    if (rawBase) {
+        try {
+            return new URL(rawPath, rawBase.endsWith('/') ? rawBase : `${rawBase}/`).toString();
+        } catch {
+        }
+    }
+
+    if (rawPath.startsWith('/')) {
+        return `${RAPID_API_BASE}${rawPath}`;
+    }
+
+    return rawPath;
+};
+
+const toGstaticLogo = (airlineCode: unknown): string => {
+    const normalizedCode = String(airlineCode || '').trim().toUpperCase();
+    return /^[A-Z0-9]{2,3}$/.test(normalizedCode)
+        ? `https://www.gstatic.com/flights/airline_logos/70px/${normalizedCode}.png`
+        : '';
+};
+
 const parseDurationMinutes = (value: unknown): number => {
     if (typeof value === 'number' && Number.isFinite(value)) {
         return Math.max(0, Math.round(value));
@@ -466,11 +496,29 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         }
 
         const entries = extractListings(json);
-        const airlineCatalog = new Map<string, string>(
-            extractArray(json?.data?.airline).map((airline: any) => [
-                String(airline?.code || '').toUpperCase(),
-                String(airline?.name || '').trim(),
-            ])
+        const airlineImagePath = firstString(
+            json?.data?.airlineImagePath,
+            json?.data?.data?.airlineImagePath,
+            json?.airlineImagePath
+        );
+        const airlineCatalog = new Map<string, { name: string; logo: string }>(
+            extractArray(json?.data?.airline).map((airline: any) => {
+                const code = String(airline?.code || '').toUpperCase();
+                const name = String(airline?.name || '').trim();
+                const logoPath = firstString(
+                    airline?.smallImage,
+                    airline?.mediumImage,
+                    airline?.largeImage,
+                    airline?.logo,
+                    airline?.image,
+                    airline?.imageUrl
+                );
+                const logo = toAbsoluteUrl(
+                    firstString(airline?.airlineImagePath, airlineImagePath),
+                    logoPath
+                );
+                return [code, { name, logo }];
+            })
         );
 
         console.log('[PRICELINE][DIAG] listings path stats:', {
@@ -514,12 +562,24 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     item?.airline,
                     item?.carrier,
                     item?.marketingCarrier,
-                    airlineCatalog.get(String(airlineCode || '').toUpperCase()),
+                    airlineCatalog.get(String(airlineCode || '').toUpperCase())?.name,
                     segments[0]?.airline,
                     segments[0]?.carrier,
                     airlineCode,
                     'Unknown Airline'
                 );
+
+                const catalogLogo = airlineCatalog.get(String(airlineCode || '').toUpperCase())?.logo;
+                const listingLogo = toAbsoluteUrl(
+                    firstString(item?.airlineImagePath, airlineImagePath),
+                    firstString(item?.smallImage, item?.logo, item?.airlineLogo)
+                );
+                const segmentLogo = toAbsoluteUrl(
+                    firstString(segments[0]?.airlineImagePath, airlineImagePath),
+                    firstString(segments[0]?.smallImage, segments[0]?.logo, segments[0]?.airlineLogo)
+                );
+                const airlineLogo =
+                    firstString(listingLogo, segmentLogo, catalogLogo, toGstaticLogo(airlineCode)) || DEFAULT_AIRLINE_LOGO;
 
                 const layovers = extractArray(item?.layovers).map((layover: any) => ({
                     city: firstString(layover?.city, layover?.name),
@@ -590,7 +650,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     id: `PRICELINE_${sourceId}`,
                     source: 'PRICELINE' as any,
                     airline,
-                    airlineLogo: firstString(item?.airlineLogo, item?.logo, segments[0]?.airlineLogo) || undefined,
+                    airlineLogo,
                     flightNumber,
                     from: fromCode || departureAirportCode,
                     to: toCode || arrivalAirportCode,
@@ -624,7 +684,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                         airline: firstString(
                             segment?.airline,
                             segment?.carrier,
-                            airlineCatalog.get(String(segment?.marketingAirline || '').toUpperCase()),
+                            airlineCatalog.get(String(segment?.marketingAirline || '').toUpperCase())?.name,
                             airline
                         ),
                         flightNumber: firstString(segment?.flightNumber, segment?.flight_no, flightNumber),

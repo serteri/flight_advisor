@@ -2,11 +2,36 @@
 
 import { useTranslations } from 'next-intl';
 import { Lock, Wifi, Utensils, Luggage, Eye, BellRing, Info, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
 import type { UserTier } from '@/lib/tierUtils';
 import { getMealStatus, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
+
+const DEFAULT_AIRLINE_LOGO = '/airlines/default.png';
+
+const extractAirlineCode = (flight: any): string => {
+    const candidates = [
+        flight?.airlineCode,
+        flight?.carrierCode,
+        flight?.carrier,
+        flight?.marketingAirlineCode,
+        flight?.segments?.[0]?.carrierCode,
+        flight?.segments?.[0]?.marketingAirline,
+        flight?.segments?.[0]?.airlineCode,
+    ];
+
+    for (const value of candidates) {
+        const normalized = String(value || '').trim().toUpperCase();
+        if (/^[A-Z0-9]{2,3}$/.test(normalized)) {
+            return normalized;
+        }
+    }
+    return '';
+};
+
+const toGstaticLogo = (airlineCode: string): string =>
+    airlineCode ? `https://www.gstatic.com/flights/airline_logos/70px/${airlineCode}.png` : '';
 
 export default function FlightResultCard({ 
     flight, 
@@ -37,7 +62,6 @@ export default function FlightResultCard({
     const arrivalTime = flight.arrivalTime || flight.arriveTime;
     const airline = flight.airline || 'Unknown Airline';
     const flightNumber = flight.flightNumber || 'N/A';
-    const airlineLogo = flight.airlineLogo || '/default-airline.png';
     const source = flight.source || 'UNKNOWN';
     const origin = flight.origin || flight.from || 'XXX';
     const destination = flight.destination || flight.to || 'XXX';
@@ -59,6 +83,28 @@ export default function FlightResultCard({
 
     const originText = toText(origin, 'XXX');
     const destinationText = toText(destination, 'XXX');
+    const airlineCode = extractAirlineCode(flight);
+
+    const airlineLogoCandidates = useMemo(() => {
+        const candidates = [
+            flight?.airlineLogo,
+            flight?.logo,
+            flight?.segments?.[0]?.airlineLogo,
+            toGstaticLogo(airlineCode),
+            DEFAULT_AIRLINE_LOGO,
+        ]
+            .map((value) => String(value || '').trim())
+            .filter(Boolean);
+
+        return Array.from(new Set(candidates));
+    }, [flight?.airlineLogo, flight?.logo, flight?.segments, airlineCode]);
+
+    const [logoIndex, setLogoIndex] = useState(0);
+    useEffect(() => {
+        setLogoIndex(0);
+    }, [airlineLogoCandidates]);
+
+    const airlineLogo = airlineLogoCandidates[logoIndex] || DEFAULT_AIRLINE_LOGO;
 
     const formatLocalTime = (value: any) => {
         if (!value) return '--:--';
@@ -289,7 +335,22 @@ export default function FlightResultCard({
                 {/* SOL: Uçuş Detayları */}
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-4">
-                        <img src={airlineLogo} alt={airline} onError={(e) => { e.currentTarget.src = '/default-airline.png'; }} className="w-12 h-12 object-contain" />
+                        <div className="w-12 h-12 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                            <img
+                                src={airlineLogo}
+                                alt={airline}
+                                width={48}
+                                height={48}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-12 h-12 object-contain"
+                                onError={() => {
+                                    setLogoIndex((current) =>
+                                        current < airlineLogoCandidates.length - 1 ? current + 1 : current
+                                    );
+                                }}
+                            />
+                        </div>
                         <div>
                             <h4 className="font-bold text-lg text-slate-900 leading-tight">{airline}</h4>
                             <div className="flex gap-2 items-center mt-1">
