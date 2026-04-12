@@ -4,6 +4,13 @@ import { FlightResult } from '@/types/hybridFlight';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRICELINE_CACHE_FLIGHT_NUMBER = '__PRICELINE_CACHE__';
 
+type RecentRouteSearchRecord = {
+    flightNumber: string;
+    price: number;
+    provider: string;
+    createdAt: Date;
+};
+
 const hasExplicitTimezone = (value: string): boolean =>
     /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
@@ -290,12 +297,7 @@ export async function getRecentRouteSearchRecords(
     departureDate: string,
     windowMinutes = 15,
     provider?: string
-): Promise<Array<{
-    flightNumber: string;
-    price: number;
-    provider: string;
-    createdAt: Date;
-}>> {
+): Promise<RecentRouteSearchRecord[]> {
     const start = normalizeUtcDate(departureDate);
     const end = new Date(start.getTime() + DAY_MS);
     const recentFrom = new Date(Date.now() - windowMinutes * 60 * 1000);
@@ -335,14 +337,14 @@ export async function getRecentRouteSearchRecords(
             orderBy: { createdAt: 'desc' },
         });
 
-        return records
+        return (records
             .map((record: any) => ({
                 flightNumber: String(record.flightNumber || ''),
                 price: Number(record.price || 0),
                 provider: String(record.provider || 'UNKNOWN').toUpperCase(),
                 createdAt: new Date(record.createdAt),
             }))
-            .filter((record) => record.flightNumber && Number.isFinite(record.price) && record.price > 0);
+            .filter((record: RecentRouteSearchRecord) => record.flightNumber && Number.isFinite(record.price) && record.price > 0)) as RecentRouteSearchRecord[];
     } catch (error: any) {
         console.warn('[FLIGHT_SEARCH_RECORD] records lookup skipped:', error?.message || error);
         return [];
