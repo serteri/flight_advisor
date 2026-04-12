@@ -27,6 +27,8 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/geoip-lite": "^1.4.4",
     "@types/node": "^20",
+    "@types/node-telegram-bot-api": "^0.64.13",
+    "@types/pdfkit": "^0.17.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19",
     "airports": "^1.0.0",
@@ -67,8 +69,6 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/node-telegram-bot-api": "^0.64.13",
-    "@types/pdfkit": "^0.17.4",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",
     "tsx": "^4.21.0"
