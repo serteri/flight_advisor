@@ -4,6 +4,8 @@ import { toMinutes } from '@/lib/search/flightSearchRecordStore';
 const RAPID_API_KEY = process.env.RAPID_API_KEY;
 const RAPID_API_HOST = process.env.RAPID_API_HOST_PRICELINE || 'priceline-com2.p.rapidapi.com';
 const RAPID_API_BASE = `https://${RAPID_API_HOST}`;
+const DEFAULT_TARGET_CURRENCY = 'AUD';
+const FALLBACK_USD_TO_AUD_RATE = 1.53;
 
 const FULL_SERVICE_CARRIERS = [
     'SINGAPORE AIRLINES',
@@ -61,6 +63,56 @@ const parsePositivePrice = (value: unknown): number => {
               ? parseFloat(value.replace(/[^0-9.]/g, ''))
               : NaN;
     return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const normalizeCurrencyCode = (value: unknown, fallback = 'USD'): string => {
+    const code = String(value || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : fallback;
+};
+
+const getUsdToAudRate = (): number => {
+    const envRate = Number.parseFloat(String(process.env.PRICELINE_USD_TO_AUD_RATE || ''));
+    if (Number.isFinite(envRate) && envRate > 0) {
+        return envRate;
+    }
+    return FALLBACK_USD_TO_AUD_RATE;
+};
+
+const normalizePricelineFare = (
+    rawPrice: number,
+    rawCurrency: string,
+    expectedCurrency: string,
+): { price: number; currency: string; converted: boolean; rate?: number } => {
+    if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
+        return { price: 0, currency: expectedCurrency, converted: false };
+    }
+
+    const sourceCurrency = normalizeCurrencyCode(rawCurrency, 'USD');
+    const targetCurrency = normalizeCurrencyCode(expectedCurrency, DEFAULT_TARGET_CURRENCY);
+
+    if (sourceCurrency === targetCurrency) {
+        return {
+            price: parseFloat(rawPrice.toFixed(2)),
+            currency: targetCurrency,
+            converted: false,
+        };
+    }
+
+    if (sourceCurrency === 'USD' && targetCurrency === 'AUD') {
+        const rate = getUsdToAudRate();
+        return {
+            price: parseFloat((rawPrice * rate).toFixed(2)),
+            currency: 'AUD',
+            converted: true,
+            rate,
+        };
+    }
+
+    return {
+        price: parseFloat(rawPrice.toFixed(2)),
+        currency: sourceCurrency,
+        converted: false,
+    };
 };
 
 const DEFAULT_AIRLINE_LOGO = '/airlines/default.png';
@@ -254,7 +306,56 @@ const resolveMeal = (item: any, airline: string, airlineCode?: string): 'include
     return isFullServiceCarrier(airline, airlineCode) ? 'included' : 'none';
 };
 
-const resolveBaggage = (item: any, airline: string): { baggageText: string; checkedKg: number; cabinKg: number } => {
+const extractStringsDeep = (value: unknown, depth = 0): string[] => {
+    if (depth > 4 || value === null || value === undefined) return [];
+    if (typeof value === 'string') return value.trim() ? [value.trim()] : [];
+    if (typeof value === 'number' || typeof value === 'boolean') return [String(value)];
+    if (Array.isArray(value)) {
+        return value.flatMap((entry) => extractStringsDeep(entry, depth + 1));
+    }
+    if (typeof value === 'object') {
+        return Object.values(value as Record<string, unknown>).flatMap((entry) =>
+            extractStringsDeep(entry, depth + 1)
+        );
+    }
+    return [];
+};
+
+const parseWeightKg = (value: unknown): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.max(0, Math.round(value));
+    }
+
+    if (typeof value !== 'string') return 0;
+
+    const text = value.trim().toLowerCase();
+    if (!text) return 0;
+
+    const kgMatch = text.match(/(\d+(?:\.\d+)?)\s*kg\b/i);
+    if (kgMatch) {
+        return Math.max(0, Math.round(parseFloat(kgMatch[1])));
+    }
+
+    const lbMatch = text.match(/(\d+(?:\.\d+)?)\s*(lb|lbs|pound|pounds)\b/i);
+    if (lbMatch) {
+        const pounds = parseFloat(lbMatch[1]);
+        return Math.max(0, Math.round(pounds * 0.453592));
+    }
+
+    if (/^\d+(?:\.\d+)?$/.test(text)) {
+        const numeric = parseFloat(text);
+        if (Number.isFinite(numeric) && numeric > 0 && numeric <= 70) {
+            return Math.round(numeric);
+        }
+    }
+
+    return 0;
+};
+
+const resolveBaggage = (
+    item: any,
+    airline: string
+): { baggageText: string; checkedKg: number; cabinKg: number; checkedIncluded: boolean } => {
     const baggageRaw =
         item?.baggage ||
         item?.fare?.baggage ||
@@ -263,40 +364,98 @@ const resolveBaggage = (item: any, airline: string): { baggageText: string; chec
         item?.amenities?.baggage;
 
     const baggageText = typeof baggageRaw === 'string' ? baggageRaw : '';
-    const parsedKg = parseDurationMinutes(baggageText);
+
+    const checkedNarratives = [
+        baggageRaw,
+        item?.baggageInfo,
+        item?.fare?.baggageInfo,
+        item?.fareRules,
+        item?.fare?.fareRules,
+        item?.fareRule,
+    ]
+        .flatMap((entry) => extractStringsDeep(entry))
+        .filter(Boolean);
+
+    const checkedKgFromText = checkedNarratives.reduce((maxKg, text) => {
+        const normalized = text.toLowerCase();
+        const isCheckedContext =
+            normalized.includes('checked') ||
+            normalized.includes('check-in') ||
+            normalized.includes('hold bag') ||
+            normalized.includes('hold baggage') ||
+            normalized.includes('bagaj');
+        if (!isCheckedContext) return maxKg;
+        return Math.max(maxKg, parseWeightKg(text));
+    }, 0);
+
+    const cabinKgFromText = checkedNarratives.reduce((maxKg, text) => {
+        const normalized = text.toLowerCase();
+        const isCabinContext =
+            normalized.includes('cabin') ||
+            normalized.includes('carry') ||
+            normalized.includes('hand bag');
+        if (!isCabinContext) return maxKg;
+        return Math.max(maxKg, parseWeightKg(text));
+    }, 0);
+
+    const explicitNoCheckedFromText = checkedNarratives.some((text) => {
+        const normalized = text.toLowerCase();
+        return (
+            (normalized.includes('checked') || normalized.includes('check-in') || normalized.includes('hold bag')) &&
+            (normalized.includes('not included') ||
+                normalized.includes('no checked') ||
+                normalized.includes('0 piece') ||
+                normalized.includes('0pc') ||
+                normalized.includes('excluded'))
+        );
+    });
+
+    const parsedKg = parseWeightKg(baggageText);
 
     const checkedKg =
-        parseDurationMinutes(item?.policies?.baggageKg) ||
-        parseDurationMinutes(item?.fare?.checkedBaggageKg) ||
-        parseDurationMinutes(item?.checkedBaggage?.kg) ||
+        parseWeightKg(item?.policies?.baggageKg) ||
+        parseWeightKg(item?.fare?.checkedBaggageKg) ||
+        parseWeightKg(item?.checkedBaggage?.kg) ||
+        parseWeightKg(item?.baggageInfo?.checkedBaggageKg) ||
+        parseWeightKg(item?.baggageInfo?.checked?.kg) ||
+        parseWeightKg(item?.fareRules?.checkedBaggageKg) ||
+        checkedKgFromText ||
         (parsedKg > 0 ? parsedKg : 0);
 
     const cabinKg =
-        parseDurationMinutes(item?.policies?.cabinBagKg) ||
-        parseDurationMinutes(item?.fare?.cabinBaggageKg) ||
-        parseDurationMinutes(item?.carryOn?.kg) ||
+        parseWeightKg(item?.policies?.cabinBagKg) ||
+        parseWeightKg(item?.fare?.cabinBaggageKg) ||
+        parseWeightKg(item?.carryOn?.kg) ||
+        parseWeightKg(item?.baggageInfo?.cabinBaggageKg) ||
+        cabinKgFromText ||
         7;
 
-    if (checkedKg > 0) {
+    const checkedIncluded = checkedKg > 0 || (!explicitNoCheckedFromText && isFullServiceCarrier(airline));
+
+    if (checkedIncluded && checkedKg > 0) {
         return {
             baggageText: `${checkedKg}kg Dahil`,
             checkedKg,
             cabinKg,
+            checkedIncluded: true,
         };
     }
 
-    if (isFullServiceCarrier(airline)) {
+    if (checkedIncluded) {
+        const inferredCheckedKg = checkedKg > 0 ? checkedKg : 20;
         return {
-            baggageText: '20kg Dahil',
-            checkedKg: 20,
+            baggageText: `${inferredCheckedKg}kg Dahil`,
+            checkedKg: inferredCheckedKg,
             cabinKg,
+            checkedIncluded: true,
         };
     }
 
     return {
-        baggageText: baggageText || 'Kontrol Et',
+        baggageText: baggageText || 'Bagaj dahil değil',
         checkedKg: 0,
         cabinKg,
+        checkedIncluded: false,
     };
 };
 
@@ -411,6 +570,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     }
 
     const date = params.date.split('T')[0];
+    const expectedCurrency = normalizeCurrencyCode(params.currency, DEFAULT_TARGET_CURRENCY);
 
     const departureAirportCode = String(params.origin || '').toUpperCase();
     const arrivalAirportCode = String(params.destination || '').toUpperCase();
@@ -604,6 +764,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     params.currency,
                     'USD'
                 );
+                const normalizedFare = normalizePricelineFare(price, priceCurrency, expectedCurrency);
 
                 if (!price || price <= 0) {
                     droppedNoPrice += 1;
@@ -659,8 +820,9 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     duration: duration.resolved,
                     durationLabel: `${Math.floor(duration.resolved / 60)}h ${duration.resolved % 60}m`,
                     stops: Math.max(0, segments.length - 1),
-                    price,
-                    currency: priceCurrency,
+                    price: normalizedFare.price,
+                    currency: normalizedFare.currency,
+                    baggage: baggage.checkedIncluded ? 'checked' : baggage.cabinKg > 0 ? 'cabin' : 'none',
                     cabinClass: (params.cabin || 'economy') as any,
                     layovers,
                     segments: segments.map((segment: any) => ({
@@ -718,7 +880,27 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                         baggageKg: baggage.checkedKg,
                         cabinBagKg: baggage.cabinKg,
                     },
-                    durationDebug: duration.debug,
+                    baggageSummary: {
+                        checked: baggage.checkedIncluded
+                            ? `${baggage.checkedKg || 20}kg Dahil`
+                            : 'Dahil Değil',
+                        cabin: `${baggage.cabinKg || 7}kg Kabin`,
+                        totalWeight: baggage.checkedIncluded
+                            ? `${(baggage.checkedKg || 20) + (baggage.cabinKg || 7)}kg`
+                            : `${baggage.cabinKg || 7}kg`,
+                    },
+                    durationDebug: {
+                        ...duration.debug,
+                        priceNormalization: {
+                            originalPrice: parseFloat(price.toFixed(2)),
+                            originalCurrency: normalizeCurrencyCode(priceCurrency, 'USD'),
+                            expectedCurrency,
+                            converted: normalizedFare.converted,
+                            conversionRate: normalizedFare.rate,
+                            normalizedPrice: normalizedFare.price,
+                            normalizedCurrency: normalizedFare.currency,
+                        },
+                    },
                 } as FlightResult;
             })
             .filter((flight): flight is FlightResult => flight !== null);

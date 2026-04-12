@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { FlightResult } from '@/types/hybridFlight';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const PRICELINE_CACHE_FLIGHT_NUMBER = '__PRICELINE_CACHE__';
 
 const hasExplicitTimezone = (value: string): boolean =>
     /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
@@ -280,5 +281,164 @@ export async function hasRecentRouteSearchRecords(
     } catch (error: any) {
         console.warn('[FLIGHT_SEARCH_RECORD] recency lookup skipped:', error?.message || error);
         return false;
+    }
+}
+
+export async function getRecentRouteSearchRecords(
+    origin: string,
+    destination: string,
+    departureDate: string,
+    windowMinutes = 15,
+    provider?: string
+): Promise<Array<{
+    flightNumber: string;
+    price: number;
+    provider: string;
+    createdAt: Date;
+}>> {
+    const start = normalizeUtcDate(departureDate);
+    const end = new Date(start.getTime() + DAY_MS);
+    const recentFrom = new Date(Date.now() - windowMinutes * 60 * 1000);
+
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return [];
+    }
+
+    try {
+        const records = await flightSearchRecordModel.findMany({
+            where: {
+                origin,
+                destination,
+                departureDate: {
+                    gte: start,
+                    lt: end,
+                },
+                createdAt: {
+                    gte: recentFrom,
+                },
+                ...(provider
+                    ? {
+                          provider: {
+                              equals: provider,
+                              mode: 'insensitive',
+                          },
+                      }
+                    : {}),
+            },
+            select: {
+                flightNumber: true,
+                price: true,
+                provider: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return records
+            .map((record: any) => ({
+                flightNumber: String(record.flightNumber || ''),
+                price: Number(record.price || 0),
+                provider: String(record.provider || 'UNKNOWN').toUpperCase(),
+                createdAt: new Date(record.createdAt),
+            }))
+            .filter((record) => record.flightNumber && Number.isFinite(record.price) && record.price > 0);
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] records lookup skipped:', error?.message || error);
+        return [];
+    }
+}
+
+export async function getRecentPricelineRawCache(
+    origin: string,
+    destination: string,
+    departureDate: string,
+    windowMinutes = 20
+): Promise<FlightResult[] | null> {
+    const start = normalizeUtcDate(departureDate);
+    const end = new Date(start.getTime() + DAY_MS);
+    const recentFrom = new Date(Date.now() - windowMinutes * 60 * 1000);
+
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return null;
+    }
+
+    try {
+        const record = await flightSearchRecordModel.findFirst({
+            where: {
+                origin,
+                destination,
+                departureDate: {
+                    gte: start,
+                    lt: end,
+                },
+                provider: {
+                    equals: 'PRICELINE',
+                    mode: 'insensitive',
+                },
+                flightNumber: PRICELINE_CACHE_FLIGHT_NUMBER,
+                cacheStatus: 'SUCCESS',
+                createdAt: {
+                    gte: recentFrom,
+                },
+            },
+            select: {
+                rawResponse: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        const raw = record?.rawResponse as any;
+        if (!raw) return null;
+
+        const flights = Array.isArray(raw?.flights) ? raw.flights : Array.isArray(raw) ? raw : [];
+        if (!Array.isArray(flights) || flights.length === 0) {
+            return null;
+        }
+
+        return flights as FlightResult[];
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] raw Priceline cache lookup skipped:', error?.message || error);
+        return null;
+    }
+}
+
+export async function persistPricelineRawCache(
+    flights: FlightResult[],
+    options: { origin: string; destination: string; departureDate: string }
+): Promise<void> {
+    const departureDate = normalizeUtcDate(options.departureDate);
+    const flightSearchRecordModel = (prisma as any)?.flightSearchRecord;
+    if (!flightSearchRecordModel) {
+        return;
+    }
+
+    const validFlights = flights.filter((flight) => Number.isFinite(Number(flight.price)) && Number(flight.price) > 0);
+    if (validFlights.length === 0) {
+        return;
+    }
+
+    try {
+        await flightSearchRecordModel.create({
+            data: {
+                flightNumber: PRICELINE_CACHE_FLIGHT_NUMBER,
+                origin: options.origin,
+                destination: options.destination,
+                departureDate,
+                price: Math.min(...validFlights.map((flight) => Number(flight.price))),
+                provider: 'PRICELINE',
+                cacheStatus: 'SUCCESS',
+                rawResponse: {
+                    provider: 'PRICELINE',
+                    cachedAt: new Date().toISOString(),
+                    flights: validFlights,
+                },
+            },
+        });
+    } catch (error: any) {
+        console.warn('[FLIGHT_SEARCH_RECORD] raw Priceline cache persist skipped:', error?.message || error);
     }
 }

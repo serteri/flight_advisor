@@ -2,6 +2,7 @@ import { FlightResult } from '@/types/hybridFlight';
 
 export type MealStatus = 'included' | 'paid' | 'none' | 'unknown' | 'assumed_included';
 export type WifiStatus = 'available' | 'unavailable' | 'unknown' | 'check_with_airline';
+export type CanonicalMealStatus = 'included' | 'paid' | 'none';
 
 const TOP_AIRLINE_KEYWORDS = [
     'SINGAPORE AIRLINES',
@@ -69,6 +70,38 @@ export const getMealStatus = (flight: Partial<FlightResult> | null | undefined):
 export const hasAnyMeal = (flight: Partial<FlightResult> | null | undefined): boolean => {
     const status = getMealStatus(flight);
     return status === 'included' || status === 'paid' || status === 'assumed_included';
+};
+
+export const getCanonicalMealStatus = (flight: Partial<FlightResult> | null | undefined): CanonicalMealStatus => {
+    const status = getMealStatus(flight);
+
+    if (status === 'included' || status === 'assumed_included') {
+        return 'included';
+    }
+
+    if (status === 'paid') {
+        return 'paid';
+    }
+
+    return 'none';
+};
+
+export const getCanonicalMealLabel = (
+    flight: Partial<FlightResult> | null | undefined,
+    locale?: string,
+): string => {
+    const status = getCanonicalMealStatus(flight);
+    const isTr = String(locale || '').toLowerCase().startsWith('tr');
+
+    if (status === 'included') {
+        return isTr ? 'Dahil' : 'Included';
+    }
+
+    if (status === 'paid') {
+        return isTr ? 'Ücretli' : 'Paid';
+    }
+
+    return isTr ? 'Yok' : 'None';
 };
 
 export const hasIncludedMeal = (flight: Partial<FlightResult> | null | undefined): boolean => {

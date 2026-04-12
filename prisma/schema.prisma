@@ -217,10 +217,13 @@ model FlightSearchRecord {
   departureDate DateTime
   price         Float
   provider      String
+  rawResponse   Json?
+  cacheStatus   String?  @default("SUCCESS")
   createdAt     DateTime @default(now())
 
   @@index([origin, destination, departureDate])
   @@index([flightNumber, departureDate])
+  @@index([provider, cacheStatus, createdAt])
   @@index([createdAt])
 }
 

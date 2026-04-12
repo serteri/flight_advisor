@@ -20,7 +20,7 @@ const buildCacheKey = (params: HybridSearchParams): string =>
         params.children || 0,
         params.infants || 0,
         params.cabin || 'economy',
-        params.currency || 'USD',
+        params.currency || 'AUD',
     ].join('|');
 
 export async function GET(request: Request) {
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
             children: parseInt(searchParams.get('children') || '0'),
             infants: parseInt(searchParams.get('infants') || '0'),
             cabin: (searchParams.get('cabin') || 'economy') as "economy" | "business" | "first",
-            currency: searchParams.get('currency') || 'USD'
+            currency: searchParams.get('currency') || 'AUD'
         };
 
         const cacheKey = buildCacheKey(queryParams);
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { origin, destination, date, adults = 1, children = 0, infants = 0, cabin = 'economy', currency = 'USD' } = body;
+        const { origin, destination, date, adults = 1, children = 0, infants = 0, cabin = 'economy', currency = 'AUD' } = body;
 
         if (!origin || !destination || !date) {
             return NextResponse.json({ error: 'Eksik parametre' }, { status: 400 });

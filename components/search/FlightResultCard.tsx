@@ -6,32 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
 import type { UserTier } from '@/lib/tierUtils';
-import { getMealStatus, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
-
-const DEFAULT_AIRLINE_LOGO = '/airlines/default.png';
-
-const extractAirlineCode = (flight: any): string => {
-    const candidates = [
-        flight?.airlineCode,
-        flight?.carrierCode,
-        flight?.carrier,
-        flight?.marketingAirlineCode,
-        flight?.segments?.[0]?.carrierCode,
-        flight?.segments?.[0]?.marketingAirline,
-        flight?.segments?.[0]?.airlineCode,
-    ];
-
-    for (const value of candidates) {
-        const normalized = String(value || '').trim().toUpperCase();
-        if (/^[A-Z0-9]{2,3}$/.test(normalized)) {
-            return normalized;
-        }
-    }
-    return '';
-};
-
-const toGstaticLogo = (airlineCode: string): string =>
-    airlineCode ? `https://www.gstatic.com/flights/airline_logos/70px/${airlineCode}.png` : '';
+import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
+import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from '@/lib/airline-logo-utils';
 
 export default function FlightResultCard({ 
     flight, 
@@ -68,7 +44,6 @@ export default function FlightResultCard({
     const price = flight.price || 0;
     const stops = flight.stops ?? 0;
     const duration = flight.duration || 0;
-    const mealStatus = getMealStatus(flight);
     const hasMeal = hasAnyMeal(flight);
     const wifiStatus = getWifiStatus(flight);
 
@@ -83,21 +58,10 @@ export default function FlightResultCard({
 
     const originText = toText(origin, 'XXX');
     const destinationText = toText(destination, 'XXX');
-    const airlineCode = extractAirlineCode(flight);
 
     const airlineLogoCandidates = useMemo(() => {
-        const candidates = [
-            flight?.airlineLogo,
-            flight?.logo,
-            flight?.segments?.[0]?.airlineLogo,
-            toGstaticLogo(airlineCode),
-            DEFAULT_AIRLINE_LOGO,
-        ]
-            .map((value) => String(value || '').trim())
-            .filter(Boolean);
-
-        return Array.from(new Set(candidates));
-    }, [flight?.airlineLogo, flight?.logo, flight?.segments, airlineCode]);
+        return getAirlineLogoCandidates(flight);
+    }, [flight]);
 
     const [logoIndex, setLogoIndex] = useState(0);
     useEffect(() => {
@@ -264,16 +228,7 @@ export default function FlightResultCard({
         const localeCode = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
         const isTrLocale = localeCode === 'tr';
 
-        const mealLabel =
-                mealStatus === 'included'
-                        ? t('included')
-                        : mealStatus === 'assumed_included'
-                            ? (isTrLocale ? 'Muhtemelen dahil' : 'Likely included')
-                            : mealStatus === 'paid'
-                                ? t('paid')
-                                : mealStatus === 'unknown'
-                                    ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
-                                    : (isTrLocale ? 'Yemek yok' : 'No meal');
+        const mealLabel = getCanonicalMealLabel(flight, localeCode);
 
         const wifiLabel =
                 wifiStatus === 'available'
@@ -487,13 +442,13 @@ export default function FlightResultCard({
                             <div className="flex items-center gap-1.5">
                                 <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {flight.policies?.baggageKg 
-                                        ? `${flight.policies.baggageKg}kg` 
-                                        : flight.baggageSummary?.checked 
-                                            ? flight.baggageSummary.checked 
-                                            : flight.amenities?.baggage === 'Dahil' 
-                                                ? '20kg Dahil' 
-                                                : 'Kontrol Et'}
+                                    {flight.policies?.baggageKg > 0
+                                        ? `${flight.policies.baggageKg}kg Dahil`
+                                        : String(flight.baggage || '').toLowerCase() === 'checked'
+                                            ? (isTrLocale ? 'Check-in Dahil' : 'Checked Included')
+                                            : String(flight.baggage || '').toLowerCase() === 'cabin'
+                                                ? `${flight.policies?.cabinBagKg || 7}kg ${isTrLocale ? 'Kabin' : 'Cabin Only'}`
+                                                : flight.baggageSummary?.checked || (isTrLocale ? 'Dahil Değil' : 'Not Included')}
                                 </span>
                             </div>
                             

@@ -297,14 +297,27 @@ const scoreFlight = (
 
     const checkedBaggage = Number(flight.policies?.baggageKg || 0);
     const cabinBaggage = Number(flight.policies?.cabinBagKg || 0);
-    if (checkedBaggage >= 23) {
+    const baggageType = String(flight.baggage || '').toLowerCase();
+    const hasCheckedByType = baggageType === 'checked';
+
+    if (checkedBaggage >= 20) {
         breakdown.baggage = 10;
-        comfortNotes.push('23kg+ check-in bagaj dahil');
+        comfortNotes.push('20kg+ check-in bagaj dahil');
+    } else if (checkedBaggage >= 15) {
+        breakdown.baggage = 9;
+        comfortNotes.push('Check-in bagaj dahil');
+    } else if (checkedBaggage > 0) {
+        breakdown.baggage = 7;
+        comfortNotes.push('Sınırlı check-in bagaj');
+    } else if (hasCheckedByType) {
+        breakdown.baggage = 8;
+        comfortNotes.push('Check-in bagaj dahil (ağırlık bilgisi sınırlı)');
     } else if (checkedBaggage <= 0 && cabinBaggage > 0) {
         breakdown.baggage = 5;
         riskFlags.push('Sadece kabin bagajı');
     } else {
-        breakdown.baggage = checkedBaggage > 0 ? 7 : 4;
+        breakdown.baggage = 4;
+        riskFlags.push('Check-in bagaj dahil değil');
     }
 
     const reliability = resolveReliability(flight.airline);

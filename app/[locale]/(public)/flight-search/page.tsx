@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { SmartCitySearch } from "@/components/SmartCitySearch";
 import { DatePicker } from "@/components/DatePicker";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
+import { FlightFilters, FlightFilterState } from "@/components/search/FlightFilters";
 import { DataSourceIndicator } from "@/components/DataSourceIndicator";
 import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
 import { Suspense } from "react";
@@ -53,6 +54,11 @@ function SearchPageContent() {
     const [results, setResults] = useState<FlightResult[]>([]);
     const [sortedResults, setSortedResults] = useState<FlightResult[]>([]);
     const [currentSort, setCurrentSort] = useState<SortOption>("best");
+    const [filters, setFilters] = useState<FlightFilterState>({
+        airline: "ALL",
+        stops: "ALL",
+        source: "ALL",
+    });
     const [error, setError] = useState<string | null>(null);
     const [viewerTier, setViewerTier] = useState<UserTier>('FREE');
     const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
@@ -76,6 +82,14 @@ function SearchPageContent() {
 
     const showMore = () => {
         setVisibleCount(prev => prev + 20);
+    };
+
+    const resetFilters = () => {
+        setFilters({
+            airline: "ALL",
+            stops: "ALL",
+            source: "ALL",
+        });
     };
 
     // Swap cities function
@@ -346,6 +360,39 @@ function SearchPageContent() {
         }
     }, [results, currentSort]);
 
+    const availableAirlines = useMemo(() => {
+        return Array.from(
+            new Set(
+                results
+                    .map((flight) => String(flight.airline || "").trim())
+                    .filter(Boolean)
+            )
+        ).sort((a, b) => a.localeCompare(b));
+    }, [results]);
+
+    const filteredResults = useMemo(() => {
+        return sortedResults.filter((flight) => {
+            const airline = String(flight.airline || "").trim();
+            const source = String(flight.source || "").toUpperCase();
+            const stops = Number(flight.stops || 0);
+
+            const airlineMatch = filters.airline === "ALL" || airline === filters.airline;
+            const sourceMatch = filters.source === "ALL" || source === filters.source;
+
+            const stopMatch =
+                filters.stops === "ALL" ||
+                (filters.stops === "DIRECT" && stops === 0) ||
+                (filters.stops === "ONE_STOP" && stops === 1) ||
+                (filters.stops === "TWO_PLUS" && stops >= 2);
+
+            return airlineMatch && sourceMatch && stopMatch;
+        });
+    }, [sortedResults, filters]);
+
+    useEffect(() => {
+        setVisibleCount(20);
+    }, [filters, currentSort, results.length]);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
             {/* Hero Section with Search */}
@@ -450,22 +497,33 @@ function SearchPageContent() {
                 <div className="bg-slate-50 min-h-screen py-8">
                     <div className="container mx-auto px-4 max-w-5xl">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-slate-900">{results.length} {t('resultsFound')}</h2>
+                            <h2 className="text-2xl font-bold text-slate-900">
+                                {filteredResults.length} / {results.length} {t('resultsFound')}
+                            </h2>
                         </div>
                         
                         {/* Veri Kaynağı Göstergesi */}
                         <DataSourceIndicator flights={results} />
+
+                        <FlightFilters
+                            filters={filters}
+                            airlines={availableAirlines}
+                            filteredCount={filteredResults.length}
+                            totalCount={results.length}
+                            onChange={setFilters}
+                            onReset={resetFilters}
+                        />
                         
                         {/* Sıralama Çubuğu */}
                         <FlightSortBar 
                             currentSort={currentSort}
                             onSortChange={handleSortChange}
-                            resultCount={results.length}
+                            resultCount={filteredResults.length}
                         />
                         
                         <ErrorBoundary>
-                            <div className="space-y-4">
-                                {sortedResults.slice(0, visibleCount).map((flight, index) => (
+                            <div className="space-y-4" style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }}>
+                                {filteredResults.slice(0, visibleCount).map((flight, index) => (
                                     <FlightResultCard
                                         key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
                                         flight={flight}
@@ -477,13 +535,13 @@ function SearchPageContent() {
                         </ErrorBoundary>
 
                         {/* DAHA FAZLA GÖSTER BUTONU */}
-                        {results.length > visibleCount && (
+                        {filteredResults.length > visibleCount && (
                             <div className="mt-8 text-center">
                                 <button
                                     onClick={showMore}
                                     className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-slate-50 hover:border-slate-400 transition shadow-sm"
                                 >
-                                    {t('showMore', { count: results.length - visibleCount })}
+                                    {t('showMore', { count: filteredResults.length - visibleCount })}
                                 </button>
                             </div>
                         )}

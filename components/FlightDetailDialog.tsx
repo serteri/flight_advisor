@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FlightResult } from "@/types/hybridFlight";
 import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
 import { useLocale } from "next-intl";
-import { getMealStatus, getWifiStatus, hasAnyMeal } from "@/lib/meal-utils";
+import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from "@/lib/meal-utils";
+import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from "@/lib/airline-logo-utils";
 
 interface FlightDetailDialogProps {
     flight: FlightResult | null;
@@ -104,12 +106,20 @@ const toCode = (value: any): string => {
 };
 
 export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: FlightDetailDialogProps) {
-    if (!flight) return null;
     const locale = useLocale();
     const isTr = locale?.toLowerCase().startsWith("tr");
-    const mealStatus = getMealStatus(flight);
+    const airlineLogoCandidates = useMemo(() => getAirlineLogoCandidates(flight), [flight]);
+    const [logoIndex, setLogoIndex] = useState(0);
+
+    useEffect(() => {
+        setLogoIndex(0);
+    }, [airlineLogoCandidates]);
+
+    if (!flight) return null;
+
     const hasMeal = hasAnyMeal(flight);
     const wifiStatus = getWifiStatus(flight);
+    const airlineLogo = airlineLogoCandidates[logoIndex] || DEFAULT_AIRLINE_LOGO;
 
     const labels = {
         departure: isTr ? "Kalkış" : "Departure",
@@ -119,6 +129,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         baggage: isTr ? "Bagaj" : "Baggage",
         cabin: isTr ? "Kabin" : "Cabin",
         checked: isTr ? "Kontrol" : "Checked",
+        checkedNotIncluded: isTr ? "Dahil Değil" : "Not Included",
         segments: isTr ? "Segmentler" : "Segments",
         segment: isTr ? "Seg" : "Seg",
         depShort: "Dep",
@@ -154,16 +165,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         no: isTr ? "Yok" : "No",
     };
 
-    const mealText =
-        mealStatus === "included"
-            ? labels.mealIncluded
-                        : mealStatus === "assumed_included"
-                            ? labels.mealLikelyIncluded
-            : mealStatus === "paid"
-              ? labels.mealPaid
-                            : mealStatus === "unknown"
-                                ? labels.mealUnknown
-                                : labels.mealNone;
+    const mealText = getCanonicalMealLabel(flight, locale);
 
         const wifiText =
                 wifiStatus === 'available'
@@ -196,6 +198,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
             'Kısa Aktarma Riski': 'Short connection risk',
             'Kendi Transferin': 'Self-transfer required',
             'Sadece kabin bagajı': 'Cabin baggage only',
+            'Check-in bagaj dahil değil': 'No checked baggage included',
             'On-time güvenilirliği düşük': 'Low on-time reliability',
             'Eski Uçak': 'Older aircraft',
             'Fiyat rota ortalamasına göre yüksek': 'Price above route average',
@@ -211,6 +214,10 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         const map: Record<string, string> = {
             'Fiyat rota ortalamasına göre çok avantajlı': 'Price is highly advantageous versus route average',
             '23kg+ check-in bagaj dahil': '23kg+ checked baggage included',
+            '20kg+ check-in bagaj dahil': '20kg+ checked baggage included',
+            'Check-in bagaj dahil': 'Checked baggage included',
+            'Sınırlı check-in bagaj': 'Limited checked baggage',
+            'Check-in bagaj dahil (ağırlık bilgisi sınırlı)': 'Checked baggage included (weight details limited)',
             'Havayolu zamanında kalkış performansı güçlü': 'Strong on-time departure performance',
             'Yeni nesil uçak (A350/787 ailesi)': 'New-generation aircraft (A350/787 family)',
             'WiFi mevcut': 'Wi-Fi available',
@@ -223,6 +230,15 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
 
     const segs = Array.isArray(flight.segments) ? flight.segments.filter(s => s) : [];
     const lays = Array.isArray(flight.layovers) ? flight.layovers : [];
+    const checkedBagKg = Number(flight.policies?.baggageKg || 0);
+    const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
+    const baggageType = String(flight.baggage || '').toLowerCase();
+    const checkedBagText =
+        checkedBagKg > 0
+            ? `${checkedBagKg}kg`
+            : baggageType === 'checked'
+                ? labels.yes
+                : labels.checkedNotIncluded;
 
     const totalSegmentMinutes = segs.reduce((sum, s) => sum + segmentDurationMinutes(s), 0);
     const totalLayoverMinutes = lays.reduce((sum, l: any) => sum + toMinutes(l?.duration), 0);
@@ -258,7 +274,22 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-lg">
-                        <img src={flight.airlineLogo || ""} alt={flight.airline} className="w-8 h-8" onError={(e) => {(e.target as any).style.display = "none"}} />
+                        <div className="w-8 h-8 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                            <img
+                                src={airlineLogo}
+                                alt={flight.airline}
+                                width={32}
+                                height={32}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-8 h-8 object-contain"
+                                onError={() => {
+                                    setLogoIndex((current) =>
+                                        current < airlineLogoCandidates.length - 1 ? current + 1 : current
+                                    );
+                                }}
+                            />
+                        </div>
                         <span>{flight.airline} {flight.flightNumber}</span>
                     </DialogTitle>
                 </DialogHeader>
@@ -270,7 +301,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                             <div className="text-right"><div className="text-xs text-slate-500">{labels.arrival}</div><div className="font-bold text-lg">{safeDate(flight.arriveTime)}</div><div className="text-xs text-slate-600">{flight.to || "XXX"}</div></div>
                         </div>
                     </div>
-                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{flight.policies?.cabinBagKg || 7}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{flight.policies?.baggageKg || 20}kg</div></div></div></div>
+                    <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{cabinBagKg}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{checkedBagText}</div></div></div></div>
                     {segs.length > 0 && (
                         <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const segFrom = toCode(s.origin || s.from || s.departure_airport || s.departureAirport || s.origin_airport); const segTo = toCode(s.destination || s.to || s.arrival_airport || s.arrivalAirport || s.destination_airport); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}: {segFrom} → {segTo}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {toCode(lays[i].airport)} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
                     )}

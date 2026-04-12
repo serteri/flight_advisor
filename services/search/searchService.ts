@@ -10,17 +10,28 @@ export type SearchProvidersMeta = {
   rateLimited: boolean;
 };
 
-export async function searchAllProvidersWithMeta(params: HybridSearchParams): Promise<SearchProvidersMeta> {
-  const base = await searchAllProvidersInternal(params);
+type SearchProviderOptions = {
+  skipPriceline?: boolean;
+  injectedFlights?: FlightResult[];
+};
+
+export async function searchAllProvidersWithMeta(
+  params: HybridSearchParams,
+  options: SearchProviderOptions = {}
+): Promise<SearchProvidersMeta> {
+  const base = await searchAllProvidersInternal(params, options);
   return base;
 }
 
 export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
-  const { flights } = await searchAllProvidersInternal(params);
+  const { flights } = await searchAllProvidersInternal(params, {});
   return flights;
 }
 
-async function searchAllProvidersInternal(params: HybridSearchParams): Promise<SearchProvidersMeta> {
+async function searchAllProvidersInternal(
+  params: HybridSearchParams,
+  options: SearchProviderOptions
+): Promise<SearchProvidersMeta> {
   console.log(`\n🔎 Flight Search Started`);
   console.log(`  Route: ${params.origin} → ${params.destination}`);
   console.log(`  Date: ${params.date}`);
@@ -39,10 +50,12 @@ async function searchAllProvidersInternal(params: HybridSearchParams): Promise<S
   }
 
   // PRICELINE - RapidAPI
-  if (process.env.RAPID_API_KEY && process.env.RAPID_API_HOST_PRICELINE) {
+  if (!options.skipPriceline && process.env.RAPID_API_KEY && process.env.RAPID_API_HOST_PRICELINE) {
     console.log(`✅ Adding PRICELINE provider`);
     promises.push(searchPricelineProvider(params));
     providers.push('Priceline');
+  } else if (options.skipPriceline) {
+    console.log(`⏭️ Skipping PRICELINE provider (DB cache hit)`);
   }
 
   console.log(`🚀 Starting ${promises.length} providers...\n`);
@@ -51,9 +64,10 @@ async function searchAllProvidersInternal(params: HybridSearchParams): Promise<S
     const results = await Promise.allSettled(promises);
     const elapsed = Date.now() - startTime;
 
-    let allFlights: FlightResult[] = [];
+    let allFlights: FlightResult[] = [...(options.injectedFlights || [])];
     let duffelCount = 0;
     let pricelineCount = 0;
+    const cachedCount = (options.injectedFlights || []).length;
 
     results.forEach((result, idx) => {
       const providerName = providers[idx] || `Provider-${idx + 1}`;
@@ -133,7 +147,7 @@ async function searchAllProvidersInternal(params: HybridSearchParams): Promise<S
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
-    console.log(`   Duffel: ${duffelCount} | PRICELINE: ${pricelineCount}`);
+    console.log(`   Duffel: ${duffelCount} | PRICELINE: ${pricelineCount} | DB Cache: ${cachedCount}`);
     console.log(`   Filtered: ${filteredFlights.length} (origin/destination match)\n`);
     
     // Sort by price
