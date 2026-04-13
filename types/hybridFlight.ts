@@ -1,4 +1,4 @@
-export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "KIWI" | "SKY_RAPID" | "AIR_RAPID" | "OPENCLAW" | "SKY_SCANNER_PRO" | "AMADEUS" | "TRAVELPAYOUTS" | "SERPAPI" | "PRICELINE";
+﻿export type FlightSource = "duffel" | "kiwi" | "travelpayouts" | "rapidapi" | "RAPID_API" | "DUFFEL" | "KIWI" | "SKY_RAPID" | "AIR_RAPID" | "OPENCLAW" | "SKY_SCANNER_PRO" | "AMADEUS" | "TRAVELPAYOUTS" | "SERPAPI" | "PRICELINE";
 
 export type CabinClass = "economy" | "premium" | "business" | "first";
 
@@ -82,12 +82,12 @@ export type FlightResult = {
         hasPower?: boolean;
         hasMeal: boolean;
         seatType?: string;
-        baggage?: string; // OpenClaw formatı için
-        entertainment?: string; // OpenClaw formatı için
-        seatPitch?: string; // OpenClaw formatı için
-        food?: string; // OpenClaw formatı için
+        baggage?: string; // OpenClaw formatÄ± iÃ§in
+        entertainment?: string; // OpenClaw formatÄ± iÃ§in
+        seatPitch?: string; // OpenClaw formatÄ± iÃ§in
+        food?: string; // OpenClaw formatÄ± iÃ§in
     };
-    // OpenClaw'ın policies alanı
+    // OpenClaw'Ä±n policies alanÄ±
     policies?: {
         baggageKg?: number;
         cabinBagKg?: number;
@@ -150,5 +150,18 @@ export type FlightResult = {
         valueTag: string;
         dataQuality?: 'valid' | 'invalid';
         dataErrorReason?: string;
+        // Intelligence Layer v2
+        personaScore?: number;
+        persona?: 'balanced' | 'business' | 'budget';
+        delayProbability?: number;
+        connectionRisk?: 'low' | 'medium' | 'high' | 'critical';
+        minConnectionMinutes?: number;
+        priceIntel?: {
+            label: 'Good Deal' | 'Below Average' | 'Fair Price' | 'Wait' | 'Likely to Increase';
+            deltaPercent: number;
+            source: string;
+        };
+        confidenceScore?: number;
+        explanation?: string;
     };
 };

@@ -484,6 +484,91 @@ export default function FlightResultCard({
                         </div>
                     )}
 
+                        {/* ── Intelligence Panel v2 ────────────────────────────────── */}
+                        {(() => {
+                            const intel = flight.advancedScore;
+                            if (!intel) return null;
+
+                            const confScore: number = intel.confidenceScore ?? 0;
+                            const confColor = confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
+                            const confLabel = confScore >= 80 ? 'Yüksek' : confScore >= 50 ? 'Orta' : 'Düşük';
+
+                            const priceIntelConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
+                                'Good Deal':          { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Kaçırma Fırsatı' },
+                                'Below Average':      { icon: '✅', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'İyi Fiyat' },
+                                'Fair Price':         { icon: '📊', colorClass: 'bg-slate-100 text-slate-600 border-slate-300', label: 'Ortalama Fiyat' },
+                                'Wait':               { icon: '⏳', colorClass: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Bekle' },
+                                'Likely to Increase': { icon: '📈', colorClass: 'bg-rose-100 text-rose-700 border-rose-300', label: 'Fiyat Artabilir' },
+                            };
+                            const pIntel = intel.priceIntel;
+                            const pConf = pIntel ? priceIntelConfig[pIntel.label] : null;
+
+                            const connRisk = intel.connectionRisk ?? 'low';
+                            const connRiskConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
+                                low:      { icon: '🟢', colorClass: 'bg-green-100 text-green-700',  label: 'Düşük Risk' },
+                                medium:   { icon: '🟡', colorClass: 'bg-amber-100 text-amber-700',  label: 'Orta Risk' },
+                                high:     { icon: '🟠', colorClass: 'bg-orange-100 text-orange-700', label: 'Yüksek Risk' },
+                                critical: { icon: '🔴', colorClass: 'bg-rose-100 text-rose-700',    label: 'Kritik Risk' },
+                            };
+                            const cConf = connRiskConfig[connRisk];
+
+                            const delayP = intel.delayProbability ?? 0;
+                            const delayColorClass = delayP >= 30 ? 'bg-rose-100 text-rose-700' : delayP >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
+
+                            return (
+                                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                                    {/* Confidence score — always visible */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Veri Kalitesi</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`w-2 h-2 rounded-full ${confColor}`} />
+                                            <span className="text-xs font-bold text-slate-700">{confLabel} ({confScore}%)</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Intel badges — blurred for FREE */}
+                                    <div className={`flex flex-wrap gap-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                        {pConf && (
+                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${pConf.colorClass}`}>
+                                                {pConf.icon} {pConf.label}
+                                                {pIntel && pIntel.deltaPercent !== 0 && (
+                                                    <span className="ml-0.5 opacity-80">({pIntel.deltaPercent > 0 ? '+' : ''}{pIntel.deltaPercent}%)</span>
+                                                )}
+                                            </span>
+                                        )}
+                                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${delayColorClass}`}>
+                                            ⏱ %{delayP} gecikme
+                                        </span>
+                                        {stops > 0 && (
+                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cConf.colorClass}`}>
+                                                {cConf.icon} Aktarma: {cConf.label}
+                                                {(intel.minConnectionMinutes ?? -1) > 0 && (
+                                                    <span className="ml-0.5 opacity-75">({intel.minConnectionMinutes}dk)</span>
+                                                )}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Explanation — blurred for FREE */}
+                                    {intel.explanation && (
+                                        <p className={`text-xs text-slate-600 leading-relaxed ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                            💡 {intel.explanation}
+                                        </p>
+                                    )}
+
+                                    {/* CTA for FREE users */}
+                                    {!hasPremiumAccess && (
+                                        <button
+                                            onClick={() => setShowLockOverlay(true)}
+                                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
+                                        >
+                                            🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç →
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
                     {/* KONTROL ET BUTONU - View Analysis */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button

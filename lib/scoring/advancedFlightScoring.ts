@@ -81,6 +81,20 @@ const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
 
 const EARTH_RADIUS_KM = 6371;
+
+// ── Intelligence Layer v2 ─────────────────────────────────────────────────
+type PersonaKey = 'balanced' | 'business' | 'budget';
+
+const PERSONA_WEIGHTS: Record<PersonaKey, ScoreBreakdown> = {
+    balanced: { priceValue: 0.20, duration: 0.15, stops: 0.10, connection: 0.10, selfTransfer: 0.10, baggage: 0.10, reliability: 0.10, aircraft: 0.05, amenities: 0.05, airportIndex: 0.05 },
+    business: { priceValue: 0.12, duration: 0.18, stops: 0.12, connection: 0.14, selfTransfer: 0.10, baggage: 0.08, reliability: 0.16, aircraft: 0.04, amenities: 0.12, airportIndex: 0.04 },
+    budget:   { priceValue: 0.40, duration: 0.12, stops: 0.08, connection: 0.08, selfTransfer: 0.06, baggage: 0.10, reliability: 0.06, aircraft: 0.02, amenities: 0.03, airportIndex: 0.05 },
+};
+
+const BREAKDOWN_MAXES: ScoreBreakdown = {
+    priceValue: 20, duration: 15, stops: 10, connection: 10, selfTransfer: 10,
+    baggage: 10, reliability: 10, aircraft: 5, amenities: 5, airportIndex: 5,
+};
 const CRUISE_SPEED_KMH = 850;
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -200,6 +214,87 @@ const resolveAircraftCode = (flight: FlightResult): string => {
     return (segAircraft || '').toString().toUpperCase();
 };
 
+const getDelayProbabilityFromReliability = (reliabilityScore: number): number => {
+    if (reliabilityScore >= 9) return 8;
+    if (reliabilityScore >= 8) return 12;
+    if (reliabilityScore >= 7) return 18;
+    if (reliabilityScore >= 6) return 24;
+    if (reliabilityScore >= 5) return 30;
+    return 38;
+};
+
+const computePriceIntel = (
+    price: number,
+    referencePrice: number,
+    referenceSource: string,
+): { label: 'Good Deal' | 'Below Average' | 'Fair Price' | 'Wait' | 'Likely to Increase'; deltaPercent: number; source: string } => {
+    if (!Number.isFinite(referencePrice) || referencePrice <= 0 || !Number.isFinite(price) || price <= 0) {
+        return { label: 'Fair Price', deltaPercent: 0, source: referenceSource };
+    }
+    const delta = (price - referencePrice) / referencePrice;
+    const deltaPercent = Math.round(delta * 100);
+    if (delta <= -0.20) return { label: 'Good Deal',             deltaPercent, source: referenceSource };
+    if (delta <= -0.05) return { label: 'Below Average',         deltaPercent, source: referenceSource };
+    if (delta <=  0.05) return { label: 'Fair Price',            deltaPercent, source: referenceSource };
+    if (delta <=  0.20) return { label: 'Wait',                  deltaPercent, source: referenceSource };
+    return               { label: 'Likely to Increase', deltaPercent, source: referenceSource };
+};
+
+const computeConfidenceScore = (flight: FlightResult): number => {
+    let score = 0;
+    if (Number.isFinite(flight.price) && flight.price > 0) score += 25;
+    if (resolveAircraftCode(flight).length >= 3) score += 15;
+    if (Number(flight.policies?.baggageKg) > 0 || flight.baggage) score += 20;
+    const dep = String(flight.departTime || '');
+    const arr = String(flight.arriveTime || '');
+    const hasTz = (v: string) => /(?:Z|[+-]\d{2}:?\d{2})$/i.test(v.trim());
+    if (dep && arr && hasTz(dep) && hasTz(arr)) score += 20;
+    else if (dep && arr) score += 10;
+    if (flight.meal !== undefined || flight.amenities?.hasMeal !== undefined) score += 10;
+    if (flight.stops === 0 || (Array.isArray(flight.layovers) && flight.layovers.length > 0)) score += 10;
+    return Math.min(100, score);
+};
+
+const computePersonaScore = (breakdown: ScoreBreakdown, persona: PersonaKey = 'balanced'): number => {
+    const weights = PERSONA_WEIGHTS[persona] ?? PERSONA_WEIGHTS.balanced;
+    let total = 0;
+    for (const key of Object.keys(weights) as (keyof ScoreBreakdown)[]) {
+        total += (breakdown[key] / (BREAKDOWN_MAXES[key] || 1)) * weights[key];
+    }
+    return Number((total * 10).toFixed(1));
+};
+
+const generateScoreExplanation = (
+    flight: FlightResult,
+    breakdown: ScoreBreakdown,
+    comfortNotes: string[],
+    priceIntel: { label: string; deltaPercent: number },
+    displayScore: number,
+    connectionRisk: string,
+    minConnectionMinutes: number,
+): string => {
+    const parts: string[] = [];
+    if (flight.stops === 0) parts.push('direkt uçuş');
+    if (priceIntel.label === 'Good Deal')
+        parts.push(`fiyatı ortalamanın %${Math.abs(priceIntel.deltaPercent)} altında`);
+    else if (priceIntel.label === 'Below Average')
+        parts.push('fiyatı ortalamanın altında');
+    else if (priceIntel.label === 'Likely to Increase')
+        parts.push('fiyatı yükselme eğiliminde');
+    const bagNote = comfortNotes.find(n => n.toLowerCase().includes('bagaj'));
+    if (bagNote) parts.push(bagNote.replace(/^Check-in/, 'check-in').toLowerCase());
+    if (comfortNotes.some(n => n.toLowerCase().includes('yemek'))) parts.push('yemek servisi dahil');
+    if (breakdown.duration >= 13) parts.push('kısa seyahat süresi');
+    if (connectionRisk === 'critical' && minConnectionMinutes > 0)
+        parts.push(`${minConnectionMinutes}dk kritik aktarma riski`);
+    else if (connectionRisk === 'high' && minConnectionMinutes > 0)
+        parts.push(`${minConnectionMinutes}dk'lık sıkı aktarma`);
+    if (comfortNotes.some(n => n.includes('Top-tier'))) parts.push('üst düzey havayolu güvenilirliği');
+    if (parts.length === 0) return `Bu uçuş dengeli profiliyle ${displayScore.toFixed(1)} puan aldı.`;
+    return `Bu uçuş ${parts.slice(0, 3).join(', ')} nedeniyle ${displayScore.toFixed(1)} puan aldı.`;
+};
+// ── End Intelligence Layer v2 ─────────────────────────────────────────────
+
 const scoreFlight = (
     flight: FlightResult,
     context: {
@@ -208,6 +303,7 @@ const scoreFlight = (
         expectedRouteDuration: number;
         markInvalidData: boolean;
         invalidReason?: string;
+        persona?: PersonaKey;
     }
 ) => {
     const breakdown: ScoreBreakdown = {
@@ -279,15 +375,29 @@ const scoreFlight = (
     breakdown.connection = 10;
     const layovers = resolveLayovers(flight);
     layovers.forEach((layover) => {
-        if (layover.duration > 0 && layover.duration < 45) {
-            breakdown.connection -= 4;
-            riskFlags.push('Kısa Aktarma Riski');
-        } else if (layover.duration > 300) {
-            breakdown.connection -= 3;
-            riskFlags.push('Uzun aktarma beklemesi');
+        if (layover.duration > 0) {
+            if (layover.duration < 45) {
+                breakdown.connection -= 6;
+                riskFlags.push('Kritik Bağlantı Riski');
+            } else if (layover.duration < 75) {
+                breakdown.connection -= 3;
+                riskFlags.push('Sıkı Aktarma Riski');
+            } else if (layover.duration > 300) {
+                breakdown.connection -= 2;
+                riskFlags.push('Uzun aktarma beklemesi');
+            }
         }
     });
     breakdown.connection = clamp(breakdown.connection, 0, 10);
+
+    const layoverDurations = layovers.filter(l => l.duration > 0).map(l => l.duration);
+    const minConnectionMinutes = layoverDurations.length > 0 ? Math.min(...layoverDurations) : -1;
+    const connectionRisk: 'low' | 'medium' | 'high' | 'critical' =
+        flight.stops === 0       ? 'low' :
+        minConnectionMinutes < 0 ? 'low' :
+        minConnectionMinutes < 45  ? 'critical' :
+        minConnectionMinutes < 75  ? 'high' :
+        minConnectionMinutes < 120 ? 'medium' : 'low';
 
     const selfTransfer = hasSelfTransferRisk(flight);
     breakdown.selfTransfer = selfTransfer ? 0 : 10;
@@ -332,6 +442,8 @@ const scoreFlight = (
     } else if (breakdown.reliability <= 6) {
         riskFlags.push('On-time güvenilirliği düşük');
     }
+
+    const delayProbability = getDelayProbabilityFromReliability(reliability.score);
 
     const aircraftCode = resolveAircraftCode(flight);
     const aircraftAge = flight.aircraftAge || AIRCRAFT_AGE[aircraftCode] || 12;
@@ -379,6 +491,18 @@ const scoreFlight = (
     const displayScore = Number((totalScore / 10).toFixed(1));
 
     let valueTag = 'Dengeli Seçenek';
+    const personaScore = computePersonaScore(breakdown, context.persona);
+    const priceIntel = computePriceIntel(validPrice, referencePrice, priceReferenceSource);
+    const confidenceScore = computeConfidenceScore(flight);
+    const finalRiskFlags = Array.from(new Set([
+        ...riskFlags,
+        ...(context.markInvalidData ? ['Veri Hatası', context.invalidReason || 'Gerçekçi olmayan süre tespit edildi.'] : []),
+    ]));
+    const finalComfortNotes = Array.from(new Set(comfortNotes));
+    const explanation = context.markInvalidData
+        ? undefined
+        : generateScoreExplanation(flight, breakdown, finalComfortNotes, priceIntel, displayScore, connectionRisk, minConnectionMinutes);
+
     if (breakdown.priceValue >= 16 && totalScore >= 75) {
         valueTag = 'En İyi Fiyat/Performans';
     } else if (breakdown.amenities >= 4 && breakdown.duration >= 12) {
@@ -399,14 +523,19 @@ const scoreFlight = (
                 amount: Number.isFinite(referencePrice) ? referencePrice : 0,
             },
             breakdown,
-            riskFlags: Array.from(new Set([
-                ...riskFlags,
-                ...(context.markInvalidData ? ['Veri Hatası', context.invalidReason || 'Gerçekçi olmayan süre tespit edildi.'] : []),
-            ])),
-            comfortNotes: Array.from(new Set(comfortNotes)),
+            riskFlags: finalRiskFlags,
+            comfortNotes: finalComfortNotes,
             valueTag: context.markInvalidData ? 'Veri Hatası' : valueTag,
             dataQuality: context.markInvalidData ? 'invalid' : 'valid',
             dataErrorReason: context.markInvalidData ? context.invalidReason : undefined,
+            personaScore,
+            persona: context.persona || 'balanced',
+            delayProbability,
+            connectionRisk,
+            minConnectionMinutes,
+            priceIntel,
+            confidenceScore,
+            explanation,
         },
     } as FlightResult;
 };
@@ -418,6 +547,7 @@ export async function applyAdvancedFlightScoring(
         destination?: string;
         departureDate?: string;
         useHistoricalMedian?: boolean;
+        persona?: PersonaKey;
     }
 ): Promise<FlightResult[]> {
     const validPrices = flights
@@ -460,6 +590,7 @@ export async function applyAdvancedFlightScoring(
                 expectedRouteDuration,
                 markInvalidData,
                 invalidReason,
+                persona: options?.persona,
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));
