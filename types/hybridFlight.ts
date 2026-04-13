@@ -169,6 +169,7 @@ export type FlightResult = {
         priceIntel?: {
             label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase';
             deltaPercent: number;
+            absoluteDelta?: number; // Absolute savings vs average (positive = cheaper, negative = premium)
             source: string;
             semanticLabel?: string; // Human-readable price description
         };

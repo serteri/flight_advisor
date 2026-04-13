@@ -224,7 +224,7 @@ export default function FlightResultCard({
 
     const carrierSummaryText =
         carrierSummary.length > 1
-            ? `${carrierSummary[0].name} + Partner`
+            ? carrierSummary.map(e => e.name).join(' + ')
             : (carrierSummary[0]?.name || airline);
     const segmentsTotalMinutes = segments.reduce((sum: number, seg: any) => sum + getSegmentDurationMinutes(seg, 0), 0);
     const layoversTotalMinutes = Array.isArray(flight.layovers)
@@ -422,37 +422,44 @@ export default function FlightResultCard({
                 {/* SOL: Uçuş Detayları */}
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
-                            <img
-                                src={airlineLogo}
-                                alt={airline}
-                                width={48}
-                                height={48}
-                                loading="lazy"
-                                decoding="async"
-                                className="w-12 h-12 object-contain"
-                                onError={() => {
-                                    setLogoIndex((current) =>
-                                        current < airlineLogoCandidates.length - 1 ? current + 1 : current
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{carrierSummaryText || airline}</h4>
-                            {carrierSummary.length > 1 && (
-                                <div className="flex items-center gap-1 mt-1">
-                                    {carrierSummary.map((entry) => (
+                        {/* Logo area: single logo OR all carrier logos side-by-side */}
+                        {carrierSummary.length > 1 ? (
+                            <div className="flex items-center gap-1 shrink-0">
+                                {carrierSummary.map((entry, i) => (
+                                    <div key={entry.name} className="relative w-10 h-10 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center" style={{ marginLeft: i > 0 ? '-8px' : 0, zIndex: carrierSummary.length - i }}>
                                         <img
-                                            key={entry.name}
                                             src={entry.logo}
                                             alt={entry.name}
-                                            className="w-5 h-5 rounded-full border border-slate-200 object-contain bg-white"
+                                            width={40}
+                                            height={40}
                                             loading="lazy"
+                                            decoding="async"
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = DEFAULT_AIRLINE_LOGO; }}
                                         />
-                                    ))}
-                                </div>
-                            )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="w-12 h-12 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                                <img
+                                    src={airlineLogo}
+                                    alt={airline}
+                                    width={48}
+                                    height={48}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-12 h-12 object-contain"
+                                    onError={() => {
+                                        setLogoIndex((current) =>
+                                            current < airlineLogoCandidates.length - 1 ? current + 1 : current
+                                        );
+                                    }}
+                                />
+                            </div>
+                        )}
+                        <div>
+                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{carrierSummaryText || airline}</h4>
                             <div className="flex gap-2 items-center mt-1">
                                 <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flightNumber}</span>
                                 {/* Provider Source Badge */}
@@ -563,19 +570,48 @@ export default function FlightResultCard({
                                                 <span className="font-semibold text-slate-800 truncate">{segFrom} → {segTo}</span>
                                                 <span className="font-semibold text-slate-700 shrink-0">{formatDuration(segDuration)}</span>
                                             </div>
-                                            <div className="text-[11px] text-slate-600 font-medium">
-                                                Operated by {operatingCarrier}
-                                                {marketingCarrier && marketingCarrier !== operatingCarrier ? ` • Marketed by ${marketingCarrier}` : ''}
+                                            {/* Operating Carrier — prominent */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                    ✈ {operatingCarrier}
+                                                </span>
+                                                {marketingCarrier && marketingCarrier !== operatingCarrier && (
+                                                    <span className="text-[10px] text-slate-400 font-medium">marketed by {marketingCarrier}</span>
+                                                )}
                                             </div>
                                             <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
                                                 <span>{formatLocalTime(segDep)} departure</span>
                                                 <span>{formatLocalTime(segArr)} arrival</span>
                                             </div>
-                                            {idx < segments.length - 1 && layoverMinutes > 0 && (
-                                                <div className="rounded-lg border-2 border-amber-300 bg-amber-100 px-3 py-2 text-xs font-bold text-amber-900 shadow-sm">
-                                                    ⏳ {formatDuration(layoverMinutes)} Layover in {layoverCity} ({layoverAirportCode})
-                                                </div>
-                                            )}
+                                            {idx < segments.length - 1 && (() => {
+                                                // Prefer flight.layovers, fall back to computing from adjacent segment timestamps
+                                                let layMins = layoverMinutes;
+                                                let layCode = layoverAirportCode;
+                                                let layCity = layoverCity;
+                                                if (layMins === 0) {
+                                                    const nextSeg = segments[idx + 1] as any;
+                                                    const curArr = seg.arriving_at || seg.arrival_time || seg.arrival;
+                                                    const nextDep = nextSeg?.departing_at || nextSeg?.departure_time || nextSeg?.departure;
+                                                    if (curArr && nextDep) {
+                                                        const a = new Date(curArr).getTime();
+                                                        const d = new Date(nextDep).getTime();
+                                                        if (Number.isFinite(a) && Number.isFinite(d) && d > a) {
+                                                            layMins = Math.round((d - a) / 60000);
+                                                        }
+                                                    }
+                                                    if (!layCode) {
+                                                        layCode = toText(seg.destination || seg.arrival_airport || seg.to, segTo).toUpperCase();
+                                                        layCity = layCode;
+                                                    }
+                                                }
+                                                if (layMins <= 0) return null;
+                                                return (
+                                                    <div className="rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-bold text-blue-900 shadow-sm flex items-center gap-2">
+                                                        <span className="text-base">🛫</span>
+                                                        <span>{formatDuration(layMins)} layover in {layCity || layCode} ({layCode})</span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     );
                                 })}
@@ -694,12 +730,14 @@ export default function FlightResultCard({
 
                                     {/* Intel badges — blurred for FREE */}
                                     <div className={`flex flex-wrap gap-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
-                                        {pConf && (
+                                        {pConf && pIntel && (
                                             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${pConf.colorClass}`}>
-                                                {pConf.icon} {pConf.label}
-                                                {pIntel && pIntel.deltaPercent !== 0 && (
-                                                    <span className="ml-0.5 opacity-80">({pIntel.deltaPercent > 0 ? '+' : ''}{pIntel.deltaPercent}%)</span>
-                                                )}
+                                                {pConf.icon}{' '}
+                                                {pIntel.absoluteDelta != null && pIntel.absoluteDelta > 0
+                                                    ? `${flight.currency || '$'}${pIntel.absoluteDelta} cheaper than typical`
+                                                    : pIntel.absoluteDelta != null && pIntel.absoluteDelta < 0
+                                                        ? `${flight.currency || '$'}${Math.abs(pIntel.absoluteDelta)} above average`
+                                                        : pConf.label}
                                             </span>
                                         )}
                                         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${delayColorClass}`}>

@@ -399,17 +399,20 @@ const computePriceIntel = (
     price: number,
     referencePrice: number,
     referenceSource: string,
-): { label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase'; deltaPercent: number; source: string; semanticLabel: string } => {
+): { label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase'; deltaPercent: number; absoluteDelta: number; source: string; semanticLabel: string } => {
     if (!Number.isFinite(referencePrice) || referencePrice <= 0 || !Number.isFinite(price) || price <= 0) {
-        return { label: 'Fair price', deltaPercent: 0, source: referenceSource, semanticLabel: 'Fair price - typical for this route' };
+        return { label: 'Fair price', deltaPercent: 0, absoluteDelta: 0, source: referenceSource, semanticLabel: 'Fair price - typical for this route' };
     }
     const delta = (price - referencePrice) / referencePrice;
     const deltaPercent = Math.round(delta * 100);
+    // absoluteDelta > 0 means savings vs average; < 0 means premium over average
+    const absoluteDelta = Math.round(referencePrice - price);
     
     if (delta <= -0.20) {
         return { 
             label: 'Strong deal', 
-            deltaPercent, 
+            deltaPercent,
+            absoluteDelta,
             source: referenceSource,
             semanticLabel: `Strong deal (~${Math.abs(deltaPercent)}% below average)` 
         };
@@ -417,7 +420,8 @@ const computePriceIntel = (
     if (delta <= -0.05) {
         return { 
             label: 'Below average', 
-            deltaPercent, 
+            deltaPercent,
+            absoluteDelta,
             source: referenceSource,
             semanticLabel: `Below average (~${Math.abs(deltaPercent)}% discount)`
         };
@@ -425,7 +429,8 @@ const computePriceIntel = (
     if (delta <= 0.05) {
         return { 
             label: 'Fair price', 
-            deltaPercent, 
+            deltaPercent,
+            absoluteDelta,
             source: referenceSource,
             semanticLabel: `Fair price - typical for this route`
         };
@@ -433,7 +438,8 @@ const computePriceIntel = (
     if (delta <= 0.20) {
         return { 
             label: 'Monitor price', 
-            deltaPercent, 
+            deltaPercent,
+            absoluteDelta,
             source: referenceSource,
             semanticLabel: `Price is rising (~${deltaPercent}% above average)`
         };
@@ -441,6 +447,7 @@ const computePriceIntel = (
     return {
         label: 'Expect increase',
         deltaPercent,
+        absoluteDelta,
         source: referenceSource,
         semanticLabel: `Expect price increase (~${deltaPercent}% premium)`
     };
