@@ -24,7 +24,8 @@ export type HybridSearchParams = {
 export type FlightResult = {
     id: string;
     source: FlightSource;
-    airline: string;
+    airline: string; // Marketing airline
+    operatingAirline?: string; // Actual operating airline (for code-sharing flights)
     airlineLogo?: string; // Duffel'dan geliyor, burada eksikti
     flightNumber: string;
     aircraft?: string;
@@ -35,6 +36,12 @@ export type FlightResult = {
     duration: number; // minutes or whatever format you use
     durationLabel?: string;
     stops: number;
+    soldBy?: {
+        source: FlightSource;
+        airline: string; // Which airline shows it
+        price: number;
+        currency: string;
+    }[]; // Array of different airlines/sources selling this flight
     segments?: any[];
     layovers?: {
         duration: number;

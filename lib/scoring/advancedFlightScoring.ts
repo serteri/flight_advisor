@@ -177,26 +177,58 @@ const resolveDurationMinutes = (flight: FlightResult): number => {
 };
 
 // ── DEDUPLICATION ──────────────────────────────────────────────────────────
-// Merge flights with same departure time, arrival time, route, and airline
+// Merge flights with same departure time, arrival time, route, and operating_airline
+// Keep lowest price variant and track all marketing airlines in "Sold by" list
 const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
-    const seen = new Map<string, FlightResult>();
+    const groups = new Map<string, FlightResult[]>();
     
     flights.forEach((flight) => {
         const departTime = String(flight.departTime || '').trim();
         const arriveTime = String(flight.arriveTime || '').trim();
         const route = `${flight.from || ''}|${flight.to || ''}`;
-        const airline = String(flight.airline || '').toUpperCase();
+        // Use operating_airline if available, otherwise use marketing airline
+        const operatingAirline = String(flight.operatingAirline || flight.airline || '').toUpperCase();
         
-        const key = [departTime, arriveTime, route, airline].join('||');
+        const key = [departTime, arriveTime, route, operatingAirline].join('||');
         
-        if (!seen.has(key)) {
-            seen.set(key, flight);
+        if (!groups.has(key)) {
+            groups.set(key, []);
         }
-        // If already seen, keep the first one (which will be the lowest price typically)
-        // or you could merge them by picking the best price or score
+        groups.get(key)!.push(flight);
     });
     
-    return Array.from(seen.values());
+    // For each group, keep lowest price and track all sold-by airlines
+    const result: FlightResult[] = [];
+    groups.forEach((flightGroup) => {
+        // Sort by price to get lowest first
+        flightGroup.sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
+        const baseFlight = flightGroup[0];
+        
+        // Track all airlines that sell this flight
+        const soldBySet = new Set<string>();
+        flightGroup.forEach((flight) => {
+            soldBySet.add(`${flight.source}:${flight.airline}`);
+        });
+        
+        // Create soldBy array with unique airline/source combinations
+        const soldBy: typeof baseFlight.soldBy = Array.from(soldBySet)
+            .map((entry) => {
+                const [source, airline] = entry.split(':');
+                const flightData = flightGroup.find(f => f.source === source && f.airline === airline);
+                return {
+                    source: source as any,
+                    airline,
+                    price: flightData?.price || baseFlight.price,
+                    currency: flightData?.currency || baseFlight.currency,
+                };
+            });
+        
+        // Merge into base flight
+        baseFlight.soldBy = soldBy.length > 1 ? soldBy : undefined;
+        result.push(baseFlight);
+    });
+    
+    return result;
 };
 
 const resolveLayovers = (flight: FlightResult) =>
@@ -439,11 +471,11 @@ const generateScoreExplanation = (
 ): string => {
     const parts: string[] = [];
     if (flight.stops === 0) parts.push('direkt uçuş');
-    if (priceIntel.label === 'Good Deal')
+    if (priceIntel.label === 'Strong deal')
         parts.push(`fiyatı ortalamanın %${Math.abs(priceIntel.deltaPercent)} altında`);
-    else if (priceIntel.label === 'Below Average')
+    else if (priceIntel.label === 'Below average')
         parts.push('fiyatı ortalamanın altında');
-    else if (priceIntel.label === 'Likely to Increase')
+    else if (priceIntel.label === 'Expect increase')
         parts.push('fiyatı yükselme eğiliminde');
     const bagNote = comfortNotes.find(n => n.toLowerCase().includes('bagaj'));
     if (bagNote) parts.push(bagNote.replace(/^Check-in/, 'check-in').toLowerCase());
