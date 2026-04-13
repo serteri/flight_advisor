@@ -11,6 +11,20 @@ export const dynamic = 'force-dynamic';
 const SEARCH_CACHE_TTL_MS = 15 * 60 * 1000;
 const searchResponseCache = new Map<string, { expiresAt: number; results: any[] }>();
 
+const normalizeCabinParam = (value: string | null | undefined): HybridSearchParams['cabin'] => {
+    switch ((value || '').toLowerCase()) {
+        case 'premium':
+        case 'premium_economy':
+            return 'premium';
+        case 'business':
+            return 'business';
+        case 'first':
+            return 'first';
+        default:
+            return 'economy';
+    }
+};
+
 const buildCacheKey = (params: HybridSearchParams): string =>
     [
         params.origin.toUpperCase(),
@@ -48,7 +62,7 @@ export async function GET(request: Request) {
             adults: parseInt(searchParams.get('adults') || '1'),
             children: parseInt(searchParams.get('children') || '0'),
             infants: parseInt(searchParams.get('infants') || '0'),
-            cabin: (searchParams.get('cabin') || 'economy') as "economy" | "business" | "first",
+            cabin: normalizeCabinParam(searchParams.get('cabin')),
             currency: searchParams.get('currency') || 'AUD'
         };
 

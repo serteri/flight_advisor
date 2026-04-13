@@ -11,8 +11,8 @@ interface PassengerSelectorProps {
     setChildrenCount: (val: number) => void;
     infants: number;
     setInfants: (val: number) => void;
-    cabin: "ECONOMY" | "BUSINESS" | "FIRST";
-    setCabin: (val: "ECONOMY" | "BUSINESS" | "FIRST") => void;
+    cabin: "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
+    setCabin: (val: "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST") => void;
     variant?: "default" | "ghost";
     className?: string;
 }
@@ -32,6 +32,7 @@ export function PassengerSelector({
     const t = useTranslations('FlightSearch');
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const maxPassengers = 9;
 
     // Close on click outside
     useEffect(() => {
@@ -49,6 +50,17 @@ export function PassengerSelector({
     const getCabinLabel = (c: string) => {
         switch (c) {
             case "ECONOMY": return t('economy');
+            case "PREMIUM_ECONOMY": return t('premiumEconomy');
+            case "BUSINESS": return t('business');
+            case "FIRST": return t('firstClass');
+            default: return c;
+        }
+    };
+
+    const getCabinShortLabel = (c: string) => {
+        switch (c) {
+            case "ECONOMY": return t('economy');
+            case "PREMIUM_ECONOMY": return t('premiumEconomy');
             case "BUSINESS": return t('business');
             case "FIRST": return t('firstClass');
             default: return c;
@@ -88,7 +100,7 @@ export function PassengerSelector({
                             {t('travelers_label') || "Travelers & Cabin"}
                         </div>
                         <div className="text-xl md:text-2xl font-black text-slate-900 truncate leading-none">
-                            {totalPassengers} {t('passengers_short') || "Guest"}, {getCabinLabel(cabin).substring(0, 3)}
+                            {totalPassengers} {t('passengers_short') || "Guest"}, {getCabinShortLabel(cabin)}
                         </div>
                     </>
                 )}
@@ -106,8 +118,8 @@ export function PassengerSelector({
                         <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wider">
                             {t('cabin')}
                         </label>
-                        <div className="flex bg-slate-100 p-1 rounded-lg">
-                            {(["ECONOMY", "BUSINESS", "FIRST"] as const).map((c) => (
+                        <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-lg">
+                            {(["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"] as const).map((c) => (
                                 <button
                                     key={c}
                                     type="button"
@@ -138,16 +150,16 @@ export function PassengerSelector({
                                     type="button"
                                     onClick={() => setAdults(Math.max(1, adults - 1))}
                                     className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors disabled:opacity-50"
-                                    disabled={adults <= 1}
+                                    disabled={adults <= Math.max(1, infants)}
                                 >
                                     -
                                 </button>
                                 <span className="w-4 text-center font-semibold text-slate-900">{adults}</span>
                                 <button
                                     type="button"
-                                    onClick={() => setAdults(Math.min(9, adults + 1))}
+                                    onClick={() => setAdults(Math.min(maxPassengers, adults + 1))}
                                     className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors disabled:opacity-50"
-                                    disabled={adults >= 9}
+                                    disabled={totalPassengers >= maxPassengers}
                                 >
                                     +
                                 </button>
@@ -172,9 +184,9 @@ export function PassengerSelector({
                                 <span className="w-4 text-center font-semibold text-slate-900">{childrenCount}</span>
                                 <button
                                     type="button"
-                                    onClick={() => setChildrenCount(Math.min(9, childrenCount + 1))}
+                                    onClick={() => setChildrenCount(Math.min(maxPassengers, childrenCount + 1))}
                                     className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors disabled:opacity-50"
-                                    disabled={childrenCount >= 9}
+                                    disabled={totalPassengers >= maxPassengers}
                                 >
                                     +
                                 </button>
@@ -201,7 +213,7 @@ export function PassengerSelector({
                                     type="button"
                                     onClick={() => setInfants(Math.min(adults, infants + 1))} // Infants usually can't exceed adults
                                     className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors disabled:opacity-50"
-                                    disabled={infants >= adults}
+                                    disabled={infants >= adults || totalPassengers >= maxPassengers}
                                 >
                                     +
                                 </button>
@@ -218,6 +230,10 @@ export function PassengerSelector({
                             {t('select') || 'Done'}
                         </button>
                     </div>
+
+                    <p className="mt-3 text-xs text-slate-500">
+                        {t('totalPassengers', { count: totalPassengers })}
+                    </p>
                 </div>
             )}
         </div>

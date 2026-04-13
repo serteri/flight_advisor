@@ -26,7 +26,7 @@ export function SearchForm() {
     const [adults, setAdults] = useState(1);
     const [childrenCount, setChildrenCount] = useState(0);
     const [infants, setInfants] = useState(0);
-    const [cabin, setCabin] = useState<"ECONOMY" | "BUSINESS" | "FIRST">("ECONOMY");
+    const [cabin, setCabin] = useState<"ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST">("ECONOMY");
 
     const handleSearch = () => {
         // SAFETY: Ensure origin and destination have correct structure

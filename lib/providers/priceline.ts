@@ -575,14 +575,33 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
     const departureAirportCode = String(params.origin || '').toUpperCase();
     const arrivalAirportCode = String(params.destination || '').toUpperCase();
     const numberOfAdults = String(params.adults || 1);
+    const numberOfChildren = String(Math.max(0, params.children || 0));
+    const numberOfInfants = String(Math.max(0, Math.min(params.infants || 0, params.adults || 1)));
+    const classType = (() => {
+        switch (params.cabin) {
+            case 'premium':
+                return 'PREMIUM_ECONOMY';
+            case 'business':
+                return 'BUS';
+            case 'first':
+                return 'FST';
+            default:
+                return 'ECO';
+        }
+    })();
 
     const query = new URLSearchParams({
         itinerary_type: 'ONE_WAY',
-        class_type: 'ECO',
+        class_type: classType,
+        cabin_class: String(params.cabin || 'economy').toUpperCase(),
         departure_airport_code: departureAirportCode,
         arrival_airport_code: arrivalAirportCode,
         departure_date: date,
         number_of_adults: numberOfAdults,
+        number_of_children: numberOfChildren,
+        number_of_infants: numberOfInfants,
+        children: numberOfChildren,
+        infants: numberOfInfants,
         originAirportCode: departureAirportCode,
         destinationAirportCode: arrivalAirportCode,
         departureDate: date,
@@ -595,11 +614,14 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
         console.log('[PRICELINE][DIAG] Request URL:', requestUrl);
         console.log('[PRICELINE][DIAG] Request params:', {
             itinerary_type: 'ONE_WAY',
-            class_type: 'ECO',
+            class_type: classType,
+            cabin_class: String(params.cabin || 'economy').toUpperCase(),
             departure_airport_code: departureAirportCode,
             arrival_airport_code: arrivalAirportCode,
             departure_date: date,
             number_of_adults: numberOfAdults,
+            number_of_children: numberOfChildren,
+            number_of_infants: numberOfInfants,
             originAirportCode: departureAirportCode,
             destinationAirportCode: arrivalAirportCode,
             departureDate: date,

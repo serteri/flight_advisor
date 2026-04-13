@@ -2,12 +2,43 @@ import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { getDuffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';
 
+const mapDuffelCabin = (cabin?: HybridSearchParams['cabin']) => {
+    switch (cabin) {
+        case 'premium':
+            return 'premium_economy';
+        case 'business':
+            return 'business';
+        case 'first':
+            return 'first';
+        default:
+            return 'economy';
+    }
+};
+
+const buildDuffelPassengers = (params: HybridSearchParams) => {
+    const adults = Math.max(1, params.adults || 1);
+    const children = Math.max(0, params.children || 0);
+    const infants = Math.max(0, Math.min(params.infants || 0, adults));
+
+    return [
+        ...Array.from({ length: adults }, () => ({ type: 'adult' as const })),
+        ...Array.from({ length: children }, () => ({ type: 'child' as const })),
+        ...Array.from({ length: infants }, () => ({ type: 'infant_without_seat' as const })),
+    ];
+};
+
 export async function searchDuffel(params: HybridSearchParams): Promise<FlightResult[]> {
-    console.log(`[Duffel] Searching for ${params.origin} -> ${params.destination} on ${params.date}`);
+    console.log(`[Duffel] Searching for ${params.origin} -> ${params.destination} on ${params.date}`, {
+        adults: params.adults,
+        children: params.children || 0,
+        infants: params.infants || 0,
+        cabin: params.cabin || 'economy',
+    });
     
     try {
         // instantiate client at call-time so token is read from env when needed
         const client = getDuffel();
+        const passengers = buildDuffelPassengers(params);
         // @ts-ignore
         const res = await client.offerRequests.create({
             slices: [{
@@ -15,8 +46,8 @@ export async function searchDuffel(params: HybridSearchParams): Promise<FlightRe
                 destination: params.destination,
                 departure_date: params.date
             }] as any,
-            passengers: [{ type: 'adult' }],
-            cabin_class: 'economy',
+            passengers: passengers as any,
+            cabin_class: mapDuffelCabin(params.cabin),
         });
 
         const offers = res.data.offers

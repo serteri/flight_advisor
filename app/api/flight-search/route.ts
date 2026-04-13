@@ -37,6 +37,20 @@ type ViewerAccess = {
     stripeCurrentPeriodEnd: string | null;
 };
 
+const normalizeCabinParam = (value: string | null | undefined): HybridSearchParams['cabin'] => {
+    switch ((value || '').toLowerCase()) {
+        case 'premium':
+        case 'premium_economy':
+            return 'premium';
+        case 'business':
+            return 'business';
+        case 'first':
+            return 'first';
+        default:
+            return 'economy';
+    }
+};
+
 async function resolveViewerAccess(): Promise<ViewerAccess> {
     const session = await auth();
     const email = session?.user?.email?.toLowerCase();
@@ -84,10 +98,7 @@ function buildQueryParams(searchParams: URLSearchParams): HybridSearchParams {
         adults: parseInt(searchParams.get('adults') || '1'),
         children: parseInt(searchParams.get('children') || '0'),
         infants: parseInt(searchParams.get('infants') || '0'),
-        cabin: (searchParams.get('cabin') || 'economy') as
-            | 'economy'
-            | 'business'
-            | 'first',
+        cabin: normalizeCabinParam(searchParams.get('cabin')),
         currency: searchParams.get('currency') || 'AUD',
     };
 }

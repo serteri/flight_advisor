@@ -7,17 +7,16 @@ import { DatePicker } from "@/components/DatePicker";
 import {
     Plane,
     Loader2,
-    Users,
     ArrowRightLeft,
     MapPin,
-    Sparkles,
-    ChevronDown
+    Sparkles
 } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
 import { FlightFilters, FlightFilterState } from "@/components/search/FlightFilters";
 import { DataSourceIndicator } from "@/components/DataSourceIndicator";
 import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
+import { PassengerSelector } from "@/components/PassengerSelector";
 import { Suspense } from "react";
 import { FlightResult } from "@/types/hybridFlight";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -33,6 +32,49 @@ const popularDestinations = [
     { city: "Dubai", iata: "DXB" },
     { city: "Tokyo", iata: "NRT" },
 ];
+
+type SearchCabin = "economy" | "premium" | "business" | "first";
+type SelectorCabin = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
+
+const normalizeCabinParam = (value: string | null): SearchCabin => {
+    switch ((value || '').toLowerCase()) {
+        case 'premium':
+        case 'premium_economy':
+            return 'premium';
+        case 'business':
+            return 'business';
+        case 'first':
+            return 'first';
+        default:
+            return 'economy';
+    }
+};
+
+const toSelectorCabin = (value: SearchCabin): SelectorCabin => {
+    switch (value) {
+        case 'premium':
+            return 'PREMIUM_ECONOMY';
+        case 'business':
+            return 'BUSINESS';
+        case 'first':
+            return 'FIRST';
+        default:
+            return 'ECONOMY';
+    }
+};
+
+const fromSelectorCabin = (value: SelectorCabin): SearchCabin => {
+    switch (value) {
+        case 'PREMIUM_ECONOMY':
+            return 'premium';
+        case 'BUSINESS':
+            return 'business';
+        case 'FIRST':
+            return 'first';
+        default:
+            return 'economy';
+    }
+};
 
 export default function SkyscannerSearchPage() {
     return (
@@ -75,7 +117,7 @@ function SearchPageContent() {
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
-    const [cabin, setCabin] = useState<"economy" | "business" | "first">("economy");
+    const [cabin, setCabin] = useState<SearchCabin>("economy");
 
     // Pagination state
     const [visibleCount, setVisibleCount] = useState(20);
@@ -91,6 +133,28 @@ function SearchPageContent() {
             source: "ALL",
         });
     };
+
+    const validatePassengerSelection = useCallback((selection: {
+        adults: number;
+        children: number;
+        infants: number;
+    }) => {
+        const totalPassengers = selection.adults + selection.children + selection.infants;
+
+        if (selection.adults < 1) {
+            return t('adultRequired');
+        }
+
+        if (selection.infants > selection.adults) {
+            return t('infantsRequireAdults');
+        }
+
+        if (totalPassengers > 9) {
+            return t('passengerLimit');
+        }
+
+        return null;
+    }, [t]);
 
     // Swap cities function
     const swapCities = () => {
@@ -109,10 +173,19 @@ function SearchPageContent() {
         date: string;
         returnDate?: string;
         adults: number;
-        cabin: string;
+        children: number;
+        infants: number;
+        cabin: SearchCabin;
+        tripType: "ONE_WAY" | "ROUND_TRIP";
     }) => {
         if (!params.origin || !params.destination || !params.date) {
             setError(t('fillAllFields'));
+            return;
+        }
+
+        const passengerValidationError = validatePassengerSelection(params);
+        if (passengerValidationError) {
+            setError(passengerValidationError);
             return;
         }
 
@@ -124,7 +197,7 @@ function SearchPageContent() {
         try {
             // Validate IATA codes (3 letters)
             if (params.origin.length !== 3 || params.destination.length !== 3) {
-                setError('Please select valid airports (3-letter codes)');
+                setError(t('invalidAirports'));
                 setLoading(false);
                 return;
             }
@@ -135,13 +208,17 @@ function SearchPageContent() {
                 destination: params.destination,
                 date: params.date,
                 adults: params.adults.toString(),
+                children: params.children.toString(),
+                infants: params.infants.toString(),
                 cabin: params.cabin,
-                tripType: tripType === "roundTrip" ? "ROUND_TRIP" : "ONE_WAY" // Ensure upper case for backend
+                tripType: params.tripType
             });
 
             if (params.returnDate) {
                 queryParams.append('returnDate', params.returnDate);
             }
+
+            window.history.replaceState(null, '', `${window.location.pathname}?${queryParams.toString()}`);
 
             const res = await fetch(`/api/flight-search?${queryParams.toString()}`, {
                 method: 'GET',
@@ -188,10 +265,22 @@ function SearchPageContent() {
         const urlDate = initialParams.get('date');
         const urlReturnDate = initialParams.get('returnDate');
         const urlAdults = initialParams.get('adults');
+        const urlChildren = initialParams.get('children');
+        const urlInfants = initialParams.get('infants');
         const urlCabin = initialParams.get('cabin');
 
         if (urlOrigin && urlDestination && urlDate) {
-            const searchKey = [urlOrigin, urlDestination, urlDate, urlReturnDate || '', urlAdults || '1', urlCabin || 'economy'].join('|');
+            const normalizedCabin = normalizeCabinParam(urlCabin);
+            const searchKey = [
+                urlOrigin,
+                urlDestination,
+                urlDate,
+                urlReturnDate || '',
+                urlAdults || '1',
+                urlChildren || '0',
+                urlInfants || '0',
+                normalizedCabin,
+            ].join('|');
             if (lastBootSearchRef.current === searchKey) {
                 return;
             }
@@ -212,7 +301,9 @@ function SearchPageContent() {
             }
 
             if (urlAdults) setAdults(parseInt(urlAdults));
-            if (urlCabin) setCabin(urlCabin as any);
+            if (urlChildren) setChildren(parseInt(urlChildren));
+            if (urlInfants) setInfants(parseInt(urlInfants));
+            setCabin(normalizedCabin);
 
             // Trigger Search
             executeSearch({
@@ -221,10 +312,13 @@ function SearchPageContent() {
                 date: urlDate,
                 returnDate: urlReturnDate || undefined,
                 adults: urlAdults ? parseInt(urlAdults) : 1,
-                cabin: urlCabin || 'economy'
+                children: urlChildren ? parseInt(urlChildren) : 0,
+                infants: urlInfants ? parseInt(urlInfants) : 0,
+                cabin: normalizedCabin,
+                tripType: urlReturnDate ? 'ROUND_TRIP' : 'ONE_WAY'
             });
         }
-    }, []);
+    }, [executeSearch]);
 
     useEffect(() => {
         const plan = (session?.user as any)?.subscriptionPlan;
@@ -250,8 +344,11 @@ function SearchPageContent() {
             destination: toIata,
             date: departureDate,
             returnDate: tripType === "roundTrip" ? returnDate : undefined,
-            adults: adults + children + infants,
-            cabin: cabin
+            adults,
+            children,
+            infants,
+            cabin,
+            tripType: tripType === "roundTrip" ? "ROUND_TRIP" : "ONE_WAY"
         });
     }
 
@@ -458,6 +555,26 @@ function SearchPageContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <DatePicker label={t('departureDate')} placeholder={t('selectDate')} value={departureDate} onChange={setDepartureDate} minDate={new Date()} locale={locale} />
                                 <DatePicker label={t('returnDate')} placeholder={t('selectDate')} value={returnDate} onChange={setReturnDate} minDate={departureDate ? new Date(departureDate) : new Date()} locale={locale} disabled={tripType === "oneWay"} />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-slate-700">{t('travelers_label')}</label>
+                                    <PassengerSelector
+                                        adults={adults}
+                                        setAdults={setAdults}
+                                        childrenCount={children}
+                                        setChildrenCount={setChildren}
+                                        infants={infants}
+                                        setInfants={setInfants}
+                                        cabin={toSelectorCabin(cabin)}
+                                        setCabin={(value) => setCabin(fromSelectorCabin(value))}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                    {t('totalPassengers', { count: adults + children + infants })}
+                                </div>
                             </div>
 
                             {/* Search Button */}

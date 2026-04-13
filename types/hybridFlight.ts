@@ -16,7 +16,7 @@ export type HybridSearchParams = {
     adults: number;
     children?: number; // For Junior Guardian logic
     infants?: number;
-    cabin?: "economy" | "business" | "first";
+    cabin?: "economy" | "premium" | "business" | "first";
     currency?: string;
 };
 
