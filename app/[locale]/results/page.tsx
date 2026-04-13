@@ -8,11 +8,14 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { Search } from 'lucide-react';
 import type { UserTier } from '@/lib/tierUtils';
 
+type SearchPersona = 'budget' | 'comfort' | 'business' | 'family';
+
 interface ResultsPageProps {
     searchParams: {
         origin?: string;
         destination?: string;
         date?: string;
+        persona?: string;
     };
 }
 
@@ -25,6 +28,9 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
 
     // URL'den arama parametrelerini al
     const { origin, destination, date } = searchParams;
+    const [persona, setPersona] = useState<SearchPersona>(
+        (searchParams.persona as SearchPersona) || 'comfort'
+    );
 
     // Fetch user tier on session change
     useEffect(() => {
@@ -69,6 +75,7 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                     origin,
                     destination,
                     date,
+                    ...(persona ? { persona } : {}),
                 });
 
                 const response = await fetch(`/api/flight-search?${queryParams.toString()}`);
@@ -97,7 +104,7 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
         }
 
         fetchResults();
-    }, [origin, destination, date]);
+    }, [origin, destination, date, persona]);
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -122,6 +129,23 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                     <p className="text-slate-500 mt-2">
                         Agent Score ve 9 farklı kriter analiz edilerek en mantıklı uçuşlar sıralandı.
                     </p>
+                    {/* Persona Selector */}
+                    <div className="mt-4 flex items-center gap-3">
+                        <span className="text-sm font-medium text-slate-600">Profil:</span>
+                        {(['budget', 'comfort', 'business', 'family'] as SearchPersona[]).map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPersona(p)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                                    persona === p
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+                                }`}
+                            >
+                                {p === 'budget' ? '💰 Bütçe' : p === 'comfort' ? '😊 Konfor' : p === 'business' ? '💼 İş' : '👨‍👩‍👧 Aile'}
+                            </button>
+                        ))}
+                    </div>
                 </header>
 
                 {/* Loading State */}
