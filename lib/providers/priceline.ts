@@ -863,6 +863,18 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                             segment?.marketingAirline,
                             airlineCode
                         ).toUpperCase(),
+                        marketingCarrier: firstString(
+                            segment?.marketingAirlineName,
+                            segment?.marketingAirline,
+                            segment?.carrier,
+                            segment?.airline
+                        ),
+                        operatingCarrier: firstString(
+                            segment?.operatingAirlineName,
+                            segment?.operatingAirline,
+                            segment?.carrier,
+                            segment?.airline
+                        ),
                         departure: firstString(
                             segment?.departure,
                             segment?.departTime,

@@ -29,6 +29,7 @@ const buildCacheKey = (params: HybridSearchParams): string =>
         params.children || 0,
         params.infants || 0,
         params.cabin || 'economy',
+        params.persona || 'comfort',
         params.currency || 'AUD',
     ].join('|');
 
@@ -36,6 +37,14 @@ type ViewerAccess = {
     isPremium: boolean;
     userTier: 'FREE' | 'PRO' | 'ELITE';
     stripeCurrentPeriodEnd: string | null;
+    userId: string | null;
+};
+
+type UserPreferenceProfile = {
+    prefersDirect: boolean;
+    prefersNight: boolean;
+    preferredDepartureWindow: 'morning' | 'evening' | 'none';
+    sampleSize: number;
 };
 
 const normalizeCabinParam = (value: string | null | undefined): HybridSearchParams['cabin'] => {
@@ -61,12 +70,14 @@ async function resolveViewerAccess(): Promise<ViewerAccess> {
             isPremium: false,
             userTier: 'FREE',
             stripeCurrentPeriodEnd: null,
+            userId: null,
         };
     }
 
     const dbUser = await prisma.user.findUnique({
         where: { email },
         select: {
+            id: true,
             isPremium: true,
             subscriptionPlan: true,
             stripeCurrentPeriodEnd: true,
@@ -88,7 +99,50 @@ async function resolveViewerAccess(): Promise<ViewerAccess> {
         stripeCurrentPeriodEnd: dbUser?.stripeCurrentPeriodEnd
             ? dbUser.stripeCurrentPeriodEnd.toISOString()
             : null,
+        userId: dbUser?.id || null,
     };
+}
+
+async function resolveUserPreferenceProfile(userId: string | null): Promise<UserPreferenceProfile | null> {
+    if (!userId) return null;
+
+    const prefModel = (prisma as any)?.userPreference;
+    if (!prefModel) return null;
+
+    try {
+        const rows = await prefModel.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            take: 80,
+            select: {
+                isDirect: true,
+                isNight: true,
+                departureHour: true,
+            },
+        });
+
+        if (!rows.length) return null;
+
+        const directCount = rows.filter((r: any) => Boolean(r.isDirect)).length;
+        const nightCount = rows.filter((r: any) => Boolean(r.isNight)).length;
+        const morningCount = rows.filter((r: any) => Number(r.departureHour) >= 5 && Number(r.departureHour) < 12).length;
+        const eveningCount = rows.filter((r: any) => Number(r.departureHour) >= 18 || Number(r.departureHour) < 1).length;
+
+        return {
+            prefersDirect: directCount / rows.length >= 0.55,
+            prefersNight: nightCount / rows.length >= 0.50,
+            preferredDepartureWindow:
+                eveningCount / rows.length >= 0.45
+                    ? 'evening'
+                    : morningCount / rows.length >= 0.45
+                        ? 'morning'
+                        : 'none',
+            sampleSize: rows.length,
+        };
+    } catch (error) {
+        console.warn('[PREFERENCE_PROFILE] resolve failed:', error);
+        return null;
+    }
 }
 
 function buildQueryParams(searchParams: URLSearchParams): HybridSearchParams {
@@ -101,6 +155,11 @@ function buildQueryParams(searchParams: URLSearchParams): HybridSearchParams {
         infants: parseInt(searchParams.get('infants') || '0'),
         cabin: normalizeCabinParam(searchParams.get('cabin')),
         currency: searchParams.get('currency') || 'AUD',
+        persona: (() => {
+            const p = (searchParams.get('persona') || '').toLowerCase();
+            if (p === 'budget' || p === 'business' || p === 'family') return p;
+            return 'comfort';
+        })(),
     };
 }
 
@@ -163,6 +222,8 @@ export async function GET(request: Request) {
         const queryParams = buildQueryParams(searchParams);
         const cacheKey = buildCacheKey(queryParams);
         const viewerAccess = await resolveViewerAccess();
+        const preferenceProfile = await resolveUserPreferenceProfile(viewerAccess.userId);
+        const usePersonalizedScoring = Boolean(preferenceProfile && preferenceProfile.sampleSize >= 3);
         const hasRecentDbRecords = await hasRecentRouteSearchRecords(
             queryParams.origin,
             queryParams.destination,
@@ -199,7 +260,7 @@ export async function GET(request: Request) {
         }
 
         const cached = flightSearchResponseCache.get(cacheKey);
-        if (hasRecentDbRecords && cached && cached.expiresAt > Date.now()) {
+        if (!usePersonalizedScoring && hasRecentDbRecords && cached && cached.expiresAt > Date.now()) {
             return NextResponse.json({
                 results: cached.results,
                 viewerAccess,
@@ -251,12 +312,16 @@ export async function GET(request: Request) {
             destination: queryParams.destination,
             departureDate: queryParams.date,
             useHistoricalMedian: viewerAccess.isPremium,
+            persona: queryParams.persona,
+            preferenceProfile: preferenceProfile || undefined,
         });
 
-        flightSearchResponseCache.set(cacheKey, {
-            expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
-            results: scoredFlights,
-        });
+        if (!usePersonalizedScoring) {
+            flightSearchResponseCache.set(cacheKey, {
+                expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
+                results: scoredFlights,
+            });
+        }
 
         return NextResponse.json({
             results: scoredFlights,

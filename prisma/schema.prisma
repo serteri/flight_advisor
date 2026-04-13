@@ -41,6 +41,7 @@ model User {
   watchedFlights  WatchedFlight[]
   monitors        Monitor[]
   monitoredTrips  MonitoredTrip[]
+  preferences     UserPreference[]
 }
 
 model Account {
@@ -279,6 +280,31 @@ model FlightSelectionEvent {
 
   @@index([action, createdAt])
   @@index([origin, destination, departureDate])
+}
+
+model UserPreference {
+  id                String   @id @default(cuid())
+  userId            String?
+  action            String
+  origin            String?
+  destination       String?
+  departureDate     DateTime?
+  flightId          String?
+  provider          String?
+  selectedPrice     Float?
+  selectedScore     Float?
+  competitorPrice   Float?
+  competitorScore   Float?
+  isDirect          Boolean  @default(false)
+  isNight           Boolean  @default(false)
+  departureHour     Int?
+  createdAt         DateTime @default(now())
+
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([origin, destination, departureDate])
+  @@index([isDirect, isNight, createdAt])
 }
 
 // ----------------------------

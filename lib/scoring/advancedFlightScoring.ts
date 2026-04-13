@@ -83,12 +83,20 @@ const clamp = (value: number, min: number, max: number) =>
 const EARTH_RADIUS_KM = 6371;
 
 // ── Intelligence Layer v2 ─────────────────────────────────────────────────
-type PersonaKey = 'balanced' | 'business' | 'budget';
+type PersonaKey = 'balanced' | 'business' | 'budget' | 'family';
+type PersonaInput = 'comfort' | 'business' | 'budget' | 'family' | 'balanced';
+type PreferenceProfile = {
+    prefersDirect: boolean;
+    prefersNight: boolean;
+    preferredDepartureWindow: 'morning' | 'evening' | 'none';
+    sampleSize: number;
+};
 
 const PERSONA_WEIGHTS: Record<PersonaKey, ScoreBreakdown> = {
     balanced: { priceValue: 0.20, duration: 0.15, stops: 0.10, connection: 0.10, selfTransfer: 0.10, baggage: 0.10, reliability: 0.10, aircraft: 0.05, amenities: 0.05, airportIndex: 0.05 },
-    business: { priceValue: 0.12, duration: 0.18, stops: 0.12, connection: 0.14, selfTransfer: 0.10, baggage: 0.08, reliability: 0.16, aircraft: 0.04, amenities: 0.12, airportIndex: 0.04 },
-    budget:   { priceValue: 0.40, duration: 0.12, stops: 0.08, connection: 0.08, selfTransfer: 0.06, baggage: 0.10, reliability: 0.06, aircraft: 0.02, amenities: 0.03, airportIndex: 0.05 },
+    business: { priceValue: 0.10, duration: 0.22, stops: 0.10, connection: 0.12, selfTransfer: 0.08, baggage: 0.06, reliability: 0.14, aircraft: 0.05, amenities: 0.10, airportIndex: 0.03 },
+    budget:   { priceValue: 0.56, duration: 0.10, stops: 0.08, connection: 0.06, selfTransfer: 0.05, baggage: 0.05, reliability: 0.04, aircraft: 0.02, amenities: 0.01, airportIndex: 0.03 },
+    family:   { priceValue: 0.16, duration: 0.14, stops: 0.08, connection: 0.18, selfTransfer: 0.10, baggage: 0.20, reliability: 0.07, aircraft: 0.02, amenities: 0.03, airportIndex: 0.02 },
 };
 
 const BREAKDOWN_MAXES: ScoreBreakdown = {
@@ -264,6 +272,49 @@ const computePersonaScore = (breakdown: ScoreBreakdown, persona: PersonaKey = 'b
     return Number((total * 10).toFixed(1));
 };
 
+const resolvePersona = (persona?: PersonaInput): PersonaKey => {
+    if (persona === 'business' || persona === 'budget' || persona === 'family' || persona === 'balanced') {
+        return persona;
+    }
+    return 'balanced';
+};
+
+const resolveDepartureHour = (flight: FlightResult): number | null => {
+    const raw = String(flight.departTime || '').trim();
+    if (!raw) return null;
+    const parsed = new Date(raw);
+    if (!Number.isFinite(parsed.getTime())) return null;
+    return parsed.getUTCHours();
+};
+
+const computePreferenceBonusRaw = (
+    flight: FlightResult,
+    profile?: PreferenceProfile
+): number => {
+    if (!profile || profile.sampleSize < 3) return 0;
+
+    let bonus = 0;
+    const departureHour = resolveDepartureHour(flight);
+
+    if (profile.prefersDirect && flight.stops === 0) {
+        bonus += 2;
+    }
+
+    if (profile.prefersNight && departureHour !== null && (departureHour >= 18 || departureHour < 6)) {
+        bonus += 1.5;
+    }
+
+    if (profile.preferredDepartureWindow === 'morning' && departureHour !== null && departureHour >= 5 && departureHour < 12) {
+        bonus += 1.5;
+    }
+
+    if (profile.preferredDepartureWindow === 'evening' && departureHour !== null && (departureHour >= 18 || departureHour < 1)) {
+        bonus += 1.5;
+    }
+
+    return clamp(Number(bonus.toFixed(2)), 0, 5);
+};
+
 const generateScoreExplanation = (
     flight: FlightResult,
     breakdown: ScoreBreakdown,
@@ -304,6 +355,7 @@ const scoreFlight = (
         markInvalidData: boolean;
         invalidReason?: string;
         persona?: PersonaKey;
+        preferenceProfile?: PreferenceProfile;
     }
 ) => {
     const breakdown: ScoreBreakdown = {
@@ -487,11 +539,14 @@ const scoreFlight = (
     });
     breakdown.airportIndex = clamp(airportIndex, 0, 5);
 
-    const totalScore = Object.values(breakdown).reduce((sum, score) => sum + score, 0);
+    const baseTotalScore = Object.values(breakdown).reduce((sum, score) => sum + score, 0);
+    const preferenceBonusRaw = computePreferenceBonusRaw(flight, context.preferenceProfile);
+    const totalScore = clamp(Number((baseTotalScore + preferenceBonusRaw).toFixed(2)), 0, 100);
     const displayScore = Number((totalScore / 10).toFixed(1));
 
     let valueTag = 'Dengeli Seçenek';
-    const personaScore = computePersonaScore(breakdown, context.persona);
+    const resolvedPersona = resolvePersona(context.persona as PersonaInput);
+    const personaScore = computePersonaScore(breakdown, resolvedPersona);
     const priceIntel = computePriceIntel(validPrice, referencePrice, priceReferenceSource);
     const confidenceScore = computeConfidenceScore(flight);
     const finalRiskFlags = Array.from(new Set([
@@ -529,12 +584,13 @@ const scoreFlight = (
             dataQuality: context.markInvalidData ? 'invalid' : 'valid',
             dataErrorReason: context.markInvalidData ? context.invalidReason : undefined,
             personaScore,
-            persona: context.persona || 'balanced',
+            persona: resolvedPersona,
             delayProbability,
             connectionRisk,
             minConnectionMinutes,
             priceIntel,
             confidenceScore,
+            forYouBonus: Number((preferenceBonusRaw / 10).toFixed(2)),
             explanation,
         },
     } as FlightResult;
@@ -547,7 +603,8 @@ export async function applyAdvancedFlightScoring(
         destination?: string;
         departureDate?: string;
         useHistoricalMedian?: boolean;
-        persona?: PersonaKey;
+        persona?: PersonaInput;
+        preferenceProfile?: PreferenceProfile;
     }
 ): Promise<FlightResult[]> {
     const validPrices = flights
@@ -590,7 +647,8 @@ export async function applyAdvancedFlightScoring(
                 expectedRouteDuration,
                 markInvalidData,
                 invalidReason,
-                persona: options?.persona,
+                persona: resolvePersona(options?.persona),
+                preferenceProfile: options?.preferenceProfile,
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));

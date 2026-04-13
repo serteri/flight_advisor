@@ -35,6 +35,7 @@ const popularDestinations = [
 
 type SearchCabin = "economy" | "premium" | "business" | "first";
 type SelectorCabin = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
+type SearchPersona = "budget" | "comfort" | "business" | "family";
 
 const normalizeCabinParam = (value: string | null): SearchCabin => {
     switch ((value || '').toLowerCase()) {
@@ -118,6 +119,7 @@ function SearchPageContent() {
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabin, setCabin] = useState<SearchCabin>("economy");
+    const [persona, setPersona] = useState<SearchPersona>("comfort");
 
     // Pagination state
     const [visibleCount, setVisibleCount] = useState(20);
@@ -176,6 +178,7 @@ function SearchPageContent() {
         children: number;
         infants: number;
         cabin: SearchCabin;
+        persona: SearchPersona;
         tripType: "ONE_WAY" | "ROUND_TRIP";
     }) => {
         if (!params.origin || !params.destination || !params.date) {
@@ -211,6 +214,7 @@ function SearchPageContent() {
                 children: params.children.toString(),
                 infants: params.infants.toString(),
                 cabin: params.cabin,
+                persona: params.persona,
                 tripType: params.tripType
             });
 
@@ -268,6 +272,7 @@ function SearchPageContent() {
         const urlChildren = initialParams.get('children');
         const urlInfants = initialParams.get('infants');
         const urlCabin = initialParams.get('cabin');
+        const urlPersona = initialParams.get('persona');
 
         if (urlOrigin && urlDestination && urlDate) {
             const normalizedCabin = normalizeCabinParam(urlCabin);
@@ -280,6 +285,7 @@ function SearchPageContent() {
                 urlChildren || '0',
                 urlInfants || '0',
                 normalizedCabin,
+                (urlPersona || 'comfort').toLowerCase(),
             ].join('|');
             if (lastBootSearchRef.current === searchKey) {
                 return;
@@ -304,6 +310,12 @@ function SearchPageContent() {
             if (urlChildren) setChildren(parseInt(urlChildren));
             if (urlInfants) setInfants(parseInt(urlInfants));
             setCabin(normalizedCabin);
+            const normalizedPersona = ((urlPersona || 'comfort').toLowerCase() as SearchPersona);
+            setPersona(
+                normalizedPersona === 'budget' || normalizedPersona === 'business' || normalizedPersona === 'family'
+                    ? normalizedPersona
+                    : 'comfort'
+            );
 
             // Trigger Search
             executeSearch({
@@ -315,6 +327,10 @@ function SearchPageContent() {
                 children: urlChildren ? parseInt(urlChildren) : 0,
                 infants: urlInfants ? parseInt(urlInfants) : 0,
                 cabin: normalizedCabin,
+                persona:
+                    normalizedPersona === 'budget' || normalizedPersona === 'business' || normalizedPersona === 'family'
+                        ? normalizedPersona
+                        : 'comfort',
                 tripType: urlReturnDate ? 'ROUND_TRIP' : 'ONE_WAY'
             });
         }
@@ -348,6 +364,7 @@ function SearchPageContent() {
             children,
             infants,
             cabin,
+            persona,
             tripType: tripType === "roundTrip" ? "ROUND_TRIP" : "ONE_WAY"
         });
     }
@@ -557,7 +574,7 @@ function SearchPageContent() {
                                 <DatePicker label={t('returnDate')} placeholder={t('selectDate')} value={returnDate} onChange={setReturnDate} minDate={departureDate ? new Date(departureDate) : new Date()} locale={locale} disabled={tripType === "oneWay"} />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-slate-700">{t('travelers_label')}</label>
                                     <PassengerSelector
@@ -571,6 +588,19 @@ function SearchPageContent() {
                                         setCabin={(value) => setCabin(fromSelectorCabin(value))}
                                         className="w-full"
                                     />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-slate-700">Seyahat Amacı</label>
+                                    <select
+                                        value={persona}
+                                        onChange={(e) => setPersona(e.target.value as SearchPersona)}
+                                        className="w-full h-12 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="budget">Budget</option>
+                                        <option value="comfort">Comfort</option>
+                                        <option value="business">Business</option>
+                                        <option value="family">Family</option>
+                                    </select>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                                     {t('totalPassengers', { count: adults + children + infants })}

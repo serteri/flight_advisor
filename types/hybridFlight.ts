@@ -18,6 +18,7 @@ export type HybridSearchParams = {
     infants?: number;
     cabin?: "economy" | "premium" | "business" | "first";
     currency?: string;
+    persona?: "budget" | "comfort" | "business" | "family";
 };
 
 export type FlightResult = {
@@ -152,7 +153,7 @@ export type FlightResult = {
         dataErrorReason?: string;
         // Intelligence Layer v2
         personaScore?: number;
-        persona?: 'balanced' | 'business' | 'budget';
+        persona?: 'balanced' | 'business' | 'budget' | 'family';
         delayProbability?: number;
         connectionRisk?: 'low' | 'medium' | 'high' | 'critical';
         minConnectionMinutes?: number;
@@ -162,6 +163,7 @@ export type FlightResult = {
             source: string;
         };
         confidenceScore?: number;
+        forYouBonus?: number;
         explanation?: string;
     };
 };

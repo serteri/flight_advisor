@@ -27,6 +27,7 @@ export function SearchForm() {
     const [childrenCount, setChildrenCount] = useState(0);
     const [infants, setInfants] = useState(0);
     const [cabin, setCabin] = useState<"ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST">("ECONOMY");
+    const [persona, setPersona] = useState<'budget' | 'comfort' | 'business' | 'family'>('comfort');
 
     const handleSearch = () => {
         // SAFETY: Ensure origin and destination have correct structure
@@ -54,7 +55,8 @@ export function SearchForm() {
                 adults: adults.toString(),
                 children: childrenCount.toString(),
                 infants: infants.toString(),
-                cabin: cabin
+                cabin: cabin,
+                persona,
             });
 
             router.push(`/flight-search?${queryParams.toString()}`);
@@ -170,6 +172,23 @@ export function SearchForm() {
                         variant="ghost"
                         className="h-[88px] rounded-2xl md:rounded-none transition-colors"
                     />
+                </div>
+
+                {/* Travel Purpose */}
+                <div className="relative md:w-[170px] group px-2 flex items-center">
+                    <div className="w-full">
+                        <label className="text-xs font-semibold text-slate-500 block mb-1">Seyahat Amacı</label>
+                        <select
+                            value={persona}
+                            onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
+                            className="w-full h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700"
+                        >
+                            <option value="budget">Budget</option>
+                            <option value="comfort">Comfort</option>
+                            <option value="business">Business</option>
+                            <option value="family">Family</option>
+                        </select>
+                    </div>
                 </div>
 
                 {/* Search Button */}
