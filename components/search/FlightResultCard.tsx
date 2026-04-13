@@ -663,19 +663,23 @@ export default function FlightResultCard({
                             const pIntel = intel.priceIntel;
                             const pConf = pIntel ? priceIntelConfig[pIntel.label] : null;
 
+                            // ── CONNECTION: use semantic label + risk for colour ──────────────
                             const connRisk = intel.connectionRisk ?? 'low';
-                            const connRiskConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
-                                low:      { icon: '🟢', colorClass: 'bg-green-100 text-green-700',  label: 'Düşük Risk' },
-                                medium:   { icon: '🟡', colorClass: 'bg-amber-100 text-amber-700',  label: 'Orta Risk' },
-                                high:     { icon: '🟠', colorClass: 'bg-orange-100 text-orange-700', label: 'Yüksek Risk' },
-                                critical: { icon: '🔴', colorClass: 'bg-rose-100 text-rose-700',    label: 'Kritik Risk' },
+                            const connLabel = intel.connectionLabel ?? (stops === 0 ? 'Non-stop' : 'Good connection window');
+                            const connIconMap: Record<string, string> = {
+                                low: '🟢', medium: '🟡', high: '🟠', critical: '🔴',
                             };
-                            const cConf = connRiskConfig[connRisk];
+                            const connColorMap: Record<string, string> = {
+                                low:      'bg-green-100 text-green-700',
+                                medium:   'bg-amber-100 text-amber-700',
+                                high:     'bg-orange-100 text-orange-700',
+                                critical: 'bg-rose-100 text-rose-700',
+                            };
 
-                            // ── REAL DELAY RISK LABEL (Kill Fake Precision) ───
-                            const delayRiskLabel = intel.delayRiskLabel ?? 'Typical delay risk (~18-20%)';
-                            const delayP = intel.delayProbability ?? 0;
-                            const delayColorClass = delayP >= 30 ? 'bg-rose-100 text-rose-700' : delayP >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
+                            // ── DELAY: semantic label only, no fake % ─────────────────────────
+                            const delayRiskLabel = intel.delayRiskLabel ?? 'Typical delay risk';
+                            const delayCat = intel.delayProbability ?? 18; // internal proxy only, never shown raw
+                            const delayColorClass = delayCat >= 28 ? 'bg-rose-100 text-rose-700' : delayCat >= 18 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
 
                             return (
                                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
@@ -702,10 +706,10 @@ export default function FlightResultCard({
                                             ⏱ {delayRiskLabel}
                                         </span>
                                         {stops > 0 && (
-                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cConf.colorClass}`}>
-                                                {cConf.icon} Aktarma: {cConf.label}
+                                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${connColorMap[connRisk]}`}>
+                                                {connIconMap[connRisk]} {connLabel}
                                                 {(intel.minConnectionMinutes ?? -1) > 0 && (
-                                                    <span className="ml-0.5 opacity-75">({intel.minConnectionMinutes}dk)</span>
+                                                    <span className="ml-0.5 opacity-75">({intel.minConnectionMinutes} min)</span>
                                                 )}
                                             </span>
                                         )}

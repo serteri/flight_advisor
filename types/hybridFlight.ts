@@ -164,6 +164,7 @@ export type FlightResult = {
         delayProbability?: number;
         delayRiskLabel?: string; // Semantic label for delay risk (e.g., "Low delay risk (< 10%)")
         connectionRisk?: 'low' | 'medium' | 'high' | 'critical'; // Based on layover times: <60min=high, 60-90min=medium, 90+=low
+        connectionLabel?: string; // UX label: 'Non-stop' | 'Good connection window' | 'Tight connection window' | 'Critical connection'
         minConnectionMinutes?: number;
         priceIntel?: {
             label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase';

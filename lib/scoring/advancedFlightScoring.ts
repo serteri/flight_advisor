@@ -237,6 +237,68 @@ const resolveLayovers = (flight: FlightResult) =>
         duration: toMinutes(layover.duration),
     }));
 
+// ── REAL LAYOVER COMPUTATION: next_leg.departure − prev_leg.arrival ────────
+type ResolvedLayover = {
+    durationMinutes: number;
+    airport: string;
+    fromAirline: string;
+    toAirline: string;
+    isSameAirline: boolean;
+};
+
+const resolveLayoversFromSegments = (flight: FlightResult): ResolvedLayover[] => {
+    const segments = Array.isArray(flight.segments) ? flight.segments : [];
+    const result: ResolvedLayover[] = [];
+
+    for (let i = 0; i < segments.length - 1; i++) {
+        const cur = segments[i] as any;
+        const next = segments[i + 1] as any;
+
+        const arrRaw = cur?.arriving_at || cur?.arrival_time || cur?.arrival;
+        const depRaw = next?.departing_at || next?.departure_time || next?.departure;
+        const airport = String(
+            cur?.destination?.iata_code || cur?.destination_airport?.iata_code ||
+            cur?.destination || cur?.arrival_airport || ''
+        ).toUpperCase();
+        const fromAirline = String(
+            cur?.operating_carrier?.name || cur?.operating_carrier?.iata_code ||
+            cur?.airline || flight.airline || ''
+        ).toUpperCase();
+        const toAirline = String(
+            next?.operating_carrier?.name || next?.operating_carrier?.iata_code ||
+            next?.airline || flight.airline || ''
+        ).toUpperCase();
+        const isSameAirline = fromAirline.length > 0 && fromAirline === toAirline;
+
+        if (arrRaw && depRaw) {
+            const arrMs = new Date(arrRaw).getTime();
+            const depMs = new Date(depRaw).getTime();
+            if (Number.isFinite(arrMs) && Number.isFinite(depMs) && depMs > arrMs) {
+                result.push({ durationMinutes: Math.round((depMs - arrMs) / 60000), airport, fromAirline, toAirline, isSameAirline });
+                continue;
+            }
+        }
+        // Fallback to pre-computed layover at matching index
+        const fallback = (flight.layovers || [])[i];
+        if (fallback) {
+            result.push({ durationMinutes: toMinutes(fallback.duration), airport: (fallback.airport || airport || '').toUpperCase(), fromAirline, toAirline, isSameAirline });
+        }
+    }
+
+    // If no segments produced results, fall back entirely to flight.layovers
+    if (result.length === 0) {
+        return (flight.layovers || []).map((lay) => ({
+            durationMinutes: toMinutes(lay.duration),
+            airport: (lay.airport || '').toUpperCase(),
+            fromAirline: flight.airline.toUpperCase(),
+            toAirline: flight.airline.toUpperCase(),
+            isSameAirline: true,
+        }));
+    }
+
+    return result;
+};
+
 const hasSelfTransferRisk = (flight: FlightResult): boolean => {
     const segments = Array.isArray(flight.segments) ? flight.segments : [];
     if (segments.length < 2) return false;
@@ -304,42 +366,33 @@ const resolveAircraftCode = (flight: FlightResult): string => {
     return (segAircraft || '').toString().toUpperCase();
 };
 
-const getDelayProbabilityFromReliability = (reliabilityScore: number): number => {
-    if (reliabilityScore >= 9) return 8;    // Premium: ~8% delay risk
-    if (reliabilityScore >= 8) return 12;   // High-tier: ~12% delay risk
-    if (reliabilityScore >= 7) return 18;   // Standard: ~18% delay risk
-    if (reliabilityScore >= 6) return 24;   // Below avg: ~24% delay risk
-    if (reliabilityScore >= 5) return 30;   // Low: ~30% delay risk
-    return 38;                               // Very low reliability: ~38% delay risk
+// ── UNIFIED DELAY HEURISTIC — no fake precision numbers ─────────────────────
+type DelayHeuristic = {
+    label: string;
+    category: 'low' | 'medium' | 'high';
 };
 
-// ── HEURISTIC DELAY WITH AIRLINE HIERARCHY ────────────────────────────────
-const getHeuristicDelayProbability = (airlineName: string, hasRealData: boolean = false): number => {
-    if (hasRealData) return 0; // Placeholder; real data should override this
-    
+const resolveDelayHeuristic = (airlineName: string, routeDistanceKm?: number | null): DelayHeuristic => {
     const upper = airlineName.toUpperCase();
-    
-    // Premium carriers: Low delay risk
-    if (Array.from(PREMIUM_AIRLINES).some((name) => upper.includes(name))) {
-        return 10; // ~10% delay probability
-    }
-    
-    // Budget carriers: Medium-High delay risk
-    if (Array.from(BUDGET_AIRLINES).some((name) => upper.includes(name))) {
-        return 28; // ~28% delay probability
-    }
-    
-    // Default mid-tier
-    return 18; // ~18% delay probability
-};
+    // Long-haul routes (>4000 km) get a stability boost — dedicated ops, fewer weather disruptions
+    const isLongHaul = typeof routeDistanceKm === 'number' && routeDistanceKm > 4000;
 
-// ── DELAY RISK LABEL: Kill Fake Precision ───────────────────────────────
-const getDelayRiskLabel = (delayProbability: number): string => {
-    if (delayProbability <= 10) return 'Low delay risk (< 10%)';
-    if (delayProbability <= 15) return 'Typical delay risk (~15%)';
-    if (delayProbability <= 20) return 'Moderate delay risk (~18-20%)';
-    if (delayProbability <= 30) return 'Higher delay risk (~25-30%)';
-    return 'High delay risk (> 30%)';
+    // Premium carriers → always low risk
+    if (Array.from(PREMIUM_AIRLINES).some((name) => upper.includes(name))) {
+        return { label: 'Low delay risk', category: 'low' };
+    }
+
+    // Budget carriers → higher risk, but long-haul bumps down one level
+    if (Array.from(BUDGET_AIRLINES).some((name) => upper.includes(name))) {
+        if (isLongHaul) return { label: 'Typical delay risk (~20%)', category: 'medium' };
+        return { label: 'Higher delay risk', category: 'high' };
+    }
+
+    // Mid-tier on long-haul → lower risk due to route stability
+    if (isLongHaul) return { label: 'Low-moderate delay risk', category: 'low' };
+
+    // Default mid-tier
+    return { label: 'Typical delay risk', category: 'medium' };
 };
 
 const computePriceIntel = (
@@ -591,42 +644,60 @@ const scoreFlight = (
         riskFlags.push('Çoklu aktarma');
     }
 
+    // ── CONNECTION RISK: computed from real segment timestamps ──────────────
     breakdown.connection = 10;
-    const layovers = resolveLayovers(flight);
-    
-    // ── REAL CONNECTION RISK: Calculate based on actual layover times ────────
-    // <60 dk: high | 60-90 dk: medium | 90+ dk: low
-    layovers.forEach((layover) => {
-        if (layover.duration > 0) {
-            // HIGH RISK: < 60 minutes
-            if (layover.duration < 60) {
-                breakdown.connection -= 6;
-                riskFlags.push('Yüksek Aktarma Riski (< 60 dk)');
-            }
-            // MEDIUM RISK: 60-90 minutes
-            else if (layover.duration < 90) {
-                breakdown.connection -= 3;
-                riskFlags.push('Orta Aktarma Riski (60-90 dk)');
-            }
-            // LONG LAYOVER: > 300 minutes
-            else if (layover.duration > 300) {
-                breakdown.connection -= 2;
-                riskFlags.push('Uzun aktarma beklemesi (> 5 saat)');
+    const resolvedLayovers = resolveLayoversFromSegments(flight);
+    const connectionUxLabels: string[] = [];
+
+    resolvedLayovers.forEach((lay) => {
+        if (lay.durationMinutes <= 0) return;
+
+        // Base risk from actual layover duration
+        let riskLevel: 'high' | 'medium' | 'low' =
+            lay.durationMinutes < 60 ? 'high' :
+            lay.durationMinutes < 90 ? 'medium' : 'low';
+
+        // Same-airline bonus: one level reduction (airline can protect the connection)
+        if (lay.isSameAirline) {
+            if (riskLevel === 'high')   riskLevel = 'medium';
+            else if (riskLevel === 'medium') riskLevel = 'low';
+        }
+
+        if (riskLevel === 'high') {
+            breakdown.connection -= 6;
+            riskFlags.push('Critical connection — may miss flight');
+            connectionUxLabels.push('Critical connection — may miss flight');
+        } else if (riskLevel === 'medium') {
+            breakdown.connection -= 3;
+            riskFlags.push('Tight connection window');
+            connectionUxLabels.push('Tight connection window');
+        } else {
+            // Long layover still slightly penalised for user discomfort
+            if (lay.durationMinutes > 300) {
+                breakdown.connection -= 1;
+                riskFlags.push('Very long layover (> 5 h)');
+                connectionUxLabels.push('Long layover (> 5 h)');
+            } else {
+                connectionUxLabels.push('Good connection window');
             }
         }
     });
-    breakdown.connection = clamp(breakdown.connection, 0, 10);
 
-    const layoverDurations = layovers.filter(l => l.duration > 0).map(l => l.duration);
+    breakdown.connection = clamp(breakdown.connection, 0, 10);
+    const connectionLabel =
+        flight.stops === 0 ? 'Non-stop'
+        : connectionUxLabels[0] ?? 'Good connection window';
+
+    const layoverDurations = resolvedLayovers.filter(l => l.durationMinutes > 0).map(l => l.durationMinutes);
     const minConnectionMinutes = layoverDurations.length > 0 ? Math.min(...layoverDurations) : -1;
-    
-    // ── ALIGN connectionRisk with connectionRiskLabel thresholds ──────────────
-    // <60 dk: high | 60-90 dk: medium | 90+ dk: low
     const connectionRisk: 'low' | 'medium' | 'high' | 'critical' =
         flight.stops === 0       ? 'low' :
         minConnectionMinutes < 0 ? 'low' :
         minConnectionMinutes < 60  ? 'high' :
         minConnectionMinutes < 90  ? 'medium' : 'low';
+
+    // Cache simple layovers for airport-index lookup below
+    const layovers = resolvedLayovers;
 
     const selfTransfer = hasSelfTransferRisk(flight);
     breakdown.selfTransfer = selfTransfer ? 0 : 10;
@@ -672,12 +743,12 @@ const scoreFlight = (
         riskFlags.push('On-time güvenilirliği düşük');
     }
 
-    // ── REAL DELAY DATA: Reliability-based heuristic + airline hierarchy ─────
-    const delayProbability = getDelayProbabilityFromReliability(reliability.score);
-    const delayRiskLabel = getDelayRiskLabel(delayProbability);
-    
-    // Optional: Override with heuristic delay if no reliability data
-    // const heuristicDelay = getHeuristicDelayProbability(flight.airline);
+    // ── DELAY HEURISTIC: airline hierarchy + route-length bonus, no fake % ─────
+    const routeDistanceKm = getGreatCircleDistanceKm(flight.from, flight.to);
+    const delayHeuristic = resolveDelayHeuristic(flight.airline, routeDistanceKm);
+    const delayRiskLabel = delayHeuristic.label;
+    // Keep delayProbability as internal proxy for downstream consumers (no UI display)
+    const delayProbability = delayHeuristic.category === 'low' ? 10 : delayHeuristic.category === 'medium' ? 18 : 28;
 
     const aircraftCode = resolveAircraftCode(flight);
     const aircraftAge = flight.aircraftAge || AIRCRAFT_AGE[aircraftCode] || 12;
@@ -710,14 +781,10 @@ const scoreFlight = (
     breakdown.amenities = clamp(Math.round(amenitiesScore), 0, 5);
 
     let airportIndex = 5;
-    layovers.forEach((layover) => {
-        if (!layover.airport) return;
-        if (EASY_AIRPORTS.has(layover.airport)) {
-            airportIndex += 1;
-        }
-        if (HARD_AIRPORTS.has(layover.airport)) {
-            airportIndex -= 2;
-        }
+    resolvedLayovers.forEach((lay) => {
+        if (!lay.airport) return;
+        if (EASY_AIRPORTS.has(lay.airport)) airportIndex += 1;
+        if (HARD_AIRPORTS.has(lay.airport))  airportIndex -= 2;
     });
     breakdown.airportIndex = clamp(airportIndex, 0, 5);
 
@@ -768,8 +835,9 @@ const scoreFlight = (
             personaScore,
             persona: resolvedPersona,
             delayProbability,
-            delayRiskLabel, // Semantic label for delay risk (e.g., "Low delay risk (< 10%)")
+            delayRiskLabel,    // Semantic label: 'Low delay risk' | 'Typical delay risk (~20%)' | etc.
             connectionRisk,
+            connectionLabel,   // UX label: 'Non-stop' | 'Good connection window' | 'Tight connection window' | etc.
             minConnectionMinutes,
             priceIntel,
             confidenceScore,
