@@ -848,6 +848,21 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     cabinClass: (params.cabin || 'economy') as any,
                     layovers,
                     segments: segments.map((segment: any) => ({
+                        marketingAirlineCode: firstString(
+                            segment?.marketingAirlineCode,
+                            segment?.marketingAirline,
+                            segment?.carrierCode,
+                            airlineCode
+                        ).toUpperCase(),
+                        operatingAirlineCode: firstString(
+                            segment?.operatingAirlineCode,
+                            segment?.operatingAirline,
+                            segment?.operatingCarrierCode,
+                            segment?.carrierCode,
+                            segment?.marketingAirlineCode,
+                            segment?.marketingAirline,
+                            airlineCode
+                        ).toUpperCase(),
                         departure: firstString(
                             segment?.departure,
                             segment?.departTime,
@@ -865,11 +880,75 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                             segment?.arrivalInfo?.time?.dateTime
                         ),
                         duration: parseDurationMinutes(segment?.duration || segment?.durationMinutes),
+                        marketingAirlineName: firstString(
+                            segment?.marketingAirlineName,
+                            airlineCatalog.get(
+                                firstString(
+                                    segment?.marketingAirlineCode,
+                                    segment?.marketingAirline,
+                                    segment?.carrierCode,
+                                    airlineCode
+                                ).toUpperCase()
+                            )?.name,
+                            segment?.airline,
+                            airline
+                        ),
+                        operatingAirlineName: firstString(
+                            segment?.operatingAirlineName,
+                            airlineCatalog.get(
+                                firstString(
+                                    segment?.operatingAirlineCode,
+                                    segment?.operatingAirline,
+                                    segment?.operatingCarrierCode,
+                                    segment?.carrierCode,
+                                    segment?.marketingAirlineCode,
+                                    segment?.marketingAirline,
+                                    airlineCode
+                                ).toUpperCase()
+                            )?.name,
+                            segment?.airline,
+                            airline
+                        ),
                         airline: firstString(
                             segment?.airline,
                             segment?.carrier,
                             airlineCatalog.get(String(segment?.marketingAirline || '').toUpperCase())?.name,
                             airline
+                        ),
+                        airlineLogo: firstString(
+                            toAbsoluteUrl(
+                                firstString(segment?.airlineImagePath, airlineImagePath),
+                                firstString(segment?.smallImage, segment?.logo, segment?.airlineLogo)
+                            ),
+                            airlineCatalog.get(
+                                firstString(
+                                    segment?.operatingAirlineCode,
+                                    segment?.operatingAirline,
+                                    segment?.operatingCarrierCode,
+                                    segment?.carrierCode,
+                                    segment?.marketingAirlineCode,
+                                    segment?.marketingAirline,
+                                    airlineCode
+                                ).toUpperCase()
+                            )?.logo,
+                            airlineCatalog.get(
+                                firstString(
+                                    segment?.marketingAirlineCode,
+                                    segment?.marketingAirline,
+                                    segment?.carrierCode,
+                                    airlineCode
+                                ).toUpperCase()
+                            )?.logo,
+                            toGstaticLogo(
+                                firstString(
+                                    segment?.operatingAirlineCode,
+                                    segment?.operatingAirline,
+                                    segment?.marketingAirlineCode,
+                                    segment?.marketingAirline,
+                                    segment?.carrierCode,
+                                    airlineCode
+                                ).toUpperCase()
+                            )
                         ),
                         flightNumber: firstString(segment?.flightNumber, segment?.flight_no, flightNumber),
                         origin: firstString(

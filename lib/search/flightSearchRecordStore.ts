@@ -11,6 +11,12 @@ type RecentRouteSearchRecord = {
     createdAt: Date;
 };
 
+type SearchAnalyticsOptions = {
+    origin: string;
+    destination: string;
+    departureDate: string;
+};
+
 const hasExplicitTimezone = (value: string): boolean =>
     /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
@@ -195,6 +201,123 @@ export async function persistFlightSearchRecords(
             rows: validRows.length,
             sample: validRows.slice(0, 2),
         });
+    }
+}
+
+export async function persistSearchAnalytics(
+    flights: FlightResult[],
+    options: SearchAnalyticsOptions
+): Promise<void> {
+    const departureDate = normalizeUtcDate(options.departureDate);
+    const searchTimestamp = new Date();
+
+    const validFlights = flights
+        .filter((flight) => Number.isFinite(Number(flight.price)) && Number(flight.price) > 0)
+        .filter((flight) => !isInvalidBneIstDuration(flight));
+
+    if (validFlights.length === 0) {
+        return;
+    }
+
+    const groupedByProvider = new Map<string, number[]>();
+    for (const flight of validFlights) {
+        const provider = String(flight.source || 'UNKNOWN').toUpperCase();
+        const price = Number(flight.price);
+        if (!groupedByProvider.has(provider)) {
+            groupedByProvider.set(provider, []);
+        }
+        groupedByProvider.get(provider)!.push(price);
+    }
+
+    const searchAnalyticsModel = (prisma as any)?.searchAnalytics;
+    if (searchAnalyticsModel && groupedByProvider.size > 0) {
+        const rows = Array.from(groupedByProvider.entries()).map(([provider, prices]) => {
+            const minPrice = Math.min(...prices);
+            const avgPrice = prices.reduce((sum, value) => sum + value, 0) / prices.length;
+            return {
+                origin: options.origin,
+                destination: options.destination,
+                departureDate,
+                minPrice,
+                avgPrice,
+                provider,
+                searchTimestamp,
+            };
+        });
+
+        try {
+            await searchAnalyticsModel.createMany({ data: rows });
+        } catch (error: any) {
+            console.warn('[SEARCH_ANALYTICS] persist skipped:', error?.message || error);
+        }
+    }
+
+    const routeInsightModel = (prisma as any)?.routeInsight;
+    if (!routeInsightModel) {
+        return;
+    }
+
+    const routeMinPrice = Math.min(...validFlights.map((flight) => Number(flight.price)));
+    const routeAvgPrice =
+        validFlights.reduce((sum, flight) => sum + Number(flight.price), 0) / validFlights.length;
+
+    try {
+        const existing = await routeInsightModel.findUnique({
+            where: {
+                origin_destination_departureDate: {
+                    origin: options.origin,
+                    destination: options.destination,
+                    departureDate,
+                },
+            },
+            select: {
+                searchCount: true,
+                lastMinPrice: true,
+                volatility: true,
+            },
+        });
+
+        if (!existing) {
+            await routeInsightModel.create({
+                data: {
+                    origin: options.origin,
+                    destination: options.destination,
+                    departureDate,
+                    searchCount: 1,
+                    lastMinPrice: routeMinPrice,
+                    lastAvgPrice: routeAvgPrice,
+                    volatility: 0,
+                    lastSearchedAt: searchTimestamp,
+                },
+            });
+            return;
+        }
+
+        const previousMin = Number(existing.lastMinPrice || 0);
+        const deltaPercent =
+            previousMin > 0 ? Math.abs((routeMinPrice - previousMin) / previousMin) * 100 : 0;
+        const nextVolatility = Number(
+            ((Number(existing.volatility || 0) * 0.7) + (deltaPercent * 0.3)).toFixed(2)
+        );
+
+        await routeInsightModel.update({
+            where: {
+                origin_destination_departureDate: {
+                    origin: options.origin,
+                    destination: options.destination,
+                    departureDate,
+                },
+            },
+            data: {
+                searchCount: Number(existing.searchCount || 0) + 1,
+                lastMinPrice: routeMinPrice,
+                lastAvgPrice: routeAvgPrice,
+                volatility: nextVolatility,
+                lastSearchedAt: searchTimestamp,
+            },
+        });
+    } catch (error: any) {
+        console.warn('[ROUTE_INSIGHT] update skipped:', error?.message || error);
     }
 }
 

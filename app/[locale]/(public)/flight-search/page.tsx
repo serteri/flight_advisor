@@ -641,12 +641,31 @@ function SearchPageContent() {
                         <ErrorBoundary>
                             <div className="space-y-4" style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }}>
                                 {filteredResults.slice(0, visibleCount).map((flight, index) => (
+                                    (() => {
+                                        const nearbyCompetitor =
+                                            filteredResults[index + 1] ||
+                                            filteredResults[index - 1] ||
+                                            null;
+                                        return (
                                     <FlightResultCard
                                         key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
                                         flight={flight}
                                         isPremium={hasPremiumAccess}
                                         userTier={viewerTier}
+                                        selectionContext={{
+                                            rank: index + 1,
+                                            totalResults: filteredResults.length,
+                                            competitorPrice: nearbyCompetitor ? Number(nearbyCompetitor.price || 0) : null,
+                                            competitorScore:
+                                                nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.agentScore))
+                                                    ? Number(nearbyCompetitor.agentScore)
+                                                    : nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.advancedScore?.displayScore))
+                                                        ? Number(nearbyCompetitor.advancedScore?.displayScore)
+                                                        : null,
+                                        }}
                                     />
+                                        );
+                                    })()
                                 ))}
                             </div>
                         </ErrorBoundary>

@@ -7,6 +7,7 @@ import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring'
 import {
     hasRecentRouteSearchRecords,
     persistFlightSearchRecords,
+    persistSearchAnalytics,
     getRecentRouteSearchRecords,
     getRecentPricelineRawCache,
     persistPricelineRawCache,
@@ -224,6 +225,12 @@ export async function GET(request: Request) {
         }
 
         await persistFlightSearchRecords(allFlights, {
+            origin: queryParams.origin,
+            destination: queryParams.destination,
+            departureDate: queryParams.date,
+        });
+
+        await persistSearchAnalytics(allFlights, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,

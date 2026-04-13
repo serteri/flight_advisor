@@ -12,11 +12,18 @@ import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from '@/lib/airline-lo
 export default function FlightResultCard({ 
     flight, 
     isPremium = false, 
-    userTier = 'FREE' 
+    userTier = 'FREE',
+    selectionContext
 }: { 
     flight: any; 
     isPremium?: boolean; 
     userTier?: UserTier;
+    selectionContext?: {
+        rank?: number;
+        totalResults?: number;
+        competitorPrice?: number | null;
+        competitorScore?: number | null;
+    };
 }) {
     const t = useTranslations('Results');
     const [showScore, setShowScore] = useState(isPremium);
@@ -165,6 +172,57 @@ export default function FlightResultCard({
     };
 
     const segments = Array.isArray(flight.segments) ? flight.segments : [];
+    const bookingUrl =
+        (typeof flight.deepLink === 'string' && flight.deepLink) ||
+        (typeof flight.bookingLink === 'string' && flight.bookingLink) ||
+        (Array.isArray(flight.bookingProviders) && flight.bookingProviders[0]?.link) ||
+        '';
+
+    const carrierSummary = useMemo(() => {
+        const entries: Array<{ name: string; logo: string }> = [];
+        const seen = new Set<string>();
+
+        for (const seg of segments) {
+            const name = String(
+                seg?.operatingAirlineName ||
+                seg?.operatingAirline ||
+                seg?.marketingAirlineName ||
+                seg?.marketingAirline ||
+                seg?.airline ||
+                ''
+            ).trim();
+            if (!name) continue;
+
+            const key = name.toUpperCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            const segLogoCandidates = getAirlineLogoCandidates({
+                airlineLogo: seg?.airlineLogo,
+                segments: [
+                    {
+                        airlineLogo: seg?.airlineLogo,
+                        marketingAirline: seg?.marketingAirlineCode || seg?.marketingAirline,
+                        carrierCode: seg?.operatingAirlineCode || seg?.operatingAirline,
+                        airlineCode: seg?.airlineCode,
+                    },
+                ],
+            } as any);
+
+            entries.push({
+                name,
+                logo: segLogoCandidates[0] || DEFAULT_AIRLINE_LOGO,
+            });
+        }
+
+        if (entries.length === 0) {
+            return [{ name: airline, logo: airlineLogo }];
+        }
+
+        return entries;
+    }, [segments, airline, airlineLogo]);
+
+    const carrierSummaryText = carrierSummary.map((entry) => entry.name).join(' + ');
     const segmentsTotalMinutes = segments.reduce((sum: number, seg: any) => sum + getSegmentDurationMinutes(seg, 0), 0);
     const layoversTotalMinutes = Array.isArray(flight.layovers)
         ? flight.layovers.reduce((sum: number, layover: any) => sum + parseMinutes(layover?.duration), 0)
@@ -176,6 +234,18 @@ export default function FlightResultCard({
         : assembledTotalMinutes > 0
             ? assembledTotalMinutes
             : endpointTotalMinutes;
+
+    const trackingCompetitorPrice =
+        Number.isFinite(Number(selectionContext?.competitorPrice))
+            ? Number(selectionContext?.competitorPrice)
+            : Array.isArray(flight.bookingProviders) && flight.bookingProviders.length > 1
+                ? Number(flight.bookingProviders[1]?.price || 0)
+                : null;
+
+    const trackingCompetitorScore =
+        Number.isFinite(Number(selectionContext?.competitorScore))
+            ? Number(selectionContext?.competitorScore)
+            : null;
 
     const totalDurationLabel = (() => {
         const localeCode = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
@@ -254,6 +324,57 @@ export default function FlightResultCard({
         alert("✅ Uçuş takibe alındı! Fiyat düşerse haber vereceğiz.");
     };
 
+    const sendSelectionEvent = (action: 'BOOK' | 'DETAIL') => {
+        const payload = {
+            action,
+            flightId: flight.id,
+            flightNumber,
+            provider: source,
+            origin: originText,
+            destination: destinationText,
+            departureDate: String(departureTime || '').slice(0, 10),
+            selectedPrice: Number(price) || null,
+            selectedScore: Number.isFinite(displayScore) ? displayScore : null,
+            competitorPrice: trackingCompetitorPrice,
+            competitorScore: trackingCompetitorScore,
+            rank: selectionContext?.rank ?? null,
+            totalResults: selectionContext?.totalResults ?? null,
+            currency: flight.currency || 'AUD',
+        };
+
+        try {
+            const body = JSON.stringify(payload);
+            if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+                const blob = new Blob([body], { type: 'application/json' });
+                navigator.sendBeacon('/api/selection-track', blob);
+                return;
+            }
+
+            fetch('/api/selection-track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body,
+                keepalive: true,
+            }).catch(() => undefined);
+        } catch {
+            // Best effort only - never block UX.
+        }
+    };
+
+    const handleDetailsClick = () => {
+        if (!hasPremiumAccess) return;
+        sendSelectionEvent('DETAIL');
+        setShowDetails(true);
+    };
+
+    const handleBookClick = () => {
+        if (!bookingUrl) return;
+        sendSelectionEvent('BOOK');
+        if (typeof window !== 'undefined') {
+            window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+        }
+    };
+
     return (
         <div className="bg-white rounded-[16px] p-5 border-2 border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
             {/* DEBUG INDICATOR - REMOVE LATER */}
@@ -307,7 +428,20 @@ export default function FlightResultCard({
                             />
                         </div>
                         <div>
-                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{airline}</h4>
+                            <h4 className="font-bold text-lg text-slate-900 leading-tight">{carrierSummaryText || airline}</h4>
+                            {carrierSummary.length > 1 && (
+                                <div className="flex items-center gap-1 mt-1">
+                                    {carrierSummary.map((entry) => (
+                                        <img
+                                            key={entry.name}
+                                            src={entry.logo}
+                                            alt={entry.name}
+                                            className="w-5 h-5 rounded-full border border-slate-200 object-contain bg-white"
+                                            loading="lazy"
+                                        />
+                                    ))}
+                                </div>
+                            )}
                             <div className="flex gap-2 items-center mt-1">
                                 <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flightNumber}</span>
                                 {/* Provider Source Badge */}
@@ -405,17 +539,32 @@ export default function FlightResultCard({
                                     const segDep = seg.departure || seg.departing_at || seg.departure_time || seg.departure_at || seg.departure_airport?.time;
                                     const segArr = seg.arrival || seg.arriving_at || seg.arrival_time || seg.arrival_at || seg.arrival_airport?.time;
                                     const segDuration = getSegmentDurationMinutes(seg, 0);
+                                    const operatingCarrier = String(seg.operatingAirlineName || seg.operatingAirline || seg.airline || 'Unknown Carrier').trim();
+                                    const marketingCarrier = String(seg.marketingAirlineName || seg.marketingAirline || operatingCarrier).trim();
+                                    const layoverAfter = Array.isArray(flight.layovers) ? flight.layovers[idx] : null;
+                                    const layoverMinutes = parseMinutes(layoverAfter?.duration);
+                                    const layoverAirportCode = toText(layoverAfter?.airport, segTo).toUpperCase();
+                                    const layoverCity = toText(layoverAfter?.city, layoverAirportCode);
 
                                     return (
-                                        <div key={`${segFrom}-${segTo}-${idx}`} className="flex flex-col gap-1">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-semibold text-slate-800">{segFrom} → {segTo}</span>
-                                                <span className="font-semibold text-slate-700">{formatDuration(segDuration)}</span>
+                                        <div key={`${segFrom}-${segTo}-${idx}`} className="flex flex-col gap-1.5">
+                                            <div className="flex items-center justify-between text-sm gap-3">
+                                                <span className="font-semibold text-slate-800 truncate">{segFrom} → {segTo}</span>
+                                                <span className="font-semibold text-slate-700 shrink-0">{formatDuration(segDuration)}</span>
                                             </div>
-                                            <div className="flex items-center justify-between text-xs text-slate-500">
+                                            <div className="text-[11px] text-slate-600 font-medium">
+                                                Operated by {operatingCarrier}
+                                                {marketingCarrier && marketingCarrier !== operatingCarrier ? ` • Marketed by ${marketingCarrier}` : ''}
+                                            </div>
+                                            <div className="flex items-center justify-between text-xs text-slate-500 gap-3">
                                                 <span>{formatLocalTime(segDep)} departure</span>
                                                 <span>{formatLocalTime(segArr)} arrival</span>
                                             </div>
+                                            {idx < segments.length - 1 && layoverMinutes > 0 && (
+                                                <div className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800">
+                                                    {formatDuration(layoverMinutes)} layover in {layoverCity} ({layoverAirportCode})
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -572,11 +721,7 @@ export default function FlightResultCard({
                     {/* KONTROL ET BUTONU - View Analysis */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
-                            onClick={() => {
-                                if (hasPremiumAccess) {
-                                    setShowDetails(true);
-                                }
-                            }}
+                            onClick={handleDetailsClick}
                             disabled={!hasPremiumAccess}
                             className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
                                 hasPremiumAccess 
@@ -587,6 +732,17 @@ export default function FlightResultCard({
                             <Eye className="w-4 h-4" />
                             View Analysis
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1" />}
+                        </button>
+                        <button
+                            onClick={handleBookClick}
+                            disabled={!bookingUrl}
+                            className={`mt-2 w-full font-semibold py-2 px-4 rounded-lg transition-colors ${
+                                bookingUrl
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            }`}
+                        >
+                            Book
                         </button>
                     </div>
 

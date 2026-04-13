@@ -227,6 +227,60 @@ model FlightSearchRecord {
   @@index([createdAt])
 }
 
+model SearchAnalytics {
+  id              String   @id @default(cuid())
+  origin          String
+  destination     String
+  departureDate   DateTime
+  minPrice        Float
+  avgPrice        Float
+  provider        String
+  searchTimestamp DateTime @default(now())
+
+  @@index([origin, destination, departureDate])
+  @@index([provider, searchTimestamp])
+  @@index([searchTimestamp])
+}
+
+model RouteInsight {
+  id             String   @id @default(cuid())
+  origin         String
+  destination    String
+  departureDate  DateTime
+  searchCount    Int      @default(0)
+  lastMinPrice   Float
+  lastAvgPrice   Float
+  volatility     Float    @default(0)
+  lastSearchedAt DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([origin, destination, departureDate])
+  @@index([origin, destination])
+  @@index([departureDate, lastSearchedAt])
+}
+
+model FlightSelectionEvent {
+  id                String   @id @default(cuid())
+  action            String
+  flightId          String?
+  flightNumber      String?
+  provider          String?
+  origin            String?
+  destination       String?
+  departureDate     DateTime?
+  selectedPrice     Float?
+  selectedScore     Float?
+  competitorPrice   Float?
+  competitorScore   Float?
+  rank              Int?
+  totalResults      Int?
+  currency          String?
+  createdAt         DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([origin, destination, departureDate])
+}
+
 // ----------------------------
 // WATCHED FLIGHTS (User Tracking)
 // ----------------------------

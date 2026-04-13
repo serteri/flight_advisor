@@ -148,14 +148,32 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                         
                         <div className="grid gap-6">
                             {flights.length > 0 ? (
-                                flights.map((flight, index) => (
-                                    <FlightResultCard
-                                        key={flight.id || index}
-                                        flight={flight}
-                                        isPremium={userTier === 'PRO' || userTier === 'ELITE'}
-                                        userTier={userTier}
-                                    />
-                                ))
+                                flights.map((flight, index) => {
+                                    const nearbyCompetitor =
+                                        flights[index + 1] ||
+                                        flights[index - 1] ||
+                                        null;
+
+                                    return (
+                                        <FlightResultCard
+                                            key={flight.id || index}
+                                            flight={flight}
+                                            isPremium={userTier === 'PRO' || userTier === 'ELITE'}
+                                            userTier={userTier}
+                                            selectionContext={{
+                                                rank: index + 1,
+                                                totalResults: flights.length,
+                                                competitorPrice: nearbyCompetitor ? Number(nearbyCompetitor.price || 0) : null,
+                                                competitorScore:
+                                                    nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.agentScore))
+                                                        ? Number(nearbyCompetitor.agentScore)
+                                                        : nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.advancedScore?.displayScore))
+                                                            ? Number(nearbyCompetitor.advancedScore?.displayScore)
+                                                            : null,
+                                            }}
+                                        />
+                                    );
+                                })
                             ) : (
                                 <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-xl bg-white">
                                     <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
