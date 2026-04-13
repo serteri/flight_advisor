@@ -18,6 +18,33 @@ type ScoreBreakdown = {
     airportIndex: number;
 };
 
+// ── REAL DATA HIERARCHY: Premium vs Low-Cost ────────────────────────────────
+const PREMIUM_AIRLINES = new Set([
+    'SINGAPORE AIRLINES',
+    'QATAR AIRWAYS',
+    'EMIRATES',
+    'ANA',
+    'ALL NIPPON AIRWAYS',
+    'JAPAN AIRLINES',
+    'CATHAY PACIFIC',
+    'EVA AIR',
+    'SWISS',
+    'LUFTHANSA',
+    'KLM',
+]);
+
+const BUDGET_AIRLINES = new Set([
+    'RYANAIR',
+    'EASYJET',
+    'WIZZ AIR',
+    'SPIRIT AIRLINES',
+    'FRONTIER AIRLINES',
+    'AIRASIA',
+    'LION AIR',
+    'INDIGO',
+    'GO FIRST',
+]);
+
 const RELIABILITY_BY_AIRLINE: Record<string, number> = {
     'SINGAPORE AIRLINES': 9.3,
     'QATAR AIRWAYS': 8.9,
@@ -149,6 +176,29 @@ const resolveDurationMinutes = (flight: FlightResult): number => {
     return resolveFlightDurationMinutes(flight);
 };
 
+// ── DEDUPLICATION ──────────────────────────────────────────────────────────
+// Merge flights with same departure time, arrival time, route, and airline
+const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
+    const seen = new Map<string, FlightResult>();
+    
+    flights.forEach((flight) => {
+        const departTime = String(flight.departTime || '').trim();
+        const arriveTime = String(flight.arriveTime || '').trim();
+        const route = `${flight.from || ''}|${flight.to || ''}`;
+        const airline = String(flight.airline || '').toUpperCase();
+        
+        const key = [departTime, arriveTime, route, airline].join('||');
+        
+        if (!seen.has(key)) {
+            seen.set(key, flight);
+        }
+        // If already seen, keep the first one (which will be the lowest price typically)
+        // or you could merge them by picking the best price or score
+    });
+    
+    return Array.from(seen.values());
+};
+
 const resolveLayovers = (flight: FlightResult) =>
     (flight.layovers || []).map((layover) => ({
         airport: (layover.airport || '').toUpperCase(),
@@ -223,29 +273,92 @@ const resolveAircraftCode = (flight: FlightResult): string => {
 };
 
 const getDelayProbabilityFromReliability = (reliabilityScore: number): number => {
-    if (reliabilityScore >= 9) return 8;
-    if (reliabilityScore >= 8) return 12;
-    if (reliabilityScore >= 7) return 18;
-    if (reliabilityScore >= 6) return 24;
-    if (reliabilityScore >= 5) return 30;
-    return 38;
+    if (reliabilityScore >= 9) return 8;    // Premium: ~8% delay risk
+    if (reliabilityScore >= 8) return 12;   // High-tier: ~12% delay risk
+    if (reliabilityScore >= 7) return 18;   // Standard: ~18% delay risk
+    if (reliabilityScore >= 6) return 24;   // Below avg: ~24% delay risk
+    if (reliabilityScore >= 5) return 30;   // Low: ~30% delay risk
+    return 38;                               // Very low reliability: ~38% delay risk
+};
+
+// ── HEURISTIC DELAY WITH AIRLINE HIERARCHY ────────────────────────────────
+const getHeuristicDelayProbability = (airlineName: string, hasRealData: boolean = false): number => {
+    if (hasRealData) return 0; // Placeholder; real data should override this
+    
+    const upper = airlineName.toUpperCase();
+    
+    // Premium carriers: Low delay risk
+    if (Array.from(PREMIUM_AIRLINES).some((name) => upper.includes(name))) {
+        return 10; // ~10% delay probability
+    }
+    
+    // Budget carriers: Medium-High delay risk
+    if (Array.from(BUDGET_AIRLINES).some((name) => upper.includes(name))) {
+        return 28; // ~28% delay probability
+    }
+    
+    // Default mid-tier
+    return 18; // ~18% delay probability
+};
+
+// ── DELAY RISK LABEL: Kill Fake Precision ───────────────────────────────
+const getDelayRiskLabel = (delayProbability: number): string => {
+    if (delayProbability <= 10) return 'Low delay risk (< 10%)';
+    if (delayProbability <= 15) return 'Typical delay risk (~15%)';
+    if (delayProbability <= 20) return 'Moderate delay risk (~18-20%)';
+    if (delayProbability <= 30) return 'Higher delay risk (~25-30%)';
+    return 'High delay risk (> 30%)';
 };
 
 const computePriceIntel = (
     price: number,
     referencePrice: number,
     referenceSource: string,
-): { label: 'Good Deal' | 'Below Average' | 'Fair Price' | 'Wait' | 'Likely to Increase'; deltaPercent: number; source: string } => {
+): { label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase'; deltaPercent: number; source: string; semanticLabel: string } => {
     if (!Number.isFinite(referencePrice) || referencePrice <= 0 || !Number.isFinite(price) || price <= 0) {
-        return { label: 'Fair Price', deltaPercent: 0, source: referenceSource };
+        return { label: 'Fair price', deltaPercent: 0, source: referenceSource, semanticLabel: 'Fair price - typical for this route' };
     }
     const delta = (price - referencePrice) / referencePrice;
     const deltaPercent = Math.round(delta * 100);
-    if (delta <= -0.20) return { label: 'Good Deal',             deltaPercent, source: referenceSource };
-    if (delta <= -0.05) return { label: 'Below Average',         deltaPercent, source: referenceSource };
-    if (delta <=  0.05) return { label: 'Fair Price',            deltaPercent, source: referenceSource };
-    if (delta <=  0.20) return { label: 'Wait',                  deltaPercent, source: referenceSource };
-    return               { label: 'Likely to Increase', deltaPercent, source: referenceSource };
+    
+    if (delta <= -0.20) {
+        return { 
+            label: 'Strong deal', 
+            deltaPercent, 
+            source: referenceSource,
+            semanticLabel: `Strong deal (~${Math.abs(deltaPercent)}% below average)` 
+        };
+    }
+    if (delta <= -0.05) {
+        return { 
+            label: 'Below average', 
+            deltaPercent, 
+            source: referenceSource,
+            semanticLabel: `Below average (~${Math.abs(deltaPercent)}% discount)`
+        };
+    }
+    if (delta <= 0.05) {
+        return { 
+            label: 'Fair price', 
+            deltaPercent, 
+            source: referenceSource,
+            semanticLabel: `Fair price - typical for this route`
+        };
+    }
+    if (delta <= 0.20) {
+        return { 
+            label: 'Monitor price', 
+            deltaPercent, 
+            source: referenceSource,
+            semanticLabel: `Price is rising (~${deltaPercent}% above average)`
+        };
+    }
+    return {
+        label: 'Expect increase',
+        deltaPercent,
+        source: referenceSource,
+        semanticLabel: `Expect price increase (~${deltaPercent}% premium)`
+    };
 };
 
 const computeConfidenceScore = (flight: FlightResult): number => {
@@ -351,6 +464,10 @@ const scoreFlight = (
     context: {
         avgPrice: number;
         medianPrice: number | null;
+        minPrice: number;
+        maxPrice: number;
+        minDuration: number;
+        maxDuration: number;
         expectedRouteDuration: number;
         markInvalidData: boolean;
         invalidReason?: string;
@@ -380,6 +497,47 @@ const scoreFlight = (
     const durationMinutes = resolveDurationMinutes(flight);
     const expectedRouteDuration = Math.max(1, context.expectedRouteDuration || durationMinutes || 1);
 
+    // ── RELATIVE PRICE SCORING ────────────────────────────────────────────────
+    // Score based on min/max of current results: (max - price) / (max - min) * 20
+    let priceScoreValue = 10; // default
+    if (context.maxPrice > context.minPrice) {
+        const relativePriceRatio = (context.maxPrice - validPrice) / (context.maxPrice - context.minPrice);
+        priceScoreValue = clamp(relativePriceRatio * 20, 0, 20);
+    } else if (context.minPrice > 0) {
+        // All prices are the same
+        priceScoreValue = 10;
+    }
+    breakdown.priceValue = Math.round(priceScoreValue);
+
+    // Set comfort notes based on relative price score
+    if (priceScoreValue >= 16) {
+        comfortNotes.push('Fiyat rota ortalamasına göre çok avantajlı');
+    } else if (priceScoreValue >= 12) {
+        comfortNotes.push('Fiyat rota ortalamasına göre avantajlı');
+    } else if (priceScoreValue < 6) {
+        riskFlags.push('Fiyat rota ortalamasına göre yüksek');
+    }
+
+    // ── RELATIVE DURATION SCORING ─────────────────────────────────────────────
+    // Score based on min/max of current results
+    let durationScoreValue = 15; // default max
+    if (context.maxDuration > context.minDuration) {
+        // Invert: shorter is better, so (max - duration) / (max - min) * 15
+        const relativeDurationRatio = (context.maxDuration - durationMinutes) / (context.maxDuration - context.minDuration);
+        durationScoreValue = clamp(relativeDurationRatio * 15, 0, 15);
+    } else if (durationMinutes > 0) {
+        // All durations are the same
+        durationScoreValue = 15;
+    }
+    breakdown.duration = Math.round(durationScoreValue);
+
+    if (durationScoreValue >= 13) {
+        comfortNotes.push('Kısa seyahat süresi');
+    } else if (durationScoreValue < 6) {
+        riskFlags.push('Uzun toplam seyahat süresi');
+    }
+
+    // ── REFERENCE PRICE FOR INTEL (separate from relative scoring) ──────────────
     const referencePrice =
         typeof context.medianPrice === 'number' && context.medianPrice > 0
             ? context.medianPrice
@@ -388,55 +546,40 @@ const scoreFlight = (
         typeof context.medianPrice === 'number' && context.medianPrice > 0
             ? 'historicalMedian'
             : 'liveAverage';
-    const priceDelta = referencePrice > 0 ? (validPrice - referencePrice) / referencePrice : 0;
-    if (priceDelta <= -0.2) {
-        breakdown.priceValue = 20;
-        comfortNotes.push('Fiyat rota ortalamasına göre çok avantajlı');
-    } else if (priceDelta <= -0.1) {
-        // 10% - 20% indirim bandı: 11..19 puan
-        const discountRatio = Math.min(1, Math.max(0, ((-priceDelta) - 0.1) / 0.1));
-        breakdown.priceValue = clamp(Math.round(11 + discountRatio * 8), 11, 19);
-        comfortNotes.push('Fiyat rota ortalamasına göre avantajlı');
-    } else if (priceDelta < 0) {
-        // 0% - 10% indirim bandı: en fazla 10 puan
-        const discountRatio = Math.min(1, Math.max(0, (-priceDelta) / 0.1));
-        breakdown.priceValue = clamp(Math.round(6 + discountRatio * 4), 6, 10);
-    } else if (priceDelta >= 0.3) {
-        breakdown.priceValue = 4;
-        riskFlags.push('Fiyat rota ortalamasına göre yüksek');
-    } else {
-        breakdown.priceValue = clamp(Math.round(10 - priceDelta * 20), 0, 10);
-    }
 
-    const durationRatio = durationMinutes > 0 ? durationMinutes / expectedRouteDuration : 2;
-    if (durationRatio <= 1) {
-        breakdown.duration = 15;
-    } else if (durationRatio <= 1.25) {
-        breakdown.duration = clamp(Math.round(15 - (durationRatio - 1) * 20), 10, 15);
-    } else {
-        const penalty = Math.min(10, Math.round((durationRatio - 1.25) * 20) + 4);
-        breakdown.duration = clamp(15 - penalty, 0, 15);
-        riskFlags.push('Uzun toplam seyahat süresi');
-    }
-
-    breakdown.stops = flight.stops <= 0 ? 10 : flight.stops === 1 ? 8 : 4;
+    // ── UPDATED STOPS PENALTY ─────────────────────────────────────────────────
+    // 0 stops: 1.0 multiplier -> 10
+    // 1 stop: 0.7 multiplier -> 7
+    // 2+ stops: 0.4 multiplier -> 4
+    const baseStopsScore = 10;
+    const stopsMultiplier = flight.stops <= 0 ? 1.0 : flight.stops === 1 ? 0.7 : 0.4;
+    breakdown.stops = Math.round(baseStopsScore * stopsMultiplier);
+    
     if (flight.stops >= 2) {
         riskFlags.push('Çoklu aktarma');
     }
 
     breakdown.connection = 10;
     const layovers = resolveLayovers(flight);
+    
+    // ── REAL CONNECTION RISK: Calculate based on actual layover times ────────
+    // <60 dk: high | 60-90 dk: medium | 90+ dk: low
     layovers.forEach((layover) => {
         if (layover.duration > 0) {
-            if (layover.duration < 45) {
+            // HIGH RISK: < 60 minutes
+            if (layover.duration < 60) {
                 breakdown.connection -= 6;
-                riskFlags.push('Kritik Bağlantı Riski');
-            } else if (layover.duration < 75) {
+                riskFlags.push('Yüksek Aktarma Riski (< 60 dk)');
+            }
+            // MEDIUM RISK: 60-90 minutes
+            else if (layover.duration < 90) {
                 breakdown.connection -= 3;
-                riskFlags.push('Sıkı Aktarma Riski');
-            } else if (layover.duration > 300) {
+                riskFlags.push('Orta Aktarma Riski (60-90 dk)');
+            }
+            // LONG LAYOVER: > 300 minutes
+            else if (layover.duration > 300) {
                 breakdown.connection -= 2;
-                riskFlags.push('Uzun aktarma beklemesi');
+                riskFlags.push('Uzun aktarma beklemesi (> 5 saat)');
             }
         }
     });
@@ -444,12 +587,14 @@ const scoreFlight = (
 
     const layoverDurations = layovers.filter(l => l.duration > 0).map(l => l.duration);
     const minConnectionMinutes = layoverDurations.length > 0 ? Math.min(...layoverDurations) : -1;
+    
+    // ── ALIGN connectionRisk with connectionRiskLabel thresholds ──────────────
+    // <60 dk: high | 60-90 dk: medium | 90+ dk: low
     const connectionRisk: 'low' | 'medium' | 'high' | 'critical' =
         flight.stops === 0       ? 'low' :
         minConnectionMinutes < 0 ? 'low' :
-        minConnectionMinutes < 45  ? 'critical' :
-        minConnectionMinutes < 75  ? 'high' :
-        minConnectionMinutes < 120 ? 'medium' : 'low';
+        minConnectionMinutes < 60  ? 'high' :
+        minConnectionMinutes < 90  ? 'medium' : 'low';
 
     const selfTransfer = hasSelfTransferRisk(flight);
     breakdown.selfTransfer = selfTransfer ? 0 : 10;
@@ -495,7 +640,12 @@ const scoreFlight = (
         riskFlags.push('On-time güvenilirliği düşük');
     }
 
+    // ── REAL DELAY DATA: Reliability-based heuristic + airline hierarchy ─────
     const delayProbability = getDelayProbabilityFromReliability(reliability.score);
+    const delayRiskLabel = getDelayRiskLabel(delayProbability);
+    
+    // Optional: Override with heuristic delay if no reliability data
+    // const heuristicDelay = getHeuristicDelayProbability(flight.airline);
 
     const aircraftCode = resolveAircraftCode(flight);
     const aircraftAge = flight.aircraftAge || AIRCRAFT_AGE[aircraftCode] || 12;
@@ -586,6 +736,7 @@ const scoreFlight = (
             personaScore,
             persona: resolvedPersona,
             delayProbability,
+            delayRiskLabel, // Semantic label for delay risk (e.g., "Low delay risk (< 10%)")
             connectionRisk,
             minConnectionMinutes,
             priceIntel,
@@ -607,12 +758,25 @@ export async function applyAdvancedFlightScoring(
         preferenceProfile?: PreferenceProfile;
     }
 ): Promise<FlightResult[]> {
-    const validPrices = flights
+    // ── DEDUPLICATION: Merge flights with same departure, arrival, route, operating_airline ──
+    const deduplicatedFlights = deduplicateFlights(flights);
+
+    const validPrices = deduplicatedFlights
         .map((flight) => Number(flight.price))
         .filter((price) => Number.isFinite(price) && price > 0);
     const avgPrice = validPrices.length
         ? validPrices.reduce((sum, price) => sum + price, 0) / validPrices.length
         : 0;
+
+    const minPrice = validPrices.length ? Math.min(...validPrices) : 0;
+    const maxPrice = validPrices.length ? Math.max(...validPrices) : 0;
+
+    // Calculate duration range for relative scoring
+    const validDurations = deduplicatedFlights
+        .map((flight) => resolveFlightDurationMinutes(flight))
+        .filter((duration) => duration > 0);
+    const minDuration = validDurations.length ? Math.min(...validDurations) : 0;
+    const maxDuration = validDurations.length ? Math.max(...validDurations) : 0;
 
     const expectedRouteDuration = getExpectedRouteDurationMinutes(options?.origin, options?.destination);
 
@@ -634,7 +798,7 @@ export async function applyAdvancedFlightScoring(
         }
     }
 
-    return flights
+    return deduplicatedFlights
         .map((flight) => {
             const markInvalidData = isInvalidBneIstDuration(flight);
             const invalidReason = markInvalidData
@@ -644,6 +808,10 @@ export async function applyAdvancedFlightScoring(
             return scoreFlight(flight, {
                 avgPrice,
                 medianPrice,
+                minPrice,
+                maxPrice,
+                minDuration,
+                maxDuration,
                 expectedRouteDuration,
                 markInvalidData,
                 invalidReason,

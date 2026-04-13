@@ -155,12 +155,14 @@ export type FlightResult = {
         personaScore?: number;
         persona?: 'balanced' | 'business' | 'budget' | 'family';
         delayProbability?: number;
-        connectionRisk?: 'low' | 'medium' | 'high' | 'critical';
+        delayRiskLabel?: string; // Semantic label for delay risk (e.g., "Low delay risk (< 10%)")
+        connectionRisk?: 'low' | 'medium' | 'high' | 'critical'; // Based on layover times: <60min=high, 60-90min=medium, 90+=low
         minConnectionMinutes?: number;
         priceIntel?: {
-            label: 'Good Deal' | 'Below Average' | 'Fair Price' | 'Wait' | 'Likely to Increase';
+            label: 'Strong deal' | 'Below average' | 'Fair price' | 'Monitor price' | 'Expect increase';
             deltaPercent: number;
             source: string;
+            semanticLabel?: string; // Human-readable price description
         };
         confidenceScore?: number;
         forYouBonus?: number;

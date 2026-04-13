@@ -654,11 +654,11 @@ export default function FlightResultCard({
                             const confLabel = confScore >= 80 ? 'Yüksek' : confScore >= 50 ? 'Orta' : 'Düşük';
 
                             const priceIntelConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
-                                'Good Deal':          { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Kaçırma Fırsatı' },
-                                'Below Average':      { icon: '✅', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'İyi Fiyat' },
-                                'Fair Price':         { icon: '📊', colorClass: 'bg-slate-100 text-slate-600 border-slate-300', label: 'Ortalama Fiyat' },
-                                'Wait':               { icon: '⏳', colorClass: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Bekle' },
-                                'Likely to Increase': { icon: '📈', colorClass: 'bg-rose-100 text-rose-700 border-rose-300', label: 'Fiyat Artabilir' },
+                                'Strong deal':      { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Güçlü İndirim' },
+                                'Below average':    { icon: '✅', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'Ortalamanın Altında' },
+                                'Fair price':       { icon: '📊', colorClass: 'bg-slate-100 text-slate-600 border-slate-300', label: 'Ortalama Fiyat' },
+                                'Monitor price':    { icon: '⏳', colorClass: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Fiyat Yükseliyor' },
+                                'Expect increase':  { icon: '📈', colorClass: 'bg-rose-100 text-rose-700 border-rose-300', label: 'Hızlı Artama Bekleniyor' },
                             };
                             const pIntel = intel.priceIntel;
                             const pConf = pIntel ? priceIntelConfig[pIntel.label] : null;
@@ -672,6 +672,8 @@ export default function FlightResultCard({
                             };
                             const cConf = connRiskConfig[connRisk];
 
+                            // ── REAL DELAY RISK LABEL (Kill Fake Precision) ───
+                            const delayRiskLabel = intel.delayRiskLabel ?? 'Typical delay risk (~18-20%)';
                             const delayP = intel.delayProbability ?? 0;
                             const delayColorClass = delayP >= 30 ? 'bg-rose-100 text-rose-700' : delayP >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
 
@@ -697,7 +699,7 @@ export default function FlightResultCard({
                                             </span>
                                         )}
                                         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${delayColorClass}`}>
-                                            ⏱ %{delayP} gecikme
+                                            ⏱ {delayRiskLabel}
                                         </span>
                                         {stops > 0 && (
                                             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cConf.colorClass}`}>
