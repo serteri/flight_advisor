@@ -187,6 +187,19 @@ export type FlightResult = {
             volatility: number;
             bookingWindowPattern?: unknown;
             recommendedBookingWindowDays?: number | null;
+            observedMinPrice?: number;
+            observedMaxPrice?: number;
+        };
+        // Intelligence Layer v3 — Flight Intelligence Phase 1
+        buyWaitSignal?: {
+            action: 'BUY' | 'MONITOR' | 'WAIT';
+            label: string;
+            urgencyDays?: number;
+        };
+        dealTier?: 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE';
+        regretStat?: {
+            cheaperThan: number; // % of historical prices lower than this price
+            label: string;
         };
     };
 };

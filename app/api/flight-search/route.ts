@@ -3,7 +3,7 @@ import { searchAllProvidersWithMeta } from '@/services/search/searchService';
 import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
+import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 import {
     hasRecentRouteSearchRecords,
     persistFlightSearchRecords,
@@ -334,20 +334,35 @@ export async function GET(request: Request) {
                         volatility: routeInsight.volatility,
                         bookingWindowPattern: routeInsight.bookingWindowPattern,
                         recommendedBookingWindowDays: routeInsight.recommendedBookingWindowDays,
+                        observedMinPrice: routeInsight.observedMinPrice,
+                        observedMaxPrice: routeInsight.observedMaxPrice,
                     },
                 },
             };
         });
 
+        // Flight Intelligence Phase 1: BUY/WAIT, deal tier, regret stat
+        const intelligentFlights = applyRouteIntelligenceFeatures(
+            enrichedFlights as import('@/types/hybridFlight').FlightResult[],
+            routeInsight ? {
+                avgPriceRoute: routeInsight.avgPriceRoute,
+                volatility: routeInsight.volatility,
+                recommendedBookingWindowDays: routeInsight.recommendedBookingWindowDays,
+                observedMinPrice: routeInsight.observedMinPrice,
+                observedMaxPrice: routeInsight.observedMaxPrice,
+            } : null,
+            queryParams.date,
+        );
+
         if (!usePersonalizedScoring) {
             flightSearchResponseCache.set(cacheKey, {
                 expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
-                results: enrichedFlights,
+                results: intelligentFlights,
             });
         }
 
         return NextResponse.json({
-            results: enrichedFlights,
+            results: intelligentFlights,
             viewerAccess,
             warnings: providerMeta.warnings,
             cache: {

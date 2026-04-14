@@ -879,6 +879,196 @@ const scoreFlight = (
     } as FlightResult;
 };
 
+// ── FLIGHT INTELLIGENCE PHASE 1 ──────────────────────────────────────────
+
+type RouteInsightInput = {
+    avgPriceRoute: number;
+    volatility: number;
+    recommendedBookingWindowDays?: number | null;
+    observedMinPrice?: number;
+    observedMaxPrice?: number;
+};
+
+/**
+ * BUY vs WAIT Engine
+ * Uses route-level data to decide: BUY NOW / MONITOR / WAIT
+ */
+const computeBuyWaitSignal = (
+    price: number,
+    routeInsight: RouteInsightInput,
+    daysUntilDeparture: number,
+): { action: 'BUY' | 'MONITOR' | 'WAIT'; label: string; urgencyDays?: number } => {
+    const { avgPriceRoute, volatility, recommendedBookingWindowDays } = routeInsight;
+
+    if (!Number.isFinite(avgPriceRoute) || avgPriceRoute <= 0) {
+        return { action: 'MONITOR', label: 'Monitor price — insufficient history' };
+    }
+
+    const priceDeltaPct = (price - avgPriceRoute) / avgPriceRoute;
+    const windowDays = recommendedBookingWindowDays ?? 14;
+
+    // BUY NOW: genuinely cheap, and prices are volatile (likely to bounce back)
+    if (priceDeltaPct <= -0.15) {
+        return {
+            action: 'BUY',
+            label: `Buy now — prices likely to increase within ${Math.max(2, Math.round(daysUntilDeparture * 0.15))} days`,
+            urgencyDays: Math.max(2, Math.round(daysUntilDeparture * 0.15)),
+        };
+    }
+
+    // BUY NOW: price is at or below average AND we're inside the recommended booking window
+    if (priceDeltaPct <= 0.0 && daysUntilDeparture <= windowDays) {
+        return {
+            action: 'BUY',
+            label: `Buy now — you're in the optimal booking window`,
+            urgencyDays: daysUntilDeparture,
+        };
+    }
+
+    // WAIT: overpriced, enough time to wait, and volatility is high enough for a drop
+    if (priceDeltaPct >= 0.15 && daysUntilDeparture >= 7 && volatility >= 20) {
+        return {
+            action: 'WAIT',
+            label: `Wait — price is above average; may drop in the next week`,
+        };
+    }
+
+    // WAIT: considerably overpriced and lots of time left
+    if (priceDeltaPct >= 0.25 && daysUntilDeparture >= 14) {
+        return {
+            action: 'WAIT',
+            label: `Wait — price is ${Math.round(priceDeltaPct * 100)}% above typical; better deals expected`,
+        };
+    }
+
+    // MONITOR: fair price, price movement is plausible
+    const monitorLabel =
+        volatility >= 30
+            ? `Monitor price — volatile route, price may shift`
+            : priceDeltaPct < 0
+                ? `Monitor price — slightly below average, stable`
+                : `Monitor price — typical for this route`;
+
+    return { action: 'MONITOR', label: monitorLabel };
+};
+
+/**
+ * Real Deal Detection (tier-based, no fake % discounts)
+ * RARE_DEAL = top 5% cheapest | GOOD_DEAL = top 20% | NORMAL | EXPENSIVE
+ */
+const computeDealTier = (
+    price: number,
+    routeInsight: RouteInsightInput,
+    batchMinPrice: number,
+    batchMaxPrice: number,
+): 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE' => {
+    const minP = (routeInsight.observedMinPrice ?? batchMinPrice);
+    const maxP = (routeInsight.observedMaxPrice ?? batchMaxPrice);
+    const avgP = routeInsight.avgPriceRoute;
+
+    if (!Number.isFinite(maxP) || !Number.isFinite(minP) || maxP <= minP) {
+        // Fall back to batch-relative tier
+        if (!Number.isFinite(batchMaxPrice) || batchMaxPrice <= batchMinPrice) return 'NORMAL';
+        const batchRank = (batchMaxPrice - price) / (batchMaxPrice - batchMinPrice);
+        if (batchRank >= 0.90) return 'RARE_DEAL';
+        if (batchRank >= 0.70) return 'GOOD_DEAL';
+        if (batchRank >= 0.30) return 'NORMAL';
+        return 'EXPENSIVE';
+    }
+
+    // percentileRank: 1.0 = cheapest possible, 0 = most expensive
+    const rank = clamp((maxP - price) / (maxP - minP), 0, 1);
+
+    if (rank >= 0.95) return 'RARE_DEAL';
+    if (rank >= 0.80) return 'GOOD_DEAL';
+    if (rank >= 0.35) return 'NORMAL';
+    return 'EXPENSIVE';
+};
+
+/**
+ * Regret Minimization — psychological price framing
+ * Returns how many % of historical prices were lower ("X% of travelers paid less")
+ */
+const computeRegretStat = (
+    price: number,
+    routeInsight: RouteInsightInput,
+    batchMinPrice: number,
+    batchMaxPrice: number,
+): { cheaperThan: number; label: string } => {
+    const minP = routeInsight.observedMinPrice ?? batchMinPrice;
+    const maxP = routeInsight.observedMaxPrice ?? batchMaxPrice;
+
+    if (!Number.isFinite(maxP) || !Number.isFinite(minP) || maxP <= minP) {
+        return { cheaperThan: 50, label: 'Typical price for this route' };
+    }
+
+    // cheaperThan = % of historical prices below this price (lower = better deal)
+    const cheaperThan = clamp(Math.round(((price - minP) / (maxP - minP)) * 100), 0, 100);
+
+    let label: string;
+    if (cheaperThan <= 5) {
+        label = `You're within the cheapest 5% of prices seen for this route`;
+    } else if (cheaperThan <= 12) {
+        label = `Only ${cheaperThan}% of travelers paid less than this`;
+    } else if (cheaperThan <= 25) {
+        label = `You're within the cheapest ${cheaperThan}% of prices for this route`;
+    } else if (cheaperThan <= 50) {
+        label = `Below most prices seen on this route`;
+    } else if (cheaperThan <= 70) {
+        label = `A typical price for this route`;
+    } else {
+        label = `${100 - cheaperThan}% of travelers found cheaper options`;
+    }
+
+    return { cheaperThan, label };
+};
+
+/**
+ * Applies route intelligence features (BUY/WAIT, deal tier, regret stat, confidence boost)
+ * to already-scored flights. Call this AFTER attaching routeIntelligence.
+ */
+export function applyRouteIntelligenceFeatures(
+    flights: FlightResult[],
+    routeInsight: RouteInsightInput | null,
+    departureDate: string,
+): FlightResult[] {
+    if (!routeInsight) return flights;
+
+    const now = Date.now();
+    const depMs = new Date(departureDate).getTime();
+    const daysUntilDeparture = Number.isFinite(depMs)
+        ? Math.max(0, Math.round((depMs - now) / 86_400_000))
+        : 30;
+
+    const validPrices = flights.map(f => Number(f.price)).filter(p => Number.isFinite(p) && p > 0);
+    const batchMin = validPrices.length ? Math.min(...validPrices) : 0;
+    const batchMax = validPrices.length ? Math.max(...validPrices) : 0;
+
+    return flights.map((flight) => {
+        const price = Number(flight.price);
+        if (!Number.isFinite(price) || price <= 0) return flight;
+
+        const buyWaitSignal = computeBuyWaitSignal(price, routeInsight, daysUntilDeparture);
+        const dealTier = computeDealTier(price, routeInsight, batchMin, batchMax);
+        const regretStat = computeRegretStat(price, routeInsight, batchMin, batchMax);
+
+        // Confidence boost: having historical route data is +15 points
+        const baseConfidence = flight.advancedScore?.confidenceScore ?? 0;
+        const boostedConfidence = clamp(baseConfidence + 15, 0, 100);
+
+        return {
+            ...flight,
+            advancedScore: {
+                ...(flight.advancedScore || {}),
+                confidenceScore: boostedConfidence,
+                buyWaitSignal,
+                dealTier,
+                regretStat,
+            },
+        } as FlightResult;
+    });
+}
+
 export async function applyAdvancedFlightScoring(
     flights: FlightResult[],
     options?: {

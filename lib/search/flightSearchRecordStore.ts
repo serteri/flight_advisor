@@ -665,6 +665,8 @@ export async function getRouteInsightForDate(
     volatility: number;
     bookingWindowPattern: unknown;
     recommendedBookingWindowDays: number | null;
+    observedMinPrice: number;
+    observedMaxPrice: number;
 } | null> {
     const routeInsightModel = (prisma as any)?.routeInsight;
     if (!routeInsightModel) return null;
@@ -687,6 +689,8 @@ export async function getRouteInsightForDate(
                 volatility: true,
                 bookingWindowPattern: true,
                 recommendedBookingWindowDays: true,
+                observedMinPrice: true,
+                observedMaxPrice: true,
             },
         });
         if (!row) return null;
@@ -696,6 +700,8 @@ export async function getRouteInsightForDate(
             volatility: Number(row.volatility || 0),
             bookingWindowPattern: row.bookingWindowPattern,
             recommendedBookingWindowDays: row.recommendedBookingWindowDays ?? null,
+            observedMinPrice: Number(row.observedMinPrice || 0),
+            observedMaxPrice: Number(row.observedMaxPrice || 0),
         };
     } catch (error: any) {
         console.warn('[ROUTE_INSIGHT] summary lookup skipped:', error?.message || error);

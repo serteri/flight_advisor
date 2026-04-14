@@ -770,6 +770,15 @@ export default function FlightResultCard({
                                         </div>
                                     </div>
 
+                                    {/* Confidence statement — shown when score >= 60 */}
+                                    {confScore >= 60 && (
+                                        <div className={`rounded-lg px-3 py-2 text-xs font-semibold ${confScore >= 80 ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                                            {confScore >= 80
+                                                ? `✅ We are ${confScore}% confident this is a great deal`
+                                                : `📊 We are ${confScore}% confident in this analysis`}
+                                        </div>
+                                    )}
+
                                     {/* Intel badges — blurred for FREE */}
                                     <div className={`flex flex-wrap gap-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                         {pConf && pIntel && (
@@ -805,6 +814,19 @@ export default function FlightResultCard({
                                     {flight.counterfactualNote && (
                                         <p className={`text-xs text-indigo-700 leading-relaxed bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             🤖 {flight.counterfactualNote}
+                                        </p>
+                                    )}
+
+                                    {/* Regret Minimization Stat — psychological framing */}
+                                    {flight.advancedScore?.regretStat && (
+                                        <p className={`text-xs font-semibold leading-relaxed rounded-lg px-2.5 py-2 border ${
+                                            (flight.advancedScore.regretStat.cheaperThan ?? 50) <= 25
+                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                : (flight.advancedScore.regretStat.cheaperThan ?? 50) <= 50
+                                                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                                        } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                            📊 {flight.advancedScore.regretStat.label}
                                         </p>
                                     )}
 
@@ -935,6 +957,24 @@ export default function FlightResultCard({
 
                     {/* FİYAT SECTION */}
                     <div className="text-center mb-3">
+                        {/* Deal Tier Badge */}
+                        {(() => {
+                            const tier = flight.advancedScore?.dealTier;
+                            if (!tier || tier === 'NORMAL') return null;
+                            const cfg: Record<string, { icon: string; cls: string; text: string }> = {
+                                RARE_DEAL:  { icon: '🔥', cls: 'bg-amber-100 text-amber-800 border-amber-300', text: 'Rare Deal' },
+                                GOOD_DEAL:  { icon: '🟢', cls: 'bg-green-100 text-green-700 border-green-300', text: 'Good Deal' },
+                                EXPENSIVE:  { icon: '🔴', cls: 'bg-rose-100 text-rose-700 border-rose-300', text: 'Above Average' },
+                            };
+                            const c = cfg[tier];
+                            if (!c) return null;
+                            return (
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border mb-1.5 ${c.cls}`}>
+                                    {c.icon} {c.text}
+                                </span>
+                            );
+                        })()}
+
                         <div className="flex flex-col items-center">
                             {displayOriginalPrice && (
                                 <span className="text-sm font-bold text-slate-400 line-through">
@@ -948,6 +988,23 @@ export default function FlightResultCard({
                                 {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}
                             </span>
                         </div>
+
+                        {/* BUY / WAIT Signal */}
+                        {(() => {
+                            const sig = flight.advancedScore?.buyWaitSignal;
+                            if (!sig) return null;
+                            const cfg: Record<string, { icon: string; cls: string }> = {
+                                BUY:     { icon: '🟢', cls: 'bg-green-50 text-green-800 border-green-300' },
+                                MONITOR: { icon: '🟡', cls: 'bg-amber-50 text-amber-800 border-amber-300' },
+                                WAIT:    { icon: '🔴', cls: 'bg-rose-50 text-rose-800 border-rose-300' },
+                            };
+                            const c = cfg[sig.action] ?? cfg.MONITOR;
+                            return (
+                                <div className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-center ${c.cls}`}>
+                                    {c.icon} {sig.label}
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* PUAN DETAYLARI (NEDEN BU PUAN?) */}
