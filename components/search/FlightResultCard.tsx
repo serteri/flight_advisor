@@ -13,11 +13,13 @@ export default function FlightResultCard({
     flight, 
     isPremium = false, 
     userTier = 'FREE',
+    championBadge,
     selectionContext
 }: { 
     flight: any; 
     isPremium?: boolean; 
     userTier?: UserTier;
+    championBadge?: 'Best Overall' | 'Best Value' | 'Lowest Risk' | 'Fastest';
     selectionContext?: {
         rank?: number;
         totalResults?: number;
@@ -398,6 +400,14 @@ export default function FlightResultCard({
                 </div>
             )}
 
+            {championBadge && (
+                <div className="absolute top-3 right-24 z-20">
+                    <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-1 text-[10px] font-extrabold tracking-wide uppercase">
+                        {championBadge}
+                    </span>
+                </div>
+            )}
+
             {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
                 <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
@@ -757,6 +767,12 @@ export default function FlightResultCard({
                                     {intel.explanation && (
                                         <p className={`text-xs text-slate-600 leading-relaxed ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             💡 {intel.explanation}
+                                        </p>
+                                    )}
+
+                                    {flight.counterfactualNote && (
+                                        <p className={`text-xs text-indigo-700 leading-relaxed bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                            🤖 {flight.counterfactualNote}
                                         </p>
                                     )}
 

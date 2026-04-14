@@ -133,6 +133,7 @@ export type FlightResult = {
     scoreReason?: string; // OpenClaw reason
     scorePros?: string[];
     scoreCons?: string[];
+    counterfactualNote?: string;
     durationDebug?: unknown;
     advancedScore?: {
         totalScore: number;
@@ -160,7 +161,7 @@ export type FlightResult = {
         dataErrorReason?: string;
         // Intelligence Layer v2
         personaScore?: number;
-        persona?: 'balanced' | 'business' | 'budget' | 'family';
+        persona?: 'comfort' | 'balanced' | 'business' | 'budget' | 'family';
         delayProbability?: number;
         delayRiskLabel?: string; // Semantic label for delay risk (e.g., "Low delay risk (< 10%)")
         connectionRisk?: 'low' | 'medium' | 'high' | 'critical'; // Based on layover times: <60min=high, 60-90min=medium, 90+=low
@@ -176,5 +177,10 @@ export type FlightResult = {
         confidenceScore?: number;
         forYouBonus?: number;
         explanation?: string;
+        tradeoff?: {
+            price: number;
+            time: number;
+            comfort: number;
+        };
     };
 };

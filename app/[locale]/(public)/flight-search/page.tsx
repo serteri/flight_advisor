@@ -36,6 +36,7 @@ const popularDestinations = [
 type SearchCabin = "economy" | "premium" | "business" | "first";
 type SelectorCabin = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
 type SearchPersona = "budget" | "comfort" | "business" | "family";
+type ChampionBadge = 'Best Overall' | 'Best Value' | 'Lowest Risk' | 'Fastest';
 
 const normalizeCabinParam = (value: string | null): SearchCabin => {
     switch ((value || '').toLowerCase()) {
@@ -503,6 +504,122 @@ function SearchPageContent() {
         });
     }, [sortedResults, filters]);
 
+    const getFlightKey = (flight: FlightResult) =>
+        `${flight.id}|${flight.source}|${flight.flightNumber}|${flight.departTime}`;
+
+    const championData = useMemo(() => {
+        const list = [...filteredResults];
+        const empty = { ordered: list, labels: {} as Record<string, ChampionBadge> };
+        if (list.length === 0) return empty;
+
+        const parseNum = (value: unknown): number => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string') {
+                const n = Number(value.replace(/[^0-9.]/g, ''));
+                return Number.isFinite(n) ? n : 0;
+            }
+            return 0;
+        };
+        const resolvePrice = (flight: FlightResult) => {
+            const direct = parseNum((flight as any).price);
+            if (direct > 0) return direct;
+            return Number.MAX_SAFE_INTEGER;
+        };
+        const resolveDuration = (flight: FlightResult) => {
+            const direct = parseNum((flight as any).duration);
+            if (direct > 0) return direct;
+            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
+            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
+                return Math.round((arrMs - depMs) / 60000);
+            }
+            return Number.MAX_SAFE_INTEGER;
+        };
+        const resolveScore = (flight: FlightResult) => {
+            const score = Number(flight.advancedScore?.totalScore ?? flight.agentScore ?? flight.advancedScore?.displayScore ?? flight.score ?? 0);
+            return Number.isFinite(score) ? score : 0;
+        };
+        const resolveRisk = (flight: FlightResult) => {
+            const connectionRisk = flight.advancedScore?.connectionRisk || 'low';
+            const connectionRiskScore = connectionRisk === 'critical' ? 4 : connectionRisk === 'high' ? 3 : connectionRisk === 'medium' ? 2 : 1;
+            const delayPenalty = Number(flight.advancedScore?.delayProbability || 18) / 10;
+            const reliabilityPenalty = (10 - Number(flight.advancedScore?.breakdown?.reliability || 5)) / 2;
+            const selfTransferPenalty = Number(flight.advancedScore?.breakdown?.selfTransfer || 10) < 10 ? 2 : 0;
+            return connectionRiskScore + delayPenalty + reliabilityPenalty + selfTransferPenalty;
+        };
+
+        const labels: Record<string, ChampionBadge> = {};
+        const selectedKeys = new Set<string>();
+        const champions: FlightResult[] = [];
+
+        const pickChampion = (label: ChampionBadge, comparator: (a: FlightResult, b: FlightResult) => number) => {
+            const candidate = [...list].sort(comparator).find((f) => !selectedKeys.has(getFlightKey(f)));
+            if (!candidate) return;
+            const key = getFlightKey(candidate);
+            selectedKeys.add(key);
+            labels[key] = label;
+            champions.push(candidate);
+        };
+
+        pickChampion('Best Overall', (a, b) => resolveScore(b) - resolveScore(a));
+        pickChampion('Best Value', (a, b) => {
+            const valueA = Number(a.advancedScore?.breakdown?.priceValue || 0);
+            const valueB = Number(b.advancedScore?.breakdown?.priceValue || 0);
+            if (valueA !== valueB) return valueB - valueA;
+            return resolvePrice(a) - resolvePrice(b);
+        });
+        pickChampion('Lowest Risk', (a, b) => resolveRisk(a) - resolveRisk(b));
+        pickChampion('Fastest', (a, b) => resolveDuration(a) - resolveDuration(b));
+
+        const ordered = [...champions, ...list.filter((f) => !selectedKeys.has(getFlightKey(f)))];
+        return { ordered, labels };
+    }, [filteredResults]);
+
+    const rankedResults = useMemo(() => {
+        const base = championData.ordered;
+        const result = base.map((flight) => ({ ...flight }));
+
+        const parseNum = (value: unknown): number => {
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (typeof value === 'string') {
+                const n = Number(value.replace(/[^0-9.]/g, ''));
+                return Number.isFinite(n) ? n : 0;
+            }
+            return 0;
+        };
+        const resolveDuration = (flight: FlightResult) => {
+            const direct = parseNum((flight as any).duration);
+            if (direct > 0) return direct;
+            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
+            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) return Math.round((arrMs - depMs) / 60000);
+            return Number.MAX_SAFE_INTEGER;
+        };
+
+        result.forEach((flight) => {
+            const currentKey = getFlightKey(flight);
+            const currentPrice = parseNum(flight.price);
+            const currentDuration = resolveDuration(flight);
+
+            const alt = base
+                .filter((candidate) => getFlightKey(candidate) !== currentKey)
+                .map((candidate) => {
+                    const priceDiff = parseNum(candidate.price) - currentPrice;
+                    const timeGain = currentDuration - resolveDuration(candidate);
+                    return { candidate, priceDiff, timeGain };
+                })
+                .filter((x) => x.priceDiff >= 40 && x.timeGain >= 180)
+                .sort((a, b) => a.priceDiff - b.priceDiff || b.timeGain - a.timeGain)[0];
+
+            if (alt) {
+                const hoursSaved = Math.max(1, Math.round(alt.timeGain / 60));
+                flight.counterfactualNote = `Bu uçuştan $${Math.round(alt.priceDiff)} daha pahalı ama ${hoursSaved} saat daha kısa bir alternatif var.`;
+            }
+        });
+
+        return result;
+    }, [championData]);
+
     useEffect(() => {
         setVisibleCount(20);
     }, [filters, currentSort, results.length]);
@@ -645,7 +762,7 @@ function SearchPageContent() {
                     <div className="container mx-auto px-4 max-w-5xl">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold text-slate-900">
-                                {filteredResults.length} / {results.length} {t('resultsFound')}
+                                {rankedResults.length} / {results.length} {t('resultsFound')}
                             </h2>
                         </div>
                         
@@ -665,26 +782,27 @@ function SearchPageContent() {
                         <FlightSortBar 
                             currentSort={currentSort}
                             onSortChange={handleSortChange}
-                            resultCount={filteredResults.length}
+                            resultCount={rankedResults.length}
                         />
                         
                         <ErrorBoundary>
                             <div className="space-y-4" style={{ contentVisibility: "auto", containIntrinsicSize: "900px" }}>
-                                {filteredResults.slice(0, visibleCount).map((flight, index) => (
+                                {rankedResults.slice(0, visibleCount).map((flight, index) => (
                                     (() => {
                                         const nearbyCompetitor =
-                                            filteredResults[index + 1] ||
-                                            filteredResults[index - 1] ||
+                                            rankedResults[index + 1] ||
+                                            rankedResults[index - 1] ||
                                             null;
                                         return (
                                     <FlightResultCard
                                         key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
                                         flight={flight}
+                                        championBadge={championData.labels[getFlightKey(flight)]}
                                         isPremium={hasPremiumAccess}
                                         userTier={viewerTier}
                                         selectionContext={{
                                             rank: index + 1,
-                                            totalResults: filteredResults.length,
+                                            totalResults: rankedResults.length,
                                             competitorPrice: nearbyCompetitor ? Number(nearbyCompetitor.price || 0) : null,
                                             competitorScore:
                                                 nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.agentScore))
@@ -701,13 +819,13 @@ function SearchPageContent() {
                         </ErrorBoundary>
 
                         {/* DAHA FAZLA GÖSTER BUTONU */}
-                        {filteredResults.length > visibleCount && (
+                        {rankedResults.length > visibleCount && (
                             <div className="mt-8 text-center">
                                 <button
                                     onClick={showMore}
                                     className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-slate-50 hover:border-slate-400 transition shadow-sm"
                                 >
-                                    {t('showMore', { count: filteredResults.length - visibleCount })}
+                                    {t('showMore', { count: rankedResults.length - visibleCount })}
                                 </button>
                             </div>
                         )}

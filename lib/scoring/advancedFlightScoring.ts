@@ -110,7 +110,7 @@ const clamp = (value: number, min: number, max: number) =>
 const EARTH_RADIUS_KM = 6371;
 
 // ── Intelligence Layer v2 ─────────────────────────────────────────────────
-type PersonaKey = 'balanced' | 'business' | 'budget' | 'family';
+type PersonaKey = 'comfort' | 'business' | 'budget' | 'family' | 'balanced';
 type PersonaInput = 'comfort' | 'business' | 'budget' | 'family' | 'balanced';
 type PreferenceProfile = {
     prefersDirect: boolean;
@@ -120,10 +120,14 @@ type PreferenceProfile = {
 };
 
 const PERSONA_WEIGHTS: Record<PersonaKey, ScoreBreakdown> = {
-    balanced: { priceValue: 0.20, duration: 0.15, stops: 0.10, connection: 0.10, selfTransfer: 0.10, baggage: 0.10, reliability: 0.10, aircraft: 0.05, amenities: 0.05, airportIndex: 0.05 },
-    business: { priceValue: 0.10, duration: 0.22, stops: 0.10, connection: 0.12, selfTransfer: 0.08, baggage: 0.06, reliability: 0.14, aircraft: 0.05, amenities: 0.10, airportIndex: 0.03 },
-    budget:   { priceValue: 0.56, duration: 0.10, stops: 0.08, connection: 0.06, selfTransfer: 0.05, baggage: 0.05, reliability: 0.04, aircraft: 0.02, amenities: 0.01, airportIndex: 0.03 },
-    family:   { priceValue: 0.16, duration: 0.14, stops: 0.08, connection: 0.18, selfTransfer: 0.10, baggage: 0.20, reliability: 0.07, aircraft: 0.02, amenities: 0.03, airportIndex: 0.02 },
+    // Raw weights used in Score = Σ(weight_i × normalized_feature_i), then normalized by total weight.
+    comfort:  { priceValue: 0.5, duration: 0.8, stops: 0.6, connection: 0.7, selfTransfer: 0.6, baggage: 0.6, reliability: 0.7, aircraft: 0.5, amenities: 0.8, airportIndex: 0.4 },
+    balanced: { priceValue: 0.5, duration: 0.8, stops: 0.6, connection: 0.7, selfTransfer: 0.6, baggage: 0.6, reliability: 0.7, aircraft: 0.5, amenities: 0.8, airportIndex: 0.4 },
+    business: { priceValue: 0.4, duration: 0.9, stops: 0.7, connection: 0.8, selfTransfer: 0.7, baggage: 0.5, reliability: 0.8, aircraft: 0.5, amenities: 0.8, airportIndex: 0.3 },
+    // User request: Budget => price 1.0, all other features 0.2
+    budget:   { priceValue: 1.0, duration: 0.2, stops: 0.2, connection: 0.2, selfTransfer: 0.2, baggage: 0.2, reliability: 0.2, aircraft: 0.2, amenities: 0.2, airportIndex: 0.2 },
+    // User request: Family => baggage 0.9, short connection 0.9 (modeled via connection feature), price 0.5, others 0.2
+    family:   { priceValue: 0.5, duration: 0.2, stops: 0.2, connection: 0.9, selfTransfer: 0.2, baggage: 0.9, reliability: 0.2, aircraft: 0.2, amenities: 0.2, airportIndex: 0.2 },
 };
 
 const BREAKDOWN_MAXES: ScoreBreakdown = {
@@ -470,18 +474,23 @@ const computeConfidenceScore = (flight: FlightResult): number => {
 
 const computePersonaScore = (breakdown: ScoreBreakdown, persona: PersonaKey = 'balanced'): number => {
     const weights = PERSONA_WEIGHTS[persona] ?? PERSONA_WEIGHTS.balanced;
-    let total = 0;
+    let weightedTotal = 0;
+    let weightSum = 0;
     for (const key of Object.keys(weights) as (keyof ScoreBreakdown)[]) {
-        total += (breakdown[key] / (BREAKDOWN_MAXES[key] || 1)) * weights[key];
+        const max = BREAKDOWN_MAXES[key] || 1;
+        const normalizedFeature = clamp(breakdown[key] / max, 0, 1);
+        weightedTotal += normalizedFeature * weights[key];
+        weightSum += weights[key];
     }
-    return Number((total * 10).toFixed(1));
+    const normalizedTotal = weightSum > 0 ? weightedTotal / weightSum : 0;
+    return Number((normalizedTotal * 10).toFixed(1));
 };
 
 const resolvePersona = (persona?: PersonaInput): PersonaKey => {
-    if (persona === 'business' || persona === 'budget' || persona === 'family' || persona === 'balanced') {
+    if (persona === 'business' || persona === 'budget' || persona === 'family' || persona === 'comfort' || persona === 'balanced') {
         return persona;
     }
-    return 'balanced';
+    return 'comfort';
 };
 
 const resolveDepartureHour = (flight: FlightResult): number | null => {
@@ -813,6 +822,21 @@ const scoreFlight = (
     const explanation = context.markInvalidData
         ? undefined
         : generateScoreExplanation(flight, breakdown, finalComfortNotes, priceIntel, displayScore, connectionRisk, minConnectionMinutes);
+    const tradeoff = {
+        price: clamp(Math.round((breakdown.priceValue / BREAKDOWN_MAXES.priceValue) * 100), 0, 100),
+        time: clamp(Math.round((breakdown.duration / BREAKDOWN_MAXES.duration) * 100), 0, 100),
+        comfort: clamp(
+            Math.round(
+                (
+                    (breakdown.baggage / BREAKDOWN_MAXES.baggage) +
+                    (breakdown.amenities / BREAKDOWN_MAXES.amenities) +
+                    (breakdown.aircraft / BREAKDOWN_MAXES.aircraft)
+                ) / 3 * 100
+            ),
+            0,
+            100
+        ),
+    };
 
     if (breakdown.priceValue >= 16 && totalScore >= 75) {
         valueTag = 'En İyi Fiyat/Performans';
@@ -850,6 +874,7 @@ const scoreFlight = (
             confidenceScore,
             forYouBonus: Number((preferenceBonusRaw / 10).toFixed(2)),
             explanation,
+            tradeoff,
         },
     } as FlightResult;
 };

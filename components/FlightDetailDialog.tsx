@@ -161,6 +161,10 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         wifiUnknown: isTr ? "Wi-Fi bilgisi yok" : "Wi-Fi info unavailable",
         wifiCheckAirline: isTr ? "Wi-Fi için havayoluna danış" : "Check with airline",
         durationDebug: isTr ? "Süre Debug" : "Duration Debug",
+        operatingCarrier: isTr ? "Uçuran Havayolu" : "Operating Carrier",
+        marketedBy: isTr ? "Biletleyen" : "Marketed by",
+        tradeoff: isTr ? "Trade-off Görselleştirici" : "Trade-off Visualizer",
+        counterfactual: isTr ? "Alternatif Senaryo" : "Alternative Scenario",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
     };
@@ -268,6 +272,13 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
             { label: "Airport Index", value: `${breakdown.airportIndex}/5` },
         ]
         : [];
+    const tradeoff = flight.advancedScore?.tradeoff || (breakdown
+        ? {
+            price: Math.round((breakdown.priceValue / 20) * 100),
+            time: Math.round((breakdown.duration / 15) * 100),
+            comfort: Math.round((((breakdown.baggage / 10) + (breakdown.amenities / 5) + (breakdown.aircraft / 5)) / 3) * 100),
+        }
+        : null);
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -303,7 +314,50 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     </div>
                     <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{cabinBagKg}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{checkedBagText}</div></div></div></div>
                     {segs.length > 0 && (
-                        <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3><div className="space-y-2">{segs.map((s: any, i: number) => {const c = s.operating_carrier || s.operatingCarrier || {}; const airlineName = (s.airline || c.name || flight.airline || (isTr ? "Havayolu" : "Airline")).toString(); const carrierCode = (c.iata_code || s.carrier || s.carrierCode || "XX").toString(); const segFrom = toCode(s.origin || s.from || s.departure_airport || s.departureAirport || s.origin_airport); const segTo = toCode(s.destination || s.to || s.arrival_airport || s.arrivalAirport || s.destination_airport); const d = s.departing_at || s.departure; const a = s.arriving_at || s.arrival; const segMinutes = segmentDurationMinutes(s); return (<div key={i} className="border-b pb-2 last:border-0"><div className="flex items-center gap-2 mb-1"><AirlineLogo carrierCode={carrierCode} airlineName={airlineName} className="w-5 h-5" /><div className="text-sm font-semibold flex-1">{airlineName}</div><div className="text-xs text-slate-500">{labels.segment} {i+1}: {segFrom} → {segTo}</div></div><div className="grid grid-cols-3 gap-2 text-sm"><div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div><div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div><div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div></div>{lays[i] && <div className="mt-1 text-sm bg-amber-50 border border-amber-200 p-1.5 rounded">⏱️ {toCode(lays[i].airport)} - {formatDuration(lays[i].duration || 0)}</div>}</div>)})}</div></div>
+                        <div className="bg-white p-3 rounded border">
+                            <h3 className="font-bold mb-2 flex items-center gap-1"><Plane className="w-4 h-4" /> {labels.segments} ({segs.length})</h3>
+                            <div className="space-y-2">
+                                {segs.map((s: any, i: number) => {
+                                    const c = s.operating_carrier || s.operatingCarrier || {};
+                                    const operatingName = (c.name || s.operatingAirlineName || s.operatingAirline || s.operatingCarrier || flight.operatingAirline || flight.airline || (isTr ? "Havayolu" : "Airline")).toString();
+                                    const marketingName = (s.marketingAirlineName || s.marketingAirline || s.airline || operatingName).toString();
+                                    const carrierCode = (c.iata_code || s.operatingAirlineCode || s.carrier || s.carrierCode || "XX").toString();
+                                    const segFrom = toCode(s.origin || s.from || s.departure_airport || s.departureAirport || s.origin_airport);
+                                    const segTo = toCode(s.destination || s.to || s.arrival_airport || s.arrivalAirport || s.destination_airport);
+                                    const d = s.departing_at || s.departure;
+                                    const a = s.arriving_at || s.arrival;
+                                    const segMinutes = segmentDurationMinutes(s);
+                                    const lay = lays[i];
+
+                                    return (
+                                        <div key={i} className="border-b pb-2 last:border-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <AirlineLogo carrierCode={carrierCode} airlineName={operatingName} className="w-5 h-5" />
+                                                <div className="text-sm font-semibold flex-1">{labels.segment} {i + 1}: {segFrom} → {segTo}</div>
+                                            </div>
+                                            <div className="text-xs mb-1.5">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-800">
+                                                    ✈ {labels.operatingCarrier}: {operatingName}
+                                                </span>
+                                                {marketingName && marketingName !== operatingName && (
+                                                    <span className="ml-2 text-slate-500">{labels.marketedBy}: {marketingName}</span>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                                <div><div className="text-slate-500">{labels.depShort}</div><div className="font-semibold">{safeDate(d)}</div></div>
+                                                <div className="text-center"><div className="text-slate-500">{labels.durShort}</div><div className="font-semibold">{formatDuration(segMinutes)}</div></div>
+                                                <div className="text-right"><div className="text-slate-500">{labels.arrShort}</div><div className="font-semibold">{safeDate(a)}</div></div>
+                                            </div>
+                                            {lay && (
+                                                <div className="mt-1 text-sm bg-blue-50 border border-blue-200 p-2 rounded font-semibold text-blue-900">
+                                                    🛫 {formatDuration(lay.duration || 0)} layover in {toCode(lay.city || lay.airport)} ({toCode(lay.airport)})
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     )}
 
                     {flight.advancedScore && (
@@ -333,6 +387,30 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                         : ''}
                                 </div>
                             )}
+
+                            {tradeoff && (
+                                <div className="bg-slate-50 border border-slate-200 rounded p-2.5 space-y-2">
+                                    <div className="text-xs font-bold text-slate-700 uppercase">{labels.tradeoff}</div>
+                                    {[{ key: 'Price', value: tradeoff.price, color: 'bg-emerald-500' }, { key: 'Time', value: tradeoff.time, color: 'bg-blue-500' }, { key: 'Comfort', value: tradeoff.comfort, color: 'bg-violet-500' }].map((row) => (
+                                        <div key={row.key} className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="font-semibold text-slate-600">{row.key}</span>
+                                                <span className="font-bold text-slate-800">{row.value}%</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                <div className={`h-full ${row.color}`} style={{ width: `${Math.max(0, Math.min(100, row.value))}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {flight.counterfactualNote && (
+                        <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+                            <h3 className="font-bold text-indigo-700 mb-1 text-base">🤖 {labels.counterfactual}</h3>
+                            <p className="text-xs text-indigo-800">{flight.counterfactualNote}</p>
                         </div>
                     )}
 
