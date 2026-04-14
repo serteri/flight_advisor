@@ -14,12 +14,14 @@ export default function FlightResultCard({
     isPremium = false, 
     userTier = 'FREE',
     championBadge,
+    onUserAction,
     selectionContext
 }: { 
     flight: any; 
     isPremium?: boolean; 
     userTier?: UserTier;
     championBadge?: 'Best Overall' | 'Best Value' | 'Lowest Risk' | 'Fastest';
+    onUserAction?: (action: 'BOOK' | 'DETAIL') => void;
     selectionContext?: {
         rank?: number;
         totalResults?: number;
@@ -314,13 +316,6 @@ export default function FlightResultCard({
                                 ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
                                 : t('wifi_none');
 
-    const handleLockClick = () => {
-        if (!hasPremiumAccess) {
-            setShowLockOverlay(true);
-            return;
-        }
-    };
-
     const handleTrackClick = () => {
         if (!hasPremiumAccess) {
             setShowLockOverlay(true);
@@ -374,15 +369,44 @@ export default function FlightResultCard({
         }
     };
 
+    const openCheckout = async (plan: 'PRO', billingCycle: 'monthly' | 'yearly' = 'monthly') => {
+        try {
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan, billingCycle, trial: false }),
+            });
+            const data = await res.json();
+            if (res.ok && data?.url && typeof window !== 'undefined') {
+                window.location.href = data.url;
+                return;
+            }
+        } catch {
+            // fall through to pricing
+        }
+        if (typeof window !== 'undefined') {
+            const locale = window.location.pathname.split('/')[1] || 'en';
+            window.location.href = `/${locale}/pricing`;
+        }
+    };
+
+    const openOneTimeReport = () => {
+        if (typeof window === 'undefined') return;
+        const locale = window.location.pathname.split('/')[1] || 'en';
+        const configured = process.env.NEXT_PUBLIC_ONE_TIME_REPORT_URL;
+        window.location.href = configured || `/${locale}/pricing?offer=report`;
+    };
+
     const handleDetailsClick = () => {
-        if (!hasPremiumAccess) return;
         sendSelectionEvent('DETAIL');
+        onUserAction?.('DETAIL');
         setShowDetails(true);
     };
 
     const handleBookClick = () => {
         if (!bookingUrl) return;
         sendSelectionEvent('BOOK');
+        onUserAction?.('BOOK');
         if (typeof window !== 'undefined') {
             window.open(bookingUrl, '_blank', 'noopener,noreferrer');
         }
@@ -793,16 +817,15 @@ export default function FlightResultCard({
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
                             onClick={handleDetailsClick}
-                            disabled={!hasPremiumAccess}
                             className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                                hasPremiumAccess 
-                                    ? 'bg-blue-100 hover:bg-blue-200 text-blue-700' 
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                hasPremiumAccess
+                                    ? 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                             }`}
                         >
                             <Eye className="w-4 h-4" />
                             View Analysis
-                            {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1" />}
+                            {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
                         <button
                             onClick={handleBookClick}
@@ -942,6 +965,7 @@ export default function FlightResultCard({
                 flight={flight} 
                 open={showDetails} 
                 onClose={() => setShowDetails(false)} 
+                hasPremiumAccess={hasPremiumAccess}
                 canTrack={hasPremiumAccess}
             />
 
@@ -949,20 +973,32 @@ export default function FlightResultCard({
             {showLockOverlay && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowLockOverlay(false)}>
                     <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <LockedFeatureOverlay
-                            featureName="Flight Intelligence Suite"
-                            requiredTier="PRO"
-                            description="Unlock real-time tracking, EU261 compensation alerts, and detailed flight analysis"
-                            benefits={[
-                                'Live flight status & disruption alerts',
-                                'EU261 compensation calculator',
-                                'Detailed amenity & aircraft analysis',
-                                'Refund & change policy insights',
-                                'Price drop notifications'
-                            ]}
-                            variant="panel"
-                            className="w-full"
-                        />
+                        <div className="space-y-3">
+                            <LockedFeatureOverlay
+                                featureName="Flight Intelligence Suite"
+                                requiredTier="PRO"
+                                description="Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı için Pro açın"
+                                benefits={[
+                                    'Risk Analizi (Premium)',
+                                    'Fiyat Tahmini (Premium)',
+                                    'Detaylı Skor Dağılımı (Premium)',
+                                ]}
+                                variant="panel"
+                                className="w-full"
+                            />
+                            <button
+                                onClick={() => openCheckout('PRO', 'monthly')}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
+                            >
+                                🔓 Pro Analizi Kilidini Aç - Monthly Pro ($19)
+                            </button>
+                            <button
+                                onClick={openOneTimeReport}
+                                className="w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 text-sm font-semibold py-2.5 rounded-lg"
+                            >
+                                One-time Report ($4.99)
+                            </button>
+                        </div>
                         <button
                             onClick={() => setShowLockOverlay(false)}
                             className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700"

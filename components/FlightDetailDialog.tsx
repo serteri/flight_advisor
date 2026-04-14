@@ -15,6 +15,7 @@ interface FlightDetailDialogProps {
     open: boolean;
     onClose: () => void;
     canTrack?: boolean;
+    hasPremiumAccess?: boolean;
 }
 
 const safeDate = (d: any) => {
@@ -105,7 +106,7 @@ const toCode = (value: any): string => {
     return String(value).toUpperCase();
 };
 
-export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: FlightDetailDialogProps) {
+export function FlightDetailDialog({ flight, open, onClose, canTrack = false, hasPremiumAccess = false }: FlightDetailDialogProps) {
     const locale = useLocale();
     const isTr = locale?.toLowerCase().startsWith("tr");
     const airlineLogoCandidates = useMemo(() => getAirlineLogoCandidates(flight), [flight]);
@@ -165,8 +166,35 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
         marketedBy: isTr ? "Biletleyen" : "Marketed by",
         tradeoff: isTr ? "Trade-off Görselleştirici" : "Trade-off Visualizer",
         counterfactual: isTr ? "Alternatif Senaryo" : "Alternative Scenario",
+        unlockPro: isTr ? "🔓 Pro Analizi Kilidini Aç" : "🔓 Unlock Pro Analysis",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
+    };
+
+    const openCheckout = async () => {
+        try {
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: 'PRO', billingCycle: 'monthly', trial: false }),
+            });
+            const data = await res.json();
+            if (res.ok && data?.url && typeof window !== 'undefined') {
+                window.location.href = data.url;
+                return;
+            }
+        } catch {
+            // fall through to pricing page
+        }
+        if (typeof window !== 'undefined') {
+            window.location.href = `/${locale}/pricing`;
+        }
+    };
+
+    const openOneTimeReport = () => {
+        if (typeof window === 'undefined') return;
+        const configured = process.env.NEXT_PUBLIC_ONE_TIME_REPORT_URL;
+        window.location.href = configured || `/${locale}/pricing?offer=report`;
     };
 
     const mealText = getCanonicalMealLabel(flight, locale);
@@ -361,7 +389,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     )}
 
                     {flight.advancedScore && (
-                        <div className="bg-white p-3 rounded border space-y-3">
+                        <div className="bg-white p-3 rounded border space-y-3 relative">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-bold text-base">{labels.scoreBreakdown}</h3>
                                 <div className="text-right">
@@ -371,7 +399,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 text-sm ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                 {breakdownRows.map((row) => (
                                     <div key={row.label} className="flex justify-between bg-slate-50 rounded px-2 py-1.5">
                                         <span className="font-semibold text-slate-600">{row.label}</span>
@@ -380,7 +408,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                 ))}
                             </div>
                             {flight.advancedScore.priceReference && (
-                                <div className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-1.5">
+                                <div className={`text-xs text-slate-500 bg-slate-50 rounded px-2 py-1.5 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                     {labels.priceReference}: {flight.advancedScore.priceReference.source === 'historicalMedian' ? labels.historicalMedianUsed : labels.liveAverageUsed}
                                     {Number.isFinite(flight.advancedScore.priceReference.amount) && flight.advancedScore.priceReference.amount > 0
                                         ? ` (${Math.round(flight.advancedScore.priceReference.amount)} ${flight.currency || 'USD'})`
@@ -389,7 +417,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                             )}
 
                             {tradeoff && (
-                                <div className="bg-slate-50 border border-slate-200 rounded p-2.5 space-y-2">
+                                <div className={`bg-slate-50 border border-slate-200 rounded p-2.5 space-y-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                     <div className="text-xs font-bold text-slate-700 uppercase">{labels.tradeoff}</div>
                                     {[{ key: 'Price', value: tradeoff.price, color: 'bg-emerald-500' }, { key: 'Time', value: tradeoff.time, color: 'bg-blue-500' }, { key: 'Comfort', value: tradeoff.comfort, color: 'bg-violet-500' }].map((row) => (
                                         <div key={row.key} className="space-y-1">
@@ -402,6 +430,24 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {!hasPremiumAccess && (
+                                <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 space-y-2">
+                                    <p className="text-xs font-semibold text-blue-800">Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı Pro üyelikte tam görünür.</p>
+                                    <button
+                                        onClick={openCheckout}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-md"
+                                    >
+                                        {labels.unlockPro} - Monthly Pro ($19)
+                                    </button>
+                                    <button
+                                        onClick={openOneTimeReport}
+                                        className="w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-semibold py-2 rounded-md"
+                                    >
+                                        One-time Report ($4.99)
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -424,7 +470,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false }: 
                     )}
 
                     {flight.advancedScore && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                             <div className="bg-rose-50 border border-rose-200 p-3 rounded">
                                 <h3 className="font-bold text-rose-700 mb-2 text-base">🚩 {labels.riskFlags}</h3>
                                 {flight.advancedScore.riskFlags.length > 0 ? (

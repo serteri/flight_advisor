@@ -251,6 +251,11 @@ model RouteInsight {
   searchCount    Int      @default(0)
   lastMinPrice   Float
   lastAvgPrice   Float
+  observedMinPrice Float
+  observedMaxPrice Float
+  rollingAvgPrice Float
+  recommendedBookingWindowDays Int?
+  lastObservedDaysToDeparture Int?
   volatility     Float    @default(0)
   lastSearchedAt DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -208,8 +208,14 @@ export async function persistSearchAnalytics(
     flights: FlightResult[],
     options: SearchAnalyticsOptions
 ): Promise<void> {
+    const normalizedOrigin = String(options.origin || '').toUpperCase();
+    const normalizedDestination = String(options.destination || '').toUpperCase();
     const departureDate = normalizeUtcDate(options.departureDate);
     const searchTimestamp = new Date();
+    const daysToDeparture = Math.max(
+        0,
+        Math.round((departureDate.getTime() - searchTimestamp.getTime()) / DAY_MS)
+    );
 
     const validFlights = flights
         .filter((flight) => Number.isFinite(Number(flight.price)) && Number(flight.price) > 0)
@@ -235,8 +241,8 @@ export async function persistSearchAnalytics(
             const minPrice = Math.min(...prices);
             const avgPrice = prices.reduce((sum, value) => sum + value, 0) / prices.length;
             return {
-                origin: options.origin,
-                destination: options.destination,
+                origin: normalizedOrigin,
+                destination: normalizedDestination,
                 departureDate,
                 minPrice,
                 avgPrice,
@@ -258,6 +264,7 @@ export async function persistSearchAnalytics(
     }
 
     const routeMinPrice = Math.min(...validFlights.map((flight) => Number(flight.price)));
+    const routeMaxPrice = Math.max(...validFlights.map((flight) => Number(flight.price)));
     const routeAvgPrice =
         validFlights.reduce((sum, flight) => sum + Number(flight.price), 0) / validFlights.length;
 
@@ -265,14 +272,18 @@ export async function persistSearchAnalytics(
         const existing = await routeInsightModel.findUnique({
             where: {
                 origin_destination_departureDate: {
-                    origin: options.origin,
-                    destination: options.destination,
+                    origin: normalizedOrigin,
+                    destination: normalizedDestination,
                     departureDate,
                 },
             },
             select: {
                 searchCount: true,
                 lastMinPrice: true,
+                observedMinPrice: true,
+                observedMaxPrice: true,
+                rollingAvgPrice: true,
+                recommendedBookingWindowDays: true,
                 volatility: true,
             },
         });
@@ -280,12 +291,17 @@ export async function persistSearchAnalytics(
         if (!existing) {
             await routeInsightModel.create({
                 data: {
-                    origin: options.origin,
-                    destination: options.destination,
+                    origin: normalizedOrigin,
+                    destination: normalizedDestination,
                     departureDate,
                     searchCount: 1,
                     lastMinPrice: routeMinPrice,
                     lastAvgPrice: routeAvgPrice,
+                    observedMinPrice: routeMinPrice,
+                    observedMaxPrice: routeMaxPrice,
+                    rollingAvgPrice: routeAvgPrice,
+                    recommendedBookingWindowDays: daysToDeparture,
+                    lastObservedDaysToDeparture: daysToDeparture,
                     volatility: 0,
                     lastSearchedAt: searchTimestamp,
                 },
@@ -294,17 +310,30 @@ export async function persistSearchAnalytics(
         }
 
         const previousMin = Number(existing.lastMinPrice || 0);
+        const previousObservedMin = Number(existing.observedMinPrice || previousMin || routeMinPrice);
+        const previousObservedMax = Number(existing.observedMaxPrice || routeMaxPrice);
+        const previousRollingAvg = Number(existing.rollingAvgPrice || existing.lastMinPrice || routeAvgPrice);
+        const previousWindow = Number(existing.recommendedBookingWindowDays || 0);
         const deltaPercent =
             previousMin > 0 ? Math.abs((routeMinPrice - previousMin) / previousMin) * 100 : 0;
         const nextVolatility = Number(
             ((Number(existing.volatility || 0) * 0.7) + (deltaPercent * 0.3)).toFixed(2)
         );
+        const nextObservedMin = Math.min(previousObservedMin, routeMinPrice);
+        const nextObservedMax = Math.max(previousObservedMax, routeMaxPrice);
+        const nextRollingAvg = Number(((previousRollingAvg * 0.8) + (routeAvgPrice * 0.2)).toFixed(2));
+        const nextBookingWindow =
+            routeMinPrice <= previousObservedMin
+                ? daysToDeparture
+                : previousWindow > 0
+                    ? Math.round(previousWindow * 0.8 + daysToDeparture * 0.2)
+                    : daysToDeparture;
 
         await routeInsightModel.update({
             where: {
                 origin_destination_departureDate: {
-                    origin: options.origin,
-                    destination: options.destination,
+                    origin: normalizedOrigin,
+                    destination: normalizedDestination,
                     departureDate,
                 },
             },
@@ -312,6 +341,11 @@ export async function persistSearchAnalytics(
                 searchCount: Number(existing.searchCount || 0) + 1,
                 lastMinPrice: routeMinPrice,
                 lastAvgPrice: routeAvgPrice,
+                observedMinPrice: nextObservedMin,
+                observedMaxPrice: nextObservedMax,
+                rollingAvgPrice: nextRollingAvg,
+                recommendedBookingWindowDays: nextBookingWindow,
+                lastObservedDaysToDeparture: daysToDeparture,
                 volatility: nextVolatility,
                 lastSearchedAt: searchTimestamp,
             },

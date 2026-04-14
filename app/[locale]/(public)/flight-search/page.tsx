@@ -124,6 +124,8 @@ function SearchPageContent() {
 
     // Pagination state
     const [visibleCount, setVisibleCount] = useState(20);
+    const interactedFlightKeysRef = useRef<Set<string>>(new Set());
+    const ignoredFlightKeysRef = useRef<Set<string>>(new Set());
 
     const showMore = () => {
         setVisibleCount(prev => prev + 20);
@@ -621,6 +623,59 @@ function SearchPageContent() {
     }, [championData]);
 
     useEffect(() => {
+        if (!rankedResults.length || loading) return;
+
+        const timeoutId = window.setTimeout(() => {
+            const slice = rankedResults.slice(0, Math.max(visibleCount, 20));
+
+            for (const flight of slice) {
+                const key = getFlightKey(flight);
+                if (interactedFlightKeysRef.current.has(key) || ignoredFlightKeysRef.current.has(key)) {
+                    continue;
+                }
+
+                const payload = {
+                    action: 'IGNORE',
+                    flightId: flight.id,
+                    flightNumber: flight.flightNumber,
+                    provider: String(flight.source || '').toUpperCase(),
+                    origin: String(flight.from || '').toUpperCase(),
+                    destination: String(flight.to || '').toUpperCase(),
+                    departureDate: String(flight.departTime || '').slice(0, 10),
+                    selectedPrice: Number(flight.price) || null,
+                    selectedScore: Number(flight.agentScore ?? flight.advancedScore?.displayScore ?? 0) || null,
+                    rank: null,
+                    totalResults: rankedResults.length,
+                    currency: String(flight.currency || 'AUD').toUpperCase(),
+                    isDirect: Number(flight.stops) === 0,
+                    departTime: flight.departTime,
+                };
+
+                try {
+                    const body = JSON.stringify(payload);
+                    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+                        const blob = new Blob([body], { type: 'application/json' });
+                        navigator.sendBeacon('/api/selection-track', blob);
+                    } else {
+                        fetch('/api/selection-track', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body,
+                            keepalive: true,
+                        }).catch(() => undefined);
+                    }
+                } catch {
+                    // Best effort only.
+                }
+
+                ignoredFlightKeysRef.current.add(key);
+            }
+        }, 10000);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [rankedResults, visibleCount, loading]);
+
+    useEffect(() => {
         setVisibleCount(20);
     }, [filters, currentSort, results.length]);
 
@@ -800,6 +855,9 @@ function SearchPageContent() {
                                         championBadge={championData.labels[getFlightKey(flight)]}
                                         isPremium={hasPremiumAccess}
                                         userTier={viewerTier}
+                                        onUserAction={() => {
+                                            interactedFlightKeysRef.current.add(getFlightKey(flight));
+                                        }}
                                         selectionContext={{
                                             rank: index + 1,
                                             totalResults: rankedResults.length,

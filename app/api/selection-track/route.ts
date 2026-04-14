@@ -29,7 +29,7 @@ export async function POST(request: Request) {
             : null;
 
         const action = String(payload?.action || '').toUpperCase();
-        if (action !== 'BOOK' && action !== 'DETAIL') {
+        if (action !== 'BOOK' && action !== 'DETAIL' && action !== 'IGNORE') {
             return NextResponse.json({ ok: false, error: 'Invalid action' }, { status: 400 });
         }
 
