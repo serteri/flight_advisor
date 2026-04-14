@@ -74,6 +74,7 @@ export async function POST(request: Request) {
                 data: {
                     userId: user?.id || null,
                     action,
+                    airline: payload?.airline ? String(payload.airline) : null,
                     origin: payload?.origin ? String(payload.origin).toUpperCase() : null,
                     destination: payload?.destination ? String(payload.destination).toUpperCase() : null,
                     departureDate,

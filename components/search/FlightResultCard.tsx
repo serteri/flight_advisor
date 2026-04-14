@@ -272,6 +272,7 @@ export default function FlightResultCard({
     }
 
     const hasPremiumAccess = isPremium || userTier === 'PRO' || userTier === 'ELITE';
+    const isPremiumUser = hasPremiumAccess;
     const hasEliteAccess = userTier === 'ELITE';
     const displayPrice = Number.isFinite(price) && price > 0 ? Math.max(1, Math.round(price)) : null;
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
@@ -333,6 +334,7 @@ export default function FlightResultCard({
             action,
             flightId: flight.id,
             flightNumber,
+            airline,
             provider: source,
             origin: originText,
             destination: destinationText,
@@ -801,12 +803,12 @@ export default function FlightResultCard({
                                     )}
 
                                     {/* CTA for FREE users */}
-                                    {!hasPremiumAccess && (
+                                    {!isPremiumUser && (
                                         <button
                                             onClick={() => setShowLockOverlay(true)}
                                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
                                         >
-                                            🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç →
+                                            🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç
                                         </button>
                                     )}
                                 </div>
@@ -990,7 +992,7 @@ export default function FlightResultCard({
                                 onClick={() => openCheckout('PRO', 'monthly')}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
                             >
-                                🔓 Pro Analizi Kilidini Aç - Monthly Pro ($19)
+                                🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç - Monthly Pro ($19)
                             </button>
                             <button
                                 onClick={openOneTimeReport}

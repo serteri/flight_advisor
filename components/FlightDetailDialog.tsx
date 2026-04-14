@@ -148,6 +148,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         riskFlags: isTr ? "Risk İşaretleri" : "Risk Flags",
         noRisk: isTr ? "Belirgin risk işareti yok." : "No significant risk flags.",
         comfortNotes: isTr ? "Konfor Notları" : "Comfort Notes",
+        explanationEngine: isTr ? "Açıklama Motoru" : "Explanation Engine",
         noComfort: isTr ? "Ekstra konfor notu bulunamadı." : "No extra comfort notes.",
         valueTag: "Value Tag",
         amenities: isTr ? "Hizmetler" : "Amenities",
@@ -166,7 +167,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         marketedBy: isTr ? "Biletleyen" : "Marketed by",
         tradeoff: isTr ? "Trade-off Görselleştirici" : "Trade-off Visualizer",
         counterfactual: isTr ? "Alternatif Senaryo" : "Alternative Scenario",
-        unlockPro: isTr ? "🔓 Pro Analizi Kilidini Aç" : "🔓 Unlock Pro Analysis",
+        unlockPro: isTr ? "🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç" : "🔓 Unlock Risk & Price Intelligence",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
     };
@@ -466,6 +467,13 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                             <p className="text-xs text-red-700">
                                 {flight.advancedScore.dataErrorReason || labels.dataErrorFallback}
                             </p>
+                        </div>
+                    )}
+
+                    {flight.advancedScore?.explanation && (
+                        <div className={`bg-indigo-50 border border-indigo-200 rounded p-3 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                            <h3 className="font-bold text-indigo-700 mb-1 text-base">🧠 {labels.explanationEngine}</h3>
+                            <p className="text-xs text-indigo-800">{flight.advancedScore.explanation}</p>
                         </div>
                     )}
 

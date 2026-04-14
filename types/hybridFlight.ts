@@ -182,5 +182,11 @@ export type FlightResult = {
             time: number;
             comfort: number;
         };
+        routeIntelligence?: {
+            avgPriceRoute: number;
+            volatility: number;
+            bookingWindowPattern?: unknown;
+            recommendedBookingWindowDays?: number | null;
+        };
     };
 };

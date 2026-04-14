@@ -235,6 +235,8 @@ model SearchAnalytics {
   departureDate   DateTime
   minPrice        Float
   avgPrice        Float
+  foundMinPrice   Float    @default(0)
+  foundAvgPrice   Float    @default(0)
   provider        String
   searchTimestamp DateTime @default(now())
 
@@ -251,11 +253,13 @@ model RouteInsight {
   searchCount    Int      @default(0)
   lastMinPrice   Float
   lastAvgPrice   Float
+  avgPriceRoute  Float    @default(0)
   observedMinPrice Float
   observedMaxPrice Float
   rollingAvgPrice Float
   recommendedBookingWindowDays Int?
   lastObservedDaysToDeparture Int?
+  bookingWindowPattern Json?
   volatility     Float    @default(0)
   lastSearchedAt DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -291,6 +295,7 @@ model UserPreference {
   id                String   @id @default(cuid())
   userId            String?
   action            String
+  airline           String?
   origin            String?
   destination       String?
   departureDate     DateTime?

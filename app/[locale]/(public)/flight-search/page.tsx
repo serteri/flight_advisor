@@ -106,6 +106,7 @@ function SearchPageContent() {
     const [error, setError] = useState<string | null>(null);
     const [viewerTier, setViewerTier] = useState<UserTier>('FREE');
     const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+    const isPremiumUser = hasPremiumAccess || viewerTier === 'PRO' || viewerTier === 'ELITE';
     const { data: session } = useSession();
     const lastBootSearchRef = useRef<string>('');
 
@@ -599,23 +600,15 @@ function SearchPageContent() {
         };
 
         result.forEach((flight) => {
-            const currentKey = getFlightKey(flight);
             const currentPrice = parseNum(flight.price);
-            const currentDuration = resolveDuration(flight);
-
-            const alt = base
-                .filter((candidate) => getFlightKey(candidate) !== currentKey)
-                .map((candidate) => {
-                    const priceDiff = parseNum(candidate.price) - currentPrice;
-                    const timeGain = currentDuration - resolveDuration(candidate);
-                    return { candidate, priceDiff, timeGain };
-                })
-                .filter((x) => x.priceDiff >= 40 && x.timeGain >= 180)
-                .sort((a, b) => a.priceDiff - b.priceDiff || b.timeGain - a.timeGain)[0];
-
-            if (alt) {
-                const hoursSaved = Math.max(1, Math.round(alt.timeGain / 60));
-                flight.counterfactualNote = `Bu uçuştan $${Math.round(alt.priceDiff)} daha pahalı ama ${hoursSaved} saat daha kısa bir alternatif var.`;
+            const avgPriceRoute = parseNum((flight as any).advancedScore?.routeIntelligence?.avgPriceRoute);
+            if (avgPriceRoute > 0 && currentPrice > 0) {
+                const delta = Math.round(Math.abs(avgPriceRoute - currentPrice));
+                if (delta >= 10) {
+                    flight.counterfactualNote = currentPrice > avgPriceRoute
+                        ? `Bu fiyat rota ortalamasından $${delta} daha pahalı.`
+                        : `Bu fiyat rota ortalamasından $${delta} daha ucuz.`;
+                }
             }
         });
 
@@ -638,6 +631,7 @@ function SearchPageContent() {
                     action: 'IGNORE',
                     flightId: flight.id,
                     flightNumber: flight.flightNumber,
+                    airline: flight.airline,
                     provider: String(flight.source || '').toUpperCase(),
                     origin: String(flight.from || '').toUpperCase(),
                     destination: String(flight.to || '').toUpperCase(),
@@ -853,7 +847,7 @@ function SearchPageContent() {
                                         key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
                                         flight={flight}
                                         championBadge={championData.labels[getFlightKey(flight)]}
-                                        isPremium={hasPremiumAccess}
+                                        isPremium={isPremiumUser}
                                         userTier={viewerTier}
                                         onUserAction={() => {
                                             interactedFlightKeysRef.current.add(getFlightKey(flight));
@@ -887,6 +881,51 @@ function SearchPageContent() {
                                 </button>
                             </div>
                         )}
+
+                        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5">
+                            <h3 className="text-lg font-black text-slate-900 mb-3">Upgrade Plans</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                    <div className="text-sm font-extrabold text-blue-800">Monthly Pro ($19)</div>
+                                    <p className="text-xs text-blue-700 mt-1">Sınırsız analiz ve özel bildirimler.</p>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const res = await fetch('/api/checkout', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ plan: 'PRO', billingCycle: 'monthly', trial: false }),
+                                                });
+                                                const data = await res.json();
+                                                if (res.ok && data?.url && typeof window !== 'undefined') {
+                                                    window.location.href = data.url;
+                                                    return;
+                                                }
+                                            } catch {
+                                                // fallback below
+                                            }
+                                            window.location.href = `/${locale}/pricing`;
+                                        }}
+                                        className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
+                                    >
+                                        🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç
+                                    </button>
+                                </div>
+                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                    <div className="text-sm font-extrabold text-slate-800">One-time Flight Report ($4.99)</div>
+                                    <p className="text-xs text-slate-600 mt-1">Sadece bu rota için derinlemesine risk ve fiyat analizi.</p>
+                                    <button
+                                        onClick={() => {
+                                            const configured = process.env.NEXT_PUBLIC_ONE_TIME_REPORT_URL;
+                                            window.location.href = configured || `/${locale}/pricing?offer=report`;
+                                        }}
+                                        className="mt-3 w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 text-sm font-semibold py-2.5 rounded-lg"
+                                    >
+                                        One-time Report ($4.99)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

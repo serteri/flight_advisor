@@ -8,6 +8,7 @@ import {
     hasRecentRouteSearchRecords,
     persistFlightSearchRecords,
     persistSearchAnalytics,
+    getRouteInsightForDate,
     getRecentRouteSearchRecords,
     getRecentPricelineRawCache,
     persistPricelineRawCache,
@@ -316,15 +317,37 @@ export async function GET(request: Request) {
             preferenceProfile: preferenceProfile || undefined,
         });
 
+        const routeInsight = await getRouteInsightForDate(
+            queryParams.origin,
+            queryParams.destination,
+            queryParams.date
+        );
+
+        const enrichedFlights = scoredFlights.map((flight) => {
+            if (!routeInsight) return flight;
+            return {
+                ...flight,
+                advancedScore: {
+                    ...(flight.advancedScore || {}),
+                    routeIntelligence: {
+                        avgPriceRoute: routeInsight.avgPriceRoute,
+                        volatility: routeInsight.volatility,
+                        bookingWindowPattern: routeInsight.bookingWindowPattern,
+                        recommendedBookingWindowDays: routeInsight.recommendedBookingWindowDays,
+                    },
+                },
+            };
+        });
+
         if (!usePersonalizedScoring) {
             flightSearchResponseCache.set(cacheKey, {
                 expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
-                results: scoredFlights,
+                results: enrichedFlights,
             });
         }
 
         return NextResponse.json({
-            results: scoredFlights,
+            results: enrichedFlights,
             viewerAccess,
             warnings: providerMeta.warnings,
             cache: {

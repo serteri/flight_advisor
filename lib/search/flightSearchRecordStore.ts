@@ -17,6 +17,11 @@ type SearchAnalyticsOptions = {
     departureDate: string;
 };
 
+type BookingWindowPattern = {
+    bestDay: number | null;
+    buckets: Record<string, { sampleSize: number; avgMinPrice: number }>;
+};
+
 const hasExplicitTimezone = (value: string): boolean =>
     /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value.trim());
 
@@ -246,6 +251,8 @@ export async function persistSearchAnalytics(
                 departureDate,
                 minPrice,
                 avgPrice,
+                foundMinPrice: minPrice,
+                foundAvgPrice: avgPrice,
                 provider,
                 searchTimestamp,
             };
@@ -284,11 +291,50 @@ export async function persistSearchAnalytics(
                 observedMaxPrice: true,
                 rollingAvgPrice: true,
                 recommendedBookingWindowDays: true,
+                avgPriceRoute: true,
+                bookingWindowPattern: true,
                 volatility: true,
             },
         });
 
+        const buildWindowBucket = (days: number) => {
+            if (days <= 7) return '0-7';
+            if (days <= 14) return '8-14';
+            if (days <= 30) return '15-30';
+            if (days <= 60) return '31-60';
+            return '61+';
+        };
+
+        const updateBookingPattern = (
+            currentRaw: unknown,
+            days: number,
+            minPrice: number
+        ): BookingWindowPattern => {
+            const fallback: BookingWindowPattern = { bestDay: days, buckets: {} };
+            const current = currentRaw && typeof currentRaw === 'object'
+                ? (currentRaw as BookingWindowPattern)
+                : fallback;
+
+            const buckets: BookingWindowPattern['buckets'] = {
+                ...(current.buckets || {}),
+            };
+
+            const bucketKey = buildWindowBucket(days);
+            const prev = buckets[bucketKey] || { sampleSize: 0, avgMinPrice: minPrice };
+            const nextSample = prev.sampleSize + 1;
+            const nextAvg = Number((((prev.avgMinPrice * prev.sampleSize) + minPrice) / nextSample).toFixed(2));
+            buckets[bucketKey] = { sampleSize: nextSample, avgMinPrice: nextAvg };
+
+            const bestEntry = Object.entries(buckets).sort((a, b) => a[1].avgMinPrice - b[1].avgMinPrice)[0];
+            const bestDay = bestEntry
+                ? (bestEntry[0] === '0-7' ? 7 : bestEntry[0] === '8-14' ? 14 : bestEntry[0] === '15-30' ? 30 : bestEntry[0] === '31-60' ? 60 : 90)
+                : current.bestDay ?? days;
+
+            return { bestDay, buckets };
+        };
+
         if (!existing) {
+            const bookingWindowPattern = updateBookingPattern(null, daysToDeparture, routeMinPrice);
             await routeInsightModel.create({
                 data: {
                     origin: normalizedOrigin,
@@ -297,11 +343,13 @@ export async function persistSearchAnalytics(
                     searchCount: 1,
                     lastMinPrice: routeMinPrice,
                     lastAvgPrice: routeAvgPrice,
+                    avgPriceRoute: routeAvgPrice,
                     observedMinPrice: routeMinPrice,
                     observedMaxPrice: routeMaxPrice,
                     rollingAvgPrice: routeAvgPrice,
-                    recommendedBookingWindowDays: daysToDeparture,
+                    recommendedBookingWindowDays: bookingWindowPattern.bestDay ?? daysToDeparture,
                     lastObservedDaysToDeparture: daysToDeparture,
+                    bookingWindowPattern,
                     volatility: 0,
                     lastSearchedAt: searchTimestamp,
                 },
@@ -313,21 +361,25 @@ export async function persistSearchAnalytics(
         const previousObservedMin = Number(existing.observedMinPrice || previousMin || routeMinPrice);
         const previousObservedMax = Number(existing.observedMaxPrice || routeMaxPrice);
         const previousRollingAvg = Number(existing.rollingAvgPrice || existing.lastMinPrice || routeAvgPrice);
+        const previousRouteAvg = Number(existing.avgPriceRoute || routeAvgPrice);
         const previousWindow = Number(existing.recommendedBookingWindowDays || 0);
-        const deltaPercent =
-            previousMin > 0 ? Math.abs((routeMinPrice - previousMin) / previousMin) * 100 : 0;
+        const deltaPercent = previousRouteAvg > 0
+            ? Math.abs((routeAvgPrice - previousRouteAvg) / previousRouteAvg) * 100
+            : 0;
         const nextVolatility = Number(
             ((Number(existing.volatility || 0) * 0.7) + (deltaPercent * 0.3)).toFixed(2)
         );
         const nextObservedMin = Math.min(previousObservedMin, routeMinPrice);
         const nextObservedMax = Math.max(previousObservedMax, routeMaxPrice);
         const nextRollingAvg = Number(((previousRollingAvg * 0.8) + (routeAvgPrice * 0.2)).toFixed(2));
+        const nextAvgPriceRoute = Number(((previousRouteAvg * 0.7) + (routeAvgPrice * 0.3)).toFixed(2));
+        const nextBookingPattern = updateBookingPattern(existing.bookingWindowPattern, daysToDeparture, routeMinPrice);
         const nextBookingWindow =
             routeMinPrice <= previousObservedMin
                 ? daysToDeparture
                 : previousWindow > 0
-                    ? Math.round(previousWindow * 0.8 + daysToDeparture * 0.2)
-                    : daysToDeparture;
+                    ? Math.round((previousWindow * 0.6) + ((nextBookingPattern.bestDay ?? daysToDeparture) * 0.4))
+                    : (nextBookingPattern.bestDay ?? daysToDeparture);
 
         await routeInsightModel.update({
             where: {
@@ -341,11 +393,13 @@ export async function persistSearchAnalytics(
                 searchCount: Number(existing.searchCount || 0) + 1,
                 lastMinPrice: routeMinPrice,
                 lastAvgPrice: routeAvgPrice,
+                avgPriceRoute: nextAvgPriceRoute,
                 observedMinPrice: nextObservedMin,
                 observedMaxPrice: nextObservedMax,
                 rollingAvgPrice: nextRollingAvg,
                 recommendedBookingWindowDays: nextBookingWindow,
                 lastObservedDaysToDeparture: daysToDeparture,
+                bookingWindowPattern: nextBookingPattern,
                 volatility: nextVolatility,
                 lastSearchedAt: searchTimestamp,
             },
@@ -599,5 +653,52 @@ export async function persistPricelineRawCache(
         });
     } catch (error: any) {
         console.warn('[FLIGHT_SEARCH_RECORD] raw Priceline cache persist skipped:', error?.message || error);
+    }
+}
+
+export async function getRouteInsightForDate(
+    origin: string,
+    destination: string,
+    departureDate: string
+): Promise<{
+    avgPriceRoute: number;
+    volatility: number;
+    bookingWindowPattern: unknown;
+    recommendedBookingWindowDays: number | null;
+} | null> {
+    const routeInsightModel = (prisma as any)?.routeInsight;
+    if (!routeInsightModel) return null;
+
+    const normalizedOrigin = String(origin || '').toUpperCase();
+    const normalizedDestination = String(destination || '').toUpperCase();
+    const normalizedDate = normalizeUtcDate(departureDate);
+
+    try {
+        const row = await routeInsightModel.findUnique({
+            where: {
+                origin_destination_departureDate: {
+                    origin: normalizedOrigin,
+                    destination: normalizedDestination,
+                    departureDate: normalizedDate,
+                },
+            },
+            select: {
+                avgPriceRoute: true,
+                volatility: true,
+                bookingWindowPattern: true,
+                recommendedBookingWindowDays: true,
+            },
+        });
+        if (!row) return null;
+
+        return {
+            avgPriceRoute: Number(row.avgPriceRoute || 0),
+            volatility: Number(row.volatility || 0),
+            bookingWindowPattern: row.bookingWindowPattern,
+            recommendedBookingWindowDays: row.recommendedBookingWindowDays ?? null,
+        };
+    } catch (error: any) {
+        console.warn('[ROUTE_INSIGHT] summary lookup skipped:', error?.message || error);
+        return null;
     }
 }
