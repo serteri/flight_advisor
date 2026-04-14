@@ -399,6 +399,12 @@ export default function FlightResultCard({
         window.location.href = configured || `/${locale}/pricing?offer=report`;
     };
 
+    const openPricingPage = (offer: 'pro' | 'report' = 'pro') => {
+        if (typeof window === 'undefined') return;
+        const locale = window.location.pathname.split('/')[1] || 'en';
+        window.location.href = `/${locale}/pricing?offer=${offer}`;
+    };
+
     const handleDetailsClick = () => {
         sendSelectionEvent('DETAIL');
         onUserAction?.('DETAIL');
@@ -805,7 +811,7 @@ export default function FlightResultCard({
                                     {/* CTA for FREE users */}
                                     {!isPremiumUser && (
                                         <button
-                                            onClick={() => setShowLockOverlay(true)}
+                                            onClick={() => openPricingPage('pro')}
                                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
                                         >
                                             🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç

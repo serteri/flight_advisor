@@ -172,24 +172,9 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         no: isTr ? "Yok" : "No",
     };
 
-    const openCheckout = async () => {
-        try {
-            const res = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: 'PRO', billingCycle: 'monthly', trial: false }),
-            });
-            const data = await res.json();
-            if (res.ok && data?.url && typeof window !== 'undefined') {
-                window.location.href = data.url;
-                return;
-            }
-        } catch {
-            // fall through to pricing page
-        }
-        if (typeof window !== 'undefined') {
-            window.location.href = `/${locale}/pricing`;
-        }
+    const openPricingPage = (offer: 'pro' | 'report' = 'pro') => {
+        if (typeof window === 'undefined') return;
+        window.location.href = `/${locale}/pricing?offer=${offer}`;
     };
 
     const openOneTimeReport = () => {
@@ -438,7 +423,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                                 <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 space-y-2">
                                     <p className="text-xs font-semibold text-blue-800">Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı Pro üyelikte tam görünür.</p>
                                     <button
-                                        onClick={openCheckout}
+                                        onClick={() => openPricingPage('pro')}
                                         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-md"
                                     >
                                         {labels.unlockPro} - Monthly Pro ($19)
