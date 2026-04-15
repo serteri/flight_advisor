@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import ExperimentManager, { ExperimentDefinition } from '@/lib/experiment/experimentManager';
+import ExperimentManager from '@/lib/experiment/experimentManager';
 
 const isAdmin = async (): Promise<boolean> => {
     const session = await auth();
@@ -76,4 +76,37 @@ export async function POST(request: Request) {
             );
         }
 
-        for (const variant of payload.variants) {\n            if (!variant.id || !variant.name) {\n                return NextResponse.json(\n                    { error: 'Each variant must have id and name' },\n                    { status: 400 }\n                );\n            }\n        }\n\n        // Create experiment\n        const result = await ExperimentManager.createExperiment(payload);\n\n        if (!result.success) {\n            return NextResponse.json(\n                { error: result.error || 'Creation failed' },\n                { status: 400 }\n            );\n        }\n\n        return NextResponse.json(\n            {\n                success: true,\n                experimentId: result.experimentId,\n                message: `Experiment \"${payload.name}\" created successfully`,\n            },\n            { status: 201 }\n        );\n    } catch (error) {\n        console.error('[ADMIN_EXPERIMENTS_POST]', error);\n        return NextResponse.json(\n            { error: 'Failed to create experiment' },\n            { status: 500 }\n        );\n    }\n}\n
+        for (const variant of payload.variants) {
+            if (!variant.id || !variant.name) {
+                return NextResponse.json(
+                    { error: 'Each variant must have id and name' },
+                    { status: 400 }
+                );
+            }
+        }
+
+        const result = await ExperimentManager.createExperiment(payload);
+
+        if (!result.success) {
+            return NextResponse.json(
+                { error: result.error || 'Creation failed' },
+                { status: 400 }
+            );
+        }
+
+        return NextResponse.json(
+            {
+                success: true,
+                experimentId: result.experimentId,
+                message: `Experiment "${payload.name}" created successfully`,
+            },
+            { status: 201 }
+        );
+    } catch (error) {
+        console.error('[ADMIN_EXPERIMENTS_POST]', error);
+        return NextResponse.json(
+            { error: 'Failed to create experiment' },
+            { status: 500 }
+        );
+    }
+}

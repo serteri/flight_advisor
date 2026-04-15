@@ -39,9 +39,147 @@ class MessageVariants {
       };
     } else {
       return {
-        shortMessage: '⚪ Decent Price',
-        fullMessage: 'Weak signal: This price is lower than average, but the signal is not strong. Consider if you\'re comfortable with the price.',
+        shortMessage: 'Decent Price',
+        fullMessage:
+          'Weak signal: This price is lower than average, but the signal is not strong. Consider if you are comfortable with the price.',
         ctaLabel: 'Book',
         urgencyLevel: 'LOW',
         confidence: 'LOW',
-        tone: 'NEUTRAL',  \n      };\n    }\n  }\n\n  /**\n   * Get message variants for WAIT decision\n   */\n  static getWaitMessaging(confidence: number): MessageVariant {\n    if (confidence >= 75) {\n      return {\n        shortMessage: '⬇️ Likely to Drop - Track It',\n        fullMessage: 'Strong signal: Based on pricing trends, you could save significantly by waiting. We\\'ll monitor and alert you.',\n        ctaLabel: 'Track This Flight',\n        urgencyLevel: 'MEDIUM',\n        confidence: 'HIGH',\n        tone: 'POSITIVE',\n      };\n    } else if (confidence >= 50) {\n      return {\n        shortMessage: '📊 May Drop - Worth Tracking',\n        fullMessage: 'Moderate signal: Prices sometimes decrease, so waiting could pay off. Set a price alert to stay informed.',\n        ctaLabel: 'Track Price',\n        urgencyLevel: 'MEDIUM',\n        confidence: 'MEDIUM',\n        tone: 'CAUTIOUS',\n      };\n    } else {\n      return {\n        shortMessage: '⏳ Could Go Either Way',\n        fullMessage: 'Weak signal: Prices are uncertain. You might want to wait, but no strong case either way.',\n        ctaLabel: 'Track',\n        urgencyLevel: 'LOW',\n        confidence: 'LOW',\n        tone: 'NEUTRAL',\n      };\n    }\n  }\n\n  /**\n   * Get message variants for AVOID decision\n   */\n  static getAvoidMessaging(confidence: number): MessageVariant {\n    if (confidence >= 75) {\n      return {\n        shortMessage: '❌ Overpriced - Better Options Exist',\n        fullMessage: 'Strong signal: This price is significantly higher than typical. You\\'ll almost certainly find better options above.',\n        ctaLabel: 'See Better Options',\n        urgencyLevel: 'HIGH',\n        confidence: 'HIGH',\n        tone: 'URGENT',\n      };\n    } else if (confidence >= 50) {\n      return {\n        shortMessage: '⚠️ High Price - Consider Alternatives',\n        fullMessage: 'Moderate signal: This is priced above average. There are likely better deals available.',\n        ctaLabel: 'Browse Others',\n        urgencyLevel: 'MEDIUM',\n        confidence: 'MEDIUM',\n        tone: 'CAUTIOUS',\n      };\n    } else {\n      return {\n        shortMessage: '💭 Pricey - Check Others',\n        fullMessage: 'Weak signal: This is a bit pricier than usual, but may still be reasonable depending on your preferences.',\n        ctaLabel: 'See More Options',\n        urgencyLevel: 'LOW',\n        confidence: 'LOW',\n        tone: 'NEUTRAL',\n      };\n    }\n  }\n\n  /**\n   * Get messaging for any decision + confidence combo\n   */\n  static getMessaging(\n    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID',\n    confidence: number\n  ): MessageVariant {\n    switch (decisionType) {\n      case 'BUY_NOW':\n        return this.getBuyNowMessaging(confidence);\n      case 'WAIT':\n        return this.getWaitMessaging(confidence);\n      case 'AVOID':\n        return this.getAvoidMessaging(confidence);\n      default:\n        return {\n          shortMessage: 'No Strong Signal',\n          fullMessage: 'The data doesn\\'t give a clear recommendation. Choose based on your preferences.',\n          ctaLabel: 'View Details',\n          urgencyLevel: 'LOW',\n          confidence: 'LOW',\n          tone: 'NEUTRAL',\n        };\n    }\n  }\n\n  /**\n   * Get CSS classes based on confidence + decision\n   */\n  static getStyleClasses(\n    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID',\n    confidence: number\n  ): {\n    containerBg: string;\n    badgeBg: string;\n    textColor: string;\n    icon: string;\n  } {\n    const confLevel = confidence >= 75 ? 'high' : confidence >= 50 ? 'medium' : 'low';\n\n    const styles: Record<string, any> = {\n      BUY_NOW: {\n        high: {\n          containerBg: 'bg-emerald-50 border-emerald-300',\n          badgeBg: 'bg-emerald-500 text-white',\n          textColor: 'text-emerald-900',\n          icon: '🔴',\n        },\n        medium: {\n          containerBg: 'bg-green-50 border-green-300',\n          badgeBg: 'bg-green-500 text-white',\n          textColor: 'text-green-900',\n          icon: '🟢',\n        },\n        low: {\n          containerBg: 'bg-gray-50 border-gray-300',\n          badgeBg: 'bg-gray-500 text-white',\n          textColor: 'text-gray-900',\n          icon: '⚪',\n        },\n      },\n      WAIT: {\n        high: {\n          containerBg: 'bg-blue-50 border-blue-300',\n          badgeBg: 'bg-blue-500 text-white',\n          textColor: 'text-blue-900',\n          icon: '⬇️',\n        },\n        medium: {\n          containerBg: 'bg-cyan-50 border-cyan-300',\n          badgeBg: 'bg-cyan-500 text-white',\n          textColor: 'text-cyan-900',\n          icon: '📊',\n        },\n        low: {\n          containerBg: 'bg-slate-50 border-slate-300',\n          badgeBg: 'bg-slate-500 text-white',\n          textColor: 'text-slate-900',\n          icon: '⏳',\n        },\n      },\n      AVOID: {\n        high: {\n          containerBg: 'bg-red-50 border-red-300',\n          badgeBg: 'bg-red-600 text-white',\n          textColor: 'text-red-900',\n          icon: '❌',\n        },\n        medium: {\n          containerBg: 'bg-orange-50 border-orange-300',\n          badgeBg: 'bg-orange-500 text-white',\n          textColor: 'text-orange-900',\n          icon: '⚠️',\n        },\n        low: {\n          containerBg: 'bg-amber-50 border-amber-300',\n          badgeBg: 'bg-amber-500 text-white',\n          textColor: 'text-amber-900',\n          icon: '💭',\n        },\n      },\n    };\n\n    return styles[decisionType]?.[confLevel] || styles.WAIT.low;\n  }\n\n  /**\n   * Get confidence level label\n   */\n  static getConfidenceLabel(confidence: number): string {\n    if (confidence >= 75) return 'High Confidence';\n    if (confidence >= 50) return 'Moderate Confidence';\n    return 'Low Confidence';\n  }\n\n  /**\n   * Get confidence visual indicator (0-5 stars or bars)\n   */\n  static getConfidenceBars(confidence: number): string {\n    const bars = Math.ceil((confidence / 100) * 5);\n    return '█'.repeat(bars) + '░'.repeat(5 - bars);\n  }\n}\n\nexport default MessageVariants;\n
+        tone: 'NEUTRAL',
+      };
+    }
+  }
+
+  static getWaitMessaging(confidence: number): MessageVariant {
+    if (confidence >= 75) {
+      return {
+        shortMessage: 'Likely to Drop - Track It',
+        fullMessage:
+          'Strong signal: Based on pricing trends, you could save significantly by waiting. We will monitor and alert you.',
+        ctaLabel: 'Track This Flight',
+        urgencyLevel: 'MEDIUM',
+        confidence: 'HIGH',
+        tone: 'POSITIVE',
+      };
+    }
+
+    if (confidence >= 50) {
+      return {
+        shortMessage: 'May Drop - Worth Tracking',
+        fullMessage:
+          'Moderate signal: Prices sometimes decrease, so waiting could pay off. Set a price alert to stay informed.',
+        ctaLabel: 'Track Price',
+        urgencyLevel: 'MEDIUM',
+        confidence: 'MEDIUM',
+        tone: 'CAUTIOUS',
+      };
+    }
+
+    return {
+      shortMessage: 'Could Go Either Way',
+      fullMessage: 'Weak signal: Prices are uncertain. You might want to wait, but there is no strong case either way.',
+      ctaLabel: 'Track',
+      urgencyLevel: 'LOW',
+      confidence: 'LOW',
+      tone: 'NEUTRAL',
+    };
+  }
+
+  static getAvoidMessaging(confidence: number): MessageVariant {
+    if (confidence >= 75) {
+      return {
+        shortMessage: 'Overpriced - Better Options Exist',
+        fullMessage:
+          'Strong signal: This price is significantly higher than typical. You will likely find better options above.',
+        ctaLabel: 'See Better Options',
+        urgencyLevel: 'HIGH',
+        confidence: 'HIGH',
+        tone: 'URGENT',
+      };
+    }
+
+    if (confidence >= 50) {
+      return {
+        shortMessage: 'High Price - Consider Alternatives',
+        fullMessage: 'Moderate signal: This is priced above average. There are likely better deals available.',
+        ctaLabel: 'Browse Others',
+        urgencyLevel: 'MEDIUM',
+        confidence: 'MEDIUM',
+        tone: 'CAUTIOUS',
+      };
+    }
+
+    return {
+      shortMessage: 'Pricey - Check Others',
+      fullMessage:
+        'Weak signal: This is a bit pricier than usual, but may still be reasonable depending on your preferences.',
+      ctaLabel: 'See More Options',
+      urgencyLevel: 'LOW',
+      confidence: 'LOW',
+      tone: 'NEUTRAL',
+    };
+  }
+
+  static getMessaging(
+    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID',
+    confidence: number
+  ): MessageVariant {
+    if (decisionType === 'BUY_NOW') return this.getBuyNowMessaging(confidence);
+    if (decisionType === 'WAIT') return this.getWaitMessaging(confidence);
+    if (decisionType === 'AVOID') return this.getAvoidMessaging(confidence);
+
+    return {
+      shortMessage: 'No Strong Signal',
+      fullMessage: 'The data does not give a clear recommendation. Choose based on your preferences.',
+      ctaLabel: 'View Details',
+      urgencyLevel: 'LOW',
+      confidence: 'LOW',
+      tone: 'NEUTRAL',
+    };
+  }
+
+  static getStyleClasses(
+    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID',
+    confidence: number
+  ): {
+    containerBg: string;
+    badgeBg: string;
+    textColor: string;
+    icon: string;
+  } {
+    const confLevel = confidence >= 75 ? 'high' : confidence >= 50 ? 'medium' : 'low';
+
+    const styles: Record<string, Record<string, { containerBg: string; badgeBg: string; textColor: string; icon: string }>> = {
+      BUY_NOW: {
+        high: { containerBg: 'bg-emerald-50 border-emerald-300', badgeBg: 'bg-emerald-500 text-white', textColor: 'text-emerald-900', icon: 'B' },
+        medium: { containerBg: 'bg-green-50 border-green-300', badgeBg: 'bg-green-500 text-white', textColor: 'text-green-900', icon: 'B' },
+        low: { containerBg: 'bg-gray-50 border-gray-300', badgeBg: 'bg-gray-500 text-white', textColor: 'text-gray-900', icon: 'B' },
+      },
+      WAIT: {
+        high: { containerBg: 'bg-blue-50 border-blue-300', badgeBg: 'bg-blue-500 text-white', textColor: 'text-blue-900', icon: 'W' },
+        medium: { containerBg: 'bg-cyan-50 border-cyan-300', badgeBg: 'bg-cyan-500 text-white', textColor: 'text-cyan-900', icon: 'W' },
+        low: { containerBg: 'bg-slate-50 border-slate-300', badgeBg: 'bg-slate-500 text-white', textColor: 'text-slate-900', icon: 'W' },
+      },
+      AVOID: {
+        high: { containerBg: 'bg-red-50 border-red-300', badgeBg: 'bg-red-600 text-white', textColor: 'text-red-900', icon: 'A' },
+        medium: { containerBg: 'bg-orange-50 border-orange-300', badgeBg: 'bg-orange-500 text-white', textColor: 'text-orange-900', icon: 'A' },
+        low: { containerBg: 'bg-amber-50 border-amber-300', badgeBg: 'bg-amber-500 text-white', textColor: 'text-amber-900', icon: 'A' },
+      },
+    };
+
+    return styles[decisionType][confLevel] || styles.WAIT.low;
+  }
+
+  static getConfidenceLabel(confidence: number): string {
+    if (confidence >= 75) return 'High Confidence';
+    if (confidence >= 50) return 'Moderate Confidence';
+    return 'Low Confidence';
+  }
+
+  static getConfidenceBars(confidence: number): string {
+    const bars = Math.ceil((confidence / 100) * 5);
+    return '#'.repeat(bars) + '-'.repeat(5 - bars);
+  }
+}
+
+export default MessageVariants;

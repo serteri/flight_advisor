@@ -456,8 +456,8 @@ async function resolveProactiveTips(params: {
                 const saving = Math.round(baseReferencePrice - avgPriceRoute);
                 return { dayDiff, avgPriceRoute, saving };
             })
-            .filter((row) => row.dayDiff !== 0 && Math.abs(row.dayDiff) <= 1 && row.avgPriceRoute > 0 && row.saving >= 60)
-            .sort((a, b) => b.saving - a.saving)[0];
+            .filter((row: { dayDiff: number; avgPriceRoute: number; saving: number }) => row.dayDiff !== 0 && Math.abs(row.dayDiff) <= 1 && row.avgPriceRoute > 0 && row.saving >= 60)
+            .sort((a: { saving: number }, b: { saving: number }) => b.saving - a.saving)[0];
 
         if (bestDate) {
             const direction = bestDate.dayDiff < 0 ? 'earlier' : 'later';

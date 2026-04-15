@@ -1,1 +1,207 @@
-/**\n * 📊 DECISION ACCURACY TRACKER\n * \n * Post-hoc evaluation of decision quality:\n * - Track price at decision time\n * - Evaluate X days later\n * - Compute accuracy scores\n * - Feed back into confidence calibration\n */\n\nimport { prisma } from '@/lib/prisma';\n\nexport interface DecisionRecord {\n  eventId: string;\n  origin: string;\n  destination: string;\n  departureDate: Date;\n  decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID';\n  decisionConfidence: number;\n  priceAtDecision: number;\n  decidedAt: Date;\n}\n\nexport interface DecisionAccuracyResult {\n  eventId: string;\n  isAccurate: boolean;\n  accuracyScore: number; // 0-100\n  priceChange: number;\n  priceChangePercent: number;\n  feedback: string;\n}\n\nclass DecisionAccuracyTracker {\n  /**\n   * Record a decision for later evaluation\n   */\n  static async recordDecision(record: DecisionRecord): Promise<{\n    success: boolean;\n    accuracyId?: string;\n    error?: string;\n  }> {\n    try {\n      const model = (prisma as any)?.decisionAccuracy;\n      if (!model) {\n        return { success: false, error: 'DecisionAccuracy model unavailable' };\n      }\n\n      const created = await model.create({\n        data: {\n          origin: record.origin,\n          destination: record.destination,\n          departureDate: record.departureDate,\n          decisionType: record.decisionType,\n          decisionConfidence: record.decisionConfidence,\n          priceAtDecision: record.priceAtDecision,\n          decidedAt: record.decidedAt,\n          eventId: record.eventId,\n        },\n      });\n\n      return { success: true, accuracyId: created.id };\n    } catch (error) {\n      console.error('[DecisionAccuracyTracker] Record failed:', error);\n      return {\n        success: false,\n        error: error instanceof Error ? error.message : 'Unknown error',\n      };\n    }\n  }\n\n  /**\n   * Evaluate decision accuracy\n   * Checks actual price at evaluation time vs. predicted behavior\n   */\n  static async evaluateDecision(\n    accuracyId: string,\n    currentPrice: number\n  ): Promise<DecisionAccuracyResult | null> {\n    try {\n      const model = (prisma as any)?.decisionAccuracy;\n      if (!model) return null;\n\n      const decision = await model.findUnique({\n        where: { id: accuracyId },\n      });\n\n      if (!decision) return null;\n\n      const priceChange = currentPrice - decision.priceAtDecision;\n      const priceChangePercent = (priceChange / decision.priceAtDecision) * 100;\n      const conf = decision.decisionConfidence || 50;\n\n      // Score based on decision type and price movement\n      let isAccurate = false;\n      let accuracyScore = 0;\n      let feedback = '';\n\n      if (decision.decisionType === 'BUY_NOW') {\n        // BUY_NOW is accurate if price increased (user saved money)\n        if (priceChange > 0) {\n          isAccurate = true;\n          // Score: how much did user save, relative to confidence\n          accuracyScore = Math.min(100, 50 + (priceChangePercent * 0.5));\n          feedback = `Correct! Price increased ${priceChangePercent.toFixed(1)}% after decision.`;\n        } else {\n          isAccurate = false;\n          // Penalize less if confidence was low\n          accuracyScore = Math.max(0, 50 - (Math.abs(priceChangePercent) * 0.5));\n          feedback = `Incorrect. Price decreased ${Math.abs(priceChangePercent).toFixed(1)}% instead.`;\n        }\n      } else if (decision.decisionType === 'WAIT') {\n        // WAIT is accurate if price decreased (waiting paid off)\n        if (priceChange < 0) {\n          isAccurate = true;\n          accuracyScore = Math.min(100, 50 + (Math.abs(priceChangePercent) * 0.5));\n          feedback = `Correct! Price decreased ${Math.abs(priceChangePercent).toFixed(1)}% as expected.`;\n        } else {\n          isAccurate = false;\n          accuracyScore = Math.max(0, 50 - (priceChangePercent * 0.5));\n          feedback = `Incorrect. Price increased ${priceChangePercent.toFixed(1)}% instead of dropping.`;\n        }\n      } else if (decision.decisionType === 'AVOID') {\n        // AVOID is accurate if price decreased significantly (flight became even worse value)\n        if (priceChange > 300) {\n          // Significant price jump validates AVOID\n          isAccurate = true;\n          accuracyScore = Math.min(100, 50 + (priceChangePercent * 0.3));\n          feedback = `Correct! Price spiked ${priceChangePercent.toFixed(1)}%, validating AVOID.`;\n        } else if (priceChange < -00) {\n          // Price dropped makes AVOID debatable, but could mean user could have waited for better\n          isAccurate = false;\n          accuracyScore = Math.max(0, 25 + (Math.abs(priceChangePercent) * 0.5));\n          feedback = `Uncertain. Price dropped ${Math.abs(priceChangePercent).toFixed(1)}%, making AVOID questionable.`;\n        } else {\n          // Price stable  around same level\n          isAccurate = true;\n          accuracyScore = 60;\n          feedback = `Reasonable. Price remained stable, AVOID avoided regret.`;\n        }\n      }\n\n      // Store evaluation\n      await model.update({\n        where: { id: accuracyId },\n        data: {\n          evaluatedAt: new Date(),\n          priceAtEvaluation: currentPrice,\n          priceChange,\n          priceChangePercent: Number(priceChangePercent.toFixed(2)),\n          isAccurate,\n          accuracyScore: Math.round(accuracyScore),\n        },\n      });\n\n      return {\n        eventId: decision.eventId || '',\n        isAccurate,\n        accuracyScore: Math.round(accuracyScore),\n        priceChange,\n        priceChangePercent,\n        feedback,\n      };\n    } catch (error) {\n      console.error('[DecisionAccuracyTracker] Evaluation failed:', error);\n      return null;\n    }\n  }\n\n  /**\n   * Get decisions ready for evaluation (decided > X days ago, not yet evaluated)\n   */\n  static async getPendingEvaluations(daysAgo: number = 3): Promise<any[]> {\n    try {\n      const model = (prisma as any)?.decisionAccuracy;\n      if (!model) return [];\n\n      const cutoffDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);\n\n      const pending = await model.findMany({\n        where: {\n          decidedAt: {\n            lte: cutoffDate,\n          },\n          evaluatedAt: null, // Not yet evaluated\n        },\n        orderBy: { decidedAt: 'asc' },\n        take: 100, // Batch process\n      });\n\n      return pending;\n    } catch (error) {\n      console.error('[DecisionAccuracyTracker] Failed to fetch pending evaluations:', error);\n      return [];\n    }\n  }\n\n  /**\n   * Get accuracy statistics for a route and decision type\n   */\n  static async getAccuracyStats(\n    origin: string,\n    destination: string,\n    decisionType?: string\n  ): Promise<{\n    totalEvaluated: number;\n    accurateCount: number;\n    accuracyRate: number;\n    avgAccuracyScore: number;\n  }> {\n    try {\n      const model = (prisma as any)?.decisionAccuracy;\n      if (!model) {\n        return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };\n      }\n\n      const where: any = {\n        origin,\n        destination,\n        evaluatedAt: {\n          not: null, // Only evaluated decisions\n        },\n      };\n\n      if (decisionType) {\n        where.decisionType = decisionType;\n      }\n\n      const evals = await model.findMany({ where });\n\n      if (evals.length === 0) {\n        return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };\n      }\n\n      const accurateCount = evals.filter((e: any) => e.isAccurate).length;\n      const avgAccuracyScore =\n        evals.reduce((sum: number, e: any) => sum + (e.accuracyScore || 0), 0) / evals.length;\n\n      return {\n        totalEvaluated: evals.length,\n        accurateCount,\n        accuracyRate: Number(((accurateCount / evals.length) * 100).toFixed(1)),\n        avgAccuracyScore: Number(avgAccuracyScore.toFixed(1)),\n      };\n    } catch (error) {\n      console.error('[DecisionAccuracyTracker] Stats query failed:', error);\n      return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };\n    }\n  }\n}\n\nexport default DecisionAccuracyTracker;\n
+import { prisma } from '@/lib/prisma';
+
+export interface DecisionRecord {
+	eventId: string;
+	origin: string;
+	destination: string;
+	departureDate: Date;
+	decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID';
+	decisionConfidence: number;
+	priceAtDecision: number;
+	decidedAt: Date;
+}
+
+export interface DecisionAccuracyResult {
+	eventId: string;
+	isAccurate: boolean;
+	accuracyScore: number;
+	priceChange: number;
+	priceChangePercent: number;
+	feedback: string;
+}
+
+class DecisionAccuracyTracker {
+	static async recordDecision(record: DecisionRecord): Promise<{
+		success: boolean;
+		accuracyId?: string;
+		error?: string;
+	}> {
+		try {
+			const model = (prisma as any)?.decisionAccuracy;
+			if (!model) {
+				return { success: false, error: 'DecisionAccuracy model unavailable' };
+			}
+
+			const created = await model.create({
+				data: {
+					origin: record.origin,
+					destination: record.destination,
+					departureDate: record.departureDate,
+					decisionType: record.decisionType,
+					decisionConfidence: record.decisionConfidence,
+					priceAtDecision: record.priceAtDecision,
+					decidedAt: record.decidedAt,
+					eventId: record.eventId,
+				},
+			});
+
+			return { success: true, accuracyId: created.id };
+		} catch (error) {
+			console.error('[DecisionAccuracyTracker] Record failed:', error);
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			};
+		}
+	}
+
+	static async evaluateDecision(
+		accuracyId: string,
+		currentPrice: number
+	): Promise<DecisionAccuracyResult | null> {
+		try {
+			const model = (prisma as any)?.decisionAccuracy;
+			if (!model) return null;
+
+			const decision = await model.findUnique({ where: { id: accuracyId } });
+			if (!decision) return null;
+
+			const priceChange = currentPrice - decision.priceAtDecision;
+			const priceChangePercent = (priceChange / decision.priceAtDecision) * 100;
+
+			let isAccurate = false;
+			let accuracyScore = 0;
+			let feedback = '';
+
+			if (decision.decisionType === 'BUY_NOW') {
+				if (priceChange > 0) {
+					isAccurate = true;
+					accuracyScore = Math.min(100, 50 + priceChangePercent * 0.5);
+					feedback = `Correct! Price increased ${priceChangePercent.toFixed(1)}% after decision.`;
+				} else {
+					isAccurate = false;
+					accuracyScore = Math.max(0, 50 - Math.abs(priceChangePercent) * 0.5);
+					feedback = `Incorrect. Price decreased ${Math.abs(priceChangePercent).toFixed(1)}% instead.`;
+				}
+			} else if (decision.decisionType === 'WAIT') {
+				if (priceChange < 0) {
+					isAccurate = true;
+					accuracyScore = Math.min(100, 50 + Math.abs(priceChangePercent) * 0.5);
+					feedback = `Correct! Price decreased ${Math.abs(priceChangePercent).toFixed(1)}% as expected.`;
+				} else {
+					isAccurate = false;
+					accuracyScore = Math.max(0, 50 - priceChangePercent * 0.5);
+					feedback = `Incorrect. Price increased ${priceChangePercent.toFixed(1)}% instead of dropping.`;
+				}
+			} else if (decision.decisionType === 'AVOID') {
+				if (priceChange > 300) {
+					isAccurate = true;
+					accuracyScore = Math.min(100, 50 + priceChangePercent * 0.3);
+					feedback = `Correct! Price spiked ${priceChangePercent.toFixed(1)}%, validating AVOID.`;
+				} else if (priceChange < 0) {
+					isAccurate = false;
+					accuracyScore = Math.max(0, 25 + Math.abs(priceChangePercent) * 0.5);
+					feedback = `Uncertain. Price dropped ${Math.abs(priceChangePercent).toFixed(1)}%, making AVOID questionable.`;
+				} else {
+					isAccurate = true;
+					accuracyScore = 60;
+					feedback = 'Reasonable. Price remained stable, AVOID avoided regret.';
+				}
+			}
+
+			await model.update({
+				where: { id: accuracyId },
+				data: {
+					evaluatedAt: new Date(),
+					priceAtEvaluation: currentPrice,
+					priceChange,
+					priceChangePercent: Number(priceChangePercent.toFixed(2)),
+					isAccurate,
+					accuracyScore: Math.round(accuracyScore),
+				},
+			});
+
+			return {
+				eventId: decision.eventId || '',
+				isAccurate,
+				accuracyScore: Math.round(accuracyScore),
+				priceChange,
+				priceChangePercent,
+				feedback,
+			};
+		} catch (error) {
+			console.error('[DecisionAccuracyTracker] Evaluation failed:', error);
+			return null;
+		}
+	}
+
+	static async getPendingEvaluations(daysAgo: number = 3): Promise<any[]> {
+		try {
+			const model = (prisma as any)?.decisionAccuracy;
+			if (!model) return [];
+
+			const cutoffDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+			return await model.findMany({
+				where: {
+					decidedAt: { lte: cutoffDate },
+					evaluatedAt: null,
+				},
+				orderBy: { decidedAt: 'asc' },
+				take: 100,
+			});
+		} catch (error) {
+			console.error('[DecisionAccuracyTracker] Failed to fetch pending evaluations:', error);
+			return [];
+		}
+	}
+
+	static async getAccuracyStats(
+		origin: string,
+		destination: string,
+		decisionType?: string
+	): Promise<{
+		totalEvaluated: number;
+		accurateCount: number;
+		accuracyRate: number;
+		avgAccuracyScore: number;
+	}> {
+		try {
+			if (!origin || !destination) {
+				return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };
+			}
+
+			const model = (prisma as any)?.decisionAccuracy;
+			if (!model) {
+				return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };
+			}
+
+			const where: any = {
+				origin,
+				destination,
+				evaluatedAt: { not: null },
+			};
+			if (decisionType) where.decisionType = decisionType;
+
+			const evals = await model.findMany({ where });
+			if (evals.length === 0) {
+				return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };
+			}
+
+			const accurateCount = evals.filter((e: any) => e.isAccurate).length;
+			const avgAccuracyScore =
+				evals.reduce((sum: number, e: any) => sum + (e.accuracyScore || 0), 0) / evals.length;
+
+			return {
+				totalEvaluated: evals.length,
+				accurateCount,
+				accuracyRate: Number(((accurateCount / evals.length) * 100).toFixed(1)),
+				avgAccuracyScore: Number(avgAccuracyScore.toFixed(1)),
+			};
+		} catch (error) {
+			console.error('[DecisionAccuracyTracker] Stats query failed:', error);
+			return { totalEvaluated: 0, accurateCount: 0, accuracyRate: 0, avgAccuracyScore: 0 };
+		}
+	}
+}
+
+export default DecisionAccuracyTracker;

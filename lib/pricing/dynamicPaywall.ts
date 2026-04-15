@@ -1,1 +1,140 @@
-/**\n * 💰 DYNAMIC PAYWALL STRATEGY\n * \n * Adjusts paywall behavior based on:\n * - Decision type (BUY_NOW, WAIT, AVOID)\n * - Decision confidence\n * - User subscription level\n * - Route popularity\n */\n\nexport type PaywallStrategy = 'HARD_LOCK' | 'SOFT_LOCK' | 'DELAYED_LOCK' | 'OPEN';\n\nexport interface PaywallContext {\n  strategy: PaywallStrategy;\n  showPreview: boolean; // Show blurred preview?  \n  showUpgradePrompt: boolean; // Show \"Upgrade\" CTA?\n  urgencyLevel: 'HIGH' | 'MEDIUM' | 'LOW';\n  message: string;\n  ctaLabel: string;\n  ctaUrl?: string;\n}\n\nclass DynamicPaywall {\n  /**\n   * Determine paywall strategy based on decision context\n   */\n  static resolveStrategy(\n    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID' | null,\n    confidence: number,\n    isPremium: boolean\n  ): PaywallContext {\n    // Premium users always get open access\n    if (isPremium) {\n      return {\n        strategy: 'OPEN',\n        showPreview: false,\n        showUpgradePrompt: false,\n        urgencyLevel: 'LOW',\n        message: '',\n        ctaLabel: '',\n      };\n    }\n\n    // No decision signal → soft lock\n    if (!decisionType) {\n      return this.getSoftLockContext(\n        'See detailed analysis to make the best booking decision.',\n        'View Analysis'\n      );\n    }\n\n    // AGGRESSIVE: BUY_NOW users are hot → hard lock\n    if (decisionType === 'BUY_NOW') {\n      const urgency = confidence >= 75 ? 'HIGH' : 'MEDIUM';\n      return this.getHardLockContext(\n        confidence >= 75\n          ? \"Don't miss out. Unlock the full analysis before prices rise.\"\n          : 'Unlock detailed price trends and booking strategy.',\n        'Unlock Now',\n        urgency\n      );\n    }\n\n    // BALANCED: WAIT users are thinking → soft lock\n    if (decisionType === 'WAIT') {\n      return this.getSoftLockContext(\n        confidence >= 75\n          ? 'View our trend analysis to confirm the drop is coming.'\n          : 'See pricing trends and recommendation.'\n      );\n    }\n\n    // SOFT: AVOID users are unlikely to book → delayed lock\n    if (decisionType === 'AVOID') {\n      return this.getDelayedLockContext(\n        'See better alternatives and pricing insights.',\n        'See All Options'\n      );\n    }\n\n    return this.getSoftLockContext('View analysis', 'Learn More');\n  }\n\n  /**\n   * HARD_LOCK: Premium content fully locked\n   * Used for BUY_NOW decisions (highest conversion intent)\n   */\n  private static getHardLockContext(\n    message: string,\n    ctaLabel: string,\n    urgency: 'HIGH' | 'MEDIUM' = 'MEDIUM'\n  ): PaywallContext {\n    return {\n      strategy: 'HARD_LOCK',\n      showPreview: false, // No sneak peek\n      showUpgradePrompt: true,\n      urgencyLevel: urgency,\n      message: `${urgency === 'HIGH' ? '🔥 ' : ''}${message}`,\n      ctaLabel,\n      ctaUrl: '/upgrade?intent=buy_now',\n    };\n  }\n\n  /**\n   * SOFT_LOCK: Content blurred but visible\n   * Used for WAIT decisions (medium intent)\n   */\n  private static getSoftLockContext(\n    message: string,\n    ctaLabel: string = 'Upgrade'\n  ): PaywallContext {\n    return {\n      strategy: 'SOFT_LOCK',\n      showPreview: true, // Show blurred version\n      showUpgradePrompt: true,\n      urgencyLevel: 'MEDIUM',\n      message,\n      ctaLabel,\n      ctaUrl: '/upgrade',\n    };\n  }\n\n  /**\n   * DELAYED_LOCK: Show content first, upgrade later\n   * Used for AVOID decisions (low immediate intent)\n   * Allows user to see they're right, then offer premium naturally\n   */\n  private static getDelayedLockContext(\n    message: string,\n    ctaLabel: string = 'Compare Flights'\n  ): PaywallContext {\n    return {\n      strategy: 'DELAYED_LOCK',\n      showPreview: true, // Full visible content\n      showUpgradePrompt: false, // Don't interrupt\n      urgencyLevel: 'LOW',\n      message,\n      ctaLabel,\n      ctaUrl: '/flights?sort=best', // Soft CTA to browse\n    };\n  }\n\n  /**\n   * Check if user should see a specific premium feature\n   */\n  static canAccessFeature(\n    feature: 'DECISION_RECOMMENDATION' | 'CONFIDENCE_SCORE' | 'TREND_ANALYSIS' | 'REGRET_INSIGHT',\n    isPremium: boolean,\n    decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID' | null,\n    confidence: number\n  ): boolean {\n    if (isPremium) return true;\n\n    // Free tier gets limited features\n    // Show recommendations for BUY_NOW to maximize conversions\n    if (feature === 'DECISION_RECOMMENDATION') {\n      return decisionType === 'BUY_NOW';\n    }\n\n    // Never show confidence to free users (too detailed)\n    if (feature === 'CONFIDENCE_SCORE') {\n      return false;\n    }\n\n    // Show trend analysis for WAIT (educational)\n    if (feature === 'TREND_ANALYSIS') {\n      return decisionType === 'WAIT';\n    }\n\n    // Show regret insight for AVOID (validates choice)\n    if (feature === 'REGRET_INSIGHT') {\n      return decisionType === 'AVOID' && confidence >= 75;\n    }\n\n    return false;\n  }\n\n  /**\n   * Get paywall messaging based on strategy\n   */\n  static getPaywallMessage(context: PaywallContext): string {\n    switch (context.strategy) {\n      case 'HARD_LOCK':\n        return `${context.message} (Premium exclusive)`;\n      case 'SOFT_LOCK':\n        return `${context.message} Unlock for full details.`;\n      case 'DELAYED_LOCK':\n        return context.message;\n      case 'OPEN':\n        return '';\n      default:\n        return 'Premium feature';\n    }\n  }\n\n  /**\n   * Should show paywall UI?\n   */\n  static shouldShowPaywall(context: PaywallContext): boolean {\n    return context.strategy !== 'OPEN';\n  }\n\n  /**\n   * Get blur visibility (0.0 = fully blurred, 1.0 = fully visible)\n   */\n  static getBlurOpacity(context: PaywallContext): number {\n    switch (context.strategy) {\n      case 'HARD_LOCK':\n        return 0; // Fully blurred\n      case 'SOFT_LOCK':\n        return 0.4; // Mostly blurred, slight hint\n      case 'DELAYED_LOCK':\n        return 1; // Fully visible\n      case 'OPEN':\n        return 1;\n      default:\n        return 0.5;\n    }\n  }\n\n  /**\n   * Should show \"upgrade\" button prominently?\n   */\n  static showUpgradeButton(context: PaywallContext): boolean {\n    return (\n      context.showUpgradePrompt &&\n      context.strategy !== 'OPEN'\n    );\n  }\n}\n\nexport default DynamicPaywall;\n
+export type PaywallStrategy = 'HARD_LOCK' | 'SOFT_LOCK' | 'DELAYED_LOCK' | 'OPEN';
+
+export interface PaywallContext {
+	strategy: PaywallStrategy;
+	showPreview: boolean;
+	showUpgradePrompt: boolean;
+	urgencyLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+	message: string;
+	ctaLabel: string;
+	ctaUrl?: string;
+}
+
+class DynamicPaywall {
+	static resolveStrategy(
+		decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID' | null,
+		confidence: number,
+		isPremium: boolean
+	): PaywallContext {
+		if (isPremium) {
+			return {
+				strategy: 'OPEN',
+				showPreview: false,
+				showUpgradePrompt: false,
+				urgencyLevel: 'LOW',
+				message: '',
+				ctaLabel: '',
+			};
+		}
+
+		if (!decisionType) {
+			return this.getSoftLockContext('See detailed analysis to make the best booking decision.', 'View Analysis');
+		}
+
+		if (decisionType === 'BUY_NOW') {
+			const urgency = confidence >= 75 ? 'HIGH' : 'MEDIUM';
+			return this.getHardLockContext(
+				confidence >= 75
+					? 'Do not miss out. Unlock the full analysis before prices rise.'
+					: 'Unlock detailed price trends and booking strategy.',
+				'Unlock Now',
+				urgency
+			);
+		}
+
+		if (decisionType === 'WAIT') {
+			return this.getSoftLockContext(
+				confidence >= 75
+					? 'View trend analysis to confirm if the drop is coming.'
+					: 'See pricing trends and recommendation.'
+			);
+		}
+
+		if (decisionType === 'AVOID') {
+			return this.getDelayedLockContext('See better alternatives and pricing insights.', 'See All Options');
+		}
+
+		return this.getSoftLockContext('View analysis', 'Learn More');
+	}
+
+	private static getHardLockContext(
+		message: string,
+		ctaLabel: string,
+		urgency: 'HIGH' | 'MEDIUM' = 'MEDIUM'
+	): PaywallContext {
+		return {
+			strategy: 'HARD_LOCK',
+			showPreview: false,
+			showUpgradePrompt: true,
+			urgencyLevel: urgency,
+			message,
+			ctaLabel,
+			ctaUrl: '/upgrade?intent=buy_now',
+		};
+	}
+
+	private static getSoftLockContext(message: string, ctaLabel: string = 'Upgrade'): PaywallContext {
+		return {
+			strategy: 'SOFT_LOCK',
+			showPreview: true,
+			showUpgradePrompt: true,
+			urgencyLevel: 'MEDIUM',
+			message,
+			ctaLabel,
+			ctaUrl: '/upgrade',
+		};
+	}
+
+	private static getDelayedLockContext(
+		message: string,
+		ctaLabel: string = 'Compare Flights'
+	): PaywallContext {
+		return {
+			strategy: 'DELAYED_LOCK',
+			showPreview: true,
+			showUpgradePrompt: false,
+			urgencyLevel: 'LOW',
+			message,
+			ctaLabel,
+			ctaUrl: '/flights?sort=best',
+		};
+	}
+
+	static canAccessFeature(
+		feature: 'DECISION_RECOMMENDATION' | 'CONFIDENCE_SCORE' | 'TREND_ANALYSIS' | 'REGRET_INSIGHT',
+		isPremium: boolean,
+		decisionType: 'BUY_NOW' | 'WAIT' | 'AVOID' | null,
+		confidence: number
+	): boolean {
+		if (isPremium) return true;
+
+		if (feature === 'DECISION_RECOMMENDATION') return decisionType === 'BUY_NOW';
+		if (feature === 'CONFIDENCE_SCORE') return false;
+		if (feature === 'TREND_ANALYSIS') return decisionType === 'WAIT';
+		if (feature === 'REGRET_INSIGHT') return decisionType === 'AVOID' && confidence >= 75;
+		return false;
+	}
+
+	static getPaywallMessage(context: PaywallContext): string {
+		if (context.strategy === 'HARD_LOCK') return `${context.message} (Premium exclusive)`;
+		if (context.strategy === 'SOFT_LOCK') return `${context.message} Unlock for full details.`;
+		if (context.strategy === 'DELAYED_LOCK') return context.message;
+		return '';
+	}
+
+	static shouldShowPaywall(context: PaywallContext): boolean {
+		return context.strategy !== 'OPEN';
+	}
+
+	static getBlurOpacity(context: PaywallContext): number {
+		if (context.strategy === 'HARD_LOCK') return 0;
+		if (context.strategy === 'SOFT_LOCK') return 0.4;
+		return 1;
+	}
+
+	static showUpgradeButton(context: PaywallContext): boolean {
+		return context.showUpgradePrompt && context.strategy !== 'OPEN';
+	}
+}
+
+export default DynamicPaywall;

@@ -93,7 +93,7 @@ const DECISION_CONFIG_DEFAULTS: Record<DecisionType, DecisionConfigValue> = {
 class DecisionConfigStore {
   private config: Map<DecisionType, DecisionConfigValue> = new Map();
   private lastSync: Date = new Date();
-  private syncInterval: NodeJS.Timer | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     // Initialize with defaults
@@ -253,11 +253,15 @@ class DecisionConfigStore {
 // 🎯 Singleton instance
 export const decisionConfigStore = new DecisionConfigStore();
 
-// 🔥 Auto-sync on module load
-if (typeof globalThis !== 'undefined' && !globalThis._decisionConfigInitialized) {
+// Auto-sync on module load
+const globalConfigFlag = globalThis as typeof globalThis & {
+  _decisionConfigInitialized?: boolean;
+};
+
+if (!globalConfigFlag._decisionConfigInitialized) {
   decisionConfigStore.syncFromDb().catch(console.error);
-  decisionConfigStore.startPeriodicSync(5 * 60 * 1000); // Sync every 5 minutes
-  (globalThis as any)._decisionConfigInitialized = true;
+  decisionConfigStore.startPeriodicSync(5 * 60 * 1000);
+  globalConfigFlag._decisionConfigInitialized = true;
 }
 
 export default decisionConfigStore;

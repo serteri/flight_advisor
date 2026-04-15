@@ -1,1 +1,73 @@
-/**\n * 🔧 ADMIN: DECISION CONFIG API\n * \n * Manage runtime decision thresholds and safety bounds\n * Protected endpoint - requires admin role\n */\n\nimport { NextResponse } from 'next/server';\nimport { auth } from '@/lib/auth';\nimport DecisionConfigManager from '@/lib/decision/decisionConfigManager';\nimport { decisionConfigStore } from '@/lib/decision/decisionConfig';\n\nconst isAdmin = async (): Promise<boolean> => {\n    const session = await auth();\n    // In production, check user role from database\n    // For now, simple email check against admin list\n    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim());\n    return adminEmails.length > 0 && adminEmails.includes(session?.user?.email || '');\n};\n\nexport async function GET(request: Request) {\n    try {\n        if (!isAdmin()) {\n            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });\n        }\n\n        const { searchParams } = new URL(request.url);\n        const decisionType = searchParams.get('type'); // BUY_NOW, WAIT, AVOID\n\n        if (decisionType) {\n            const config = DecisionConfigManager.getConfig(\n                decisionType as 'BUY_NOW' | 'WAIT' | 'AVOID'\n            );\n            return NextResponse.json({\n                success: true,\n                config,\n            });\n        }\n\n        // Return all configs\n        const allConfigs = DecisionConfigManager.getAllConfigs();\n        return NextResponse.json({\n            success: true,\n            configs: allConfigs,\n            lastSync: new Date(),\n        });\n    } catch (error) {\n        console.error('[ADMIN_DECISION_CONFIG_GET]', error);\n        return NextResponse.json(\n            { error: 'Failed to fetch config' },\n            { status: 500 }\n        );\n    }\n}\n\nexport async function POST(request: Request) {\n    try {\n        if (!isAdmin()) {\n            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });\n        }\n\n        const payload = await request.json();\n        const session = await auth();\n        const adminEmail = session?.user?.email || 'unknown';\n\n        const { decisionType, ...updates } = payload;\n\n        if (!decisionType || !['BUY_NOW', 'WAIT', 'AVOID'].includes(decisionType)) {\n            return NextResponse.json(\n                { error: 'Invalid decisionType' },\n                { status: 400 }\n            );\n        }\n\n        // Validate thresholds are in bounds\n        if (updates.priceThresholdMin && updates.priceThresholdMax) {\n            if (updates.priceThresholdMin >= updates.priceThresholdMax) {\n                return NextResponse.json(\n                    { error: 'Invalid range: min must be < max' },\n                    { status: 400 }\n                );\n            }\n        }\n\n        // Update config\n        const result = await DecisionConfigManager.updateConfig(\n            decisionType,\n            updates,\n            adminEmail\n        );\n\n        if (!result.success) {\n            return NextResponse.json(\n                { error: result.error || 'Update failed' },\n                { status: 400 }\n            );\n        }\n\n        return NextResponse.json({\n            success: true,\n            config: result.config,\n            message: `Config updated for ${decisionType}. Version: ${result.config?.version}`,\n        });\n    } catch (error) {\n        console.error('[ADMIN_DECISION_CONFIG_POST]', error);\n        return NextResponse.json(\n            { error: 'Failed to update config' },\n            { status: 500 }\n        );\n    }\n}\n
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import DecisionConfigManager from '@/lib/decision/decisionConfigManager';
+
+const isAdmin = async (): Promise<boolean> => {
+	const session = await auth();
+	const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
+	return adminEmails.length > 0 && adminEmails.includes(session?.user?.email || '');
+};
+
+export async function GET(request: Request) {
+	try {
+		if (!(await isAdmin())) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+		}
+
+		const { searchParams } = new URL(request.url);
+		const decisionType = searchParams.get('type');
+
+		if (decisionType) {
+			const config = DecisionConfigManager.getConfig(decisionType as 'BUY_NOW' | 'WAIT' | 'AVOID');
+			return NextResponse.json({ success: true, config });
+		}
+
+		return NextResponse.json({
+			success: true,
+			configs: DecisionConfigManager.getAllConfigs(),
+			lastSync: new Date(),
+		});
+	} catch (error) {
+		console.error('[ADMIN_DECISION_CONFIG_GET]', error);
+		return NextResponse.json({ error: 'Failed to fetch config' }, { status: 500 });
+	}
+}
+
+export async function POST(request: Request) {
+	try {
+		if (!(await isAdmin())) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+		}
+
+		const payload = await request.json();
+		const session = await auth();
+		const adminEmail = session?.user?.email || 'unknown';
+		const { decisionType, ...updates } = payload;
+
+		if (!decisionType || !['BUY_NOW', 'WAIT', 'AVOID'].includes(decisionType)) {
+			return NextResponse.json({ error: 'Invalid decisionType' }, { status: 400 });
+		}
+
+		if (
+			typeof updates.priceThresholdMin === 'number' &&
+			typeof updates.priceThresholdMax === 'number' &&
+			updates.priceThresholdMin >= updates.priceThresholdMax
+		) {
+			return NextResponse.json({ error: 'Invalid range: min must be < max' }, { status: 400 });
+		}
+
+		const result = await DecisionConfigManager.updateConfig(decisionType, updates, adminEmail);
+		if (!result.success) {
+			return NextResponse.json({ error: result.error || 'Update failed' }, { status: 400 });
+		}
+
+		return NextResponse.json({
+			success: true,
+			config: result.config,
+			message: `Config updated for ${decisionType}. Version: ${result.config?.version}`,
+		});
+	} catch (error) {
+		console.error('[ADMIN_DECISION_CONFIG_POST]', error);
+		return NextResponse.json({ error: 'Failed to update config' }, { status: 500 });
+	}
+}

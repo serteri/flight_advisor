@@ -16,4 +16,49 @@ const isAdmin = async (): Promise<boolean> => {
 };
 
 export async function PUT(
-    request: Request,\n    { params }: { params: { id: string } }\n) {\n    try {\n        if (!await isAdmin()) {\n            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });\n        }\n\n        const { id } = params;\n        const payload = await request.json();\n        const { status } = payload;\n\n        const validStatuses = ['DRAFT', 'RUNNING', 'PAUSED', 'COMPLETED'];\n        if (!validStatuses.includes(status)) {\n            return NextResponse.json(\n                { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },\n                { status: 400 }\n            );\n        }\n\n        // Update experiment status\n        const success = await ExperimentManager.updateExperimentStatus(\n            id,\n            status as 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED'\n        );\n\n        if (!success) {\n            return NextResponse.json(\n                { error: 'Failed to update experiment status' },\n                { status: 400 }\n            );\n        }\n\n        return NextResponse.json({\n            success: true,\n            experimentId: id,\n            newStatus: status,\n            message: `Experiment ${id} status updated to ${status}`,\n        });\n    } catch (error) {\n        console.error('[ADMIN_EXPERIMENT_STATUS_PUT]', error);\n        return NextResponse.json(\n            { error: 'Failed to update experiment status' },\n            { status: 500 }\n        );\n    }\n}\n
+    request: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    try {
+        if (!await isAdmin()) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
+
+        const { id } = await context.params;
+        const payload = await request.json();
+        const { status } = payload;
+
+        const validStatuses = ['DRAFT', 'RUNNING', 'PAUSED', 'COMPLETED'];
+        if (!validStatuses.includes(status)) {
+            return NextResponse.json(
+                { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        const success = await ExperimentManager.updateExperimentStatus(
+            id,
+            status as 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED'
+        );
+
+        if (!success) {
+            return NextResponse.json(
+                { error: 'Failed to update experiment status' },
+                { status: 400 }
+            );
+        }
+
+        return NextResponse.json({
+            success: true,
+            experimentId: id,
+            newStatus: status,
+            message: `Experiment ${id} status updated to ${status}`,
+        });
+    } catch (error) {
+        console.error('[ADMIN_EXPERIMENT_STATUS_PUT]', error);
+        return NextResponse.json(
+            { error: 'Failed to update experiment status' },
+            { status: 500 }
+        );
+    }
+}
