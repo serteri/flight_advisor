@@ -91,7 +91,7 @@ export function SearchForm() {
             </div>
 
             {/* Unified Search Bar Container */}
-            <div className="bg-white rounded-3xl md:rounded-full shadow-2xl shadow-blue-900/20 border border-slate-200/50 p-2 flex flex-col md:flex-row relative z-20">
+            <div className="bg-white/90 backdrop-blur-md rounded-3xl md:rounded-[2rem] soft-card-shadow border border-sky-100 p-2 flex flex-col md:flex-row relative z-20 warm-hover">
 
                 {/* Origin */}
                 <div className="relative flex-1 group">
@@ -105,8 +105,8 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-4" />
-                <div className="md:hidden h-px bg-slate-200 mx-4" />
+                <div className="hidden md:block w-px bg-sky-100 my-4" />
+                <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Destination */}
                 <div className="relative flex-1 group">
@@ -120,8 +120,8 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-4" />
-                <div className="md:hidden h-px bg-slate-200 mx-4" />
+                <div className="hidden md:block w-px bg-sky-100 my-4" />
+                <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Date Selection (Dynamic based on Trip Type) */}
                 <div className="relative md:w-[320px] group flex">
@@ -138,7 +138,7 @@ export function SearchForm() {
 
                     {tripType === 'ROUND_TRIP' && (
                         <>
-                            <div className="hidden md:block w-px bg-slate-200 my-4" />
+                            <div className="hidden md:block w-px bg-sky-100 my-4" />
                             <div className="flex-1">
                                 <DatePicker
                                     label={t('return_label') || "Return"}
@@ -155,8 +155,8 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 my-4" />
-                <div className="md:hidden h-px bg-slate-200 mx-4" />
+                <div className="hidden md:block w-px bg-sky-100 my-4" />
+                <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Passengers */}
                 <div className="relative md:w-[150px] group">
@@ -181,7 +181,7 @@ export function SearchForm() {
                         <select
                             value={persona}
                             onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
-                            className="w-full h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700"
+                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-sm font-medium text-slate-700"
                         >
                             <option value="budget">Budget</option>
                             <option value="comfort">Comfort</option>
@@ -196,7 +196,7 @@ export function SearchForm() {
                     <Button
                         onClick={handleSearch}
                         disabled={!origin || !destination || !date}
-                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-700 hover:to-orange-500 text-white shadow-lg shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                     >
                         <Search className="h-6 w-6" />
                         <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>

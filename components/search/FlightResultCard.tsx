@@ -474,7 +474,7 @@ export default function FlightResultCard({
                 : null;
 
     return (
-        <div className="bg-white rounded-[16px] p-5 border-2 border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 border border-sky-100 hover:border-sky-300 transition-all soft-card-shadow warm-hover relative group mb-4">
             {/* DEBUG INDICATOR - REMOVE LATER */}
             <div className="hidden">DEBUG: FlightResultCard Active</div>
 
@@ -504,7 +504,7 @@ export default function FlightResultCard({
             {/* TRACK BUTONU (SAĞ ÜST ALTINA TAŞINDI) */}
             <button
                 onClick={handleTrackClick}
-                className={`absolute top-12 right-4 text-slate-400 hover:text-blue-600 flex items-center gap-1 transition-colors ${!hasPremiumAccess && 'cursor-not-allowed opacity-50'}`}
+                className={`absolute top-12 right-4 text-slate-400 hover:text-sky-700 flex items-center gap-1 transition-all hover:scale-105 ${!hasPremiumAccess && 'cursor-not-allowed opacity-50'}`}
                 title={t('track')}
             >
                 <span className="text-[10px] font-bold">{t('track')}</span>
@@ -521,7 +521,7 @@ export default function FlightResultCard({
                         {carrierSummary.length > 1 ? (
                             <div className="flex items-center gap-1 shrink-0">
                                 {carrierSummary.map((entry, i) => (
-                                    <div key={entry.name} className="relative w-10 h-10 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center" style={{ marginLeft: i > 0 ? '-8px' : 0, zIndex: carrierSummary.length - i }}>
+                                    <div key={entry.name} className="relative w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 overflow-hidden flex items-center justify-center soft-card-shadow" style={{ marginLeft: i > 0 ? '-8px' : 0, zIndex: carrierSummary.length - i }}>
                                         <img
                                             src={entry.logo}
                                             alt={entry.name}
@@ -536,7 +536,7 @@ export default function FlightResultCard({
                                 ))}
                             </div>
                         ) : (
-                            <div className="w-12 h-12 rounded bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 overflow-hidden flex items-center justify-center shrink-0 soft-card-shadow">
                                 <img
                                     src={airlineLogo}
                                     alt={airline}
@@ -701,9 +701,9 @@ export default function FlightResultCard({
                                                 }
                                                 if (layMins <= 0) return null;
                                                 return (
-                                                    <div className="rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-bold text-blue-900 shadow-sm flex items-center gap-2">
+                                                    <div className="rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-orange-50 px-3 py-2.5 text-xs font-bold text-sky-900 soft-card-shadow flex items-center gap-2">
                                                         <span className="text-base">🛫</span>
-                                                        <span>{formatDuration(layMins)} layover in {layCity || layCode} ({layCode})</span>
+                                                        <span>{formatDuration(layMins)} Layover in {layCity || layCode} ({layCode})</span>
                                                     </div>
                                                 );
                                             })()}
@@ -761,16 +761,16 @@ export default function FlightResultCard({
 
                     {/* Premium callout for FREE users */}
                     {!hasPremiumAccess && (
-                        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="mt-4 rounded-2xl border border-sky-200/80 bg-white/60 backdrop-blur-md px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between soft-card-shadow">
                             <div>
-                                <p className="text-sm font-semibold text-slate-900">Premium analysis locked</p>
-                                <p className="text-xs text-slate-600">Don't risk overpaying. Unlock the best decision before you book.</p>
+                                <p className="text-sm font-semibold text-slate-900">Keşfedilmeyi Bekleyen Intelligence</p>
+                                <p className="text-xs text-slate-600">Risk ve fiyat içgörülerini aç, en doğru kararı güvenle ver.</p>
                             </div>
                             <button
                                 onClick={() => setShowLockOverlay(true)}
-                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
+                                className="bg-gradient-to-r from-amber-400 to-sky-600 hover:from-amber-500 hover:to-sky-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-lg transition-all hover:scale-105"
                             >
-                                Unlock Clear Recommendation
+                                Unlock Intelligence
                             </button>
                         </div>
                     )}
@@ -921,9 +921,9 @@ export default function FlightResultCard({
                                     {!isPremiumUser && (
                                         <button
                                             onClick={() => openPricingPage('pro')}
-                                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
+                                            className="w-full bg-gradient-to-r from-amber-400 to-sky-600 hover:from-amber-500 hover:to-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg transition-all hover:scale-105"
                                         >
-                                            🔓 Don't risk overpaying. Unlock the best decision before you book.
+                                            Unlock Intelligence
                                         </button>
                                     )}
                                 </div>
@@ -934,7 +934,7 @@ export default function FlightResultCard({
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
                             onClick={decisionAction ? decisionAction.onClick : handleDetailsClick}
-                            className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                            className={`w-full font-semibold py-2 px-4 rounded-xl transition-all hover:scale-105 flex items-center justify-center gap-2 ${
                                 decisionAction
                                     ? `${decisionAction.className}`
                                     : hasPremiumAccess
@@ -949,7 +949,7 @@ export default function FlightResultCard({
                         <button
                             onClick={handleDetailsClick}
                             disabled={false}
-                            className={`mt-2 w-full font-semibold py-2 px-4 rounded-lg transition-colors ${
+                            className={`mt-2 w-full font-semibold py-2 px-4 rounded-xl transition-all hover:scale-105 ${
                                 hasPremiumAccess
                                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                                     : 'bg-slate-100 text-slate-400'
@@ -1017,11 +1017,11 @@ export default function FlightResultCard({
                 <div className="w-full md:w-52 border-l pl-6 flex flex-col justify-between relative">
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
-                    <div className="h-32 relative flex items-center justify-center mb-2 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 px-3">
+                    <div className="h-32 relative flex items-center justify-center mb-2 rounded-2xl overflow-hidden bg-sky-50/70 border border-sky-100 px-3">
                         {!hasPremiumAccess ? (
-                            <div className="text-center opacity-70">
+                            <div className="text-center opacity-90">
                                 <div className="text-5xl font-black text-slate-300 blur-sm">8.5</div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analysis locked</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Intelligence Vault</span>
                             </div>
                         ) : (
                             <div className="text-center w-full">
@@ -1153,7 +1153,7 @@ export default function FlightResultCard({
                             <LockedFeatureOverlay
                                 featureName="Flight Intelligence Suite"
                                 requiredTier="PRO"
-                                description="Don't risk overpaying. Unlock the best decision before you book."
+                                description="Unlock Intelligence and discover the clearest booking decision before prices move."
                                 benefits={[
                                     'Decision Recommendation (Premium)',
                                     'Confidence + Regret Insights (Premium)',
@@ -1164,9 +1164,9 @@ export default function FlightResultCard({
                             />
                             <button
                                 onClick={() => openCheckout('PRO', 'monthly')}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
+                                className="w-full bg-gradient-to-r from-amber-400 to-sky-600 hover:from-amber-500 hover:to-sky-700 text-white text-sm font-bold py-2.5 rounded-xl transition-all hover:scale-105"
                             >
-                                🔓 Get a Clear Recommendation - Monthly Pro ($19)
+                                Unlock Intelligence - Monthly Pro ($19)
                             </button>
                             <button
                                 onClick={openOneTimeReport}

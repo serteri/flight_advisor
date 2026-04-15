@@ -107,10 +107,14 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
     }, [origin, destination, date, persona]);
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[#fafafa]">
             <div className="max-w-5xl mx-auto py-10 px-4">
                 {/* Header */}
                 <header className="mb-8">
+                    <div className="mb-4">
+                        <p className="motto-signature text-xs">FlightAgent Motto</p>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900">Uçmayı çok seviyoruz</h2>
+                    </div>
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                             <Search className="w-5 h-5 text-blue-600" />

@@ -737,7 +737,7 @@ function SearchPageContent() {
     }, [filters, currentSort, results.length]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] via-[#fafafa] to-[#fff7ed]">
             {/* Hero Section with Search */}
             <div className="relative z-50">
                 {/* Background Pattern */}
@@ -746,24 +746,26 @@ function SearchPageContent() {
                 <div className="container mx-auto px-4 py-12 max-w-6xl relative">
                     {/* Header */}
                     <div className="text-center mb-10">
-                        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 flex items-center justify-center gap-4">
-                            <div className="p-3 bg-blue-500/20 rounded-2xl">
-                                <Plane className="text-blue-400 h-10 w-10" />
+                        <p className="motto-signature text-xs md:text-sm mb-2">FlightAgent Motto</p>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-3">Uçmayı çok seviyoruz</h2>
+                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 flex items-center justify-center gap-4">
+                            <div className="p-3 bg-sky-100 rounded-2xl">
+                                <Plane className="text-sky-700 h-10 w-10" />
                             </div>
                             {t('heroTitle')}
                         </h1>
-                        <p className="text-blue-200/80 text-lg max-w-2xl mx-auto">
+                        <p className="text-slate-600 text-lg max-w-2xl mx-auto">
                             {t('heroSubtitle')}
                         </p>
                     </div>
 
                     {/* Search Card */}
-                    <div className="relative z-50 overflow-visible bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
+                    <div className="relative z-50 overflow-visible bg-white/90 backdrop-blur-md rounded-3xl soft-card-shadow p-6 md:p-8 border border-sky-100 warm-hover">
                         <form onSubmit={handleSearch} className="space-y-6">
                             {/* Trip Type Toggle */}
-                            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
-                                <button type="button" onClick={() => setTripType("oneWay")} className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${tripType === "oneWay" ? "bg-white text-blue-600 shadow-md" : "text-slate-600 hover:text-slate-900"}`}>{t('oneWay')}</button>
-                                <button type="button" onClick={() => setTripType("roundTrip")} className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${tripType === "roundTrip" ? "bg-white text-blue-600 shadow-md" : "text-slate-600 hover:text-slate-900"}`}>{t('roundTrip')}</button>
+                            <div className="flex gap-2 p-1 bg-sky-50 rounded-xl w-fit">
+                                <button type="button" onClick={() => setTripType("oneWay")} className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${tripType === "oneWay" ? "bg-white text-sky-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>{t('oneWay')}</button>
+                                <button type="button" onClick={() => setTripType("roundTrip")} className={`px-5 py-2.5 rounded-lg font-medium transition-all text-sm ${tripType === "roundTrip" ? "bg-white text-sky-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>{t('roundTrip')}</button>
                             </div>
 
                             {/* From & To with Swap Button */}
@@ -837,7 +839,7 @@ function SearchPageContent() {
                             </div>
 
                             {/* Search Button */}
-                            <Button type="submit" disabled={loading} className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-[0.99]">
+                            <Button type="submit" disabled={loading} className="w-full h-14 text-lg font-bold bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-700 hover:to-orange-500 rounded-2xl shadow-lg shadow-sky-500/20 transition-all hover:scale-105 active:scale-[0.99]">
                                 {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t('searching')}</> : <><Sparkles className="mr-2 h-5 w-5" /> {t('searchButton')}</>}
                             </Button>
                         </form>
@@ -860,7 +862,7 @@ function SearchPageContent() {
 
             {/* Skeleton Loading State */}
             {loading && (
-                <div className="relative z-10 bg-slate-50 min-h-screen py-8">
+                <div className="relative z-10 bg-[#fafafa] min-h-screen py-8">
                     <div className="container mx-auto px-4 max-w-5xl text-center">
                         <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
                         <p className="text-lg text-slate-600 font-medium">{t('searchingDesc')}</p>
@@ -870,16 +872,20 @@ function SearchPageContent() {
 
             {/* Results Section */}
             {results.length > 0 && (
-                <div className="bg-slate-50 min-h-screen py-8">
+                <div className="bg-[#fafafa] min-h-screen py-8">
                     <div className="container mx-auto px-4 max-w-5xl">
                         <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <p className="motto-signature text-xs mb-1">FlightAgent Motto</p>
+                                <h3 className="text-xl md:text-2xl font-extrabold text-sky-900 mb-1">Uçmayı çok seviyoruz</h3>
+                            </div>
                             <h2 className="text-2xl font-bold text-slate-900">
                                 {rankedResults.length} / {results.length} {t('resultsFound')}
                             </h2>
                         </div>
 
                         {buyNowCount > 0 && (
-                            <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                            <div className="mb-4 rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 soft-card-shadow">
                                 <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">Top Flights To Book Now</div>
                                 <div className="text-sm font-semibold text-slate-800 mt-1">
                                     {buyNowCount} flight{buyNowCount > 1 ? 's are' : ' is'} currently flagged as strong booking opportunities.
@@ -895,7 +901,7 @@ function SearchPageContent() {
                                 {proactiveTips.map((tip) => (
                                     <div
                                         key={tip.id}
-                                        className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 shadow-sm"
+                                        className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 soft-card-shadow warm-hover"
                                     >
                                         <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide mb-1">
                                             {tip.type === 'DATE' ? <CalendarClock className="h-3.5 w-3.5" /> : <Lightbulb className="h-3.5 w-3.5" />}
@@ -964,7 +970,7 @@ function SearchPageContent() {
                             <div className="mt-8 text-center">
                                 <button
                                     onClick={showMore}
-                                    className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-slate-50 hover:border-slate-400 transition shadow-sm"
+                                    className="bg-white border border-slate-300 text-slate-600 font-bold py-3 px-8 rounded-full hover:bg-sky-50 hover:border-sky-300 transition-all hover:scale-105 soft-card-shadow"
                                 >
                                     {t('showMore', { count: rankedResults.length - visibleCount })}
                                 </button>
