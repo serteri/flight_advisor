@@ -21,7 +21,7 @@ export default function FlightResultCard({
     isPremium?: boolean; 
     userTier?: UserTier;
     championBadge?: 'Best Overall' | 'Best Value' | 'Lowest Risk' | 'Fastest';
-    onUserAction?: (action: 'BOOK' | 'DETAIL') => void;
+    onUserAction?: (action: 'BOOK_CLICKED' | 'DECISION_CLICKED' | 'DECISION_SHOWN' | 'TRACK_CLICKED') => void;
     selectionContext?: {
         rank?: number;
         totalResults?: number;
@@ -33,6 +33,7 @@ export default function FlightResultCard({
     const [showScore, setShowScore] = useState(isPremium);
     const [showDetails, setShowDetails] = useState(false);
     const [showLockOverlay, setShowLockOverlay] = useState(false);
+    const [decisionTracked, setDecisionTracked] = useState(false);
     
     // Safety check: if flight data is missing critical fields, render error
     if (!flight || !flight.id) {
@@ -276,6 +277,9 @@ export default function FlightResultCard({
     const hasEliteAccess = userTier === 'ELITE';
     const displayPrice = Number.isFinite(price) && price > 0 ? Math.max(1, Math.round(price)) : null;
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
+    const estimatedTotalCost = flight.advancedScore?.estimatedTotalCost;
+    const personalBias = flight.advancedScore?.personalBias;
+    const decisionRecommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
     const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : (source === 'PRICELINE' || source === 'SERPAPI') ? 'PRICELINE' : 'KIWI';
     const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : (source === 'PRICELINE' || source === 'SERPAPI') ? '⚡ Priceline' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
@@ -317,15 +321,7 @@ export default function FlightResultCard({
                                 ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
                                 : t('wifi_none');
 
-    const handleTrackClick = () => {
-        if (!hasPremiumAccess) {
-            setShowLockOverlay(true);
-            return;
-        }
-        alert("✅ Uçuş takibe alındı! Fiyat düşerse haber vereceğiz.");
-    };
-
-    const sendSelectionEvent = (action: 'BOOK' | 'DETAIL') => {
+    const sendSelectionEvent = (action: 'BOOK_CLICKED' | 'DECISION_CLICKED' | 'DECISION_SHOWN' | 'TRACK_CLICKED') => {
         const departureHour = departureTime ? new Date(departureTime).getUTCHours() : null;
         const isNight = Number.isFinite(Number(departureHour))
             ? Number(departureHour) >= 18 || Number(departureHour) < 6
@@ -343,10 +339,14 @@ export default function FlightResultCard({
             selectedScore: Number.isFinite(displayScore) ? displayScore : null,
             competitorPrice: trackingCompetitorPrice,
             competitorScore: trackingCompetitorScore,
+            routeAveragePrice: Number(flight.advancedScore?.routeIntelligence?.avgPriceRoute || 0) || null,
+            decisionRecommendation: flight.advancedScore?.decisionRecommendation || null,
+            decisionConfidence: Number(flight.advancedScore?.decisionConfidence || 0) || null,
             rank: selectionContext?.rank ?? null,
             totalResults: selectionContext?.totalResults ?? null,
             currency: flight.currency || 'AUD',
             isDirect: Number(stops) === 0,
+            stopCount: Number(stops || 0),
             isNight,
             departureHour,
             departTime: departureTime,
@@ -369,6 +369,16 @@ export default function FlightResultCard({
         } catch {
             // Best effort only - never block UX.
         }
+    };
+
+    const handleTrackClick = () => {
+        if (!hasPremiumAccess) {
+            setShowLockOverlay(true);
+            return;
+        }
+        sendSelectionEvent('TRACK_CLICKED');
+        onUserAction?.('TRACK_CLICKED');
+        alert("✅ Uçuş takibe alındı! Fiyat düşerse haber vereceğiz.");
     };
 
     const openCheckout = async (plan: 'PRO', billingCycle: 'monthly' | 'yearly' = 'monthly') => {
@@ -406,19 +416,62 @@ export default function FlightResultCard({
     };
 
     const handleDetailsClick = () => {
-        sendSelectionEvent('DETAIL');
-        onUserAction?.('DETAIL');
+        sendSelectionEvent('DECISION_CLICKED');
+        onUserAction?.('DECISION_CLICKED');
         setShowDetails(true);
     };
 
     const handleBookClick = () => {
         if (!bookingUrl) return;
-        sendSelectionEvent('BOOK');
-        onUserAction?.('BOOK');
+        sendSelectionEvent('BOOK_CLICKED');
+        onUserAction?.('BOOK_CLICKED');
         if (typeof window !== 'undefined') {
             window.open(bookingUrl, '_blank', 'noopener,noreferrer');
         }
     };
+
+    const handleSeeBetterOptionsClick = () => {
+        sendSelectionEvent('DECISION_CLICKED');
+        onUserAction?.('DECISION_CLICKED');
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    useEffect(() => {
+        if (decisionTracked) return;
+        if (!flight?.advancedScore?.decisionRecommendation) return;
+
+        sendSelectionEvent('DECISION_SHOWN');
+        onUserAction?.('DECISION_SHOWN');
+        setDecisionTracked(true);
+    }, [decisionTracked, flight?.advancedScore?.decisionRecommendation]);
+
+    const decisionAction = decisionRecommendation === 'BUY_NOW'
+        ? {
+            message: 'Prices are likely to increase soon.',
+            context: 'This is cheaper than typical prices for this route.',
+            cta: 'Book now',
+            onClick: handleBookClick,
+            className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+        }
+        : decisionRecommendation === 'WAIT'
+            ? {
+                message: 'Prices may drop - consider waiting.',
+                context: 'Track this fare and act if the market softens further.',
+                cta: 'Track this flight',
+                onClick: handleTrackClick,
+                className: 'bg-amber-500 hover:bg-amber-600 text-white',
+            }
+            : decisionRecommendation === 'AVOID'
+                ? {
+                    message: 'This price is higher than usual.',
+                    context: 'Better-ranked options are likely above this result.',
+                    cta: 'See better options',
+                    onClick: handleSeeBetterOptionsClick,
+                    className: 'bg-slate-900 hover:bg-slate-800 text-white',
+                }
+                : null;
 
     return (
         <div className="bg-white rounded-[16px] p-5 border-2 border-slate-200 hover:border-blue-500 transition-all shadow-sm relative group mb-4">
@@ -711,13 +764,13 @@ export default function FlightResultCard({
                         <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm font-semibold text-slate-900">Premium analysis locked</p>
-                                <p className="text-xs text-slate-600">Upgrade to PRO to unlock full analysis, scoring, and tracking.</p>
+                                <p className="text-xs text-slate-600">Don't risk overpaying. Unlock the best decision before you book.</p>
                             </div>
                             <button
                                 onClick={() => setShowLockOverlay(true)}
                                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
                             >
-                                Upgrade to PRO
+                                Unlock Clear Recommendation
                             </button>
                         </div>
                     )}
@@ -817,6 +870,40 @@ export default function FlightResultCard({
                                         </p>
                                     )}
 
+                                    {flight.advancedScore?.decisionRecommendation && (
+                                        <div className={`rounded-lg px-3 py-2 border text-xs font-semibold ${
+                                            flight.advancedScore.decisionRecommendation === 'BUY_NOW'
+                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                                : flight.advancedScore.decisionRecommendation === 'AVOID'
+                                                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                                        } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                            <div className="uppercase tracking-wide text-[10px] font-extrabold mb-0.5">Decision Recommendation</div>
+                                            <div>
+                                                {flight.advancedScore.decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : flight.advancedScore.decisionRecommendation}
+                                                {Number.isFinite(Number(flight.advancedScore?.decisionConfidence)) && (
+                                                    <span className="ml-1">({Math.round(Number(flight.advancedScore?.decisionConfidence || 0))}% confidence)</span>
+                                                )}
+                                            </div>
+                                            {flight.advancedScore?.decisionReason && (
+                                                <div className="font-medium mt-1">{flight.advancedScore.decisionReason}</div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {decisionAction && hasPremiumAccess && (
+                                        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                            <div className="text-xs font-bold text-slate-900">{decisionAction.message}</div>
+                                            <div className="text-[11px] text-slate-600 mt-1">{decisionAction.context}</div>
+                                        </div>
+                                    )}
+
+                                    {flight.advancedScore?.regretInsight && (
+                                        <p className={`text-xs font-semibold leading-relaxed rounded-lg px-2.5 py-2 border bg-blue-50 text-blue-800 border-blue-200 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                            🧠 {flight.advancedScore.regretInsight}
+                                        </p>
+                                    )}
+
                                     {/* Regret Minimization Stat — psychological framing */}
                                     {flight.advancedScore?.regretStat && (
                                         <p className={`text-xs font-semibold leading-relaxed rounded-lg px-2.5 py-2 border ${
@@ -836,7 +923,7 @@ export default function FlightResultCard({
                                             onClick={() => openPricingPage('pro')}
                                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-all"
                                         >
-                                            🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç
+                                            🔓 Don't risk overpaying. Unlock the best decision before you book.
                                         </button>
                                     )}
                                 </div>
@@ -846,27 +933,29 @@ export default function FlightResultCard({
                     {/* KONTROL ET BUTONU - View Analysis */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
-                            onClick={handleDetailsClick}
+                            onClick={decisionAction ? decisionAction.onClick : handleDetailsClick}
                             className={`w-full font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                                hasPremiumAccess
-                                    ? 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                decisionAction
+                                    ? `${decisionAction.className}`
+                                    : hasPremiumAccess
+                                        ? 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                             }`}
                         >
                             <Eye className="w-4 h-4" />
-                            View Analysis
+                            {decisionAction ? decisionAction.cta : 'View Analysis'}
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
                         <button
-                            onClick={handleBookClick}
-                            disabled={!bookingUrl}
+                            onClick={handleDetailsClick}
+                            disabled={false}
                             className={`mt-2 w-full font-semibold py-2 px-4 rounded-lg transition-colors ${
-                                bookingUrl
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                hasPremiumAccess
+                                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                    : 'bg-slate-100 text-slate-400'
                             }`}
                         >
-                            Book
+                            View analysis
                         </button>
                     </div>
 
@@ -946,6 +1035,11 @@ export default function FlightResultCard({
                                         For You +{Number(flight.advancedScore?.forYouBonus || 0).toFixed(1)}
                                     </div>
                                 )}
+                                {Number(personalBias?.loyaltyBoost || 0) > 0 && personalBias?.loyaltyAirline && (
+                                    <div className="mt-1 inline-flex text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
+                                        Loyalty Boost +{Number(personalBias.loyaltyBoost).toFixed(1)} · {personalBias.loyaltyAirline}
+                                    </div>
+                                )}
                                 {flight.advancedScore?.valueTag && (
                                     <div className={`mt-2 inline-flex max-w-[150px] text-center text-[11px] leading-snug px-2.5 py-1 rounded-full font-semibold whitespace-normal break-words ${hasInvalidData ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700'}`}>
                                         {hasInvalidData ? localizeValueTag('Veri Hatası') : localizeValueTag(flight.advancedScore.valueTag)}
@@ -987,6 +1081,23 @@ export default function FlightResultCard({
                             <span className="text-[10px] text-slate-500 font-medium">
                                 {flight.bookingProviders?.length ? `${flight.bookingProviders.length} providers` : 'Best Price'}
                             </span>
+
+                            {estimatedTotalCost && Number.isFinite(Number(estimatedTotalCost.total)) && (
+                                <div className="mt-2 w-full rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-left">
+                                    <div className="text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                                        True Cost Engine
+                                    </div>
+                                    <div className="text-xs font-extrabold text-slate-800">
+                                        Estimated total cost: ${Math.round(Number(estimatedTotalCost.total)).toLocaleString()}
+                                    </div>
+                                    <div className="text-[10px] text-slate-600">
+                                        Extras: baggage ${Math.round(Number(estimatedTotalCost.estimatedBaggageFee || 0))} + meal ${Math.round(Number(estimatedTotalCost.estimatedMealCost || 0))}
+                                    </div>
+                                    <div className="text-[10px] text-slate-600">
+                                        Seat ${Math.round(Number(estimatedTotalCost.estimatedSeatSelectionCost || 0))} + transfer ${Math.round(Number(estimatedTotalCost.estimatedAirportTransferCost || 0))} + hidden fees ${Math.round(Number(estimatedTotalCost.estimatedHiddenFeeBuffer || 0))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* BUY / WAIT Signal */}
@@ -1042,11 +1153,11 @@ export default function FlightResultCard({
                             <LockedFeatureOverlay
                                 featureName="Flight Intelligence Suite"
                                 requiredTier="PRO"
-                                description="Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı için Pro açın"
+                                description="Don't risk overpaying. Unlock the best decision before you book."
                                 benefits={[
-                                    'Risk Analizi (Premium)',
-                                    'Fiyat Tahmini (Premium)',
-                                    'Detaylı Skor Dağılımı (Premium)',
+                                    'Decision Recommendation (Premium)',
+                                    'Confidence + Regret Insights (Premium)',
+                                    'True Cost Breakdown (Premium)',
                                 ]}
                                 variant="panel"
                                 className="w-full"
@@ -1055,7 +1166,7 @@ export default function FlightResultCard({
                                 onClick={() => openCheckout('PRO', 'monthly')}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
                             >
-                                🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç - Monthly Pro ($19)
+                                🔓 Get a Clear Recommendation - Monthly Pro ($19)
                             </button>
                             <button
                                 onClick={openOneTimeReport}

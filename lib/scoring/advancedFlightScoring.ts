@@ -119,6 +119,15 @@ type PreferenceProfile = {
     sampleSize: number;
 };
 
+type PersonalBiasProfile = {
+    priceWeightBoost: number;
+    directPenaltyBoost: number;
+    loyaltyAirline?: string | null;
+    loyaltyBoost: number;
+    avoidMultiStopWeight?: number;
+    avoidNightWeight?: number;
+};
+
 const PERSONA_WEIGHTS: Record<PersonaKey, ScoreBreakdown> = {
     // Raw weights used in Score = Σ(weight_i × normalized_feature_i), then normalized by total weight.
     comfort:  { priceValue: 0.5, duration: 0.8, stops: 0.6, connection: 0.7, selfTransfer: 0.6, baggage: 0.6, reliability: 0.7, aircraft: 0.5, amenities: 0.8, airportIndex: 0.4 },
@@ -529,6 +538,92 @@ const computePreferenceBonusRaw = (
     return clamp(Number(bonus.toFixed(2)), 0, 5);
 };
 
+const ESTIMATED_BAGGAGE_FEE_BY_AIRLINE: Record<string, number> = {
+    'RYANAIR': 70,
+    'EASYJET': 60,
+    'WIZZ AIR': 65,
+    'JETSTAR': 75,
+    'AIRASIA': 55,
+    'SPIRIT AIRLINES': 85,
+    'FRONTIER AIRLINES': 80,
+    'QANTAS': 45,
+    'EMIRATES': 35,
+    'QATAR AIRWAYS': 35,
+    'SINGAPORE AIRLINES': 40,
+    'TURKISH AIRLINES': 45,
+};
+
+const normalizeAirlineName = (value?: string): string =>
+    String(value || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, ' ');
+
+const estimateBaggageFee = (flight: FlightResult): number => {
+    const checkedKg = Number(flight.policies?.baggageKg || 0);
+    const baggageType = String(flight.baggage || '').toLowerCase();
+    const hasCheckedBaggage = checkedKg > 0 || baggageType === 'checked';
+
+    if (hasCheckedBaggage) return 0;
+
+    const normalizedAirline = normalizeAirlineName(flight.airline);
+    const explicitEstimate = ESTIMATED_BAGGAGE_FEE_BY_AIRLINE[normalizedAirline];
+    if (Number.isFinite(explicitEstimate)) return explicitEstimate;
+
+    const budgetMatch = Array.from(BUDGET_AIRLINES).some((name) => normalizedAirline.includes(name));
+    if (budgetMatch) return 70;
+
+    const premiumMatch = Array.from(PREMIUM_AIRLINES).some((name) => normalizedAirline.includes(name));
+    if (premiumMatch) return 35;
+
+    return 50;
+};
+
+const estimateMealCost = (
+    flight: FlightResult,
+    mealIncluded: boolean,
+    durationMinutes: number
+): number => {
+    if (mealIncluded) return 0;
+
+    const cabinClass = String(flight.cabinClass || '').toLowerCase();
+    if (cabinClass === 'business' || cabinClass === 'first') {
+        return 0;
+    }
+
+    if (durationMinutes >= 8 * 60) return 35;
+    if (durationMinutes >= 4 * 60) return 22;
+    return 12;
+};
+
+const estimateSeatSelectionCost = (flight: FlightResult): number => {
+    const cabinClass = String(flight.cabinClass || '').toLowerCase();
+    if (cabinClass === 'business' || cabinClass === 'first') return 0;
+
+    const stops = Number(flight.stops || 0);
+    if (stops >= 2) return 36;
+    if (stops === 1) return 28;
+    return 18;
+};
+
+const estimateAirportTransferCost = (flight: FlightResult, durationMinutes: number): number => {
+    const routeDistanceKm = getGreatCircleDistanceKm(flight.from, flight.to) || 0;
+    const longHaul = routeDistanceKm > 3500 || durationMinutes >= 7 * 60;
+    const destination = String(flight.to || '').toUpperCase();
+    const megaCityAirport = new Set(['LHR', 'CDG', 'JFK', 'LAX', 'NRT', 'HND', 'DXB', 'IST', 'SIN']);
+
+    if (megaCityAirport.has(destination) && longHaul) return 48;
+    if (longHaul) return 38;
+    return 24;
+};
+
+const estimateHiddenFeeBuffer = (flight: FlightResult, baseFare: number): number => {
+    const normalizedAirline = normalizeAirlineName(flight.airline);
+    const budgetMatch = Array.from(BUDGET_AIRLINES).some((name) => normalizedAirline.includes(name));
+    const ratio = budgetMatch ? 0.07 : 0.035;
+    return Number(Math.max(8, Math.min(85, baseFare * ratio)).toFixed(2));
+};
+
 const generateScoreExplanation = (
     flight: FlightResult,
     breakdown: ScoreBreakdown,
@@ -574,6 +669,7 @@ const scoreFlight = (
         invalidReason?: string;
         persona?: PersonaKey;
         preferenceProfile?: PreferenceProfile;
+        personalBiasProfile?: PersonalBiasProfile;
     }
 ) => {
     const breakdown: ScoreBreakdown = {
@@ -592,6 +688,15 @@ const scoreFlight = (
     const riskFlags: string[] = [];
     const comfortNotes: string[] = [];
 
+    const priceWeightBoost = clamp(Number(context.personalBiasProfile?.priceWeightBoost || 0), 0, 0.6);
+    const directPenaltyBoost = clamp(Number(context.personalBiasProfile?.directPenaltyBoost || 0), 0, 3);
+    const loyaltyAirline = normalizeAirlineName(context.personalBiasProfile?.loyaltyAirline || '');
+    const loyaltyBoost = clamp(Number(context.personalBiasProfile?.loyaltyBoost || 0), 0, 1);
+    const avoidMultiStopWeight = clamp(Number(context.personalBiasProfile?.avoidMultiStopWeight || 0), 0, 3);
+    const avoidNightWeight = clamp(Number(context.personalBiasProfile?.avoidNightWeight || 0), 0, 2);
+    const flightAirline = normalizeAirlineName(flight.airline || '');
+    const loyaltyMatched = Boolean(loyaltyAirline && flightAirline && flightAirline.includes(loyaltyAirline));
+
     const price = Number(flight.price);
     const validPrice = Number.isFinite(price) && price > 0 ? price : context.avgPrice;
 
@@ -608,7 +713,8 @@ const scoreFlight = (
         // All prices are the same
         priceScoreValue = 10;
     }
-    breakdown.priceValue = Math.round(priceScoreValue);
+    const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 20);
+    breakdown.priceValue = Math.round(personalizedPriceScore);
 
     // Set comfort notes based on relative price score
     if (priceScoreValue >= 16) {
@@ -654,7 +760,16 @@ const scoreFlight = (
     // 2+ stops: 0.4 multiplier -> 4
     const baseStopsScore = 10;
     const stopsMultiplier = flight.stops <= 0 ? 1.0 : flight.stops === 1 ? 0.7 : 0.4;
-    breakdown.stops = Math.round(baseStopsScore * stopsMultiplier);
+    let stopsScore = Math.round(baseStopsScore * stopsMultiplier);
+    if (flight.stops > 0 && directPenaltyBoost > 0) {
+        stopsScore -= Math.round(directPenaltyBoost * Math.max(1, flight.stops));
+        riskFlags.push('Kişisel tercihe gore aktarma cezası artırıldı');
+    }
+    if (flight.stops >= 2 && avoidMultiStopWeight > 0) {
+        stopsScore -= Math.round(avoidMultiStopWeight * (flight.stops - 1));
+        riskFlags.push('Kullanıcı geçmişinde çok aktarmalı uçuşlar sıkça elendi');
+    }
+    breakdown.stops = clamp(stopsScore, 0, 10);
     
     if (flight.stops >= 2) {
         riskFlags.push('Çoklu aktarma');
@@ -700,6 +815,9 @@ const scoreFlight = (
     });
 
     breakdown.connection = clamp(breakdown.connection, 0, 10);
+    if (flight.stops > 0 && directPenaltyBoost > 0) {
+        breakdown.connection = clamp(breakdown.connection - Math.min(4, Math.round(directPenaltyBoost)), 0, 10);
+    }
     const connectionLabel =
         flight.stops === 0 ? 'Non-stop'
         : connectionUxLabels[0] ?? 'Good connection window';
@@ -806,7 +924,29 @@ const scoreFlight = (
 
     const baseTotalScore = Object.values(breakdown).reduce((sum, score) => sum + score, 0);
     const preferenceBonusRaw = computePreferenceBonusRaw(flight, context.preferenceProfile);
-    const totalScore = clamp(Number((baseTotalScore + preferenceBonusRaw).toFixed(2)), 0, 100);
+    const priceBiasBonusRaw = clamp((breakdown.priceValue / BREAKDOWN_MAXES.priceValue) * (priceWeightBoost * 10), 0, 3);
+    const directBiasBonusRaw = flight.stops === 0 ? clamp(directPenaltyBoost * 0.8, 0, 2.5) : 0;
+    const loyaltyBoostRaw = loyaltyMatched ? clamp(loyaltyBoost * 10, 0, 8) : 0;
+    const departureHour = resolveDepartureHour(flight);
+    const isNightFlight = departureHour !== null && (departureHour >= 22 || departureHour < 6);
+    const nightPenaltyRaw = isNightFlight ? clamp(avoidNightWeight * 2.2, 0, 4) : 0;
+
+    const referenceForPenalty = referencePrice > 0 ? referencePrice : context.avgPrice;
+    const priceDeviationPct = referenceForPenalty > 0 ? (validPrice - referenceForPenalty) / referenceForPenalty : 0;
+    const priceDeviationPenalty = clamp(Math.max(0, priceDeviationPct) * 15, 0, 8);
+
+    const durationRatio = expectedRouteDuration > 0 ? durationMinutes / expectedRouteDuration : 1;
+    const durationPenalty = clamp(Math.max(0, durationRatio - 1) * 6, 0, 8);
+
+    const multiStopPenalty = flight.stops >= 2 ? clamp((flight.stops - 1) * 2.5, 0, 8) : 0;
+
+    const personalBiasBonusRaw = clamp(Number((priceBiasBonusRaw + directBiasBonusRaw + loyaltyBoostRaw).toFixed(2)), 0, 10);
+    const strongPenalty = priceDeviationPenalty + durationPenalty + multiStopPenalty + nightPenaltyRaw;
+    const rawScore = clamp(Number((baseTotalScore + preferenceBonusRaw + personalBiasBonusRaw - strongPenalty).toFixed(2)), 0, 100);
+    const normalizedRaw = clamp(rawScore / 100, 0, 1);
+    // Power curve expands score separation and avoids clustered 9.x scores.
+    const separatedScore = Math.pow(normalizedRaw, 1.35) * 100;
+    const totalScore = clamp(Number(separatedScore.toFixed(2)), 0, 100);
     const displayScore = Number((totalScore / 10).toFixed(1));
 
     let valueTag = 'Dengeli Seçenek';
@@ -837,6 +977,28 @@ const scoreFlight = (
             100
         ),
     };
+
+    const estimatedBaggageFee = estimateBaggageFee(flight);
+    const estimatedMealCost = estimateMealCost(flight, mealIncluded, durationMinutes);
+    const estimatedSeatSelectionCost = estimateSeatSelectionCost(flight);
+    const estimatedAirportTransferCost = estimateAirportTransferCost(flight, durationMinutes);
+    const estimatedHiddenFeeBuffer = estimateHiddenFeeBuffer(flight, validPrice);
+    const estimatedTotalCost = Number(
+        (
+            validPrice +
+            estimatedBaggageFee +
+            estimatedMealCost +
+            estimatedSeatSelectionCost +
+            estimatedAirportTransferCost +
+            estimatedHiddenFeeBuffer
+        ).toFixed(2)
+    );
+    const personalBiasRationale: string[] = [];
+    if (priceWeightBoost > 0) personalBiasRationale.push('price_weight_boost');
+    if (directPenaltyBoost > 0) personalBiasRationale.push('direct_preference_penalty');
+    if (loyaltyMatched) personalBiasRationale.push('loyalty_match_boost');
+    if (avoidMultiStopWeight > 0) personalBiasRationale.push('negative_learning_multi_stop');
+    if (avoidNightWeight > 0) personalBiasRationale.push('negative_learning_night');
 
     if (breakdown.priceValue >= 16 && totalScore >= 75) {
         valueTag = 'En İyi Fiyat/Performans';
@@ -873,6 +1035,33 @@ const scoreFlight = (
             priceIntel,
             confidenceScore,
             forYouBonus: Number((preferenceBonusRaw / 10).toFixed(2)),
+            personalBias: {
+                priceWeightBoost,
+                directPenaltyBoost,
+                loyaltyAirline: loyaltyAirline || null,
+                loyaltyBoost,
+                avoidMultiStopWeight,
+                avoidNightWeight,
+                biasScore: Number((personalBiasBonusRaw / 10).toFixed(2)),
+                rationale: personalBiasRationale,
+            },
+            estimatedTotalCost: {
+                currency: String(flight.currency || 'AUD').toUpperCase(),
+                baseFare: Number(validPrice.toFixed(2)),
+                estimatedBaggageFee,
+                estimatedMealCost,
+                estimatedSeatSelectionCost,
+                estimatedAirportTransferCost,
+                estimatedHiddenFeeBuffer,
+                total: estimatedTotalCost,
+            },
+            hiddenCostBreakdown: {
+                baggage: estimatedBaggageFee,
+                meals: estimatedMealCost,
+                seatSelection: estimatedSeatSelectionCost,
+                airportTransfer: estimatedAirportTransferCost,
+                hiddenFeeBuffer: estimatedHiddenFeeBuffer,
+            },
             explanation,
             tradeoff,
         },
@@ -884,10 +1073,24 @@ const scoreFlight = (
 type RouteInsightInput = {
     avgPriceRoute: number;
     volatility: number;
+    searchCount?: number;
+    rollingAvgPrice?: number;
     recommendedBookingWindowDays?: number | null;
     observedMinPrice?: number;
     observedMaxPrice?: number;
 };
+
+type RouteTrendSignal = {
+    trendSignal: 'RISING' | 'FALLING' | 'STABLE';
+    changePercent: number;
+    sampleSize: number;
+    lastPrice: number | null;
+    prevPrice: number | null;
+    olderPrice: number | null;
+    clarity: 'clear' | 'mixed' | 'weak';
+};
+
+type DecisionRecommendation = 'BUY_NOW' | 'WAIT' | 'AVOID';
 
 /**
  * BUY vs WAIT Engine
@@ -1023,6 +1226,118 @@ const computeRegretStat = (
     return { cheaperThan, label };
 };
 
+const computePricePositionScore = (price: number, avgPrice: number): number => {
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(avgPrice) || avgPrice <= 0) {
+        return 0.5;
+    }
+
+    return clamp(1 - (price / avgPrice), 0, 1);
+};
+
+const computeConfidenceScoreV2 = (
+    flight: FlightResult,
+    routeInsight: RouteInsightInput,
+    trend: RouteTrendSignal | null,
+): number => {
+    const baseDataQuality = flight.advancedScore?.dataQuality === 'invalid' ? 25 : 80;
+    const coverageScore = clamp(Math.round((Number(routeInsight.searchCount || 0) / 30) * 100), 15, 100);
+    const trendClarityScore = trend
+        ? trend.clarity === 'clear'
+            ? 90
+            : trend.clarity === 'mixed'
+                ? 65
+                : 40
+        : 35;
+    const volatilityStability = clamp(100 - Math.round(Number(routeInsight.volatility || 0) * 2), 20, 100);
+
+    const weighted =
+        baseDataQuality * 0.4 +
+        coverageScore * 0.25 +
+        trendClarityScore * 0.2 +
+        volatilityStability * 0.15;
+
+    return clamp(Math.round(weighted), 10, 99);
+};
+
+const buildRegretInsight = (
+    pricePositionScore: number,
+    trend: RouteTrendSignal | null,
+    volatility: number,
+): string => {
+    if (pricePositionScore >= 0.12) {
+        return 'This is cheaper than typical prices for this route.';
+    }
+
+    if (trend && trend.trendSignal === 'RISING') {
+        return 'Prices are trending upward - waiting may cost more.';
+    }
+
+    if (trend && trend.trendSignal === 'FALLING') {
+        return 'Recent searches show prices easing, so waiting could be beneficial.';
+    }
+
+    if (volatility >= 25) {
+        return 'Prices are still unstable - waiting could be beneficial.';
+    }
+
+    return 'This price is close to normal for the route, so timing matters more than hype.';
+};
+
+const computeDecisionRecommendation = (params: {
+    routeInsight: RouteInsightInput;
+    pricePositionScore: number;
+    confidenceScore: number;
+    daysUntilDeparture: number;
+    trend: RouteTrendSignal | null;
+}): {
+    recommendation: DecisionRecommendation;
+    confidence: number;
+    reason: string;
+} => {
+    const volatility = Number(params.routeInsight.volatility || 0);
+    const trendSignal = params.trend?.trendSignal || 'STABLE';
+    const timePressure: 'HIGH' | 'MEDIUM' | 'LOW' =
+        params.daysUntilDeparture < 14 ? 'HIGH' : params.daysUntilDeparture <= 30 ? 'MEDIUM' : 'LOW';
+
+    let recommendation: DecisionRecommendation = 'WAIT';
+
+    if (params.pricePositionScore >= 0.12 && timePressure !== 'LOW' && trendSignal !== 'FALLING') {
+        recommendation = 'BUY_NOW';
+    } else if (params.pricePositionScore <= 0.02 && volatility >= 25) {
+        recommendation = 'AVOID';
+    } else if (params.pricePositionScore > 0.02 && params.pricePositionScore < 0.12 && timePressure === 'LOW' && trendSignal === 'FALLING') {
+        recommendation = 'WAIT';
+    }
+
+    const alignmentBonus =
+        (recommendation === 'BUY_NOW' && trendSignal !== 'FALLING' ? 12 : 0) +
+        (recommendation === 'WAIT' && trendSignal === 'FALLING' ? 10 : 0) +
+        (recommendation === 'AVOID' && volatility >= 25 ? 10 : 0);
+
+    const decisionConfidence = clamp(
+        Math.round(params.confidenceScore * 0.75 + alignmentBonus),
+        25,
+        99,
+    );
+
+    let reason: string;
+    if (recommendation === 'BUY_NOW') {
+        reason = 'This fare is cheaper than the route average, time pressure is building, and recent searches do not suggest a drop.';
+    } else if (recommendation === 'AVOID') {
+        reason = 'This option is expensive relative to the route average and price volatility is still high.';
+    } else {
+        reason = trendSignal === 'FALLING'
+            ? 'Recent searches indicate prices are softening and there is still time before departure.'
+            : 'The price is not yet a standout deal, so monitoring is the safer move.';
+    }
+
+    return {
+        recommendation,
+        confidence: decisionConfidence,
+        reason,
+    };
+};
+
 /**
  * Applies route intelligence features (BUY/WAIT, deal tier, regret stat, confidence boost)
  * to already-scored flights. Call this AFTER attaching routeIntelligence.
@@ -1031,8 +1346,23 @@ export function applyRouteIntelligenceFeatures(
     flights: FlightResult[],
     routeInsight: RouteInsightInput | null,
     departureDate: string,
+    trendSignal?: RouteTrendSignal | null,
 ): FlightResult[] {
-    if (!routeInsight) return flights;
+    const validPrices = flights.map(f => Number(f.price)).filter(p => Number.isFinite(p) && p > 0);
+    const batchMin = validPrices.length ? Math.min(...validPrices) : 0;
+    const batchMax = validPrices.length ? Math.max(...validPrices) : 0;
+    const batchAvg = validPrices.length
+        ? validPrices.reduce((sum, value) => sum + value, 0) / validPrices.length
+        : 0;
+
+    const effectiveRouteInsight: RouteInsightInput = routeInsight || {
+        avgPriceRoute: batchAvg,
+        volatility: 22,
+        searchCount: 0,
+        rollingAvgPrice: batchAvg,
+        observedMinPrice: batchMin,
+        observedMaxPrice: batchMax,
+    };
 
     const now = Date.now();
     const depMs = new Date(departureDate).getTime();
@@ -1040,30 +1370,45 @@ export function applyRouteIntelligenceFeatures(
         ? Math.max(0, Math.round((depMs - now) / 86_400_000))
         : 30;
 
-    const validPrices = flights.map(f => Number(f.price)).filter(p => Number.isFinite(p) && p > 0);
-    const batchMin = validPrices.length ? Math.min(...validPrices) : 0;
-    const batchMax = validPrices.length ? Math.max(...validPrices) : 0;
-
     return flights.map((flight) => {
         const price = Number(flight.price);
         if (!Number.isFinite(price) || price <= 0) return flight;
 
-        const buyWaitSignal = computeBuyWaitSignal(price, routeInsight, daysUntilDeparture);
-        const dealTier = computeDealTier(price, routeInsight, batchMin, batchMax);
-        const regretStat = computeRegretStat(price, routeInsight, batchMin, batchMax);
+        const buyWaitSignal = computeBuyWaitSignal(price, effectiveRouteInsight, daysUntilDeparture);
+        const dealTier = computeDealTier(price, effectiveRouteInsight, batchMin, batchMax);
+        const regretStat = computeRegretStat(price, effectiveRouteInsight, batchMin, batchMax);
+        const pricePositionScore = computePricePositionScore(price, Number(effectiveRouteInsight.avgPriceRoute || batchAvg || 0));
+        const confidenceScore = computeConfidenceScoreV2(flight, effectiveRouteInsight, trendSignal || null);
+        const regretInsight = buildRegretInsight(pricePositionScore, trendSignal || null, Number(effectiveRouteInsight.volatility || 0));
+        const decision = computeDecisionRecommendation({
+            routeInsight: effectiveRouteInsight,
+            pricePositionScore,
+            confidenceScore,
+            daysUntilDeparture,
+            trend: trendSignal || null,
+        });
 
-        // Confidence boost: having historical route data is +15 points
-        const baseConfidence = flight.advancedScore?.confidenceScore ?? 0;
-        const boostedConfidence = clamp(baseConfidence + 15, 0, 100);
+        const explanation = decision.recommendation === 'BUY_NOW'
+            ? 'Better value than a typical fare for this route, with signals supporting action now.'
+            : decision.recommendation === 'AVOID'
+                ? 'Poor value relative to route pricing, and current market conditions do not justify urgency.'
+                : 'Current signals favor patience over immediate booking.';
 
         return {
             ...flight,
             advancedScore: {
                 ...(flight.advancedScore || {}),
-                confidenceScore: boostedConfidence,
+                confidenceScore,
+                pricePositionScore: Number(pricePositionScore.toFixed(2)),
+                trendSignal: trendSignal?.trendSignal || 'STABLE',
                 buyWaitSignal,
                 dealTier,
                 regretStat,
+                regretInsight,
+                decisionRecommendation: decision.recommendation,
+                decisionConfidence: decision.confidence,
+                decisionReason: decision.reason,
+                explanation,
             },
         } as FlightResult;
     });
@@ -1078,6 +1423,7 @@ export async function applyAdvancedFlightScoring(
         useHistoricalMedian?: boolean;
         persona?: PersonaInput;
         preferenceProfile?: PreferenceProfile;
+        personalBiasProfile?: PersonalBiasProfile;
     }
 ): Promise<FlightResult[]> {
     // ── DEDUPLICATION: Merge flights with same departure, arrival, route, operating_airline ──
@@ -1139,6 +1485,7 @@ export async function applyAdvancedFlightScoring(
                 invalidReason,
                 persona: resolvePersona(options?.persona),
                 preferenceProfile: options?.preferenceProfile,
+                personalBiasProfile: options?.personalBiasProfile,
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));

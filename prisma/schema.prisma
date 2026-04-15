@@ -42,6 +42,9 @@ model User {
   monitors        Monitor[]
   monitoredTrips  MonitoredTrip[]
   preferences     UserPreference[]
+  
+  // 🧪 EXPERIMENT ASSIGNMENTS
+  experimentAssignments ExperimentAssignment[]
 }
 
 model Account {
@@ -285,10 +288,21 @@ model FlightSelectionEvent {
   rank              Int?
   totalResults      Int?
   currency          String?
+  
+  // 🧪 A/B TESTING
+  experimentId      String?   // Which experiment (if any)
+  variantId         String?   // Which variant within experiment
+  
+  // 🎯 DECISION CONTEXT
+  decisionRecommendation String?  // BUY_NOW, WAIT, AVOID
+  decisionConfidence     Int?     // 0-100
+  
   createdAt         DateTime @default(now())
 
   @@index([action, createdAt])
   @@index([origin, destination, departureDate])
+  @@index([experimentId, variantId])
+  @@index([decisionRecommendation])
 }
 
 model UserPreference {
@@ -577,4 +591,164 @@ model FlightOption {
   policies        Json?    // { refundable: true, baggageKg: 30 }
 
   createdAt       DateTime @default(now())
+}
+// =======================================================================================
+// 🚀 SELF-OPTIMIZATION LAYER — A/B Testing, Accuracy, Auto-Tuning
+// =======================================================================================
+
+// 🧪 EXPERIMENT DEFINITIONS
+model Experiment {
+  id              String   @id @default(cuid())
+  name            String   // "messaging-test-v1", "cta-wording-test"
+  description     String?
+  experimentType  String   // "MESSAGE", "CTA", "PAYWALL_TIMING", "RANKING_WEIGHT"
+  status          String   @default("DRAFT") // DRAFT, RUNNING, PAUSED, COMPLETED
+  
+  // Timing
+  startDate       DateTime?
+  endDate         DateTime?
+  
+  // Targeting
+  targetMetric    String   // "BOOKING_RATE", "CLICK_RATE", "TRACK_RATE"
+  minSampleSize   Int      @default(100) // Stop experiment if not enough samples
+  
+  // Variants (stored as JSON for flexibility)
+  variants        Json     // [{ id, name, config: {...} }, ...]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  assignments     ExperimentAssignment[]
+  
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+// 👤 USER → VARIANT ASSIGNMENT
+model ExperimentAssignment {
+  id              String   @id @default(cuid())
+  userId          String?
+  sessionId       String?  // For anonymous users
+  experimentId    String
+  variantId       String   // Which variant in the experiment
+  assigned        DateTime @default(now())
+  
+  experiment      Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  user            User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, experimentId])
+  @@unique([sessionId, experimentId])
+  @@index([experimentId])
+}
+
+// 📊 DECISION ACCURACY TRACKING
+model DecisionAccuracy {
+  id              String   @id @default(cuid())
+  
+  // Decision Context
+  origin          String
+  destination     String
+  departureDate   DateTime
+  decisionType    String   // "BUY_NOW", "WAIT", "AVOID"
+  decisionConfidence Int   // 0-100 at time of decision
+  
+  // Price Tracking
+  priceAtDecision Float    // Price when decision was made
+  decidedAt       DateTime // When decision was made
+  
+  evaluatedAt     DateTime? // When accuracy was evaluated
+  priceAtEvaluation Float?  // Price when evaluated
+  priceChange     Float?   // priceAtEvaluation - priceAtDecision
+  priceChangePercent Float? // ((priceAtEvaluation - priceAtDecision) / priceAtDecision) * 100
+  
+  // Accuracy Scoring
+  isAccurate      Boolean? // Did the decision prove correct?
+  accuracyScore   Int?     // 0-100: how accurate was the prediction?
+  
+  // Event Link
+  eventId         String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([decisionType, isAccurate])
+  @@index([origin, destination])
+  @@index([createdAt])
+}
+
+// ⚙️ DECISION CONFIG (Runtime-updatable thresholds)
+model DecisionConfig {
+  id              String   @id @default(cuid())
+  
+  // Which decision type does this config apply to?
+  decisionType    String   @unique // BUY_NOW, WAIT, AVOID
+  
+  // PRICE THRESHOLDS
+  priceThresholdMin Float   @default(0.01)  // Min price position score for this decision
+  priceThresholdMax Float   @default(0.30)  // Max price position score
+  
+  // TIME PRESSURE WEIGHTING
+  timePressureWeight Float  @default(0.25)  // How much to weight urgency?
+  
+  // VOLATILITY SENSITIVITY
+  volatilitySensitivity Float @default(0.15) // How much to weight price stability?
+  
+  // TREND CLARITY INFLUENCE
+  trendClarityWeight Float   @default(0.20)  // How much to weight trend signal?
+  
+  // SAFE BOUNDS (prevent extreme swings)
+  safetyBounds    Json     @default("{}")
+    // {
+    //   "minPrice": 0.001,
+    //   "maxPrice": 1.0,
+    //   "maxWeightChange": 0.05
+    // }
+  
+  // Audit Trail
+  version         Int      @default(1)
+  updatedBy       String?  // User ID who updated
+  updatedAt       DateTime @updatedAt
+  appliedAt       DateTime? // When was this config actually applied to live?
+  
+  @@index([decisionType])
+}
+
+// 📈 DECISION PERFORMANCE METRICS (Aggregated funnel data)
+model DecisionPerformanceMetric {
+  id              String   @id @default(cuid())
+  
+  // Route + Time Window
+  origin          String
+  destination     String
+  dateWindow      DateTime // Start of aggregation window (e.g., daily/weekly)
+  
+  decisionType    String   // BUY_NOW, WAIT, AVOID
+  
+  // Funnel Metrics
+  shownCount      Int      @default(0) // How many times was this decision shown?
+  clickCount      Int      @default(0) // How many clicked?
+  bookCount       Int      @default(0) // How many actually booked? (BUY_NOW only)
+  trackCount      Int      @default(0) // How many tracked? (WAIT only)
+  ignoreCount     Int      @default(0) // How many ignored? (AVOID only)
+  
+  // Calculated Rates
+  clickRate       Float    @default(0) // (clickCount / shownCount) * 100
+  conversionRate  Float    @default(0) // (bookCount / shownCount) * 100
+  trackRate       Float    @default(0) // (trackCount / shownCount) * 100
+  ignoreRate      Float    @default(0) // (ignoreCount / shownCount) * 100
+  
+  // Accuracy Aggregate
+  avgAccuracyScore Int?    // Average accuracyScore from DecisionAccuracy for this window
+  accurateCount   Int      @default(0) // How many decisions were accurate?
+  
+  // Experiment Link (if part of A/B test)
+  experimentId    String?
+  variantId       String?
+  
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([origin, destination, dateWindow, decisionType])
+  @@index([origin, destination])
+  @@index([dateWindow])
+  @@index([experimentId])
 }

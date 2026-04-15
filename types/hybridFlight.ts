@@ -176,6 +176,39 @@ export type FlightResult = {
         };
         confidenceScore?: number;
         forYouBonus?: number;
+        personalBias?: {
+            priceWeightBoost: number;
+            directPenaltyBoost: number;
+            loyaltyAirline?: string | null;
+            loyaltyBoost: number;
+            avoidMultiStopWeight?: number;
+            avoidNightWeight?: number;
+            biasScore: number;
+            rationale: string[];
+        };
+        estimatedTotalCost?: {
+            currency: string;
+            baseFare: number;
+            estimatedBaggageFee: number;
+            estimatedMealCost: number;
+            estimatedSeatSelectionCost?: number;
+            estimatedAirportTransferCost?: number;
+            estimatedHiddenFeeBuffer?: number;
+            total: number;
+        };
+        hiddenCostBreakdown?: {
+            baggage: number;
+            meals: number;
+            seatSelection: number;
+            airportTransfer: number;
+            hiddenFeeBuffer: number;
+        };
+        decisionRecommendation?: 'BUY_NOW' | 'WAIT' | 'AVOID';
+        decisionReason?: string;
+        decisionConfidence?: number;
+        trendSignal?: 'RISING' | 'FALLING' | 'STABLE';
+        pricePositionScore?: number;
+        regretInsight?: string;
         explanation?: string;
         tradeoff?: {
             price: number;
@@ -185,6 +218,8 @@ export type FlightResult = {
         routeIntelligence?: {
             avgPriceRoute: number;
             volatility: number;
+            searchCount?: number;
+            rollingAvgPrice?: number;
             bookingWindowPattern?: unknown;
             recommendedBookingWindowDays?: number | null;
             observedMinPrice?: number;

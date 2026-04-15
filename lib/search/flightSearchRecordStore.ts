@@ -663,6 +663,8 @@ export async function getRouteInsightForDate(
 ): Promise<{
     avgPriceRoute: number;
     volatility: number;
+    searchCount: number;
+    rollingAvgPrice: number;
     bookingWindowPattern: unknown;
     recommendedBookingWindowDays: number | null;
     observedMinPrice: number;
@@ -687,6 +689,8 @@ export async function getRouteInsightForDate(
             select: {
                 avgPriceRoute: true,
                 volatility: true,
+                searchCount: true,
+                rollingAvgPrice: true,
                 bookingWindowPattern: true,
                 recommendedBookingWindowDays: true,
                 observedMinPrice: true,
@@ -698,6 +702,8 @@ export async function getRouteInsightForDate(
         return {
             avgPriceRoute: Number(row.avgPriceRoute || 0),
             volatility: Number(row.volatility || 0),
+            searchCount: Number(row.searchCount || 0),
+            rollingAvgPrice: Number(row.rollingAvgPrice || 0),
             bookingWindowPattern: row.bookingWindowPattern,
             recommendedBookingWindowDays: row.recommendedBookingWindowDays ?? null,
             observedMinPrice: Number(row.observedMinPrice || 0),
@@ -706,5 +712,138 @@ export async function getRouteInsightForDate(
     } catch (error: any) {
         console.warn('[ROUTE_INSIGHT] summary lookup skipped:', error?.message || error);
         return null;
+    }
+}
+
+export async function getRoutePriceTrend(
+    origin: string,
+    destination: string,
+    departureDate: string,
+    lookbackDays = 21
+): Promise<{
+    trendSignal: 'RISING' | 'FALLING' | 'STABLE';
+    changePercent: number;
+    sampleSize: number;
+    lastPrice: number | null;
+    prevPrice: number | null;
+    olderPrice: number | null;
+    clarity: 'clear' | 'mixed' | 'weak';
+}> {
+    const searchAnalyticsModel = (prisma as any)?.searchAnalytics;
+    if (!searchAnalyticsModel) {
+        return {
+            trendSignal: 'STABLE',
+            changePercent: 0,
+            sampleSize: 0,
+            lastPrice: null,
+            prevPrice: null,
+            olderPrice: null,
+            clarity: 'weak',
+        };
+    }
+
+    const start = normalizeUtcDate(departureDate);
+    const end = new Date(start.getTime() + DAY_MS);
+    const since = new Date(Date.now() - lookbackDays * DAY_MS);
+
+    try {
+        const rows = await searchAnalyticsModel.findMany({
+            where: {
+                origin,
+                destination,
+                departureDate: {
+                    gte: start,
+                    lt: end,
+                },
+                searchTimestamp: {
+                    gte: since,
+                },
+            },
+            select: {
+                minPrice: true,
+                avgPrice: true,
+                searchTimestamp: true,
+            },
+            orderBy: {
+                searchTimestamp: 'asc',
+            },
+        });
+
+        const buckets = new Map<string, number[]>();
+        rows.forEach((row: any) => {
+            const bucketKey = new Date(row.searchTimestamp).toISOString();
+            const representativePrice = Number(row.minPrice || row.avgPrice || 0);
+            if (!Number.isFinite(representativePrice) || representativePrice <= 0) return;
+            if (!buckets.has(bucketKey)) buckets.set(bucketKey, []);
+            buckets.get(bucketKey)!.push(representativePrice);
+        });
+
+        const pricePoints = Array.from(buckets.entries())
+            .map(([timestamp, prices]) => ({
+                timestamp,
+                price: prices.reduce((sum, value) => sum + value, 0) / prices.length,
+            }))
+            .filter((row) => Number.isFinite(row.price) && row.price > 0)
+            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+        if (pricePoints.length === 0) {
+            return {
+                trendSignal: 'STABLE',
+                changePercent: 0,
+                sampleSize: 0,
+                lastPrice: null,
+                prevPrice: null,
+                olderPrice: null,
+                clarity: 'weak',
+            };
+        }
+
+        const lastPrice = pricePoints[pricePoints.length - 1]?.price ?? null;
+        const prevPrice = pricePoints[pricePoints.length - 2]?.price ?? null;
+        const olderPrice = pricePoints[pricePoints.length - 3]?.price ?? null;
+
+        const pctChange = (next: number | null, prev: number | null): number => {
+            if (!Number.isFinite(Number(next)) || !Number.isFinite(Number(prev)) || Number(prev) <= 0) return 0;
+            return ((Number(next) - Number(prev)) / Number(prev)) * 100;
+        };
+
+        const recentDelta = pctChange(lastPrice, prevPrice);
+        const olderDelta = pctChange(prevPrice, olderPrice);
+        const absRecentDelta = Math.abs(recentDelta);
+        const absOlderDelta = Math.abs(olderDelta);
+
+        let trendSignal: 'RISING' | 'FALLING' | 'STABLE' = 'STABLE';
+        let clarity: 'clear' | 'mixed' | 'weak' = 'weak';
+
+        if (absRecentDelta >= 2.5 && absOlderDelta >= 2.5 && Math.sign(recentDelta) === Math.sign(olderDelta) && Math.sign(recentDelta) !== 0) {
+            trendSignal = recentDelta > 0 ? 'RISING' : 'FALLING';
+            clarity = 'clear';
+        } else if (absRecentDelta >= 3) {
+            trendSignal = recentDelta > 0 ? 'RISING' : recentDelta < 0 ? 'FALLING' : 'STABLE';
+            clarity = 'mixed';
+        }
+
+        const changePercent = Number(recentDelta.toFixed(2));
+
+        return {
+            trendSignal,
+            changePercent,
+            sampleSize: pricePoints.length,
+            lastPrice,
+            prevPrice,
+            olderPrice,
+            clarity,
+        };
+    } catch (error: any) {
+        console.warn('[ROUTE_INSIGHT] trend lookup skipped:', error?.message || error);
+        return {
+            trendSignal: 'STABLE',
+            changePercent: 0,
+            sampleSize: 0,
+            lastPrice: null,
+            prevPrice: null,
+            olderPrice: null,
+            clarity: 'weak',
+        };
     }
 }

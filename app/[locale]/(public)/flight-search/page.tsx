@@ -9,7 +9,9 @@ import {
     Loader2,
     ArrowRightLeft,
     MapPin,
-    Sparkles
+    Sparkles,
+    Lightbulb,
+    CalendarClock
 } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
 import FlightResultCard from "@/components/search/FlightResultCard";
@@ -37,6 +39,12 @@ type SearchCabin = "economy" | "premium" | "business" | "first";
 type SelectorCabin = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
 type SearchPersona = "budget" | "comfort" | "business" | "family";
 type ChampionBadge = 'Best Overall' | 'Best Value' | 'Lowest Risk' | 'Fastest';
+type ProactiveTip = {
+    id: string;
+    type: 'AIRPORT' | 'DATE';
+    message: string;
+    saving: number;
+};
 
 const normalizeCabinParam = (value: string | null): SearchCabin => {
     switch ((value || '').toLowerCase()) {
@@ -96,6 +104,7 @@ function SearchPageContent() {
     const [loading, setLoading] = useState(false);
     const [tripType, setTripType] = useState<"oneWay" | "roundTrip">("oneWay");
     const [results, setResults] = useState<FlightResult[]>([]);
+    const [proactiveTips, setProactiveTips] = useState<ProactiveTip[]>([]);
     const [sortedResults, setSortedResults] = useState<FlightResult[]>([]);
     const [currentSort, setCurrentSort] = useState<SortOption>("best");
     const [filters, setFilters] = useState<FlightFilterState>({
@@ -199,6 +208,7 @@ function SearchPageContent() {
         setLoading(true);
         setError(null);
         setResults([]);
+        setProactiveTips([]);
         setVisibleCount(20); // Reset pagination
 
         try {
@@ -240,6 +250,7 @@ function SearchPageContent() {
             }
 
             const flights = Array.isArray(data) ? data : (data.results || []);
+            const tips = Array.isArray(data) ? [] : (Array.isArray(data.proactiveTips) ? data.proactiveTips : []);
 
             const access = Array.isArray(data) ? null : data.viewerAccess;
             if (access) {
@@ -254,6 +265,7 @@ function SearchPageContent() {
 
             if (flights.length > 0) {
                 setResults(flights);
+                setProactiveTips(tips as ProactiveTip[]);
             } else {
                 setError(t('noFlights'));
             }
@@ -433,6 +445,14 @@ function SearchPageContent() {
             return Number.isFinite(score) ? score : 0;
         };
 
+        const resolveDecisionPriority = (flight: FlightResult) => {
+            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+            if (recommendation === 'BUY_NOW') return 0;
+            if (recommendation === 'WAIT') return 1;
+            if (recommendation === 'AVOID') return 2;
+            return 1;
+        };
+
         const isBestValue = (flight: FlightResult) => {
             const tag = (flight.advancedScore?.valueTag || '').toString().toLowerCase();
             return tag.includes('en i̇yi fiyat/performans') || tag.includes('en iyi fiyat/performans') || tag.includes('best value');
@@ -445,9 +465,14 @@ function SearchPageContent() {
                 return sorted.sort((a, b) => resolveDuration(a) - resolveDuration(b));
             case "best":
             default:
-                // Best (default): Agent Score priority (high -> low),
-                // with Best Value + 8.5+ flights pinned to the very top.
+                // Best (default): decision-led ranking for conversion, then Agent Score.
                 return sorted.sort((a, b) => {
+                    const decisionA = resolveDecisionPriority(a);
+                    const decisionB = resolveDecisionPriority(b);
+                    if (decisionA !== decisionB) {
+                        return decisionA - decisionB;
+                    }
+
                     const agentA = resolveAgentScore(a);
                     const agentB = resolveAgentScore(b);
 
@@ -511,7 +536,22 @@ function SearchPageContent() {
         `${flight.id}|${flight.source}|${flight.flightNumber}|${flight.departTime}`;
 
     const championData = useMemo(() => {
-        const list = [...filteredResults];
+        const decisionPriority = (flight: FlightResult) => {
+            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+            if (recommendation === 'BUY_NOW') return 0;
+            if (recommendation === 'WAIT') return 1;
+            if (recommendation === 'AVOID') return 2;
+            return 1;
+        };
+
+        const list = [...filteredResults].sort((a, b) => {
+            const decisionDiff = decisionPriority(a) - decisionPriority(b);
+            if (decisionDiff !== 0) return decisionDiff;
+
+            const scoreA = Number(a.advancedScore?.totalScore ?? a.agentScore ?? a.advancedScore?.displayScore ?? a.score ?? 0);
+            const scoreB = Number(b.advancedScore?.totalScore ?? b.agentScore ?? b.advancedScore?.displayScore ?? b.score ?? 0);
+            return scoreB - scoreA;
+        });
         const empty = { ordered: list, labels: {} as Record<string, ChampionBadge> };
         if (list.length === 0) return empty;
 
@@ -580,7 +620,21 @@ function SearchPageContent() {
 
     const rankedResults = useMemo(() => {
         const base = championData.ordered;
-        const result = base.map((flight) => ({ ...flight }));
+        const decisionPriority = (flight: FlightResult) => {
+            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+            if (recommendation === 'BUY_NOW') return 0;
+            if (recommendation === 'WAIT') return 1;
+            if (recommendation === 'AVOID') return 2;
+            return 1;
+        };
+
+        const result = base
+            .map((flight) => ({ ...flight }))
+            .sort((a, b) => {
+                const decisionDiff = decisionPriority(a) - decisionPriority(b);
+                if (decisionDiff !== 0) return decisionDiff;
+                return Number(b.advancedScore?.totalScore || 0) - Number(a.advancedScore?.totalScore || 0);
+            });
 
         const parseNum = (value: unknown): number => {
             if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -615,6 +669,11 @@ function SearchPageContent() {
         return result;
     }, [championData]);
 
+    const buyNowCount = useMemo(
+        () => rankedResults.filter((flight) => String(flight.advancedScore?.decisionRecommendation || '').toUpperCase() === 'BUY_NOW').length,
+        [rankedResults]
+    );
+
     useEffect(() => {
         if (!rankedResults.length || loading) return;
 
@@ -642,7 +701,11 @@ function SearchPageContent() {
                     totalResults: rankedResults.length,
                     currency: String(flight.currency || 'AUD').toUpperCase(),
                     isDirect: Number(flight.stops) === 0,
+                    stopCount: Number(flight.stops || 0),
                     departTime: flight.departTime,
+                    decisionRecommendation: flight.advancedScore?.decisionRecommendation || null,
+                    decisionConfidence: Number(flight.advancedScore?.decisionConfidence || 0) || null,
+                    routeAveragePrice: Number(flight.advancedScore?.routeIntelligence?.avgPriceRoute || 0) || null,
                 };
 
                 try {
@@ -814,9 +877,35 @@ function SearchPageContent() {
                                 {rankedResults.length} / {results.length} {t('resultsFound')}
                             </h2>
                         </div>
+
+                        {buyNowCount > 0 && (
+                            <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">Top Flights To Book Now</div>
+                                <div className="text-sm font-semibold text-slate-800 mt-1">
+                                    {buyNowCount} flight{buyNowCount > 1 ? 's are' : ' is'} currently flagged as strong booking opportunities.
+                                </div>
+                            </div>
+                        )}
                         
                         {/* Veri Kaynağı Göstergesi */}
                         <DataSourceIndicator flights={results} />
+
+                        {proactiveTips.length > 0 && (
+                            <div className="mt-4 mb-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {proactiveTips.map((tip) => (
+                                    <div
+                                        key={tip.id}
+                                        className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 shadow-sm"
+                                    >
+                                        <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide mb-1">
+                                            {tip.type === 'DATE' ? <CalendarClock className="h-3.5 w-3.5" /> : <Lightbulb className="h-3.5 w-3.5" />}
+                                            Proactive Tip
+                                        </div>
+                                        <p className="text-sm font-semibold text-slate-800">{tip.message}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <FlightFilters
                             filters={filters}
@@ -887,7 +976,7 @@ function SearchPageContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                                     <div className="text-sm font-extrabold text-blue-800">Monthly Pro ($19)</div>
-                                    <p className="text-xs text-blue-700 mt-1">Sınırsız analiz ve özel bildirimler.</p>
+                                    <p className="text-xs text-blue-700 mt-1">Don't risk overpaying. Unlock the best decision before you book.</p>
                                     <button
                                         onClick={async () => {
                                             try {
@@ -908,7 +997,7 @@ function SearchPageContent() {
                                         }}
                                         className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
                                     >
-                                        🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç
+                                        🔓 Unlock Clear Recommendation
                                     </button>
                                 </div>
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
