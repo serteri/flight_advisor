@@ -68,6 +68,14 @@ export default function Navbar() {
 
                             <LanguageSwitcher />
 
+                            {/* Motto signature badge */}
+                            <div className="hidden lg:flex items-center gap-2">
+                                <div className="w-px h-4 bg-slate-200/60" />
+                                <span className="px-3 py-1 rounded-full bg-sky-500/[0.08] border border-sky-300/20 text-[10px] font-medium italic tracking-wider text-sky-600/80 select-none cursor-default transition-all duration-300 hover:bg-sky-500/[0.15] hover:border-sky-300/40 hover:text-sky-600 hover:drop-shadow-[0_0_8px_rgba(14,165,233,0.45)] whitespace-nowrap">
+                                    {tCommon('motto')}
+                                </span>
+                            </div>
+
                             {session ? (
                                 <>
                                     <div className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -127,11 +135,6 @@ export default function Navbar() {
                     </div>
 
                     {/* Motto strip - desktop only, below main row */}
-                    <div className="hidden md:flex justify-end pb-1.5 -mt-0.5 pr-2">
-                        <p className="text-[10px] italic text-slate-400/75 tracking-wide select-none font-light">
-                            {tCommon('motto')}
-                        </p>
-                    </div>
                 </div>
             </nav>
 
