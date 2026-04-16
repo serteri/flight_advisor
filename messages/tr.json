@@ -1,4 +1,7 @@
 {
+    "common": {
+        "motto": "Her milde hassasiyet, her uçuşta tutku."
+    },
     "Navbar": {
         "home": "Ana Sayfa",
         "search": "Uçuş Ara",

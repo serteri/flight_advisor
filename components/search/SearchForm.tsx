@@ -69,29 +69,26 @@ export function SearchForm() {
     return (
         <div className="w-full relative">
             {/* Trip Type Tabs */}
-            <div className="flex gap-6 mb-4 px-2">
-                <button
-                    onClick={() => setTripType('ONE_WAY')}
-                    className={`text-sm font-bold transition-colors ${tripType === 'ONE_WAY' ? 'text-white' : 'text-white/60 hover:text-white'}`}
-                >
-                    {t('one_way') || "One way"}
-                </button>
-                <button
-                    onClick={() => setTripType('ROUND_TRIP')}
-                    className={`text-sm font-bold transition-colors ${tripType === 'ROUND_TRIP' ? 'text-white' : 'text-white/60 hover:text-white'}`}
-                >
-                    {t('round_trip') || "Round trip"}
-                </button>
-                <button
-                    onClick={() => setTripType('MULTI_CITY')}
-                    className={`text-sm font-bold transition-colors ${tripType === 'MULTI_CITY' ? 'text-white' : 'text-white/60 hover:text-white'}`}
-                >
-                    {t('multi_city') || "Multi-city"}
-                </button>
+            <div className="flex gap-2 mb-4 px-1">
+                {(['ONE_WAY', 'ROUND_TRIP', 'MULTI_CITY'] as const).map((type) => (
+                    <button
+                        key={type}
+                        onClick={() => setTripType(type)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all duration-200 ${
+                            tripType === type
+                                ? 'bg-white/25 text-white shadow-sm shadow-white/10 backdrop-blur-sm'
+                                : 'text-white/55 hover:text-white/80'
+                        }`}
+                    >
+                        {type === 'ONE_WAY' ? (t('one_way') || 'One way')
+                            : type === 'ROUND_TRIP' ? (t('round_trip') || 'Round trip')
+                            : (t('multi_city') || 'Multi-city')}
+                    </button>
+                ))}
             </div>
 
             {/* Unified Search Bar Container */}
-            <div className="bg-white/90 backdrop-blur-md rounded-3xl md:rounded-[2rem] soft-card-shadow border border-sky-100 p-2 flex flex-col md:flex-row relative z-20 warm-hover">
+            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row relative z-20 warm-hover">
 
                 {/* Origin */}
                 <div className="relative flex-1 group">
@@ -104,8 +101,15 @@ export function SearchForm() {
                     />
                 </div>
 
-                {/* Divider */}
-                <div className="hidden md:block w-px bg-sky-100 my-4" />
+                {/* Divider with plane icon */}
+                <div className="hidden md:flex items-center justify-center w-8 shrink-0 relative z-10">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-px h-full bg-sky-100 mx-auto" />
+                    </div>
+                    <div className="relative bg-white rounded-full p-1.5 shadow-sm border border-sky-100">
+                        <Plane size={12} className="text-sky-500 fill-sky-500" />
+                    </div>
+                </div>
                 <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Destination */}
@@ -196,7 +200,7 @@ export function SearchForm() {
                     <Button
                         onClick={handleSearch}
                         disabled={!origin || !destination || !date}
-                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-700 hover:to-orange-500 text-white shadow-lg shadow-sky-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-500 hover:to-orange-300 text-white shadow-lg shadow-sky-500/40 hover:shadow-sky-500/60 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 btn-glow"
                     >
                         <Search className="h-6 w-6" />
                         <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>

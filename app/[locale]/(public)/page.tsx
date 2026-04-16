@@ -8,22 +8,36 @@ export default function HomePage() {
     return (
         <div className="flex flex-col min-h-screen">
             {/* Hero Section with Search Bar */}
-            <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 bg-[#fafafa]">
-                <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-50"></div>
+            <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-gradient-to-b from-blue-50 via-white to-orange-50/40">
+
+                {/* Aero decor: compass rose / altimeter rings — purely decorative */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                    {/* Large compass ring top-right */}
+                    <div className="absolute -top-24 -right-24 w-[480px] h-[480px] rounded-full border-[1.5px] border-sky-400/8 opacity-60" />
+                    <div className="absolute -top-16 -right-16 w-[360px] h-[360px] rounded-full border-[1px] border-sky-400/6" />
+                    <div className="absolute top-0 -right-8 w-[240px] h-[240px] rounded-full border-[1px] border-orange-300/8" />
+                    {/* Altimeter rings bottom-left */}
+                    <div className="absolute -bottom-32 -left-32 w-[520px] h-[520px] rounded-full border-[1.5px] border-indigo-400/6" />
+                    <div className="absolute -bottom-20 -left-20 w-[380px] h-[380px] rounded-full border-[1px] border-sky-400/5" />
+                    {/* Heading tick lines */}
+                    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full border-[1px] border-dashed border-sky-300/5" />
+                    {/* Subtle horizon gradient band */}
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-sky-200/50 to-transparent" />
+                </div>
 
                 <div className="container relative mx-auto px-4 md:px-6">
                     <div className="max-w-5xl mx-auto text-center space-y-8 mb-12">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-semibold animate-fade-in-up">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-sm font-semibold animate-fade-in-up shadow-sm shadow-sky-100">
                             <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                             </span>
                             {t('badge.engineActive')}
                         </div>
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
                             {t('hero.title')} <br className="hidden md:block" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
                                 {t('hero.titleHighlight')}
                             </span>
                         </h1>
@@ -33,28 +47,19 @@ export default function HomePage() {
                         </p>
                     </div>
 
-                    {/* Emotional Signature */}
-                    <div className="max-w-4xl mx-auto text-center mb-5">
-                        <p className="motto-signature text-xs md:text-sm">FlightAgent Motto</p>
-                        <h3 className="mt-2 text-2xl md:text-3xl font-extrabold text-sky-900 tracking-tight">
-                            Uçmayı çok seviyoruz
-                        </h3>
-                    </div>
-
                     {/* Integrated Search Bar */}
                     <div className="max-w-4xl mx-auto p-2 md:p-6 relative z-50 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-50">
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-sky-600 to-blue-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-blue-500/30 z-50 whitespace-nowrap">
                             {t('badge.aiMode')}
                         </div>
                         <SearchForm />
                     </div>
 
                     {/* Quick Trust Indicators */}
-                    <div className="mt-12 flex flex-wrap justify-center gap-6 md:gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                        {/* Placeholder logos or trust text */}
-                        <span className="flex items-center gap-2 font-semibold text-slate-400"><Globe2 className="w-5 h-5" /> {t('trust.airlines')}</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-400"><ShieldCheck className="w-5 h-5" /> {t('trust.secure')}</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-400"><Zap className="w-5 h-5" /> {t('trust.realtime')}</span>
+                    <div className="mt-12 flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 hover:opacity-80 transition-all duration-500">
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Globe2 className="w-5 h-5 text-sky-400" /> {t('trust.airlines')}</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> {t('trust.secure')}</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Zap className="w-5 h-5 text-orange-400" /> {t('trust.realtime')}</span>
                     </div>
                 </div>
             </section>

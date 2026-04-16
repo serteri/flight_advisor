@@ -1,4 +1,7 @@
 {
+  "common": {
+    "motto": "Precision in every mile, passion in every flight."
+  },
   "Navbar": {
     "home": "Home",
     "search": "Search Flights",
