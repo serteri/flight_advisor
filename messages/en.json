@@ -135,7 +135,7 @@
           "purpose_budget": "Budget",
           "purpose_comfort": "Comfort",
           "purpose_business": "Business",
-          "purpose_family": "Family"
+            "purpose_family": "Family",
       "formula": {
         "title": "Advanced Scoring Formula",
         "intro": "Total: 100 points then normalized to a 10-point score.",
@@ -271,7 +271,7 @@
         "title": "Save",
         "desc": "Book when we notify you of the price drop."
       }
-    }
+    },
         "PricingPage": {
           "title": "Pricing",
           "subtitle": "Unlock risk intelligence and route-level price insights.",
@@ -300,7 +300,7 @@
           "ctaTitle": "Ready to explore?",
           "ctaDesc": "Start your search on FlightAdvisor and find the best deals for your next adventure.",
           "ctaButton": "Search Flights Now"
-        },
+        }
   },
   "AboutPage": {
     "title": "About FlightAdvisor",
