@@ -214,16 +214,23 @@ model SearchHistory {
 }
 
 model FlightSearchRecord {
-  id            String   @id @default(cuid())
-  flightNumber  String
-  origin        String
-  destination   String
-  departureDate DateTime
-  price         Float
-  provider      String
-  rawResponse   Json?
-  cacheStatus   String?  @default("SUCCESS")
-  createdAt     DateTime @default(now())
+  id                   String    @id @default(cuid())
+  flightNumber         String
+  origin               String
+  destination          String
+  departureDate        DateTime
+  price                Float
+  provider             String
+  airlineName          String?
+  airlineCode          String?
+  stops                Int?
+  totalDurationMinutes Int?
+  layoverAirports      String[]  @default([])
+  departureTime        DateTime?
+  arrivalTime          DateTime?
+  rawResponse          Json?
+  cacheStatus          String?   @default("SUCCESS")
+  createdAt            DateTime  @default(now())
 
   @@index([origin, destination, departureDate])
   @@index([flightNumber, departureDate])

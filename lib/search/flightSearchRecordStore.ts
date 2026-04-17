@@ -35,6 +35,113 @@ const parseIsoDateToUtcMs = (value: string): number => {
     return Number.isFinite(timestamp) ? timestamp : NaN;
 };
 
+const toOptionalDate = (value: unknown): Date | null => {
+    const text = String(value || '').trim();
+    if (!text) return null;
+
+    const ts = parseIsoDateToUtcMs(text);
+    if (!Number.isFinite(ts)) return null;
+
+    return new Date(ts);
+};
+
+const toUpperIata = (value: unknown): string | null => {
+    const code = String(value || '').trim().toUpperCase();
+    return /^[A-Z0-9]{3,4}$/.test(code) ? code : null;
+};
+
+const extractFirstSegment = (flight: FlightResult): any | null => {
+    if (!Array.isArray(flight.segments) || flight.segments.length === 0) return null;
+    return flight.segments[0] || null;
+};
+
+const resolveAirlineCode = (flight: FlightResult): string | null => {
+    const firstSegment = extractFirstSegment(flight);
+    const candidates = [
+        (flight as any)?.airlineCode,
+        firstSegment?.airlineCode,
+        firstSegment?.operating_carrier?.iata_code,
+        firstSegment?.marketing_carrier?.iata_code,
+        firstSegment?.marketingAirlineCode,
+        firstSegment?.operatingAirlineCode,
+        firstSegment?.carrierCode,
+    ];
+
+    for (const candidate of candidates) {
+        const normalized = String(candidate || '').trim().toUpperCase();
+        if (/^[A-Z0-9]{2,3}$/.test(normalized)) {
+            return normalized;
+        }
+    }
+
+    const fromFlightNumber = String(flight.flightNumber || '').trim().toUpperCase();
+    const inferred = fromFlightNumber.match(/^([A-Z0-9]{2,3})\d/);
+    return inferred ? inferred[1] : null;
+};
+
+const resolveAirlineName = (flight: FlightResult): string | null => {
+    const firstSegment = extractFirstSegment(flight);
+    const candidates = [
+        (flight as any)?.airlineName,
+        flight.airline,
+        firstSegment?.operating_carrier?.name,
+        firstSegment?.marketing_carrier?.name,
+        firstSegment?.operatingAirlineName,
+        firstSegment?.marketingAirlineName,
+        firstSegment?.carrierName,
+        firstSegment?.airline,
+    ];
+
+    for (const candidate of candidates) {
+        const text = String(candidate || '').trim();
+        if (text) return text;
+    }
+
+    return null;
+};
+
+const resolveStops = (flight: FlightResult): number => {
+    const directStops = Number((flight as any)?.stops);
+    if (Number.isFinite(directStops) && directStops >= 0) {
+        return Math.floor(directStops);
+    }
+
+    if (Array.isArray(flight.segments) && flight.segments.length > 0) {
+        return Math.max(0, flight.segments.length - 1);
+    }
+
+    return 0;
+};
+
+const resolveLayoverAirports = (flight: FlightResult): string[] => {
+    const result = new Set<string>();
+
+    if (Array.isArray(flight.layovers)) {
+        for (const layover of flight.layovers) {
+            const code = toUpperIata((layover as any)?.airport || (layover as any)?.iata || (layover as any)?.code);
+            if (code) result.add(code);
+        }
+    }
+
+    if (Array.isArray(flight.segments) && flight.segments.length > 1) {
+        for (let i = 0; i < flight.segments.length - 1; i += 1) {
+            const seg = flight.segments[i] as any;
+            const code = toUpperIata(
+                seg?.destination ||
+                seg?.to ||
+                seg?.arrivalAirport ||
+                seg?.arrival_airport_code ||
+                seg?.arrivalAirportCode ||
+                seg?.destination_airport?.iata_code ||
+                seg?.destination?.iata_code
+            );
+            if (code) result.add(code);
+        }
+    }
+
+    return Array.from(result);
+};
+
 export const toMinutes = (value: unknown): number => {
     if (typeof value === 'number' && Number.isFinite(value)) {
         return Math.max(0, value);
@@ -154,14 +261,24 @@ export async function persistFlightSearchRecords(
     const rows = flights
         .filter((flight) => Number.isFinite(Number(flight.price)) && Number(flight.price) > 0)
         .filter((flight) => !isInvalidBneIstDuration(flight))
-        .map((flight) => ({
-            flightNumber: (flight.flightNumber || 'UNKNOWN').toString(),
-            origin: options.origin,
-            destination: options.destination,
-            departureDate,
-            price: Number(flight.price),
-            provider: (flight.source || 'UNKNOWN').toString(),
-        }));
+        .map((flight) => {
+            const totalDurationMinutes = resolveFlightDurationMinutes(flight);
+            return {
+                flightNumber: (flight.flightNumber || 'UNKNOWN').toString(),
+                origin: options.origin,
+                destination: options.destination,
+                departureDate,
+                price: Number(flight.price),
+                provider: (flight.source || 'UNKNOWN').toString(),
+                airlineName: resolveAirlineName(flight),
+                airlineCode: resolveAirlineCode(flight),
+                stops: resolveStops(flight),
+                totalDurationMinutes: totalDurationMinutes > 0 ? totalDurationMinutes : null,
+                layoverAirports: resolveLayoverAirports(flight),
+                departureTime: toOptionalDate(flight.departTime),
+                arrivalTime: toOptionalDate(flight.arriveTime),
+            };
+        });
 
     const invalidRows = rows.filter((row) =>
         !row.flightNumber || !row.origin || !row.destination || !Number.isFinite(row.price) || row.price <= 0 || !row.departureDate

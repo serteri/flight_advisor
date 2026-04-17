@@ -1120,6 +1120,7 @@ const computeBuyWaitSignal = (
     routeInsight: RouteInsightInput,
     daysUntilDeparture: number,
     buyNowVariant: BuyNowVariantBucket = 'A',
+    flightProfile?: { stops: number; totalDurationMinutes: number; averageDurationMinutes: number },
 ): { action: 'BUY' | 'MONITOR' | 'WAIT'; label: string; urgencyDays?: number; variant?: BuyNowVariantBucket } => {
     const { avgPriceRoute, volatility, recommendedBookingWindowDays } = routeInsight;
 
@@ -1129,8 +1130,32 @@ const computeBuyWaitSignal = (
 
     const priceDeltaPct = (price - avgPriceRoute) / avgPriceRoute;
     const windowDays = recommendedBookingWindowDays ?? 14;
+    const stops = Math.max(0, Number(flightProfile?.stops || 0));
+    const totalDurationMinutes = Math.max(0, Number(flightProfile?.totalDurationMinutes || 0));
+    const averageDurationMinutes = Math.max(1, Number(flightProfile?.averageDurationMinutes || totalDurationMinutes || 1));
 
-    // BUY NOW: genuinely cheap, and prices are volatile (likely to bounce back)
+    // LOW PRICE but poor quality itinerary: warn user instead of instant BUY
+    if (priceDeltaPct <= -0.12 && stops >= 2 && totalDurationMinutes >= 20 * 60) {
+        return {
+            action: 'MONITOR',
+            label: 'Low fare but caution: 2+ stops and ~20h+ total travel time can cause fatigue and disruption risk.',
+        };
+    }
+
+    const durationBeatsRouteAverage = totalDurationMinutes > 0 && totalDurationMinutes <= Math.round(averageDurationMinutes * 0.9);
+
+    // RARE DEAL: cheap AND meaningfully faster than route average duration
+    if (priceDeltaPct <= -0.15 && durationBeatsRouteAverage) {
+        const savings = Math.max(1, Math.round(avgPriceRoute - price));
+        return {
+            action: 'BUY',
+            label: `Rare Deal: save ~$${savings} with a faster-than-average itinerary.`,
+            urgencyDays: Math.max(2, Math.round(daysUntilDeparture * 0.15)),
+            variant: buyNowVariant,
+        };
+    }
+
+    // BUY NOW: genuinely cheap
     if (priceDeltaPct <= -0.15) {
         return {
             action: 'BUY',
@@ -1377,6 +1402,12 @@ export function applyRouteIntelligenceFeatures(
     const batchAvg = validPrices.length
         ? validPrices.reduce((sum, value) => sum + value, 0) / validPrices.length
         : 0;
+    const validDurations = flights
+        .map((flight) => resolveDurationMinutes(flight))
+        .filter((duration) => Number.isFinite(duration) && duration > 0);
+    const averageDurationMinutes = validDurations.length
+        ? Math.round(validDurations.reduce((sum, value) => sum + value, 0) / validDurations.length)
+        : 0;
 
     const effectiveRouteInsight: RouteInsightInput = routeInsight || {
         avgPriceRoute: batchAvg,
@@ -1397,7 +1428,18 @@ export function applyRouteIntelligenceFeatures(
         const price = Number(flight.price);
         if (!Number.isFinite(price) || price <= 0) return flight;
 
-        const buyWaitSignal = computeBuyWaitSignal(price, effectiveRouteInsight, daysUntilDeparture, buyNowVariant);
+        const resolvedDurationMinutes = resolveDurationMinutes(flight);
+        const buyWaitSignal = computeBuyWaitSignal(
+            price,
+            effectiveRouteInsight,
+            daysUntilDeparture,
+            buyNowVariant,
+            {
+                stops: Number(flight.stops || 0),
+                totalDurationMinutes: resolvedDurationMinutes,
+                averageDurationMinutes,
+            }
+        );
         const dealTier = computeDealTier(price, effectiveRouteInsight, batchMin, batchMax);
         const regretStat = computeRegretStat(price, effectiveRouteInsight, batchMin, batchMax);
         const pricePositionScore = computePricePositionScore(price, Number(effectiveRouteInsight.avgPriceRoute || batchAvg || 0));
