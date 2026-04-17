@@ -90,7 +90,12 @@
         "select": "Seç",
         "safeRedirect": "Güvenli Yönlendirme (ESKİ)",
         "track": "Takip Et",
-        "premiumLock": "Analiz için Giriş Yap"
+        "premiumLock": "Analiz için Giriş Yap",
+        "decisionRecommendation": "Karar Önerisi",
+        "flightIntelligenceAlert": "Uçuş Zekası Uyarısı",
+        "unlockIntelligence": "Zekayı Aç",
+        "seatDataUnavailable": "Koltuk verisi mevcut değil",
+        "tenCriteriaEngine": "10 Kriterli Motor"
     },
     "SearchForm": {
         "origin_placeholder": "Nereden?",

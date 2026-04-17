@@ -79,6 +79,11 @@
     },
     "Results": {
         "total_duration": "Gesamtdauer"
+        ,"decisionRecommendation": "Entscheidungsempfehlung",
+        "flightIntelligenceAlert": "Flight-Intelligence-Warnung",
+        "unlockIntelligence": "Intelligence freischalten",
+        "seatDataUnavailable": "Sitzdaten nicht verfügbar",
+        "tenCriteriaEngine": "10-Kriterien-Engine"
     },
     "HomePage": {
         "hero": {

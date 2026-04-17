@@ -898,7 +898,7 @@ export default function FlightResultCard({
                                                     ? 'bg-rose-50/85 border-rose-200 text-rose-800'
                                                     : 'bg-amber-50/85 border-amber-200 text-amber-800'
                                         } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
-                                            <div className="uppercase tracking-wide text-[10px] font-extrabold mb-0.5">Decision Recommendation</div>
+                                            <div className="uppercase tracking-wide text-[10px] font-extrabold mb-0.5">{t('decisionRecommendation')}</div>
                                             <div>
                                                 {flight.advancedScore.decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : flight.advancedScore.decisionRecommendation}
                                                 {Number.isFinite(Number(flight.advancedScore?.decisionConfidence)) && (
@@ -914,7 +914,7 @@ export default function FlightResultCard({
                                     {decisionAction && hasPremiumAccess && (
                                         <div className="rounded-2xl border border-sky-200/60 bg-white/75 backdrop-blur-md px-3 py-2.5 shadow-[0_8px_24px_-12px_rgba(14,165,233,0.35)]">
                                             <div className="flex items-center justify-between gap-2">
-                                                <div className="text-[10px] uppercase tracking-wider font-black text-sky-700">Flight Intelligence Alert</div>
+                                                <div className="text-[10px] uppercase tracking-wider font-black text-sky-700">{t('flightIntelligenceAlert')}</div>
                                                 <div className="text-[10px] font-semibold text-sky-600/90 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">Variant {buyNowVariant}</div>
                                             </div>
                                             <div className="text-xs font-bold text-slate-900 mt-1">{decisionAction.message}</div>
@@ -947,7 +947,7 @@ export default function FlightResultCard({
                                             onClick={() => openPricingPage('pro')}
                                             className="w-full bg-gradient-to-r from-amber-400 to-sky-600 hover:from-amber-500 hover:to-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-lg transition-all hover:scale-105"
                                         >
-                                            Unlock Intelligence
+                                            {t('unlockIntelligence')}
                                         </button>
                                     )}
                                 </div>
@@ -967,7 +967,7 @@ export default function FlightResultCard({
                             }`}
                         >
                             <Eye className="w-4 h-4" />
-                            {decisionAction ? decisionAction.cta : 'View Analysis'}
+                            {decisionAction ? decisionAction.cta : t('viewAnalysis')}
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
                         <button
@@ -1031,7 +1031,7 @@ export default function FlightResultCard({
                         <div className="mt-3 pt-3 border-t border-slate-100">
                             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 border border-slate-300 text-[11px]">
                                 <span>ℹ️</span>
-                                <span>{flight.seatMapData.message || 'Seat data not available'}</span>
+                                <span>{flight.seatMapData.message || t('seatDataUnavailable')}</span>
                             </div>
                         </div>
                     )}
@@ -1053,7 +1053,7 @@ export default function FlightResultCard({
                                     {Number.isFinite(displayScore) ? displayScore.toFixed(1) : '0.0'}
                                 </div>
                                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide leading-none mt-1 block">{t('agentScore')}</span>
-                                <div className="text-xs text-slate-600 mt-1 font-semibold leading-relaxed">10-Criteria Engine</div>
+                                <div className="text-xs text-slate-600 mt-1 font-semibold leading-relaxed">{t('tenCriteriaEngine')}</div>
                                 {Number(flight.advancedScore?.forYouBonus || 0) > 0 && (
                                     <div className="mt-1 inline-flex text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">
                                         For You +{Number(flight.advancedScore?.forYouBonus || 0).toFixed(1)}

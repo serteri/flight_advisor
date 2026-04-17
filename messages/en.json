@@ -52,7 +52,12 @@
     "select": "Select",
     "safeRedirect": "Safe Redirect (OBSOLETE)",
     "track": "Track",
-    "premiumLock": "Login for Analysis"
+    "premiumLock": "Login for Analysis",
+    "decisionRecommendation": "Decision Recommendation",
+    "flightIntelligenceAlert": "Flight Intelligence Alert",
+    "unlockIntelligence": "Unlock Intelligence",
+    "seatDataUnavailable": "Seat data not available",
+    "tenCriteriaEngine": "10-Criteria Engine"
   },
   "SearchForm": {
     "multi_city": "Multi-city",
