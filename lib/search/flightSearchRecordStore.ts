@@ -9,6 +9,14 @@ type RecentRouteSearchRecord = {
     price: number;
     provider: string;
     createdAt: Date;
+    // DNA fields
+    airlineName: string | null;
+    airlineCode: string | null;
+    stops: number | null;
+    totalDurationMinutes: number | null;
+    layoverAirports: string[];
+    departureTime: Date | null;
+    arrivalTime: Date | null;
 };
 
 type SearchAnalyticsOptions = {
@@ -661,6 +669,13 @@ export async function getRecentRouteSearchRecords(
                 price: true,
                 provider: true,
                 createdAt: true,
+                airlineName: true,
+                airlineCode: true,
+                stops: true,
+                totalDurationMinutes: true,
+                layoverAirports: true,
+                departureTime: true,
+                arrivalTime: true,
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -671,6 +686,13 @@ export async function getRecentRouteSearchRecords(
                 price: Number(record.price || 0),
                 provider: String(record.provider || 'UNKNOWN').toUpperCase(),
                 createdAt: new Date(record.createdAt),
+                airlineName: record.airlineName ?? null,
+                airlineCode: record.airlineCode ?? null,
+                stops: record.stops != null ? Number(record.stops) : null,
+                totalDurationMinutes: record.totalDurationMinutes != null ? Number(record.totalDurationMinutes) : null,
+                layoverAirports: Array.isArray(record.layoverAirports) ? record.layoverAirports : [],
+                departureTime: record.departureTime ? new Date(record.departureTime) : null,
+                arrivalTime: record.arrivalTime ? new Date(record.arrivalTime) : null,
             }))
             .filter((record: RecentRouteSearchRecord) => record.flightNumber && Number.isFinite(record.price) && record.price > 0)) as RecentRouteSearchRecord[];
     } catch (error: any) {

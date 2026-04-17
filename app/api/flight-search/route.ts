@@ -496,11 +496,25 @@ function buildQueryParams(searchParams: URLSearchParams): HybridSearchParams {
     };
 }
 
+type CachedFlightRecord = {
+    flightNumber: string;
+    price: number;
+    provider: string;
+    createdAt: Date;
+    airlineName?: string | null;
+    airlineCode?: string | null;
+    stops?: number | null;
+    totalDurationMinutes?: number | null;
+    layoverAirports?: string[];
+    departureTime?: Date | null;
+    arrivalTime?: Date | null;
+};
+
 function mapCachedRecordsToFlights(
-    records: Array<{ flightNumber: string; price: number; provider: string; createdAt: Date }>,
+    records: CachedFlightRecord[],
     params: HybridSearchParams
 ): FlightResult[] {
-    const uniqueByFlightNumber = new Map<string, { flightNumber: string; price: number; provider: string; createdAt: Date }>();
+    const uniqueByFlightNumber = new Map<string, CachedFlightRecord>();
 
     for (const record of records) {
         const key = record.flightNumber.toUpperCase();
@@ -509,36 +523,60 @@ function mapCachedRecordsToFlights(
         }
     }
 
-    const departureIso = params.date.includes('T')
+    const fallbackDepartureIso = params.date.includes('T')
         ? params.date
         : `${params.date}T00:00:00.000Z`;
 
-    return Array.from(uniqueByFlightNumber.values()).map((record, index) => ({
-        id: `CACHE_PRICELINE_${record.flightNumber}_${record.createdAt.getTime()}_${index}`,
-        source: 'PRICELINE',
-        airline: 'Priceline (Cached)',
-        flightNumber: record.flightNumber,
-        from: params.origin.toUpperCase(),
-        to: params.destination.toUpperCase(),
-        departTime: departureIso,
-        arriveTime: departureIso,
-        duration: 0,
-        stops: 1,
-        price: Number(record.price),
-        currency: params.currency || 'AUD',
-        cabinClass: (params.cabin || 'economy') as any,
-        layovers: [],
-        segments: [],
-        policies: {
-            baggageKg: 0,
-            cabinBagKg: 7,
-        },
-        durationDebug: {
-            provider: 'PRICELINE_DB_CACHE',
-            cachedAt: record.createdAt.toISOString(),
-            fallback: true,
-        },
-    } as FlightResult));
+    return Array.from(uniqueByFlightNumber.values()).map((record, index) => {
+        const departTime = record.departureTime
+            ? record.departureTime.toISOString()
+            : fallbackDepartureIso;
+
+        const arriveTime = record.arrivalTime
+            ? record.arrivalTime.toISOString()
+            : (record.totalDurationMinutes && record.departureTime
+                ? new Date(record.departureTime.getTime() + record.totalDurationMinutes * 60 * 1000).toISOString()
+                : fallbackDepartureIso);
+
+        const layovers = (record.layoverAirports ?? []).map((iata) => ({
+            airport: iata,
+            duration: 0,
+        }));
+
+        const stops = record.stops ?? layovers.length;
+
+        const airlineName = record.airlineName
+            || (record.airlineCode ? record.airlineCode : null)
+            || 'Priceline (Cached)';
+
+        return {
+            id: `CACHE_PRICELINE_${record.flightNumber}_${record.createdAt.getTime()}_${index}`,
+            source: 'PRICELINE',
+            airline: airlineName,
+            airlineCode: record.airlineCode ?? undefined,
+            flightNumber: record.flightNumber,
+            from: params.origin.toUpperCase(),
+            to: params.destination.toUpperCase(),
+            departTime,
+            arriveTime,
+            duration: record.totalDurationMinutes ?? 0,
+            stops,
+            price: Number(record.price),
+            currency: params.currency || 'AUD',
+            cabinClass: (params.cabin || 'economy') as any,
+            layovers,
+            segments: [],
+            policies: {
+                baggageKg: 0,
+                cabinBagKg: 7,
+            },
+            durationDebug: {
+                provider: 'PRICELINE_DB_CACHE',
+                cachedAt: record.createdAt.toISOString(),
+                fallback: true,
+            },
+        } as FlightResult;
+    });
 }
 
 export async function GET(request: Request) {
