@@ -1,4 +1,11 @@
 {
   "motto": "Präzision in jeder Meile, Leidenschaft in jedem Flug.",
-  "purpose_title": "UNSER ZIEL"
+  "purpose_title": "UNSERE MISSION",
+  "departure": "Abflug",
+  "return": "Rückflug",
+  "from": "Von",
+  "to": "Nach",
+  "passengers": "Reisende",
+  "cabin_class": "Kabinenklasse",
+  "search_flights": "Flüge Suchen"
 }

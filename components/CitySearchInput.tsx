@@ -114,7 +114,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 <div className={cn(
                     "relative transition-all duration-200",
                     variant === "default" && "flex items-center bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
-                    variant === "ghost" && "flex flex-col justify-center px-3 md:px-4 h-full cursor-text hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink",
+                    variant === "ghost" && "flex flex-col justify-center px-4 md:px-5 h-full cursor-text hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink",
                     error ? "border-red-500 bg-red-50" : "",
                     className
                 )}

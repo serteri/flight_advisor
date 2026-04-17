@@ -1,4 +1,11 @@
 {
   "motto": "Precision in every mile, passion in every flight.",
-  "purpose_title": "OUR MISSION"
+  "purpose_title": "OUR MISSION",
+  "departure": "Departure",
+  "return": "Return",
+  "from": "From",
+  "to": "To",
+  "passengers": "Passengers",
+  "cabin_class": "Cabin Class",
+  "search_flights": "Search Flights"
 }

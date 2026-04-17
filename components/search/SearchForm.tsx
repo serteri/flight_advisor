@@ -90,10 +90,10 @@ export function SearchForm() {
 
             <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 relative z-20 warm-hover overflow-hidden">
 
-                <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] md:gap-2">
+                <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] lg:gap-2">
                     <div className="min-w-0 overflow-hidden xl:min-w-[250px]">
                         <CitySearchInput
-                            label={t('origin_label') || "From"}
+                            label={tCommon('from')}
                             placeholder={t('origin_placeholder')}
                             onSelect={setOrigin}
                             variant="ghost"
@@ -101,7 +101,7 @@ export function SearchForm() {
                         />
                     </div>
 
-                    <div className="hidden md:flex items-center justify-center relative z-10 pointer-events-none">
+                    <div className="hidden lg:flex items-center justify-center relative z-10 pointer-events-none">
                         <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center">
                             <div className="w-px h-full bg-slate-200/55" />
                         </div>
@@ -112,7 +112,7 @@ export function SearchForm() {
 
                     <div className="min-w-0 overflow-hidden xl:min-w-[250px]">
                         <CitySearchInput
-                            label={t('destination_label') || "To"}
+                            label={tCommon('to')}
                             placeholder={t('destination_placeholder')}
                             onSelect={setDestination}
                             variant="ghost"
@@ -123,17 +123,17 @@ export function SearchForm() {
 
                 <div className="h-px bg-slate-200/55 my-2 mx-2" />
 
-                <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,2fr)_130px_130px_64px] md:gap-2 xl:grid-cols-[minmax(340px,2fr)_150px_150px_64px]">
+                <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,2fr)_140px_140px_64px] lg:gap-2 xl:grid-cols-[minmax(340px,2fr)_150px_150px_64px]">
                     <div className="relative group min-w-0 overflow-hidden">
                         <div className="flex h-full min-w-0 overflow-hidden rounded-2xl bg-transparent">
                             <div className="flex-1 min-w-0 overflow-hidden">
                                 <DatePicker
-                                    label={t('date_label') || "Departure"}
+                                    label={tCommon('departure')}
                                     date={date}
                                     setDate={setDate}
                                     locale={locale as any}
                                     variant="ghost"
-                                    className="h-[88px] w-full rounded-2xl md:rounded-r-none transition-colors min-w-0"
+                                    className="h-[88px] w-full rounded-2xl lg:rounded-r-none transition-colors min-w-0"
                                 />
                             </div>
 
@@ -142,12 +142,12 @@ export function SearchForm() {
                                     <div className="w-px bg-slate-200/55 my-3 shrink-0" />
                                     <div className="flex-1 min-w-0 overflow-hidden">
                                         <DatePicker
-                                            label={t('return_label') || "Return"}
+                                            label={tCommon('return')}
                                             date={returnDate}
                                             setDate={setReturnDate}
                                             locale={locale as any}
                                             variant="ghost"
-                                            className="h-[88px] w-full rounded-2xl md:rounded-l-none transition-colors min-w-0"
+                                            className="h-[88px] w-full rounded-2xl lg:rounded-l-none transition-colors min-w-0"
                                             placeholder="Add date"
                                         />
                                     </div>
@@ -196,7 +196,7 @@ export function SearchForm() {
                             className="w-full md:w-[56px] md:h-[56px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-500 hover:to-orange-300 text-white shadow-lg shadow-sky-500/40 hover:shadow-sky-500/60 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 btn-glow"
                         >
                             <Search className="h-5 w-5" />
-                            <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>
+                            <span className="md:hidden ml-2 font-bold">{tCommon('search_flights')}</span>
                         </Button>
                     </div>
                 </div>

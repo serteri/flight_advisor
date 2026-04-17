@@ -1,4 +1,11 @@
 {
   "motto": "Her milde hassasiyet, her uçuşta tutku.",
-  "purpose_title": "AMACIMIZ"
+  "purpose_title": "AMACIMIZ",
+  "departure": "Gidiş",
+  "return": "Dönüş",
+  "from": "Nereden",
+  "to": "Nereye",
+  "passengers": "Yolcular",
+  "cabin_class": "Kabin Sınıfı",
+  "search_flights": "Uçuş Ara"
 }
