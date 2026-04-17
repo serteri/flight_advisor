@@ -825,16 +825,16 @@ function SearchPageContent() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-slate-700">Seyahat Amacı</label>
+                                    <label className="block text-sm font-semibold text-slate-700">{tCommon('travel_purpose')}</label>
                                     <select
                                         value={persona}
                                         onChange={(e) => setPersona(e.target.value as SearchPersona)}
                                         className="w-full h-12 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option value="budget">Budget</option>
-                                        <option value="comfort">Comfort</option>
-                                        <option value="business">Business</option>
-                                        <option value="family">Family</option>
+                                        <option value="budget">{tCommon('purpose_budget')}</option>
+                                        <option value="comfort">{tCommon('purpose_comfort')}</option>
+                                        <option value="business">{tCommon('purpose_business')}</option>
+                                        <option value="family">{tCommon('purpose_family')}</option>
                                     </select>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -850,7 +850,7 @@ function SearchPageContent() {
 
                         {!results.length && !loading && (
                             <div className="mt-8 pt-6 border-t border-slate-100">
-                                <p className="text-sm font-medium text-slate-500 mb-3">Popular destinations</p>
+                                <p className="text-sm font-medium text-slate-500 mb-3">{t('popularDestinations')}</p>
                                 <div className="flex flex-wrap gap-2">
                                     {popularDestinations.map((dest) => (
                                         <button key={dest.iata} type="button" onClick={() => selectDestination(dest)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-sm text-slate-700 transition-all"><MapPin className="h-3.5 w-3.5" />{dest.city}<span className="text-xs text-slate-400">({dest.iata})</span></button>
@@ -890,9 +890,9 @@ function SearchPageContent() {
 
                         {buyNowCount > 0 && (
                             <div className="mb-4 rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 soft-card-shadow">
-                                <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">Top Flights To Book Now</div>
+                                <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">{t('topFlightsToBookNow')}</div>
                                 <div className="text-sm font-semibold text-slate-800 mt-1">
-                                    {buyNowCount} flight{buyNowCount > 1 ? 's are' : ' is'} currently flagged as strong booking opportunities.
+                                    {t('topFlightsSummary', { count: buyNowCount })}
                                 </div>
                             </div>
                         )}
@@ -909,7 +909,7 @@ function SearchPageContent() {
                                     >
                                         <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide mb-1">
                                             {tip.type === 'DATE' ? <CalendarClock className="h-3.5 w-3.5" /> : <Lightbulb className="h-3.5 w-3.5" />}
-                                            Proactive Tip
+                                            {t('proactiveTip')}
                                         </div>
                                         <p className="text-sm font-semibold text-slate-800">{tip.message}</p>
                                     </div>
@@ -982,11 +982,11 @@ function SearchPageContent() {
                         )}
 
                         <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5">
-                            <h3 className="text-lg font-black text-slate-900 mb-3">Upgrade Plans</h3>
+                            <h3 className="text-lg font-black text-slate-900 mb-3">{t('upgradePlans')}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                    <div className="text-sm font-extrabold text-blue-800">Monthly Pro ($19)</div>
-                                    <p className="text-xs text-blue-700 mt-1">Don't risk overpaying. Unlock the best decision before you book.</p>
+                                    <div className="text-sm font-extrabold text-blue-800">{t('monthlyProTitle')}</div>
+                                    <p className="text-xs text-blue-700 mt-1">{t('monthlyProDesc')}</p>
                                     <button
                                         onClick={async () => {
                                             try {
@@ -1007,12 +1007,12 @@ function SearchPageContent() {
                                         }}
                                         className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-lg"
                                     >
-                                        🔓 Unlock Clear Recommendation
+                                        🔓 {t('unlockClearRecommendation')}
                                     </button>
                                 </div>
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <div className="text-sm font-extrabold text-slate-800">One-time Flight Report ($4.99)</div>
-                                    <p className="text-xs text-slate-600 mt-1">Sadece bu rota için derinlemesine risk ve fiyat analizi.</p>
+                                    <div className="text-sm font-extrabold text-slate-800">{t('oneTimeReportTitle')}</div>
+                                    <p className="text-xs text-slate-600 mt-1">{t('oneTimeReportDesc')}</p>
                                     <button
                                         onClick={() => {
                                             const configured = process.env.NEXT_PUBLIC_ONE_TIME_REPORT_URL;
@@ -1020,7 +1020,7 @@ function SearchPageContent() {
                                         }}
                                         className="mt-3 w-full bg-white border border-slate-300 hover:border-slate-400 text-slate-700 text-sm font-semibold py-2.5 rounded-lg"
                                     >
-                                        One-time Report ($4.99)
+                                        {t('oneTimeReportButton')}
                                     </button>
                                 </div>
                             </div>

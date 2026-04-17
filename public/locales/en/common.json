@@ -7,5 +7,11 @@
   "to": "To",
   "passengers": "Passengers",
   "cabin_class": "Cabin Class",
-  "search_flights": "Search Flights"
+  "search_flights": "Search Flights",
+  "add_date": "Add Date",
+  "travel_purpose": "Travel Purpose",
+  "purpose_budget": "Budget",
+  "purpose_comfort": "Comfort",
+  "purpose_business": "Business",
+  "purpose_family": "Family"
 }

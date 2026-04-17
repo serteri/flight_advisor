@@ -148,7 +148,7 @@ export function SearchForm() {
                                             locale={locale as any}
                                             variant="ghost"
                                             className="h-[88px] w-full rounded-2xl lg:rounded-l-none transition-colors min-w-0"
-                                            placeholder="Add date"
+                                            placeholder={tCommon('add_date')}
                                         />
                                     </div>
                                 </>
@@ -174,17 +174,17 @@ export function SearchForm() {
                     <div className="relative group px-3 flex items-center min-w-0">
                         <div className="w-full min-w-0">
                             <label className="text-xs font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">
-                                {tCommon('purpose_title')}
+                                {tCommon('travel_purpose')}
                             </label>
                             <select
                                 value={persona}
                                 onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
                                 className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-sm font-semibold text-slate-700 min-w-0"
                             >
-                                <option value="budget">Budget</option>
-                                <option value="comfort">Comfort</option>
-                                <option value="business">Business</option>
-                                <option value="family">Family</option>
+                                <option value="budget">{tCommon('purpose_budget')}</option>
+                                <option value="comfort">{tCommon('purpose_comfort')}</option>
+                                <option value="business">{tCommon('purpose_business')}</option>
+                                <option value="family">{tCommon('purpose_family')}</option>
                             </select>
                         </div>
                     </div>

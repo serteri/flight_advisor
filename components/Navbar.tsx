@@ -20,7 +20,7 @@ export default function Navbar() {
     const navLinks = [
         { name: tNav('home'), href: "/" },
         { name: tNav('search'), href: "/flight-search" },
-        { name: 'Pricing', href: "/pricing" },
+        { name: tNav('pricing'), href: "/pricing" },
         { name: tNav('blog'), href: "/blog" },
     ];
 
@@ -63,7 +63,7 @@ export default function Navbar() {
                             {/* AI Mode badge */}
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-[10px] font-bold tracking-wider select-none">
                                 <Zap size={10} className="fill-sky-500 text-sky-500" />
-                                AI MODE
+                                {tNav('aiMode')}
                             </div>
 
                             <LanguageSwitcher />
@@ -163,7 +163,7 @@ export default function Navbar() {
                         <div className="flex items-center justify-between px-3">
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-[10px] font-bold tracking-wider">
                                 <Zap size={10} className="fill-sky-500 text-sky-500" />
-                                AI MODE ACTIVE
+                                {tNav('aiModeActive')}
                             </div>
                             <LanguageSwitcher />
                         </div>

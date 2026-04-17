@@ -2,26 +2,28 @@
 import { blogPosts } from '@/app/lib/blog-data';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-export default function BlogIndex() {
+export default async function BlogIndex({ params }: { params: { locale: string } }) {
+    const t = await getTranslations('BlogPage');
     return (
         <div className="min-h-screen bg-slate-50 pb-20">
             {/* HERO */}
             <div className="bg-blue-900 text-white py-16 px-6 text-center">
-                <h1 className="text-4xl font-black mb-4">Travel Guides & Tips</h1>
+                <h1 className="text-4xl font-black mb-4">{t('title')}</h1>
                 <p className="text-blue-200 text-lg max-w-2xl mx-auto">
-                    Expert advice on finding the best flight deals, hidden gems, and travel hacks from the FlightAdvisor team.
+                    {t('subtitle')}
                 </p>
             </div>
 
             <div className="max-w-6xl mx-auto px-6 -mt-10">
-                <Link href="/" className="inline-flex items-center text-white mb-6 hover:text-blue-200 transition-colors">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+                <Link href={`/${params.locale}`} className="inline-flex items-center text-white mb-6 hover:text-blue-200 transition-colors">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('backToHome')}
                 </Link>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {blogPosts.map((post) => (
-                        <Link href={`/en/blog/${post.slug}`} key={post.slug} className="group">
+                        <Link href={`/${params.locale}/blog/${post.slug}`} key={post.slug} className="group">
                             <article className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col border border-slate-100 group-hover:border-blue-200">
                                 {/* IMAGE */}
                                 <div className="h-48 overflow-hidden relative">
@@ -31,7 +33,7 @@ export default function BlogIndex() {
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
                                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800">
-                                        Travel Tips
+                                        {t('tag')}
                                     </div>
                                 </div>
 

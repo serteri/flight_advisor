@@ -7,5 +7,11 @@
   "to": "Nach",
   "passengers": "Reisende",
   "cabin_class": "Kabinenklasse",
-  "search_flights": "Flüge Suchen"
+  "search_flights": "Flüge Suchen",
+  "add_date": "Datum hinzufügen",
+  "travel_purpose": "Reisezweck",
+  "purpose_budget": "Budget",
+  "purpose_comfort": "Komfort",
+  "purpose_business": "Geschäft",
+  "purpose_family": "Familie"
 }

@@ -124,13 +124,22 @@
     "scoring": {
       "label": "Monster No.10",
       "title": "Master Flight Scoring Engine",
-      "subtitle": "The brain of the system. Without it, everything else is just a feature.",
+          "search_flights": "Search Flights",
+          "add_date": "Add Date",
+          "travel_purpose": "Travel Purpose",
+          "purpose_budget": "Budget",
+          "purpose_comfort": "Comfort",
+          "purpose_business": "Business",
+          "purpose_family": "Family"
       "formula": {
         "title": "Advanced Scoring Formula",
         "intro": "Total: 100 points then normalized to a 10-point score.",
         "items": {
+          "pricing": "Pricing",
           "price": {
             "title": "1. Price Value Score (20)",
+          "aiMode": "AI MODE",
+          "aiModeActive": "AI MODE ACTIVE",
             "desc": "median route price, 20% cheaper = bonus, 30% higher = heavy penalty."
           },
           "duration": {
@@ -258,6 +267,35 @@
         "desc": "Book when we notify you of the price drop."
       }
     }
+        "PricingPage": {
+          "title": "Pricing",
+          "subtitle": "Unlock risk intelligence and route-level price insights.",
+          "back": "Back",
+          "monthlyPro": "Monthly Pro",
+          "proDesc": "Unlimited analysis + proactive premium alerts.",
+          "proItem1": "Risk Analysis (Delay + Connection)",
+          "proItem2": "Price Intelligence & Trend Forecast",
+          "proItem3": "Detailed Score Breakdown",
+          "proItem4": "Smart route notifications",
+          "connecting": "Connecting to Stripe...",
+          "upgradeToPro": "Upgrade to Pro",
+          "oneTimeReport": "One-time Flight Report",
+          "reportDesc": "Deep report only for this route, no subscription.",
+          "reportItem1": "Route-specific risk scan",
+          "reportItem2": "Price baseline vs route average",
+          "reportItem3": "Personalized recommendation summary",
+          "buyOneTime": "Buy One-time Report"
+        },
+        "BlogPage": {
+          "title": "Travel Guides & Tips",
+          "subtitle": "Expert advice on finding the best flight deals, hidden gems, and travel hacks from the FlightAdvisor team.",
+          "backToHome": "Back to Home",
+          "backToGuides": "Back to Guides",
+          "tag": "Travel Tips",
+          "ctaTitle": "Ready to explore?",
+          "ctaDesc": "Start your search on FlightAdvisor and find the best deals for your next adventure.",
+          "ctaButton": "Search Flights Now"
+        },
   },
   "AboutPage": {
     "title": "About FlightAdvisor",
@@ -421,6 +459,17 @@
     "invalidAirports": "Please select valid airports (3-letter IATA codes)",
     "searching": "Searching Flights...",
     "searchingDesc": "We are scanning hundreds of airlines to find the best deals",
+    "popularDestinations": "Popular destinations",
+    "topFlightsToBookNow": "Top Flights To Book Now",
+    "topFlightsSummary": "{count, plural, one {# flight is currently flagged as a strong booking opportunity.} other {# flights are currently flagged as strong booking opportunities.}}",
+    "proactiveTip": "Proactive Tip",
+    "upgradePlans": "Upgrade Plans",
+    "monthlyProTitle": "Monthly Pro ($19)",
+    "monthlyProDesc": "Don't risk overpaying. Unlock the best decision before you book.",
+    "unlockClearRecommendation": "Unlock Clear Recommendation",
+    "oneTimeReportTitle": "One-time Flight Report ($4.99)",
+    "oneTimeReportDesc": "Deep risk and pricing analysis only for this route.",
+    "oneTimeReportButton": "One-time Report ($4.99)",
     "searchButton": "Find Flights",
     "success": "Flight Found!",
     "error": "Search Failed",
