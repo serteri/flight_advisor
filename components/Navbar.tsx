@@ -13,15 +13,15 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
-    const t = useTranslations('Navbar');
-    const tCommon = useTranslations('common');
+    const t = useTranslations('common');
+    const tNav = useTranslations('Navbar');
     const { data: session } = useSession();
 
     const navLinks = [
-        { name: t('home'), href: "/" },
-        { name: t('search'), href: "/flight-search" },
+        { name: tNav('home'), href: "/" },
+        { name: tNav('search'), href: "/flight-search" },
         { name: 'Pricing', href: "/pricing" },
-        { name: t('blog'), href: "/blog" },
+        { name: tNav('blog'), href: "/blog" },
     ];
 
     return (
@@ -72,7 +72,7 @@ export default function Navbar() {
                             <div className="hidden lg:flex items-center gap-2">
                                 <div className="w-px h-4 bg-slate-200/60" />
                                 <span className="px-3 py-1 rounded-full bg-sky-500/[0.08] border border-sky-300/20 text-[10px] font-medium italic tracking-wider text-sky-600/80 select-none cursor-default transition-all duration-300 hover:bg-sky-500/[0.15] hover:border-sky-300/40 hover:text-sky-600 hover:drop-shadow-[0_0_8px_rgba(14,165,233,0.45)] whitespace-nowrap">
-                                    {tCommon('motto')}
+                                    {t('motto')}
                                 </span>
                             </div>
 
@@ -89,7 +89,7 @@ export default function Navbar() {
                                             size="sm"
                                             className="h-8 rounded-full bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white text-xs font-semibold shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 btn-glow"
                                         >
-                                            {t('dashboard')}
+                                            {tNav('dashboard')}
                                         </Button>
                                     </Link>
                                     <Button
@@ -99,7 +99,7 @@ export default function Navbar() {
                                         onClick={() => signOut({ callbackUrl: '/' })}
                                     >
                                         <LogOut size={13} className="mr-1" />
-                                        {t('logout')}
+                                        {tNav('logout')}
                                     </Button>
                                 </>
                             ) : (
@@ -110,7 +110,7 @@ export default function Navbar() {
                                             size="sm"
                                             className="h-8 rounded-full text-xs text-slate-600 hover:text-sky-600"
                                         >
-                                            {t('login')}
+                                            {tNav('login')}
                                         </Button>
                                     </Link>
                                     <Link href="/dashboard">
@@ -118,7 +118,7 @@ export default function Navbar() {
                                             size="sm"
                                             className="h-8 rounded-full bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white text-xs font-semibold shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 btn-glow"
                                         >
-                                            {t('dashboard')}
+                                            {tNav('dashboard')}
                                         </Button>
                                     </Link>
                                 </>
@@ -178,7 +178,7 @@ export default function Navbar() {
                                 </div>
                                 <Link href="/dashboard" onClick={() => setIsOpen(false)}>
                                     <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 text-white text-sm font-semibold btn-glow">
-                                        {t('dashboard')}
+                                        {tNav('dashboard')}
                                     </Button>
                                 </Link>
                                 <Button
@@ -186,26 +186,26 @@ export default function Navbar() {
                                     className="w-full rounded-xl justify-start gap-2 mt-1"
                                     onClick={() => { setIsOpen(false); signOut({ callbackUrl: '/' }); }}
                                 >
-                                    <LogOut size={15} /> {t('logout')}
+                                    <LogOut size={15} /> {tNav('logout')}
                                 </Button>
                             </>
                         ) : (
                             <>
                                 <Link href="/login" onClick={() => setIsOpen(false)}>
                                     <Button variant="outline" className="w-full rounded-xl justify-start gap-2">
-                                        <User size={15} /> {t('login')}
+                                        <User size={15} /> {tNav('login')}
                                     </Button>
                                 </Link>
                                 <Link href="/dashboard" onClick={() => setIsOpen(false)}>
                                     <Button className="w-full rounded-xl mt-1 bg-gradient-to-r from-sky-600 to-blue-700 text-white text-sm font-semibold btn-glow">
-                                        {t('dashboard')}
+                                        {tNav('dashboard')}
                                     </Button>
                                 </Link>
                             </>
                         )}
 
                         <p className="text-center text-[10px] italic text-slate-400/70 mt-3 pb-1 font-light">
-                            {tCommon('motto')}
+                            {t('motto')}
                         </p>
                     </div>
                 </div>
