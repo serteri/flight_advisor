@@ -76,7 +76,7 @@ export function PassengerSelector({
                 className={`w-full transition-all text-left cursor-pointer relative
                     ${variant === 'default'
                         ? 'h-14 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                        : 'h-full flex flex-col justify-center px-2.5 md:px-3 bg-transparent hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
+                        : 'h-full flex flex-col justify-center px-2 md:px-2.5 bg-transparent hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
                     }
                 `}
             >

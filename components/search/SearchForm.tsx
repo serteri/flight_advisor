@@ -88,10 +88,10 @@ export function SearchForm() {
             </div>
 
             {/* Unified Search Bar Container */}
-            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row relative z-20 warm-hover">
+            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row relative z-20 warm-hover overflow-hidden">
 
                 {/* Origin */}
-                <div className="relative flex-1 group">
+                <div className="relative flex-1 min-w-0 group overflow-hidden">
                     <CitySearchInput
                         label={t('origin_label') || "From"}
                         placeholder={t('origin_placeholder')}
@@ -113,7 +113,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Destination */}
-                <div className="relative flex-1 group">
+                <div className="relative flex-1 min-w-0 group overflow-hidden">
                     <CitySearchInput
                         label={t('destination_label') || "To"}
                         placeholder={t('destination_placeholder')}
@@ -128,7 +128,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Date Selection (Dynamic based on Trip Type) */}
-                <div className="relative md:w-[390px] lg:w-[430px] group flex min-w-0 flex-shrink">
+                <div className="relative md:w-[360px] lg:w-[400px] xl:w-[430px] group flex min-w-0 flex-shrink overflow-hidden">
                     <div className="flex-1 min-w-0">
                         <DatePicker
                             label={t('date_label') || "Depart"}
@@ -163,7 +163,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Passengers */}
-                <div className="relative md:w-[190px] lg:w-[220px] group min-w-0 flex-shrink">
+                <div className="relative md:w-[170px] lg:w-[200px] xl:w-[220px] group min-w-0 flex-shrink overflow-hidden">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -179,13 +179,13 @@ export function SearchForm() {
                 </div>
 
                 {/* Travel Purpose */}
-                <div className="relative md:w-[170px] group px-2 flex items-center">
+                <div className="relative md:w-[170px] group px-1.5 md:px-2 flex items-center min-w-0">
                     <div className="w-full">
-                        <label className="text-xs font-semibold text-slate-500 block mb-1">Seyahat Amacı</label>
+                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">Seyahat Amacı</label>
                         <select
                             value={persona}
                             onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
-                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-sm font-medium text-slate-700"
+                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-xs md:text-sm font-medium text-slate-700 truncate"
                         >
                             <option value="budget">Budget</option>
                             <option value="comfort">Comfort</option>

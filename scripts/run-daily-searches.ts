@@ -13,26 +13,18 @@ type Cabin = 'economy' | 'business' | 'first';
 type Persona = 'budget' | 'comfort' | 'business' | 'family';
 
 const AIRPORT_POOL = [
-  'ATL', 'PEK', 'LAX', 'ORD', 'LHR', 'HND', 'PVG', 'CDG', 'DFW', 'AMS',
-  'FRA', 'IST', 'SIN', 'DEN', 'JFK', 'MAD', 'BCN', 'MUC', 'LGW', 'MEL',
-  'SYD', 'BNE', 'PER', 'AKL', 'WLG', 'CHC', 'DXB', 'DOH', 'AUH', 'RUH',
-  'JED', 'CAI', 'CMN', 'CPT', 'JNB', 'NBO', 'ADD', 'LOS', 'ACC', 'DAR',
-  'BKK', 'HKG', 'ICN', 'NRT', 'KIX', 'TPE', 'MNL', 'CGK', 'KUL', 'DEL',
-  'BOM', 'BLR', 'MAA', 'HYD', 'CCU', 'DAC', 'CMB', 'KTM', 'SGN', 'HAN',
-  'SFO', 'SEA', 'BOS', 'MIA', 'IAD', 'EWR', 'YYZ', 'YVR', 'YUL', 'MEX',
-  'GRU', 'GIG', 'EZE', 'SCL', 'LIM', 'BOG', 'PTY', 'CUN', 'LAS', 'PHX',
-  'IAH', 'MSP', 'DTW', 'PHL', 'CLT', 'SAN', 'TPA', 'MCO', 'FLL', 'DCA',
-  'OSL', 'ARN', 'CPH', 'HEL', 'DUB', 'BRU', 'ZRH', 'VIE', 'PRG', 'WAW',
-  'ATH', 'LIS', 'OPO', 'FCO', 'MXP', 'NAP', 'VCE', 'GVA', 'MAN', 'EDI',
-  'GLA', 'BUD', 'OTP', 'SOF', 'BEG', 'ZAG', 'TLL', 'RIX', 'VNO', 'KEF',
-  'GOT', 'BGO', 'SVG', 'TRD', 'BLL', 'ALC', 'AGP', 'PMI', 'IBZ', 'TFS',
-  'MRS', 'NCE', 'LYS', 'TLS', 'HAM', 'DUS', 'BER', 'STR', 'CGN', 'HAJ',
-  'GDN', 'KRK', 'KTW', 'WRO', 'LCA', 'MLA', 'TLV', 'AMM', 'BEY', 'KWI',
-  'MCT', 'BAH', 'MED', 'DMM', 'IKA', 'KHI', 'LHE', 'ISB', 'TRV', 'GOI',
-  'PNQ', 'AMD', 'COK', 'MLE', 'REP', 'PNH', 'RGN', 'VTE', 'BWN', 'DPS',
-  'SUB', 'CEB', 'CRK', 'DVO', 'NAN', 'PPT', 'GUM', 'SPN', 'HNL', 'OGG',
-  'ANC', 'FAI', 'PDX', 'SJC', 'AUS', 'SAT', 'RDU', 'BNA', 'SLC', 'CVG',
-  'CLE', 'CMH', 'PIT', 'IND', 'MSY', 'MCI', 'OKC', 'OMA', 'ABQ', 'TUS'
+  'IST', 'JFK', 'LHR', 'DXB', 'SIN', 'SYD', 'MEL', 'BNE', 'HND', 'CDG',
+  'FRA', 'AMS', 'LAX', 'SFO', 'HKG', 'BKK', 'ICN', 'DOH', 'PEK', 'PVG',
+  'NRT', 'YYZ', 'MAD', 'BCN', 'FCO', 'MUC', 'CPH', 'ZRH', 'VIE', 'BRU',
+  'LGW', 'STN', 'MAN', 'EDI', 'DUB', 'ORD', 'DFW', 'DEN', 'ATL', 'MIA',
+  'SEA', 'IAH', 'EWR', 'CLT', 'PHX', 'LAS', 'MCO', 'BOS', 'MSP', 'DTW',
+  'PHL', 'SLC', 'YVR', 'MEX', 'GRU', 'EZE', 'SCL', 'BOG', 'PTY', 'CUN',
+  'CAI', 'JNB', 'ADD', 'AUH', 'KUL', 'MNL', 'CGK', 'TPE', 'DEL', 'BOM',
+  'BLR', 'KMG', 'CAN', 'SZX', 'AKL', 'PER', 'ADL',
+  'OSL', 'HEL', 'LIS', 'OPO', 'GVA', 'WAW', 'PRG', 'BUD', 'ATH', 'MXP',
+  'DUS', 'HAM', 'BER', 'ARN', 'TRD', 'RIX', 'VNO', 'TLL', 'KEF', 'RUH',
+  'JED', 'KWI', 'MCT', 'BAH', 'CMN', 'CPT', 'NBO', 'LOS', 'DAR', 'HYD',
+  'MAA', 'COK', 'PNQ', 'AMD', 'KHI', 'LHE', 'ISB', 'HAN', 'SGN', 'DPS'
 ] as const;
 
 const CABINS: Cabin[] = ['economy', 'economy', 'business', 'first'];
