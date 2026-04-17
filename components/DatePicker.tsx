@@ -344,7 +344,7 @@ export function DatePicker({
                     flex transition-all duration-200 text-left cursor-pointer
                     ${variant === 'default'
                         ? 'items-center h-14 px-4 pl-12 bg-white border rounded-xl hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                        : 'flex-col justify-center h-full px-3 md:px-4 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
+                        : 'flex-col justify-center h-full px-2.5 md:px-3 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
                     }
                     ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}
                     ${error ? 'border-red-500' : (variant === 'default' ? 'border-slate-200' : '')}
@@ -359,7 +359,7 @@ export function DatePicker({
                 )}
 
                 {variant === "ghost" && label && (
-                    <div className="text-xs font-semibold text-slate-500 tracking-wide mb-1 leading-none pointer-events-none truncate w-full">
+                    <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none pointer-events-none truncate w-full uppercase">
                         {label}
                     </div>
                 )}
@@ -367,18 +367,18 @@ export function DatePicker({
                 <div className={`flex flex-col justify-center min-w-0 ${variant === "default" ? "h-full" : ""}`}>
                     {selected
                         ? (
-                            <div className={`flex flex-col items-start justify-center min-w-0 ${variant === "ghost" ? "gap-0.5" : ""}`}>
+                            <div className={`flex flex-col items-start justify-center min-w-0 w-full ${variant === "ghost" ? "gap-0.5" : ""}`}>
                                 {variant === "default" && (
                                     <span className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">
                                         {format(selected, "EEEE", { locale: dateLocale })}
                                     </span>
                                 )}
-                                <span className={`text-slate-900 leading-tight truncate w-full ${variant === "ghost" ? "text-sm md:text-base font-semibold" : "text-lg font-bold"}`}>
+                                <span className={`text-slate-900 leading-tight truncate w-full whitespace-nowrap ${variant === "ghost" ? "text-sm md:text-base font-semibold" : "text-lg font-bold"}`}>
                                     {format(selected, variant === "ghost" ? "d MMM ''yy" : "d MMMM yyyy", { locale: dateLocale })}
                                 </span>
                             </div>
                         )
-                        : <span className={`${variant === "ghost" ? "text-sm md:text-base font-semibold truncate w-full" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
+                        : <span className={`${variant === "ghost" ? "text-sm md:text-base font-semibold truncate w-full whitespace-nowrap" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
                     }
                 </div>
             </button>

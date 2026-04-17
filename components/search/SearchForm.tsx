@@ -102,15 +102,15 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider with plane icon */}
-                <div className="hidden md:flex items-center justify-center w-8 shrink-0 relative z-10">
+                <div className="hidden md:flex items-center justify-center w-7 shrink-0 relative z-10">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-px h-full bg-sky-100 mx-auto" />
+                        <div className="w-px h-full bg-slate-200/55 mx-auto" />
                     </div>
                     <div className="relative bg-white rounded-full p-1.5 shadow-sm border border-sky-100">
                         <Plane size={12} className="text-sky-500 fill-sky-500" />
                     </div>
                 </div>
-                <div className="md:hidden h-px bg-sky-100 mx-4" />
+                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Destination */}
                 <div className="relative flex-1 group">
@@ -124,8 +124,8 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-sky-100 my-4" />
-                <div className="md:hidden h-px bg-sky-100 mx-4" />
+                <div className="hidden md:block w-px bg-slate-200/55 my-4" />
+                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Date Selection (Dynamic based on Trip Type) */}
                 <div className="relative md:w-[390px] lg:w-[430px] group flex min-w-0 flex-shrink">
@@ -142,7 +142,7 @@ export function SearchForm() {
 
                     {tripType === 'ROUND_TRIP' && (
                         <>
-                            <div className="hidden md:block w-px bg-sky-100 my-4" />
+                            <div className="hidden md:block w-px bg-slate-200/55 my-4" />
                             <div className="flex-1 min-w-0">
                                 <DatePicker
                                     label={t('return_label') || "Return"}
@@ -159,8 +159,8 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-sky-100 my-4" />
-                <div className="md:hidden h-px bg-sky-100 mx-4" />
+                <div className="hidden md:block w-px bg-slate-200/55 my-4" />
+                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Passengers */}
                 <div className="relative md:w-[190px] lg:w-[220px] group min-w-0 flex-shrink">

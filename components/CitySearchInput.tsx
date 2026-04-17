@@ -114,7 +114,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 <div className={cn(
                     "relative transition-all duration-200",
                     variant === "default" && "flex items-center bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100",
-                    variant === "ghost" && "flex flex-col justify-center px-4 md:px-6 h-full cursor-text hover:bg-slate-100/80 rounded-lg",
+                    variant === "ghost" && "flex flex-col justify-center px-2.5 md:px-3 h-full cursor-text hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink",
                     error ? "border-red-500 bg-red-50" : "",
                     className
                 )}
@@ -125,7 +125,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 >
                     {/* Ghost Variant Label */}
                     {variant === "ghost" && label && (
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5 select-none">
+                        <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] mb-1 select-none truncate w-full">
                             {label}
                         </div>
                     )}
@@ -155,7 +155,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                         className={cn(
                             "border-0 bg-transparent focus-visible:ring-0 p-0 shadow-none file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                             variant === "default" && "h-14 pl-12 text-lg font-semibold text-slate-800",
-                            variant === "ghost" && "h-auto text-xl md:text-2xl font-black text-slate-900 placeholder:text-slate-300 truncate leading-none"
+                            variant === "ghost" && "h-auto text-sm md:text-base font-semibold text-slate-900 placeholder:text-slate-300 truncate leading-tight whitespace-nowrap"
                         )}
                         autoComplete="off"
                     />
