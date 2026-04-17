@@ -24,6 +24,7 @@ import { FlightResult } from "@/types/hybridFlight";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useSession } from "next-auth/react";
 import type { UserTier } from "@/lib/tierUtils";
+import { getBuyNowVariantBucket } from '@/lib/experiment/buyNowVariant';
 
 // Popular destinations for quick selection
 const popularDestinations = [
@@ -100,6 +101,7 @@ export default function SkyscannerSearchPage() {
 
 function SearchPageContent() {
     const t = useTranslations('FlightSearch');
+    const tCommon = useTranslations('common');
     const locale = useLocale() as "en" | "tr" | "de";
     const [loading, setLoading] = useState(false);
     const [tripType, setTripType] = useState<"oneWay" | "roundTrip">("oneWay");
@@ -229,7 +231,8 @@ function SearchPageContent() {
                 infants: params.infants.toString(),
                 cabin: params.cabin,
                 persona: params.persona,
-                tripType: params.tripType
+                tripType: params.tripType,
+                buyNowVariant: getBuyNowVariantBucket(),
             });
 
             if (params.returnDate) {
@@ -706,6 +709,7 @@ function SearchPageContent() {
                     decisionRecommendation: flight.advancedScore?.decisionRecommendation || null,
                     decisionConfidence: Number(flight.advancedScore?.decisionConfidence || 0) || null,
                     routeAveragePrice: Number(flight.advancedScore?.routeIntelligence?.avgPriceRoute || 0) || null,
+                    buyNowVariant: getBuyNowVariantBucket(),
                 };
 
                 try {
@@ -747,7 +751,7 @@ function SearchPageContent() {
                     {/* Header */}
                     <div className="text-center mb-10">
                         <p className="motto-signature text-xs md:text-sm mb-2">FlightAgent Motto</p>
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-3">Uçmayı çok seviyoruz</h2>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-3">{tCommon('motto')}</h2>
                         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 flex items-center justify-center gap-4">
                             <div className="p-3 bg-sky-100 rounded-2xl">
                                 <Plane className="text-sky-700 h-10 w-10" />
@@ -877,7 +881,7 @@ function SearchPageContent() {
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <p className="motto-signature text-xs mb-1">FlightAgent Motto</p>
-                                <h3 className="text-xl md:text-2xl font-extrabold text-sky-900 mb-1">Uçmayı çok seviyoruz</h3>
+                                <h3 className="text-xl md:text-2xl font-extrabold text-sky-900 mb-1">{tCommon('motto')}</h3>
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900">
                                 {rankedResults.length} / {results.length} {t('resultsFound')}

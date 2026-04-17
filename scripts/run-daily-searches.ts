@@ -9,30 +9,12 @@
     npm run seed:flights -- --base-url=https://flightagent.io
 */
 
-type Cabin = 'economy' | 'premium' | 'business';
+type Cabin = 'economy' | 'business' | 'first';
 type Persona = 'budget' | 'comfort' | 'business' | 'family';
 
-type RouteConfig = {
-  origin: string;
-  destination: string;
-  basePrice: number;
-  distanceBand: 'medium' | 'long' | 'ultra';
-};
+const AIRPORT_POOL = ['LHR', 'DXB', 'JFK', 'SIN', 'BNE', 'IST', 'CDG', 'HND', 'SYD', 'MEL'];
 
-const POPULAR_ROUTES: RouteConfig[] = [
-  { origin: 'BNE', destination: 'IST', basePrice: 1220, distanceBand: 'ultra' },
-  { origin: 'SYD', destination: 'LHR', basePrice: 1380, distanceBand: 'ultra' },
-  { origin: 'MEL', destination: 'LAX', basePrice: 1090, distanceBand: 'ultra' },
-  { origin: 'DXB', destination: 'JFK', basePrice: 980, distanceBand: 'ultra' },
-  { origin: 'SIN', destination: 'CDG', basePrice: 890, distanceBand: 'long' },
-  { origin: 'HND', destination: 'SFO', basePrice: 1010, distanceBand: 'long' },
-  { origin: 'FRA', destination: 'JFK', basePrice: 760, distanceBand: 'long' },
-  { origin: 'LHR', destination: 'JFK', basePrice: 690, distanceBand: 'long' },
-  { origin: 'SYD', destination: 'SIN', basePrice: 420, distanceBand: 'medium' },
-  { origin: 'BKK', destination: 'NRT', basePrice: 380, distanceBand: 'medium' },
-];
-
-const CABINS: Cabin[] = ['economy', 'economy', 'economy', 'premium', 'business'];
+const CABINS: Cabin[] = ['economy', 'economy', 'business', 'first'];
 const PERSONAS: Persona[] = ['budget', 'comfort', 'business', 'family'];
 
 const args = process.argv.slice(2);
@@ -47,7 +29,7 @@ const BASE_URL = (
 ).replace(/\/$/, '');
 
 const REQUEST_TIMEOUT_MS = 30_000;
-const SEARCHES_PER_ROUTE = 2;
+const TOTAL_SEARCHES = 24;
 const CONCURRENCY = 4;
 
 function randInt(min: number, max: number): number {
@@ -69,44 +51,43 @@ function randomDepartureDateWithin60Days(): string {
   return toDateString(target);
 }
 
-function realisticTripParams(route: RouteConfig) {
-  const adults = randInt(1, 2);
-  const children = Math.random() < 0.2 ? 1 : 0;
-  const infants = children > 0 && Math.random() < 0.4 ? 1 : 0;
+function pickRoutePair(): { origin: string; destination: string } {
+  const origin = pick(AIRPORT_POOL);
+  let destination = pick(AIRPORT_POOL);
+
+  while (destination === origin) {
+    destination = pick(AIRPORT_POOL);
+  }
+
+  return { origin, destination };
+}
+
+function realisticTripParams() {
+  const guests = randInt(1, 4);
   const cabin = pick(CABINS);
   const persona = pick(PERSONAS);
-  const tripType = Math.random() < 0.32 ? 'ROUND_TRIP' : 'ONE_WAY';
+  const tripType = Math.random() < 0.45 ? 'ROUND_TRIP' : 'ONE_WAY';
   const date = randomDepartureDateWithin60Days();
 
-  const expectedPriceNoise = (() => {
-    const volatilityFactor = route.distanceBand === 'ultra' ? 0.14 : route.distanceBand === 'long' ? 0.12 : 0.1;
-    const seasonal = 1 + (Math.sin(Date.now() / 86_400_000) * 0.03);
-    const randomShock = 1 + ((Math.random() - 0.5) * volatilityFactor * 2);
-    const cabinFactor = cabin === 'business' ? 2.2 : cabin === 'premium' ? 1.45 : 1;
-    return Math.round(route.basePrice * seasonal * randomShock * cabinFactor);
-  })();
-
   return {
-    adults,
-    children,
-    infants,
+    guests,
     cabin,
     persona,
     tripType,
     date,
-    expectedPriceNoise,
   };
 }
 
-function buildSearchUrl(route: RouteConfig): { url: string; meta: Record<string, unknown> } {
-  const params = realisticTripParams(route);
+function buildSearchUrl(): { url: string; meta: Record<string, unknown> } {
+  const route = pickRoutePair();
+  const params = realisticTripParams();
   const search = new URLSearchParams({
     origin: route.origin,
     destination: route.destination,
     date: params.date,
-    adults: String(params.adults),
-    children: String(params.children),
-    infants: String(params.infants),
+    adults: String(params.guests),
+    children: '0',
+    infants: '0',
     cabin: params.cabin,
     persona: params.persona,
     tripType: params.tripType,
@@ -119,10 +100,10 @@ function buildSearchUrl(route: RouteConfig): { url: string; meta: Record<string,
     meta: {
       route: `${route.origin}-${route.destination}`,
       date: params.date,
+      guests: params.guests,
       cabin: params.cabin,
       persona: params.persona,
       tripType: params.tripType,
-      expectedPriceNoise: params.expectedPriceNoise,
     },
   };
 }
@@ -166,18 +147,16 @@ async function callFlightSearch(url: string): Promise<{ ok: boolean; status: num
 async function run() {
   const jobs: Array<{ url: string; meta: Record<string, unknown> }> = [];
 
-  for (const route of POPULAR_ROUTES) {
-    for (let i = 0; i < SEARCHES_PER_ROUTE; i += 1) {
-      jobs.push(buildSearchUrl(route));
-    }
+  for (let i = 0; i < TOTAL_SEARCHES; i += 1) {
+    jobs.push(buildSearchUrl());
   }
 
   console.log(`\n[seed:flights] Base URL: ${BASE_URL}`);
-  console.log(`[seed:flights] Planned searches: ${jobs.length} (${POPULAR_ROUTES.length} routes x ${SEARCHES_PER_ROUTE})`);
+  console.log(`[seed:flights] Planned searches: ${jobs.length} random pairs from pool (${AIRPORT_POOL.join(', ')})`);
   if (isDryRun) {
     console.log('[seed:flights] Dry-run mode active, requests will not be sent.\n');
     jobs.forEach((job, idx) => {
-      console.log(`${String(idx + 1).padStart(2, '0')}. ${job.meta.route} ${job.meta.date} | ${job.meta.cabin} | ${job.meta.persona} | ${job.meta.tripType}`);
+      console.log(`${String(idx + 1).padStart(2, '0')}. ${job.meta.route} ${job.meta.date} | guests=${job.meta.guests} | ${job.meta.cabin} | ${job.meta.persona} | ${job.meta.tripType}`);
     });
     return;
   }

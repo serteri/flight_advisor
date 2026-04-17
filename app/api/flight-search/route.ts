@@ -15,6 +15,7 @@ import {
     getRecentPricelineRawCache,
     persistPricelineRawCache,
 } from '@/lib/search/flightSearchRecordStore';
+import { normalizeBuyNowVariant } from '@/lib/experiment/buyNowVariant';
 
 // @ts-ignore
 import airports from 'airports';
@@ -552,6 +553,7 @@ export async function GET(request: Request) {
 
     try {
         const queryParams = buildQueryParams(searchParams);
+        const buyNowVariant = normalizeBuyNowVariant(searchParams.get('buyNowVariant')) || 'A';
         const cacheKey = buildCacheKey(queryParams);
         const viewerAccess = await resolveViewerAccess();
         const preferenceProfile = await resolveUserPreferenceProfile(viewerAccess.userId);
@@ -704,6 +706,7 @@ export async function GET(request: Request) {
             } : null,
             queryParams.date,
             routeTrend,
+            buyNowVariant,
         );
 
         const fallbackMinPrice = intelligentFlights

@@ -242,10 +242,16 @@ model SearchAnalytics {
   foundAvgPrice   Float    @default(0)
   provider        String
   searchTimestamp DateTime @default(now())
+  selectionAction String?
+  selectionVariant String?
+  decisionRecommendation String?
+  decisionConfidence Int?
+  selectedPrice   Float?
 
   @@index([origin, destination, departureDate])
   @@index([provider, searchTimestamp])
   @@index([searchTimestamp])
+  @@index([selectionVariant, selectionAction])
 }
 
 model RouteInsight {

@@ -7,6 +7,8 @@ import { DataSourceIndicator } from '@/components/DataSourceIndicator';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { Search } from 'lucide-react';
 import type { UserTier } from '@/lib/tierUtils';
+import { getBuyNowVariantBucket } from '@/lib/experiment/buyNowVariant';
+import { useTranslations } from 'next-intl';
 
 type SearchPersona = 'budget' | 'comfort' | 'business' | 'family';
 
@@ -20,6 +22,7 @@ interface ResultsPageProps {
 }
 
 export default function ResultsPage({ searchParams }: ResultsPageProps) {
+    const tCommon = useTranslations('common');
     const { data: session } = useSession();
     const [flights, setFlights] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -75,6 +78,7 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                     origin,
                     destination,
                     date,
+                    buyNowVariant: getBuyNowVariantBucket(),
                     ...(persona ? { persona } : {}),
                 });
 
@@ -113,7 +117,7 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                 <header className="mb-8">
                     <div className="mb-4">
                         <p className="motto-signature text-xs">FlightAgent Motto</p>
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900">Uçmayı çok seviyoruz</h2>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900">{tCommon('motto')}</h2>
                     </div>
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">

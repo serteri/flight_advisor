@@ -128,29 +128,29 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Date Selection (Dynamic based on Trip Type) */}
-                <div className="relative md:w-[320px] group flex">
-                    <div className="flex-1">
+                <div className="relative md:w-[390px] lg:w-[430px] group flex min-w-0 flex-shrink">
+                    <div className="flex-1 min-w-0">
                         <DatePicker
                             label={t('date_label') || "Depart"}
                             date={date}
                             setDate={setDate}
                             locale={locale as any}
                             variant="ghost"
-                            className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
+                            className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors min-w-0"
                         />
                     </div>
 
                     {tripType === 'ROUND_TRIP' && (
                         <>
                             <div className="hidden md:block w-px bg-sky-100 my-4" />
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <DatePicker
                                     label={t('return_label') || "Return"}
                                     date={returnDate}
                                     setDate={setReturnDate}
                                     locale={locale as any}
                                     variant="ghost"
-                                    className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
+                                    className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors min-w-0"
                                     placeholder="Add date"
                                 />
                             </div>
@@ -163,7 +163,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-sky-100 mx-4" />
 
                 {/* Passengers */}
-                <div className="relative md:w-[150px] group">
+                <div className="relative md:w-[190px] lg:w-[220px] group min-w-0 flex-shrink">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -174,7 +174,7 @@ export function SearchForm() {
                         cabin={cabin}
                         setCabin={setCabin}
                         variant="ghost"
-                        className="h-[88px] rounded-2xl md:rounded-none transition-colors"
+                        className="h-[88px] rounded-2xl md:rounded-none transition-colors min-w-0"
                     />
                 </div>
 

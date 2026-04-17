@@ -1092,6 +1092,25 @@ type RouteTrendSignal = {
 
 type DecisionRecommendation = 'BUY_NOW' | 'WAIT' | 'AVOID';
 
+type BuyNowVariantBucket = 'A' | 'B' | 'C';
+
+const buildBuyNowLabelByVariant = (
+    variant: BuyNowVariantBucket,
+    avgPriceRoute: number,
+    currentPrice: number,
+): string => {
+    if (variant === 'A') {
+        return 'System recommends booking now based on 92% confidence.';
+    }
+
+    if (variant === 'B') {
+        return 'Prices likely to increase within 72h — Secure this deal now.';
+    }
+
+    const savings = Math.max(1, Math.round(avgPriceRoute - currentPrice));
+    return `Save $${savings} by booking today vs. historical average.`;
+};
+
 /**
  * BUY vs WAIT Engine
  * Uses route-level data to decide: BUY NOW / MONITOR / WAIT
@@ -1100,7 +1119,8 @@ const computeBuyWaitSignal = (
     price: number,
     routeInsight: RouteInsightInput,
     daysUntilDeparture: number,
-): { action: 'BUY' | 'MONITOR' | 'WAIT'; label: string; urgencyDays?: number } => {
+    buyNowVariant: BuyNowVariantBucket = 'A',
+): { action: 'BUY' | 'MONITOR' | 'WAIT'; label: string; urgencyDays?: number; variant?: BuyNowVariantBucket } => {
     const { avgPriceRoute, volatility, recommendedBookingWindowDays } = routeInsight;
 
     if (!Number.isFinite(avgPriceRoute) || avgPriceRoute <= 0) {
@@ -1114,8 +1134,9 @@ const computeBuyWaitSignal = (
     if (priceDeltaPct <= -0.15) {
         return {
             action: 'BUY',
-            label: `Buy now — prices likely to increase within ${Math.max(2, Math.round(daysUntilDeparture * 0.15))} days`,
+            label: buildBuyNowLabelByVariant(buyNowVariant, avgPriceRoute, price),
             urgencyDays: Math.max(2, Math.round(daysUntilDeparture * 0.15)),
+            variant: buyNowVariant,
         };
     }
 
@@ -1123,8 +1144,9 @@ const computeBuyWaitSignal = (
     if (priceDeltaPct <= 0.0 && daysUntilDeparture <= windowDays) {
         return {
             action: 'BUY',
-            label: `Buy now — you're in the optimal booking window`,
+            label: buildBuyNowLabelByVariant(buyNowVariant, avgPriceRoute, price),
             urgencyDays: daysUntilDeparture,
+            variant: buyNowVariant,
         };
     }
 
@@ -1347,6 +1369,7 @@ export function applyRouteIntelligenceFeatures(
     routeInsight: RouteInsightInput | null,
     departureDate: string,
     trendSignal?: RouteTrendSignal | null,
+    buyNowVariant: BuyNowVariantBucket = 'A',
 ): FlightResult[] {
     const validPrices = flights.map(f => Number(f.price)).filter(p => Number.isFinite(p) && p > 0);
     const batchMin = validPrices.length ? Math.min(...validPrices) : 0;
@@ -1374,7 +1397,7 @@ export function applyRouteIntelligenceFeatures(
         const price = Number(flight.price);
         if (!Number.isFinite(price) || price <= 0) return flight;
 
-        const buyWaitSignal = computeBuyWaitSignal(price, effectiveRouteInsight, daysUntilDeparture);
+        const buyWaitSignal = computeBuyWaitSignal(price, effectiveRouteInsight, daysUntilDeparture, buyNowVariant);
         const dealTier = computeDealTier(price, effectiveRouteInsight, batchMin, batchMax);
         const regretStat = computeRegretStat(price, effectiveRouteInsight, batchMin, batchMax);
         const pricePositionScore = computePricePositionScore(price, Number(effectiveRouteInsight.avgPriceRoute || batchAvg || 0));

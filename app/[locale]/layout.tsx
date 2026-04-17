@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import SessionProvider from "@/components/SessionProvider";
+import BuyNowVariantBootstrap from '@/components/experiment/BuyNowVariantBootstrap';
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default async function RootLayout({
             <body className="antialiased bg-[#fafafa] text-slate-900" suppressHydrationWarning>
                 <SessionProvider>
                     <NextIntlClientProvider messages={messages}>
+                        <BuyNowVariantBootstrap />
                         {children}
                     </NextIntlClientProvider>
                 </SessionProvider>

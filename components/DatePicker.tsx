@@ -344,7 +344,7 @@ export function DatePicker({
                     flex transition-all duration-200 text-left cursor-pointer
                     ${variant === 'default'
                         ? 'items-center h-14 px-4 pl-12 bg-white border rounded-xl hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                        : 'flex-col justify-center h-full px-4 md:px-6 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg'
+                        : 'flex-col justify-center h-full px-3 md:px-4 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
                     }
                     ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}
                     ${error ? 'border-red-500' : (variant === 'default' ? 'border-slate-200' : '')}
@@ -359,26 +359,26 @@ export function DatePicker({
                 )}
 
                 {variant === "ghost" && label && (
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5 pointer-events-none">
+                    <div className="text-xs font-semibold text-slate-500 tracking-wide mb-1 leading-none pointer-events-none truncate w-full">
                         {label}
                     </div>
                 )}
 
-                <div className={`flex flex-col justify-center ${variant === "default" ? "h-full" : ""}`}>
+                <div className={`flex flex-col justify-center min-w-0 ${variant === "default" ? "h-full" : ""}`}>
                     {selected
                         ? (
-                            <div className={`flex flex-col items-start justify-center ${variant === "ghost" ? "gap-0" : ""}`}>
+                            <div className={`flex flex-col items-start justify-center min-w-0 ${variant === "ghost" ? "gap-0.5" : ""}`}>
                                 {variant === "default" && (
                                     <span className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">
                                         {format(selected, "EEEE", { locale: dateLocale })}
                                     </span>
                                 )}
-                                <span className={`font-bold text-slate-900 leading-none ${variant === "ghost" ? "text-xl md:text-2xl font-black" : "text-lg"}`}>
-                                    {format(selected, variant === "ghost" ? "d MMM yy" : "d MMMM yyyy", { locale: dateLocale })}
+                                <span className={`text-slate-900 leading-tight truncate w-full ${variant === "ghost" ? "text-sm md:text-base font-semibold" : "text-lg font-bold"}`}>
+                                    {format(selected, variant === "ghost" ? "d MMM ''yy" : "d MMMM yyyy", { locale: dateLocale })}
                                 </span>
                             </div>
                         )
-                        : <span className={`${variant === "ghost" ? "text-xl md:text-2xl font-bold" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
+                        : <span className={`${variant === "ghost" ? "text-sm md:text-base font-semibold truncate w-full" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
                     }
                 </div>
             </button>

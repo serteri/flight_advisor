@@ -230,6 +230,7 @@ export type FlightResult = {
             action: 'BUY' | 'MONITOR' | 'WAIT';
             label: string;
             urgencyDays?: number;
+            variant?: 'A' | 'B' | 'C';
         };
         dealTier?: 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE';
         regretStat?: {

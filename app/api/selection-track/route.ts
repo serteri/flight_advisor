@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import VariantResolver from '@/lib/experiment/variantResolver';
+import { normalizeBuyNowVariant } from '@/lib/experiment/buyNowVariant';
 
 const parseOptionalNumber = (value: unknown): number | null => {
     const n = Number(value);
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
         const variantPayload = VariantResolver.buildVariantPayload(variantContext);
 
         const action = String(payload?.action || '').toUpperCase();
+        const localBuyNowVariant = normalizeBuyNowVariant(payload?.buyNowVariant);
+        const resolvedVariantId = localBuyNowVariant || variantPayload.variantId || null;
         const allowedActions = new Set([
             'BOOK',
             'DETAIL',
@@ -95,7 +98,7 @@ export async function POST(request: Request) {
             currency: payload?.currency ? String(payload.currency).toUpperCase() : null,
             // 🧪 A/B TESTING
             experimentId: variantPayload.experimentId || null,
-            variantId: variantPayload.variantId || null,
+            variantId: resolvedVariantId,
             // 🎯 DECISION CONFIDENCE
             decisionConfidence: parseOptionalInt(payload?.decisionConfidence),
         });
@@ -165,6 +168,38 @@ export async function POST(request: Request) {
                 await preferenceModel.create({
                     data: createPreferenceData('IGNORE_NIGHT'),
                 });
+            }
+        }
+
+        const searchAnalyticsModel = (prisma as any)?.searchAnalytics;
+        if (searchAnalyticsModel && departureDate && payload?.origin && payload?.destination) {
+            const selectedPrice = parseOptionalNumber(payload?.selectedPrice);
+            const routeAveragePrice = parseOptionalNumber(payload?.routeAveragePrice);
+            const baselinePrice = selectedPrice || routeAveragePrice || 0;
+
+            if (baselinePrice > 0) {
+                try {
+                    await searchAnalyticsModel.create({
+                        data: {
+                            origin: String(payload.origin).toUpperCase(),
+                            destination: String(payload.destination).toUpperCase(),
+                            departureDate,
+                            minPrice: baselinePrice,
+                            avgPrice: baselinePrice,
+                            foundMinPrice: baselinePrice,
+                            foundAvgPrice: baselinePrice,
+                            provider: payload?.provider ? String(payload.provider).toUpperCase() : 'SELECTION_EVENT',
+                            searchTimestamp: new Date(),
+                            selectionAction: action,
+                            selectionVariant: resolvedVariantId,
+                            decisionRecommendation: payload?.decisionRecommendation ? String(payload.decisionRecommendation).toUpperCase() : null,
+                            decisionConfidence: parseOptionalInt(payload?.decisionConfidence),
+                            selectedPrice,
+                        },
+                    });
+                } catch (analyticsError) {
+                    console.warn('[SELECTION_TRACK] searchAnalytics create failed:', analyticsError);
+                }
             }
         }
 
