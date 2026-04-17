@@ -1,100 +1,100 @@
 {
     "common": {
-        "motto": "Her milde hassasiyet, her uçuşta tutku.",
+        "motto": "Her milde hassasiyet, her u├ºu┼ƒta tutku.",
         "purpose_title": "AMACIMIZ",
-        "departure": "Gidiş",
-        "return": "Dönüş",
+        "departure": "Gidi┼ƒ",
+        "return": "D├╢n├╝┼ƒ",
         "from": "Nereden",
         "to": "Nereye",
         "passengers": "Yolcular",
-        "cabin_class": "Kabin Sınıfı",
-        "search_flights": "Uçuş Ara",
+        "cabin_class": "Kabin S─▒n─▒f─▒",
+        "search_flights": "U├ºu┼ƒ Ara",
         "add_date": "Tarih Ekle",
-        "travel_purpose": "Seyahat Amacı",
-        "purpose_budget": "Bütçe",
+        "travel_purpose": "Seyahat Amac─▒",
+        "purpose_budget": "B├╝t├ºe",
         "purpose_comfort": "Konfor",
-        "purpose_business": "İş",
+        "purpose_business": "─░┼ƒ",
         "purpose_family": "Aile"
     },
     "Navbar": {
         "home": "Ana Sayfa",
-        "search": "Uçuş Ara",
-        "pricing": "Fiyatlandırma",
-        "features": "Özellikler",
+        "search": "U├ºu┼ƒ Ara",
+        "pricing": "Fiyatland─▒rma",
+        "features": "├ûzellikler",
         "blog": "Gezi Rehberi",
         "aiMode": "AI MODU",
-        "aiModeActive": "AI MODU AKTİF",
-        "login": "Giriş Yap",
-        "logout": "Çıkış Yap",
+        "aiModeActive": "AI MODU AKT─░F",
+        "login": "Giri┼ƒ Yap",
+        "logout": "├ç─▒k─▒┼ƒ Yap",
         "dashboard": "Panel",
-        "getStarted": "Başlayın"
+        "getStarted": "Ba┼ƒlay─▒n"
     },
     "PricingPage": {
-        "title": "Fiyatlandırma",
-        "subtitle": "Risk zekası ve rota bazlı fiyat içgörülerini açın.",
+        "title": "Fiyatland─▒rma",
+        "subtitle": "Risk zekas─▒ ve rota bazl─▒ fiyat i├ºg├╢r├╝lerini a├º─▒n.",
         "back": "Geri",
-        "monthlyPro": "Aylık Pro",
-        "proDesc": "Sınırsız analiz + proaktif premium bildirimler.",
+        "monthlyPro": "Ayl─▒k Pro",
+        "proDesc": "S─▒n─▒rs─▒z analiz + proaktif premium bildirimler.",
         "proItem1": "Risk Analizi (Gecikme + Aktarma)",
-        "proItem2": "Fiyat Zekası ve Trend Tahmini",
-        "proItem3": "Detaylı Skor Dağılımı",
-        "proItem4": "Akıllı rota bildirimleri",
-        "connecting": "Stripe'a bağlanılıyor...",
-        "upgradeToPro": "Pro'ya Yükselt",
-        "oneTimeReport": "Tek Seferlik Uçuş Raporu",
-        "reportDesc": "Sadece bu rota için derin rapor, abonelik yok.",
-        "reportItem1": "Rota bazlı risk taraması",
-        "reportItem2": "Rota ortalamasına göre fiyat kıyası",
-        "reportItem3": "Kişiselleştirilmiş öneri özeti",
-        "buyOneTime": "Tek Seferlik Rapor Satın Al"
+        "proItem2": "Fiyat Zekas─▒ ve Trend Tahmini",
+        "proItem3": "Detayl─▒ Skor Da─ƒ─▒l─▒m─▒",
+        "proItem4": "Ak─▒ll─▒ rota bildirimleri",
+        "connecting": "Stripe'a ba─ƒlan─▒l─▒yor...",
+        "upgradeToPro": "Pro'ya Y├╝kselt",
+        "oneTimeReport": "Tek Seferlik U├ºu┼ƒ Raporu",
+        "reportDesc": "Sadece bu rota i├ºin derin rapor, abonelik yok.",
+        "reportItem1": "Rota bazl─▒ risk taramas─▒",
+        "reportItem2": "Rota ortalamas─▒na g├╢re fiyat k─▒yas─▒",
+        "reportItem3": "Ki┼ƒiselle┼ƒtirilmi┼ƒ ├╢neri ├╢zeti",
+        "buyOneTime": "Tek Seferlik Rapor Sat─▒n Al"
     },
     "BlogPage": {
-        "title": "Seyahat Rehberleri ve İpuçları",
-        "subtitle": "FlightAdvisor ekibinden en iyi uçuş fırsatları, gizli rotalar ve seyahat tüyoları.",
-        "backToHome": "Ana Sayfaya Dön",
-        "backToGuides": "Rehberlere Dön",
-        "tag": "Seyahat İpuçları",
-        "ctaTitle": "Keşfetmeye hazır mısın?",
-        "ctaDesc": "FlightAdvisor'da aramanı başlat ve bir sonraki maceran için en iyi fırsatları bul.",
-        "ctaButton": "Hemen Uçuş Ara"
+        "title": "Seyahat Rehberleri ve ─░pu├ºlar─▒",
+        "subtitle": "FlightAdvisor ekibinden en iyi u├ºu┼ƒ f─▒rsatlar─▒, gizli rotalar ve seyahat t├╝yolar─▒.",
+        "backToHome": "Ana Sayfaya D├╢n",
+        "backToGuides": "Rehberlere D├╢n",
+        "tag": "Seyahat ─░pu├ºlar─▒",
+        "ctaTitle": "Ke┼ƒfetmeye haz─▒r m─▒s─▒n?",
+        "ctaDesc": "FlightAdvisor'da araman─▒ ba┼ƒlat ve bir sonraki maceran i├ºin en iyi f─▒rsatlar─▒ bul.",
+        "ctaButton": "Hemen U├ºu┼ƒ Ara"
     },
     "Results": {
-        "noFlights": "Uçuş bulunamadı",
+        "noFlights": "U├ºu┼ƒ bulunamad─▒",
         "agentScore": "Agent Skoru",
-        "bookButton": "Fiyatı Gör & Al",
+        "bookButton": "Fiyat─▒ G├╢r & Al",
         "direct": "Direkt",
         "stops": "Aktarma",
         "stop": "Aktarma",
-        "source": "VERİ KAYNAĞI",
+        "source": "VER─░ KAYNA─₧I",
         "meal": "Yemek",
         "wifi": "Wi-Fi",
         "baggage": "Bagaj",
         "included": "Dahil",
-        "paid": "Ücretli / Yok",
+        "paid": "├£cretli / Yok",
         "unknown": "Bilinmiyor",
         "meal_included": "Yemek Dahil",
-        "meal_paid": "Ücretli / Yok",
+        "meal_paid": "├£cretli / Yok",
         "meal_unknown": "Bilgi Yok",
         "wifi_available": "Wi-Fi Var",
         "wifi_none": "Wi-Fi Yok",
         "baggage_info": "Bagaj Bilgisi",
-        "view_analysis": "Analizi Gör",
+        "view_analysis": "Analizi G├╢r",
         "premium_upgrade": "Premium Ol",
         "book_aviasales": "Aviasales ile Al",
         "book_site": "Siteden Al",
-        "partnerRedirect": "Partner sitesine yönlendirileceksiniz",
+        "partnerRedirect": "Partner sitesine y├╢nlendirileceksiniz",
         "official_site": "Resmi Siteye Git",
         "currency_aud": "A$",
-        "total_duration": "Toplam süre",
+        "total_duration": "Toplam s├╝re",
         "check": "Kontrol Et",
-        "select": "Seç",
-        "safeRedirect": "Güvenli Yönlendirme (ESKİ)",
+        "select": "Se├º",
+        "safeRedirect": "G├╝venli Y├╢nlendirme (ESK─░)",
         "track": "Takip Et",
-        "premiumLock": "Analiz için Giriş Yap",
-        "decisionRecommendation": "Karar Önerisi",
-        "flightIntelligenceAlert": "Uçuş Zekası Uyarısı",
-        "unlockIntelligence": "Zekayı Aç",
-        "seatDataUnavailable": "Koltuk verisi mevcut değil",
+        "premiumLock": "Analiz i├ºin Giri┼ƒ Yap",
+        "decisionRecommendation": "Karar ├ûnerisi",
+        "flightIntelligenceAlert": "U├ºu┼ƒ Zekas─▒ Uyar─▒s─▒",
+        "unlockIntelligence": "Zekay─▒ A├º",
+        "seatDataUnavailable": "Koltuk verisi mevcut de─ƒil",
         "tenCriteriaEngine": "10 Kriterli Motor"
     },
     "SearchForm": {
@@ -102,26 +102,26 @@
         "destination_placeholder": "Nereye?",
         "origin_label": "Nereden",
         "destination_label": "Nereye",
-        "date_label": "Gidiş Tarihi",
+        "date_label": "Gidi┼ƒ Tarihi",
         "passengers_label": "Yolcular",
-        "search_button": "Uçuş Ara",
-        "one_way": "Tek Yön",
-        "round_trip": "Gidiş-Dönüş"
+        "search_button": "U├ºu┼ƒ Ara",
+        "one_way": "Tek Y├╢n",
+        "round_trip": "Gidi┼ƒ-D├╢n├╝┼ƒ"
     },
     "DatePicker": {
-        "placeholder": "Tarih seçin",
-        "today": "Bugüne Git",
+        "placeholder": "Tarih se├ºin",
+        "today": "Bug├╝ne Git",
         "close": "Kapat"
     },
     "SearchForm": {
-        "multi_city": "Çoklu Uçuş"
+        "multi_city": "├çoklu U├ºu┼ƒ"
     },
     "HomePage": {
         "hero": {
-            "title": "Kişisel Uçuş Fiyat",
-            "titleHighlight": "Uzmanınız",
-            "subtitle": "Seyahat planlamanın geleceğini deneyimleyin. Her gün milyonlarca uçuş fiyatını analiz ediyor, tam zamanında rezervasyon yapmanızı sağlıyoruz.",
-            "ctaPrimary": "Keşfetmeye Başla",
+            "title": "Ki┼ƒisel U├ºu┼ƒ Fiyat",
+            "titleHighlight": "Uzman─▒n─▒z",
+            "subtitle": "Seyahat planlaman─▒n gelece─ƒini deneyimleyin. Her g├╝n milyonlarca u├ºu┼ƒ fiyat─▒n─▒ analiz ediyor, tam zaman─▒nda rezervasyon yapman─▒z─▒ sa─ƒl─▒yoruz.",
+            "ctaPrimary": "Ke┼ƒfetmeye Ba┼ƒla",
             "ctaSecondary": "Daha Fazla Bilgi"
         },
         "badge": {
@@ -130,207 +130,207 @@
         },
         "trust": {
             "airlines": "400+ Havayolu",
-            "secure": "Güvenli Rezervasyon",
-            "realtime": "Gerçek Zamanlı Durum"
+            "secure": "G├╝venli Rezervasyon",
+            "realtime": "Ger├ºek Zamanl─▒ Durum"
         },
         "system": {
             "label": "Flight Agent Sistemleri",
-            "title": "Sıfırdan sona ne inşa ettik",
-            "subtitle": "Flight Agent sadece bir fiyat listesi değil. Yolculuğunu skorlayan, öngören ve savunan bir koruma katmanıdır.",
+            "title": "S─▒f─▒rdan sona ne in┼ƒa ettik",
+            "subtitle": "Flight Agent sadece bir fiyat listesi de─ƒil. Yolculu─ƒunu skorlayan, ├╢ng├╢ren ve savunan bir koruma katman─▒d─▒r.",
             "cards": {
                 "hybrid": {
                     "title": "Hibrit Arama Motoru",
-                    "desc": "4 veri kaynağı (RapidAPI, Amadeus, Travelpayouts, Duffel) birleşir ve kör noktalar kapanır."
+                    "desc": "4 veri kayna─ƒ─▒ (RapidAPI, Amadeus, Travelpayouts, Duffel) birle┼ƒir ve k├╢r noktalar kapan─▒r."
                 },
                 "scoring": {
-                    "title": "Master Flight Scoring",
-                    "desc": "100 puanlık motor değer, risk, konfor ve güvenilirliği puanlar. Sadece ucuz değil, akıllı."
+                    "title": "Ana Uçuş Skorlaması",
+                    "desc": "100 puanl─▒k motor de─ƒer, risk, konfor ve g├╝venilirli─ƒi puanlar. Sadece ucuz de─ƒil, ak─▒ll─▒."
                 },
                 "disruption": {
-                    "title": "Disruption Hunter + EU261",
-                    "desc": "Rötar ve iptal riskini yakalar, 600 EUR'a kadar tazminat uygunluğunu kontrol eder."
+                    "title": "Aksama Avcısı + EU261",
+                    "desc": "R├╢tar ve iptal riskini yakalar, 600 EUR'a kadar tazminat uygunlu─ƒunu kontrol eder."
                 },
                 "guardian": {
-                    "title": "Guardian Worker (24/7)",
-                    "desc": "Her 15 dakikada izleme. Kapı değişimi, rötar, iptal, alarm."
+                    "title": "Guardian İzleyici (7/24)",
+                    "desc": "Her 15 dakikada izleme. Kap─▒ de─ƒi┼ƒimi, r├╢tar, iptal, alarm."
                 },
                 "notifications": {
-                    "title": "Akıllı Bildirimler",
-                    "desc": "Email, SMS ve push. Seviye bazlı uyarılar ve aksiyon rehberi."
+                    "title": "Ak─▒ll─▒ Bildirimler",
+                    "desc": "Email, SMS ve push. Seviye bazl─▒ uyar─▒lar ve aksiyon rehberi."
                 },
                 "inbox": {
-                    "title": "Inbox Parser + Otomatik Takip",
-                    "desc": "Rezervasyon mailini ilet, PNR parse eder, veriyi çeker ve korumayı başlatır."
+                    "title": "Gelen Kutusu Ayrıştırıcı + Otomatik Takip",
+                    "desc": "Rezervasyon mailini ilet, PNR parse eder, veriyi ├ºeker ve korumay─▒ ba┼ƒlat─▒r."
                 }
             }
         },
         "scoring": {
             "label": "Canavar No.10",
-            "title": "Master Flight Scoring Engine",
-            "subtitle": "Sistemin beyni. Bu olmadan diğerleri sadece özellik olur.",
+            "title": "Ana Uçuş Skorlama Motoru",
+            "subtitle": "Sistemin beyni. Bu olmadan di─ƒerleri sadece ├╢zellik olur.",
             "formula": {
-                "title": "Geliştirilmiş Skorlama Formülü",
-                "intro": "Toplam: 100 puan, sonra 10 puanlık skora normalize edilir.",
+                "title": "Geli┼ƒtirilmi┼ƒ Skorlama Form├╝l├╝",
+                "intro": "Toplam: 100 puan, sonra 10 puanl─▒k skora normalize edilir.",
                 "items": {
                     "price": {
-                        "title": "1. Price Value Score (20)",
-                        "desc": "medyan rota fiyatı, %20 ucuz = bonus, %30 pahalı = ağır ceza."
+                        "title": "1. Fiyat-Değer Skoru (20)",
+                        "desc": "medyan rota fiyat─▒, %20 ucuz = bonus, %30 pahal─▒ = a─ƒ─▒r ceza."
                     },
                     "duration": {
-                        "title": "2. Duration Efficiency (15)",
-                        "desc": "en hızlı rota referans, %25 uzun = -5, %40 = -8."
+                        "title": "2. Süre Verimliliği (15)",
+                        "desc": "en h─▒zl─▒ rota referans, %25 uzun = -5, %40 = -8."
                     },
                     "stops": {
-                        "title": "3. Stop Count (10)",
-                        "desc": "direkt = full, 1 aktarma = -2, 2+ aktarma = -6."
+                        "title": "3. Aktarma Sayısı (10)",
+                        "desc": "direkt = tam puan, 1 aktarma = -2, 2+ aktarma = -6."
                     },
                     "connection": {
-                        "title": "4. Connection Quality (10)",
-                        "desc": "<45dk risk, 1-2.5 saat ideal, 5+ saat yıpratıcı."
+                        "title": "4. Bağlantı Kalitesi (10)",
+                        "desc": "<45dk risk, 1-2.5 saat ideal, 5+ saat y─▒prat─▒c─▒."
                     },
                     "selfTransfer": {
-                        "title": "5. Self-Transfer Risk (10)",
-                        "desc": "farklı PNR, low-cost kombinasyonu, terminal değişimi = ağır ceza."
+                        "title": "5. Self-Transfer Riski (10)",
+                        "desc": "farkl─▒ PNR, low-cost kombinasyonu, terminal de─ƒi┼ƒimi = a─ƒ─▒r ceza."
                     }
                 }
             },
             "quality": {
-                "title": "Kalite ve Konfor Katmanı",
+                "title": "Kalite ve Konfor Katman─▒",
                 "items": {
                     "baggage": {
-                        "title": "6. Baggage Allowance (10)",
-                        "desc": "23kg dahil = +10, kabin only = -5, yok = -10."
+                        "title": "6. Bagaj Hakkı (10)",
+                        "desc": "23kg dahil = +10, sadece kabin bagajı = -5, yok = -10."
                     },
                     "reliability": {
-                        "title": "7. Airline Reliability (10)",
-                        "desc": "zamanında kalkış, güvenlik geçmişi, itibar."
+                        "title": "7. Havayolu Güvenilirliği (10)",
+                        "desc": "zaman─▒nda kalk─▒┼ƒ, g├╝venlik ge├ºmi┼ƒi, itibar."
                     },
                     "aircraft": {
-                        "title": "8. Aircraft Quality (5)",
-                        "desc": "A350/787 +3, 20 yıllık uçak = -2."
+                        "title": "8. Uçak Kalitesi (5)",
+                        "desc": "A350/787 +3, 20 y─▒ll─▒k u├ºak = -2."
                     },
                     "amenity": {
-                        "title": "9. Amenity Score (5)",
-                        "desc": "WiFi, IFE, koltuk aralığı, yemek kalitesi."
+                        "title": "9. Olanak Skoru (5)",
+                        "desc": "WiFi, IFE, koltuk aral─▒─ƒ─▒, yemek kalitesi."
                     },
                     "airport": {
-                        "title": "10. Airport Difficulty Index (5)",
-                        "desc": "terminal karmaşıklığı, aktarma kolaylığı, güvenlik yoğunluğu."
+                        "title": "10. Havalimanı Zorluk Endeksi (5)",
+                        "desc": "terminal karma┼ƒ─▒kl─▒─ƒ─▒, aktarma kolayl─▒─ƒ─▒, g├╝venlik yo─ƒunlu─ƒu."
                     }
                 }
             },
             "final": {
                 "score": {
-                    "title": "Final Skor Mantığı",
-                    "desc": "72/100 -> 7.2/10. Her skor risk ve konfor notlarıyla gelir."
+                    "title": "Final Skor Mant─▒─ƒ─▒",
+                    "desc": "72/100 -> 7.2/10. Her skor risk ve konfor notlar─▒yla gelir."
                 },
                 "risk": {
-                    "title": "Risk Bayrakları",
-                    "desc": "Kısa bağlantılar, self-transfer riskleri veya rötar eğilimli taşıyıcılar için kırmızı uyarılar."
+                    "title": "Risk Bayraklar─▒",
+                    "desc": "K─▒sa ba─ƒlant─▒lar, self-transfer riskleri veya r├╢tar e─ƒilimli ta┼ƒ─▒y─▒c─▒lar i├ºin k─▒rm─▒z─▒ uyar─▒lar."
                 },
                 "value": {
-                    "title": "Değer Etiketleri",
-                    "desc": "Yeşil değer etiketleri ve konfor notları, uçuşun neden değerli olduğunu açıklar."
+                    "title": "De─ƒer Etiketleri",
+                    "desc": "Ye┼ƒil de─ƒer etiketleri ve konfor notlar─▒, u├ºu┼ƒun neden de─ƒerli oldu─ƒunu a├º─▒klar."
                 }
             }
         },
         "strategic": {
-            "label": "Stratejik Gerçek",
-            "title": "Skyscanner fiyat sıralar. Biz sonucu savunuruz.",
-            "subtitle": "Fiyat tek başına karar değildir. Risk modeller, senaryo simüle eder, krizde koruruz.",
+            "label": "Stratejik Ger├ºek",
+            "title": "Skyscanner fiyat s─▒ralar. Biz sonucu savunuruz.",
+            "subtitle": "Fiyat tek ba┼ƒ─▒na karar de─ƒildir. Risk modeller, senaryo sim├╝le eder, krizde koruruz.",
             "typical": {
                 "title": "Tipik Platformlar",
                 "items": {
-                    "price": "Sadece fiyat sıralama",
+                    "price": "Sadece fiyat s─▒ralama",
                     "risk": "Risk analizi yok",
-                    "future": "Gelecek bozulma simülasyonu yok",
-                    "crisis": "Kriz savunma katmanı yok"
+                    "future": "Gelecek bozulma sim├╝lasyonu yok",
+                    "crisis": "Kriz savunma katman─▒ yok"
                 }
             },
             "agent": {
                 "title": "Flight Agent",
                 "items": {
-                    "ranking": "Risk odaklı sıralama",
-                    "scenario": "Senaryo simülasyonu",
-                    "protection": "Proaktif bozulma koruması",
+                    "ranking": "Risk odakl─▒ s─▒ralama",
+                    "scenario": "Senaryo sim├╝lasyonu",
+                    "protection": "Proaktif bozulma korumas─▒",
                     "compensation": "Tazminat ve toparlanma rehberi"
                 }
             }
         },
         "features": {
             "title": "Neden FlightAdvisor?",
-            "subtitle": "En iyi uçuş fırsatlarını bulmanız için gereken her şey",
+            "subtitle": "En iyi u├ºu┼ƒ f─▒rsatlar─▒n─▒ bulman─▒z i├ºin gereken her ┼ƒey",
             "smartAlerts": {
-                "title": "Akıllı Fiyat Alarmları",
-                "desc": "Hedef fiyatınızı belirleyin, yapay zekamız düştüğü an size haber versin."
+                "title": "Ak─▒ll─▒ Fiyat Alarmlar─▒",
+                "desc": "Hedef fiyat─▒n─▒z─▒ belirleyin, yapay zekam─▒z d├╝┼ƒt├╝─ƒ├╝ an size haber versin."
             },
             "priceHistory": {
-                "title": "Fiyat Geçmişi",
-                "desc": "Uçmak için en iyi zamanı anlamak adına geçmiş fiyat trendlerini inceleyin."
+                "title": "Fiyat Ge├ºmi┼ƒi",
+                "desc": "U├ºmak i├ºin en iyi zaman─▒ anlamak ad─▒na ge├ºmi┼ƒ fiyat trendlerini inceleyin."
             },
             "globalSearch": {
-                "title": "Küresel Arama",
-                "desc": "Binlerce havayolu ve seyahat acentesindeki fiyatları anında karşılaştırın."
+                "title": "K├╝resel Arama",
+                "desc": "Binlerce havayolu ve seyahat acentesindeki fiyatlar─▒ an─▒nda kar┼ƒ─▒la┼ƒt─▒r─▒n."
             },
             "noFees": {
-                "title": "Gizli Ücret Yok",
-                "desc": "Ne görüyorsanız onu ödersiniz. Tam şeffaflığa inanıyoruz."
+                "title": "Gizli ├£cret Yok",
+                "desc": "Ne g├╢r├╝yorsan─▒z onu ├╢dersiniz. Tam ┼ƒeffafl─▒─ƒa inan─▒yoruz."
             },
             "instantNotify": {
-                "title": "Anında Bildirim",
-                "desc": "Bir fırsat bulunduğunda E-posta veya SMS ile anında haberdar olun."
+                "title": "An─▒nda Bildirim",
+                "desc": "Bir f─▒rsat bulundu─ƒunda E-posta veya SMS ile an─▒nda haberdar olun."
             },
             "trends": {
                 "title": "Seyahat Trendleri",
-                "desc": "Popüler destinasyonları ve mevsimsel fiyatlandırma trendlerini keşfedin."
+                "desc": "Pop├╝ler destinasyonlar─▒ ve mevsimsel fiyatland─▒rma trendlerini ke┼ƒfedin."
             }
         },
         "howItWorks": {
-            "title": "Nasıl Çalışır?",
-            "subtitle": "Büyük tasarruf için basit adımlar",
+            "title": "Nas─▒l ├çal─▒┼ƒ─▒r?",
+            "subtitle": "B├╝y├╝k tasarruf i├ºin basit ad─▒mlar",
             "step1": {
                 "title": "Ara",
                 "desc": "Destinasyonunuzu ve tarihlerinizi girin."
             },
             "step2": {
                 "title": "Takip Et",
-                "desc": "İstediğiniz rota için takibi etkinleştirin."
+                "desc": "─░stedi─ƒiniz rota i├ºin takibi etkinle┼ƒtirin."
             },
             "step3": {
                 "title": "Tasarruf Et",
-                "desc": "Fiyat düşüşünü size bildirdiğimizde rezervasyon yapın."
+                "desc": "Fiyat d├╝┼ƒ├╝┼ƒ├╝n├╝ size bildirdi─ƒimizde rezervasyon yap─▒n."
             }
         }
     },
     "AboutPage": {
-        "title": "FlightAdvisor Hakkında",
-        "subtitle": "Seyahat verilerini herkes için demokratikleştiriyoruz.",
+        "title": "FlightAdvisor Hakk─▒nda",
+        "subtitle": "Seyahat verilerini herkes i├ºin demokratikle┼ƒtiriyoruz.",
         "mission": {
             "title": "Misyonumuz",
-            "content": "FlightAdvisor olarak seyahatin herkes için erişilebilir olması gerektiğine inanıyoruz. Misyonumuz, sürekli arama derdi olmadan en iyi uçuş fiyatlarını bulmanıza yardımcı olmak için gelişmiş analitik ve yapay zeka kullanmaktır."
+            "content": "FlightAdvisor olarak seyahatin herkes i├ºin eri┼ƒilebilir olmas─▒ gerekti─ƒine inan─▒yoruz. Misyonumuz, s├╝rekli arama derdi olmadan en iyi u├ºu┼ƒ fiyatlar─▒n─▒ bulman─▒za yard─▒mc─▒ olmak i├ºin geli┼ƒmi┼ƒ analitik ve yapay zeka kullanmakt─▒r."
         },
         "story": {
             "title": "Hikayemiz",
-            "content": "2024 yılında başlayan FlightAdvisor, şeffaf olmayan uçuş fiyatlandırmasından duyulan hayal kırıklığının bir sonucu olarak doğdu."
+            "content": "2024 y─▒l─▒nda ba┼ƒlayan FlightAdvisor, ┼ƒeffaf olmayan u├ºu┼ƒ fiyatland─▒rmas─▒ndan duyulan hayal k─▒r─▒kl─▒─ƒ─▒n─▒n bir sonucu olarak do─ƒdu."
         }
     },
     "Auth": {
-        "title": "Tekrar Hoşgeldiniz",
-        "subtitle": "Hesabınıza giriş yapın",
-        "registerTitle": "Hesap Oluştur",
-        "registerSubtitle": "Uçuşları bugün takip etmeye başlayın",
-        "signIn": "Giriş Yap",
-        "register": "Kayıt Ol",
+        "title": "Tekrar Ho┼ƒgeldiniz",
+        "subtitle": "Hesab─▒n─▒za giri┼ƒ yap─▒n",
+        "registerTitle": "Hesap Olu┼ƒtur",
+        "registerSubtitle": "U├ºu┼ƒlar─▒ bug├╝n takip etmeye ba┼ƒlay─▒n",
+        "signIn": "Giri┼ƒ Yap",
+        "register": "Kay─▒t Ol",
         "email": "E-posta",
-        "password": "Şifre",
-        "name": "İsim",
+        "password": "┼₧ifre",
+        "name": "─░sim",
         "surname": "Soyisim",
-        "alreadyHaveAccount": "Zaten hesabınız var mı?",
-        "dontHaveAccount": "Hesabınız yok mu?",
-        "signInWithGoogle": "Google ile Giriş Yap",
-        "signInWithGithub": "GitHub ile Giriş Yap",
-        "signInWithMicrosoft": "Microsoft ile Giriş Yap",
-        "backToHome": "Ana Sayfaya Dön"
+        "alreadyHaveAccount": "Zaten hesab─▒n─▒z var m─▒?",
+        "dontHaveAccount": "Hesab─▒n─▒z yok mu?",
+        "signInWithGoogle": "Google ile Giri┼ƒ Yap",
+        "signInWithGithub": "GitHub ile Giri┼ƒ Yap",
+        "signInWithMicrosoft": "Microsoft ile Giri┼ƒ Yap",
+        "backToHome": "Ana Sayfaya D├╢n"
     },
     "Dashboard": {
         "title": "Panel",
@@ -338,214 +338,214 @@
         "settings": "Ayarlar",
         "home": "Ana Sayfa",
         "trackNewRoute": "Yeni Rota Takip Et",
-        "noRoutes": "Henüz uçuş takip etmiyorsunuz.",
-        "createAlert": "İlk Alarmı Oluştur",
+        "noRoutes": "Hen├╝z u├ºu┼ƒ takip etmiyorsunuz.",
+        "createAlert": "─░lk Alarm─▒ Olu┼ƒtur",
         "trackedRoutes": "Takip Edilen Rotalar",
         "addNewRoute": "Yeni Rota Ekle",
-        "emptyState": "Burada görmek için uçuşları takip etmeye başlayın",
-        "pleaseSignIn": "Lütfen Giriş Yapın",
-        "needLogin": "Uçuş panelinize erişmek için giriş yapmanız gerekiyor.",
+        "emptyState": "Burada g├╢rmek i├ºin u├ºu┼ƒlar─▒ takip etmeye ba┼ƒlay─▒n",
+        "pleaseSignIn": "L├╝tfen Giri┼ƒ Yap─▒n",
+        "needLogin": "U├ºu┼ƒ panelinize eri┼ƒmek i├ºin giri┼ƒ yapman─▒z gerekiyor.",
         "myTrips": "Seyahatlerim",
-        "myTripsDesc": "Premium koruma altındaki uçuşlarınız.",
+        "myTripsDesc": "Premium koruma alt─▒ndaki u├ºu┼ƒlar─▒n─▒z.",
         "addTrip": "Yeni Seyahat Ekle",
-        "emptyTitle": "Seyahat Listeniz Boş",
-        "emptyDesc": "Yapay zeka asistanınızı aktif etmek için uçuşunuzu ekleyin.",
+        "emptyTitle": "Seyahat Listeniz Bo┼ƒ",
+        "emptyDesc": "Yapay zeka asistan─▒n─▒z─▒ aktif etmek i├ºin u├ºu┼ƒunuzu ekleyin.",
         "addTripShort": "+ Seyahat Ekle",
         "protected": "KORUMA ALTINDA",
-        "trackedFlights": "Takip Edilen Fırsatlar",
-        "trackedFlightsDesc": "Fiyatını izlediğiniz potansiyel uçuşlar.",
-        "noTrackedFlights": "Henüz takip ettiğiniz bir uçuş yok.",
-        "lastUpdated": "Son güncelleme: {time}",
-        "nextUpdate": "Sıradaki güncelleme: {time}",
-        "delete": "Takibi Bırak",
-        "updatesDaily": "Her Gün Güncellenir",
-        "paymentSuccessTitle": "Ödeme onaylandı — hoş geldin!",
-        "paymentSuccessBody": "Planın artık aktif. Premium korumayı hemen kullanabilirsin."
+        "trackedFlights": "Takip Edilen F─▒rsatlar",
+        "trackedFlightsDesc": "Fiyat─▒n─▒ izledi─ƒiniz potansiyel u├ºu┼ƒlar.",
+        "noTrackedFlights": "Hen├╝z takip etti─ƒiniz bir u├ºu┼ƒ yok.",
+        "lastUpdated": "Son g├╝ncelleme: {time}",
+        "nextUpdate": "S─▒radaki g├╝ncelleme: {time}",
+        "delete": "Takibi B─▒rak",
+        "updatesDaily": "Her G├╝n G├╝ncellenir",
+        "paymentSuccessTitle": "├ûdeme onayland─▒ ΓÇö ho┼ƒ geldin!",
+        "paymentSuccessBody": "Plan─▒n art─▒k aktif. Premium korumay─▒ hemen kullanabilirsin."
     },
     "Guardian": {
-        "back": "Geri Dön",
+        "back": "Geri D├╢n",
         "systemStatus": "Sistem Durumu",
-        "activeScanning": "Aktif & Taranıyor",
+        "activeScanning": "Aktif & Taran─▒yor",
         "lastCheck": "Son Kontrol",
-        "justNow": "Az önce",
-        "actionRequired": "Aksiyon Gerektiren Fırsatlar",
-        "activeShields": "Aktif Koruma Kalkanları",
+        "justNow": "Az ├╢nce",
+        "actionRequired": "Aksiyon Gerektiren F─▒rsatlar",
+        "activeShields": "Aktif Koruma Kalkanlar─▒",
         "active": "Aktif",
-        "warning": "Uyarı Var",
+        "warning": "Uyar─▒ Var",
         "pending": "Beklemede",
-        "resolved": "Çözüldü",
-        "estimatedValue": "Tahmini Değer"
+        "resolved": "├ç├╢z├╝ld├╝",
+        "estimatedValue": "Tahmini De─ƒer"
     },
     "ScheduleChange": {
-        "title": "Uçuş Saati Değişti",
-        "airlineUpdate": "{airline} havayolu kalkış saatini güncelledi.",
-        "earlier": "Lütfen dikkat, uçak {hours}sa {minutes}dk ERKEN kalkacak.",
-        "later": "Uçak {hours}sa {minutes}dk geç kalkacak.",
+        "title": "U├ºu┼ƒ Saati De─ƒi┼ƒti",
+        "airlineUpdate": "{airline} havayolu kalk─▒┼ƒ saatini g├╝ncelledi.",
+        "earlier": "L├╝tfen dikkat, u├ºak {hours}sa {minutes}dk ERKEN kalkacak.",
+        "later": "U├ºak {hours}sa {minutes}dk ge├º kalkacak.",
         "oldPlan": "Eski Plan",
         "newPlan": "Yeni Plan",
-        "callAirline": "Havayolunu Ara (Ücretsiz Değişim)",
+        "callAirline": "Havayolunu Ara (├£cretsiz De─ƒi┼ƒim)",
         "confirmNewTime": "Yeni Saati Onayla"
     },
     "Modules": {
         "disruptionHunter": {
             "title": "Disruption Hunter",
-            "desc": "Rötar ve İptal takibi yapılıyor."
+            "desc": "R├╢tar ve ─░ptal takibi yap─▒l─▒yor."
         },
         "priceArbitrage": {
             "title": "Price Arbitrage",
-            "desc": "Fiyat düşüşü bekleniyor."
+            "desc": "Fiyat d├╝┼ƒ├╝┼ƒ├╝ bekleniyor."
         },
         "seatSpy": {
             "title": "Seat Spy",
-            "desc": "Yan koltuk doldu, aksiyon alın.",
-            "descEmpty": "Yan koltuk boş."
+            "desc": "Yan koltuk doldu, aksiyon al─▒n.",
+            "descEmpty": "Yan koltuk bo┼ƒ."
         },
         "scheduleGuardian": {
             "title": "Schedule Guardian",
-            "desc": "Tarife değişikliği yok.",
-            "descChange": "Tarife değişikliği tespit edildi."
+            "desc": "Tarife de─ƒi┼ƒikli─ƒi yok.",
+            "descChange": "Tarife de─ƒi┼ƒikli─ƒi tespit edildi."
         },
         "upgradeSniper": {
             "title": "Upgrade Sniper",
-            "desc": "Business Class henüz açılmadı."
+            "desc": "Business Class hen├╝z a├º─▒lmad─▒."
         }
     },
     "RouteDetails": {
-        "backToDashboard": "Panele Dön",
-        "currentBestPrice": "En İyi Güncel Fiyat",
-        "dealQuality": "Fırsat Kalitesi",
-        "excellent": "Mükemmel Fırsat!",
+        "backToDashboard": "Panele D├╢n",
+        "currentBestPrice": "En ─░yi G├╝ncel Fiyat",
+        "dealQuality": "F─▒rsat Kalitesi",
+        "excellent": "M├╝kemmel F─▒rsat!",
         "fair": "Makul Fiyat",
-        "poor": "Düşmesini Bekle",
-        "calculating": "Açıklama hesaplanıyor...",
-        "duration": "Süre",
-        "nonstop": "Aktarmasız",
+        "poor": "D├╝┼ƒmesini Bekle",
+        "calculating": "A├º─▒klama hesaplan─▒yor...",
+        "duration": "S├╝re",
+        "nonstop": "Aktarmas─▒z",
         "stopResult": "aktarma",
         "stopsResult": "aktarma",
-        "average30d": "30 Günlük Ortalama",
-        "historicalData": "Geçmiş verilere dayalı",
-        "recentHistory": "Son Fiyat Geçmişi",
-        "noData": "Henüz fiyat verisi toplanmadı.",
+        "average30d": "30 G├╝nl├╝k Ortalama",
+        "historicalData": "Ge├ºmi┼ƒ verilere dayal─▒",
+        "recentHistory": "Son Fiyat Ge├ºmi┼ƒi",
+        "noData": "Hen├╝z fiyat verisi toplanmad─▒.",
         "noInfo": "Bilgi yok"
     },
     "FlightSearch": {
-        "showMore": "Daha Fazla Göster ({count} uçuş kaldı)",
-        "title": "Uçuş Ara & Takip Et",
-        "subtitle": "Uçuş bilgilerinizi girin. Fiyatları takip edip en uygun zamanda satın almanız için sizi uyaracağız.",
-        "heroTitle": "Nereye Uçuyoruz?",
-        "heroSubtitle": "En iyi uçuş fırsatlarını keşfedin",
+        "showMore": "Daha Fazla G├╢ster ({count} u├ºu┼ƒ kald─▒)",
+        "title": "U├ºu┼ƒ Ara & Takip Et",
+        "subtitle": "U├ºu┼ƒ bilgilerinizi girin. Fiyatlar─▒ takip edip en uygun zamanda sat─▒n alman─▒z i├ºin sizi uyaraca─ƒ─▒z.",
+        "heroTitle": "Nereye U├ºuyoruz?",
+        "heroSubtitle": "En iyi u├ºu┼ƒ f─▒rsatlar─▒n─▒ ke┼ƒfedin",
         "mottoLabel": "FlightAgent Mottosu",
-        "oneWay": "Tek Yön",
-        "roundTrip": "Gidiş-Dönüş",
+        "oneWay": "Tek Y├╢n",
+        "roundTrip": "Gidi┼ƒ-D├╢n├╝┼ƒ",
         "from": "Nereden",
         "to": "Nereye",
-        "placeholder": "Şehir veya havalimanı ara...",
-        "departureDate": "Gidiş Tarihi",
-        "returnDate": "Dönüş Tarihi",
-        "selectDate": "Tarih seçin",
-        "optional": "isteğe bağlı",
-        "cabin": "Kabin Sınıfı",
+        "placeholder": "┼₧ehir veya havaliman─▒ ara...",
+        "departureDate": "Gidi┼ƒ Tarihi",
+        "returnDate": "D├╢n├╝┼ƒ Tarihi",
+        "selectDate": "Tarih se├ºin",
+        "optional": "iste─ƒe ba─ƒl─▒",
+        "cabin": "Kabin S─▒n─▒f─▒",
         "economy": "Ekonomi",
         "premiumEconomy": "Premium Economy",
         "business": "Business",
         "firstClass": "First Class",
-        "adults": "Yetişkin",
-        "passengers": "Yolcu Sayısı",
-        "children": "Çocuk",
+        "adults": "Yeti┼ƒkin",
+        "passengers": "Yolcu Say─▒s─▒",
+        "children": "├çocuk",
         "infants": "Bebek",
-        "adultLabel": "Yetişkin",
-        "childLabel": "Çocuk (2-11)",
+        "adultLabel": "Yeti┼ƒkin",
+        "childLabel": "├çocuk (2-11)",
         "infantLabel": "Bebek (0-2)",
         "travelers_label": "Yolcular & Kabin",
         "passengers_short": "Misafir",
         "totalPassengers": "Toplam: {count} yolcu",
-        "adultRequired": "En az 1 yetişkin seçmelisiniz",
-        "infantsRequireAdults": "Bebek sayısı yetişkin sayısını aşamaz",
+        "adultRequired": "En az 1 yeti┼ƒkin se├ºmelisiniz",
+        "infantsRequireAdults": "Bebek say─▒s─▒ yeti┼ƒkin say─▒s─▒n─▒ a┼ƒamaz",
         "passengerLimit": "Bir aramada en fazla 9 yolcu desteklenir",
-        "invalidAirports": "Lütfen geçerli 3 harfli IATA havaalanları seçin",
-        "searching": "Uçuşlar Aranıyor...",
-        "searchingDesc": "En iyi fırsatları bulmak için yüzlerce havayolunu tarıyoruz",
-        "popularDestinations": "Popüler destinasyonlar",
-        "topFlightsToBookNow": "Şimdi Alınabilecek En İyi Uçuşlar",
-        "topFlightsSummary": "{count, plural, one {# uçuş şu anda güçlü bir rezervasyon fırsatı olarak işaretli.} other {# uçuş şu anda güçlü rezervasyon fırsatları olarak işaretli.}}",
-        "proactiveTip": "Proaktif Öneri",
-        "upgradePlans": "Yükseltme Planları",
-        "monthlyProTitle": "Aylık Pro ($19)",
-        "monthlyProDesc": "Fazla ödemeyin. Rezervasyon yapmadan önce en doğru kararı açın.",
-        "unlockClearRecommendation": "Net Öneriyi Aç",
-        "oneTimeReportTitle": "Tek Seferlik Uçuş Raporu ($4.99)",
-        "oneTimeReportDesc": "Sadece bu rota için derin risk ve fiyat analizi.",
+        "invalidAirports": "L├╝tfen ge├ºerli 3 harfli IATA havaalanlar─▒ se├ºin",
+        "searching": "U├ºu┼ƒlar Aran─▒yor...",
+        "searchingDesc": "En iyi f─▒rsatlar─▒ bulmak i├ºin y├╝zlerce havayolunu tar─▒yoruz",
+        "popularDestinations": "Pop├╝ler destinasyonlar",
+        "topFlightsToBookNow": "┼₧imdi Al─▒nabilecek En ─░yi U├ºu┼ƒlar",
+        "topFlightsSummary": "{count, plural, one {# u├ºu┼ƒ ┼ƒu anda g├╝├ºl├╝ bir rezervasyon f─▒rsat─▒ olarak i┼ƒaretli.} other {# u├ºu┼ƒ ┼ƒu anda g├╝├ºl├╝ rezervasyon f─▒rsatlar─▒ olarak i┼ƒaretli.}}",
+        "proactiveTip": "Proaktif ├ûneri",
+        "upgradePlans": "Y├╝kseltme Planlar─▒",
+        "monthlyProTitle": "Ayl─▒k Pro ($19)",
+        "monthlyProDesc": "Fazla ├╢demeyin. Rezervasyon yapmadan ├╢nce en do─ƒru karar─▒ a├º─▒n.",
+        "unlockClearRecommendation": "Net ├ûneriyi A├º",
+        "oneTimeReportTitle": "Tek Seferlik U├ºu┼ƒ Raporu ($4.99)",
+        "oneTimeReportDesc": "Sadece bu rota i├ºin derin risk ve fiyat analizi.",
         "oneTimeReportButton": "Tek Seferlik Rapor ($4.99)",
-        "searchButton": "Uçuşları Bul",
-        "success": "Uçuş Bulundu!",
-        "error": "Arama Başarısız",
-        "resultsFound": "Uçuş Bulundu",
-        "currentPrice": "Güncel Fiyat",
+        "searchButton": "U├ºu┼ƒlar─▒ Bul",
+        "success": "U├ºu┼ƒ Bulundu!",
+        "error": "Arama Ba┼ƒar─▒s─▒z",
+        "resultsFound": "U├ºu┼ƒ Bulundu",
+        "currentPrice": "G├╝ncel Fiyat",
         "carrier": "Havayolu",
         "score": "Skor",
-        "duration": "Süre",
+        "duration": "S├╝re",
         "stops": "Aktarma",
         "direct": "Direkt",
         "stop": "Aktarma",
-        "airlines": "Havayolları",
+        "airlines": "Havayollar─▒",
         "layover": "bekleme",
         "transferAt": "Aktarma",
         "cheapest": "En Ucuz",
-        "fastest": "En Hızlı",
-        "bestScore": "En İyi Skor",
+        "fastest": "En H─▒zl─▒",
+        "bestScore": "En ─░yi Skor",
         "price": "Fiyat",
-        "trackFlight": "Bu Uçuşu Takip Et",
-        "trackingThisFlight": "Bu uçuşu takip ediyorsunuz",
-        "flightDetails": "Uçuş Detayları",
-        "hideDetails": "Detayları gizle",
-        "excellentDeal": "Mükemmel Fırsat",
-        "goodDeal": "İyi Fırsat",
+        "trackFlight": "Bu U├ºu┼ƒu Takip Et",
+        "trackingThisFlight": "Bu u├ºu┼ƒu takip ediyorsunuz",
+        "flightDetails": "U├ºu┼ƒ Detaylar─▒",
+        "hideDetails": "Detaylar─▒ gizle",
+        "excellentDeal": "M├╝kemmel F─▒rsat",
+        "goodDeal": "─░yi F─▒rsat",
         "fair": "Orta",
-        "poor": "Kötü",
-        "veryPoor": "Çok Kötü",
-        "noFlights": "Uçuş bulunamadı",
-        "fillAllFields": "Lütfen tüm alanları doldurun",
-        "trackingStarted": "Bu rotayı sizin için takip etmeye başladık. Fiyat düşüşlerini tespit ettiğimizde size haber vereceğiz.",
-        "viewDashboard": "Paneli Görüntüle",
-        "flightTime": "uçuş",
+        "poor": "K├╢t├╝",
+        "veryPoor": "├çok K├╢t├╝",
+        "noFlights": "U├ºu┼ƒ bulunamad─▒",
+        "fillAllFields": "L├╝tfen t├╝m alanlar─▒ doldurun",
+        "trackingStarted": "Bu rotay─▒ sizin i├ºin takip etmeye ba┼ƒlad─▒k. Fiyat d├╝┼ƒ├╝┼ƒlerini tespit etti─ƒimizde size haber verece─ƒiz.",
+        "viewDashboard": "Paneli G├╢r├╝nt├╝le",
+        "flightTime": "u├ºu┼ƒ",
         "waitTime": "bekleme",
         "estimatedBaggage": "Tahmini Bagaj",
-        "otherOptions": "Diğer Fiyat/Paket Seçenekleri",
-        "select": "Seç",
-        "refundable": "İade",
-        "noRefund": "İade Yok",
+        "otherOptions": "Di─ƒer Fiyat/Paket Se├ºenekleri",
+        "select": "Se├º",
+        "refundable": "─░ade",
+        "noRefund": "─░ade Yok",
         "baggage": "Bagaj",
         "lowBaggage": "Az Bagaj",
-        "whyBuy": "Neden Almalısın?",
+        "whyBuy": "Neden Almal─▒s─▒n?",
         "watchOut": "Dikkat Et",
         "decision": "KARAR",
         "baggageExtras": {
-            "noBaggage": "Bagajsız",
-            "excluded": "Bagaj Hariç (+~2500 TL)",
-            "restricted": "(Kısıtlı)",
+            "noBaggage": "Bagajs─▒z",
+            "excluded": "Bagaj Hari├º (+~2500 TL)",
+            "restricted": "(K─▒s─▒tl─▒)",
             "generous": "(Bol Bagaj)",
-            "warningTitle": "Dikkat: Bu bilet bagajsız!",
-            "warningDesc": "Eğer yolculuğunuzda bagaj gerekiyorsa, havayolundan ekstra bagaj satın almanız gerekecek. Ortalama maliyet: ~2.500 TL"
+            "warningTitle": "Dikkat: Bu bilet bagajs─▒z!",
+            "warningDesc": "E─ƒer yolculu─ƒunuzda bagaj gerekiyorsa, havayolundan ekstra bagaj sat─▒n alman─▒z gerekecek. Ortalama maliyet: ~2.500 TL"
         },
-        "SearchForm": {
-            "origin_placeholder": "Nereden?",
-            "destination_placeholder": "Nereye?",
-            "origin_label": "Nereden",
-            "destination_label": "Nereye",
-            "date_label": "Gidiş Tarihi",
-            "return_label": "Dönüş",
-            "passengers_label": "Yolcular",
-            "search_button": "Uçuş Ara",
-            "one_way": "Tek Yön",
-            "round_trip": "Gidiş-Dönüş",
-            "multi_city": "Çoklu Uçuş",
-            "purpose_label": "Amaç"
+        "errors": {
+            "originRequired": "Lütfen geçerli bir şehir veya havalimanı seçin",
+            "destinationRequired": "Lütfen geçerli bir şehir veya havalimanı seçin",
+            "departureDateRequired": "Lütfen bir gidiş tarihi seçin",
+            "departureDatePast": "Gidiş tarihi geçmişte olamaz",
+            "returnDateRequired": "Gidiş-dönüş için dönüş tarihi zorunludur",
+            "returnDateBeforeDeparture": "Dönüş tarihi, gidiş tarihinden sonra olmalıdır",
+            "generic": "Bir hata oluştu. Lütfen tekrar deneyin."
         },
-        "DatePicker": {
-            "placeholder": "Tarih seçin",
-            "today": "Bugüne Git",
-            "close": "Kapat"
-        },
+        "layover": {
+            "risk": {
+                "critical": "KRITIK - Riskli Aktarma!",
+                "high": "Riskli - Hızlı Ol",
+                "medium": "Orta - Rahat ama dikkatli",
+                "low": "Rahat - Zamanın keyfini çıkar"
+            },
+            "advice": {
+                "default_short": "Kısa bekleme. Hemen kapına yönel.",
+                "default_medium": "Süre makul. Hızlı bir kahve al ama önce kapını bul.",
                 "default_long": "Bol zamanınız var. Lounge, restoran veya dinlenme alanlarını değerlendirebilirsiniz.",
                 "DXB_short": "Dubai çok büyük. Uçaktan iner inmez koşar adım kapıya!",
                 "DXB_medium": "Terminal 3 tren kullanmayı gerektirebilir. Vaktiniz var ama oyalanmayın.",
@@ -564,189 +564,189 @@
     },
     "priceOracle": {
         "title": "Fiyat Kahini",
-        "confidence": "Güven",
+        "confidence": "G├╝ven",
         "riskScore": "Risk Skoru",
         "badges": {
             "buyNow": "HEMEN AL",
             "buy": "AL",
             "wait": "BEKLE",
-            "monitor": "TAKİP ET"
+            "monitor": "TAK─░P ET"
         },
         "trends": {
-            "rising": "YÜKSELİŞ TRENDİ",
-            "falling": "DÜŞÜŞ TRENDİ",
-            "stable": "SABİT"
+            "rising": "Y├£KSEL─░┼₧ TREND─░",
+            "falling": "D├£┼₧├£┼₧ TREND─░",
+            "stable": "SAB─░T"
         },
         "signals": {
-            "last72Hours": "Son 72 Saat: Fiyatlar artık saatlik olarak artabilir.",
-            "lastWeek": "Son Hafta! Fiyatlar her an fırlayabilir.",
-            "twoWeekRule": "14 Gün Kuralı: İndirimli bilet sınıfları kapandı.",
-            "idealTime": "İdeal Zaman: Rezervasyon için en güvenli aralıktasınız.",
-            "tooEarly": "Çok Erken: Henüz rekabetçi kampanyalar başlamamış olabilir.",
+            "last72Hours": "Son 72 Saat: Fiyatlar art─▒k saatlik olarak artabilir.",
+            "lastWeek": "Son Hafta! Fiyatlar her an f─▒rlayabilir.",
+            "twoWeekRule": "14 G├╝n Kural─▒: ─░ndirimli bilet s─▒n─▒flar─▒ kapand─▒.",
+            "idealTime": "─░deal Zaman: Rezervasyon i├ºin en g├╝venli aral─▒ktas─▒n─▒z.",
+            "tooEarly": "├çok Erken: Hen├╝z rekabet├ºi kampanyalar ba┼ƒlamam─▒┼ƒ olabilir.",
             "plentyOfTime": "4+ Ay Var: Acele etme, izle.",
-            "lessThanMonth": "1 Aydan Az: İdeal alım dönemi.",
-            "bottomPrice": "Dip Fiyat: Pazarın en alt tabanını yakaladınız.",
-            "belowAverage": "Fırsat: Pazar ortalamasının %{percent} altında.",
-            "aboveAverage": "Pahalı: Ortalamadan %{percent} yüksek. Düzeltme gelebilir.",
-            "peakSeason": "Yüksek Sezon: Global seyahat yoğunluğu yüksek (Yaz/Yılbaşı).",
-            "lowSeason": "Düşük Sezon: Talep düşük, fiyatlar gevşeyebilir.",
-            "weekend": "Hafta Sonu Uçuşu: Genelde pahalı.",
-            "tuesdayWednesday": "Salı/Çarşamba: Genelde en ucuz günler."
+            "lessThanMonth": "1 Aydan Az: ─░deal al─▒m d├╢nemi.",
+            "bottomPrice": "Dip Fiyat: Pazar─▒n en alt taban─▒n─▒ yakalad─▒n─▒z.",
+            "belowAverage": "F─▒rsat: Pazar ortalamas─▒n─▒n %{percent} alt─▒nda.",
+            "aboveAverage": "Pahal─▒: Ortalamadan %{percent} y├╝ksek. D├╝zeltme gelebilir.",
+            "peakSeason": "Y├╝ksek Sezon: Global seyahat yo─ƒunlu─ƒu y├╝ksek (Yaz/Y─▒lba┼ƒ─▒).",
+            "lowSeason": "D├╝┼ƒ├╝k Sezon: Talep d├╝┼ƒ├╝k, fiyatlar gev┼ƒeyebilir.",
+            "weekend": "Hafta Sonu U├ºu┼ƒu: Genelde pahal─▒.",
+            "tuesdayWednesday": "Sal─▒/├çar┼ƒamba: Genelde en ucuz g├╝nler."
         },
         "oracle": {
-            "badge_rare": "💎 GİZLİ HAZİNE",
-            "title_rare": "Mükemmel Denge",
-            "desc_rare": "Hem kaliteli havayolu, hem hızlı, hem de fiyatı harika. Bu uçuşu kaçırma.",
-            "badge_smart": "🧠 MANTIKLI SEÇİM",
-            "title_smart": "Verdiğin Paraya Değer",
-            "desc_smart": "Evet biraz daha pahalı ama saatlerce yolda sürünmezsin. Konforuna değer.",
-            "badge_hacker": "⚡ MACERA FIRSATI",
-            "title_hacker": "Sırt Çantalılar İçin",
-            "desc_hacker": "Piyasadaki en ucuz fiyat! Ama \"Kendi Aktarman\" riskini alman lazım. Bagajın yoksa kaçırma.",
-            "badge_bad": "🚫 KÖTÜ SEÇİM",
+            "badge_rare": "≡ƒÆÄ G─░ZL─░ HAZ─░NE",
+            "title_rare": "M├╝kemmel Denge",
+            "desc_rare": "Hem kaliteli havayolu, hem h─▒zl─▒, hem de fiyat─▒ harika. Bu u├ºu┼ƒu ka├º─▒rma.",
+            "badge_smart": "≡ƒºá MANTIKLI SE├ç─░M",
+            "title_smart": "Verdi─ƒin Paraya De─ƒer",
+            "desc_smart": "Evet biraz daha pahal─▒ ama saatlerce yolda s├╝r├╝nmezsin. Konforuna de─ƒer.",
+            "badge_hacker": "ΓÜí MACERA FIRSATI",
+            "title_hacker": "S─▒rt ├çantal─▒lar ─░├ºin",
+            "desc_hacker": "Piyasadaki en ucuz fiyat! Ama \"Kendi Aktarman\" riskini alman laz─▒m. Bagaj─▒n yoksa ka├º─▒rma.",
+            "badge_bad": "≡ƒÜ½ K├ûT├£ SE├ç─░M",
             "title_bad": "Tavsiye Etmiyoruz",
-            "desc_bad": "Hem pahalı hem de yavaş. Listede çok daha iyi seçenekler var.",
-            "badge_standard": "⚖️ STANDART",
-            "title_standard": "Ortalama Seçenek",
-            "desc_standard": "Fiyat ve süre dengesi piyasa standartlarında.",
+            "desc_bad": "Hem pahal─▒ hem de yava┼ƒ. Listede ├ºok daha iyi se├ºenekler var.",
+            "badge_standard": "ΓÜû∩╕Å STANDART",
+            "title_standard": "Ortalama Se├ºenek",
+            "desc_standard": "Fiyat ve s├╝re dengesi piyasa standartlar─▒nda.",
             "pro_quality": "Kaliteli Havayolu",
-            "pro_time": "En Hızlı Rota",
-            "pro_comfort_win": "Konfor Farkı",
-            "pro_luxury": "Lüks Deneyim",
+            "pro_time": "En H─▒zl─▒ Rota",
+            "pro_comfort_win": "Konfor Fark─▒",
+            "pro_luxury": "L├╝ks Deneyim",
             "pro_price_king": "En Uygun Fiyat",
             "con_risk_high": "Aktarma Riski Var",
-            "con_bag_missing": "Bagaj Dahil Değil",
-            "con_overpriced": "Gereksiz Pahalı",
-            "con_slow": "Çok Fazla Durak",
-            "badge_overpriced": "🛑 KAZIK FİYAT",
-            "title_overpriced": "Fiyat/Performans Kötü",
-            "desc_overpriced": "Bu uçuş piyasa ortalamasının çok üzerinde. Sadece zorunluysanız alın."
+            "con_bag_missing": "Bagaj Dahil De─ƒil",
+            "con_overpriced": "Gereksiz Pahal─▒",
+            "con_slow": "├çok Fazla Durak",
+            "badge_overpriced": "≡ƒ¢æ KAZIK F─░YAT",
+            "title_overpriced": "Fiyat/Performans K├╢t├╝",
+            "desc_overpriced": "Bu u├ºu┼ƒ piyasa ortalamas─▒n─▒n ├ºok ├╝zerinde. Sadece zorunluysan─▒z al─▒n."
         },
         "verdicts": {
             "rareFind": {
-                "title": "Kaçırılmayacak Fırsat!",
-                "description": "Piyasa ortalamasının çok altında ve güvenli. Bu fiyata bu kalite zor bulunur."
+                "title": "Ka├º─▒r─▒lmayacak F─▒rsat!",
+                "description": "Piyasa ortalamas─▒n─▒n ├ºok alt─▒nda ve g├╝venli. Bu fiyata bu kalite zor bulunur."
             },
             "hacker": {
-                "title": "Cesurlar İçin!",
-                "description": "Normalden çok daha ucuz ama \"Self-Transfer\" gerektiriyor. Bagajın yoksa ve esneksen al."
+                "title": "Cesurlar ─░├ºin!",
+                "description": "Normalden ├ºok daha ucuz ama \"Self-Transfer\" gerektiriyor. Bagaj─▒n yoksa ve esneksen al."
             },
             "overpriced": {
                 "title": "Dikkatli Olun",
-                "description": "Hem pahalı hem de riskli bir uçuş. Mecbur değilseniz almayın."
+                "description": "Hem pahal─▒ hem de riskli bir u├ºu┼ƒ. Mecbur de─ƒilseniz almay─▒n."
             },
             "premium": {
-                "title": "Konfor Odaklı",
-                "description": "Fiyat yüksek ama hizmet kalitesi ve güvencesi tam. Aileler için önerilir."
+                "title": "Konfor Odakl─▒",
+                "description": "Fiyat y├╝ksek ama hizmet kalitesi ve g├╝vencesi tam. Aileler i├ºin ├╢nerilir."
             }
         },
         "pros": {
-            "excellentPrice": "Mükemmel Fiyat",
-            "lowRisk": "Düşük Risk",
-            "dirtCheap": "İnanılmaz Ucuz",
+            "excellentPrice": "M├╝kemmel Fiyat",
+            "lowRisk": "D├╝┼ƒ├╝k Risk",
+            "dirtCheap": "─░nan─▒lmaz Ucuz",
             "maxComfort": "Maksimum Konfor",
-            "refundable": "İade Garantisi",
-            "priceDropping": "Fiyat Düşüş Eğiliminde"
+            "refundable": "─░ade Garantisi",
+            "priceDropping": "Fiyat D├╝┼ƒ├╝┼ƒ E─ƒiliminde"
         },
         "cons": {
-            "highRisk": "Aktarma Riski Yüksek",
-            "noBag": "Bagaj Dahil Değil",
-            "badValue": "Fiyat/Performans Kötü",
-            "priceRising": "Fiyat Anlık Artabilir!"
+            "highRisk": "Aktarma Riski Y├╝ksek",
+            "noBag": "Bagaj Dahil De─ƒil",
+            "badValue": "Fiyat/Performans K├╢t├╝",
+            "priceRising": "Fiyat Anl─▒k Artabilir!"
         }
     },
     "baggage": {
         "generous": "Bol Bagaj",
         "standard": "Standart Bagaj",
-        "limited": "Sınırlı Bagaj",
-        "cabinOnly": "Sadece Kabin Bagajı",
+        "limited": "S─▒n─▒rl─▒ Bagaj",
+        "cabinOnly": "Sadece Kabin Bagaj─▒",
         "noInfo": "Bilgi Yok"
     },
     "flightConsultant": {
         "headlines": {
-            "undisputedLeader": "🏆 TARTIŞMASIZ LİDER",
-            "stayAway": "🚫 UZAK DUR",
-            "sensibleChoice": "⭐ MANTIKLI SEÇİM",
-            "thinkTwice": "⚠️ DÜŞÜNDÜRÜCÜ",
-            "notRecommended": "❌ ÖNERİLMİYOR"
+            "undisputedLeader": "≡ƒÅå TARTI┼₧MASIZ L─░DER",
+            "stayAway": "≡ƒÜ½ UZAK DUR",
+            "sensibleChoice": "Γ¡É MANTIKLI SE├ç─░M",
+            "thinkTwice": "ΓÜá∩╕Å D├£┼₧├£ND├£R├£C├£",
+            "notRecommended": "Γ¥î ├ûNER─░LM─░YOR"
         },
         "identities": {
             "travelHacker": {
-                "label": "😎 Travel Hacker",
-                "description": "En iyi fiyata en iyi konforu kaptın."
+                "label": "≡ƒÿÄ Travel Hacker",
+                "description": "En iyi fiyata en iyi konforu kapt─▒n."
             },
             "transferVictim": {
-                "label": "😵 Aktarma Mağduru",
-                "description": "Bu uçuş seni yollarda yaşlandırabilir."
+                "label": "≡ƒÿ╡ Aktarma Ma─ƒduru",
+                "description": "Bu u├ºu┼ƒ seni yollarda ya┼ƒland─▒rabilir."
             },
             "timeIsValuable": {
-                "label": "🎩 Vakti Değerli",
-                "description": "Parayı bastın, zamanı satın aldın."
+                "label": "≡ƒÄ⌐ Vakti De─ƒerli",
+                "description": "Paray─▒ bast─▒n, zaman─▒ sat─▒n ald─▒n."
             },
             "logisticsExpert": {
-                "label": "📦 Lojistik Uzmanı",
-                "description": "Evi sırtlayıp götürüyorsun, en mantıklısı bu."
+                "label": "≡ƒôª Lojistik Uzman─▒",
+                "description": "Evi s─▒rtlay─▒p g├╢t├╝r├╝yorsun, en mant─▒kl─▒s─▒ bu."
             },
             "wasteOfMoney": {
-                "label": "💸 Para İsrafı",
-                "description": "Bunu almak için hiçbir mantıklı sebep yok."
+                "label": "≡ƒÆ╕ Para ─░sraf─▒",
+                "description": "Bunu almak i├ºin hi├ºbir mant─▒kl─▒ sebep yok."
             },
             "dealHunter": {
-                "label": "🦊 Fırsat Avcısı",
-                "description": "Kalite/fiyat dengesini mükemmel tuttun."
+                "label": "≡ƒªè F─▒rsat Avc─▒s─▒",
+                "description": "Kalite/fiyat dengesini m├╝kemmel tuttun."
             },
             "standardPassenger": {
-                "label": "😐 Standart Yolcu",
-                "description": "Ne iyi ne kötü, ortalama bir deneyim."
+                "label": "≡ƒÿÉ Standart Yolcu",
+                "description": "Ne iyi ne k├╢t├╝, ortalama bir deneyim."
             }
         },
         "pros": {
-            "lowestPrice": "💰 Piyasadaki en dip fiyat.",
-            "lifesaverBaggage": "📦 Taşınanlar için hayat kurtaran bagaj.",
-            "lowStress": "😌 Düşük stresli, konforlu rota.",
-            "fastestRoute": "⚡ En hızlı rota."
+            "lowestPrice": "≡ƒÆ░ Piyasadaki en dip fiyat.",
+            "lifesaverBaggage": "≡ƒôª Ta┼ƒ─▒nanlar i├ºin hayat kurtaran bagaj.",
+            "lowStress": "≡ƒÿî D├╝┼ƒ├╝k stresli, konforlu rota.",
+            "fastestRoute": "ΓÜí En h─▒zl─▒ rota."
         },
         "cons": {
-            "highStress": "😰 Yüksek stres: Yorucu yolculuk.",
-            "priceDifference": "💸 En ucuza göre {amount} {currency} fazla.",
-            "tooManyTransfers": "🛑 Çok aktarma: Yıpratıcı olabilir."
+            "highStress": "≡ƒÿ░ Y├╝ksek stres: Yorucu yolculuk.",
+            "priceDifference": "≡ƒÆ╕ En ucuza g├╢re {amount} {currency} fazla.",
+            "tooManyTransfers": "≡ƒ¢æ ├çok aktarma: Y─▒prat─▒c─▒ olabilir."
         },
         "decisions": {
-            "mustBuy": "**Biz olsak hiç düşünmezdik.** Hem cebini hem konforunu düşünen {identity} paketi. Kaçırma.",
-            "dontBuy": "**Biz olsak bunu kesinlikle almazdık.** Bu uçuş seni \"{identity}\" yapar. Parana ve zamanına yazık.",
-            "risky": "Dikkatli ol. Bu uçuş ucuz görünebilir ama **Stres Skoru: {stress}/10**. Yorgunluğa değip değmeyeceğine sen karar ver.",
-            "goodWithTimeSaving": "En ucuza göre **{priceDiff} {currency}** fark var ama yoldan **{timeSaved} saat** kazanıyorsun. Konforuna düşkünsen değer.",
-            "goodWithPrice": "Fiyatı çok iyi{transferNote}. Bütçe dostu, mantıklı bir takas.",
-            "balanced": "Dengeli bir seçenek. Ne çok pahalı ne çok uzun. {description}"
+            "mustBuy": "**Biz olsak hi├º d├╝┼ƒ├╝nmezdik.** Hem cebini hem konforunu d├╝┼ƒ├╝nen {identity} paketi. Ka├º─▒rma.",
+            "dontBuy": "**Biz olsak bunu kesinlikle almazd─▒k.** Bu u├ºu┼ƒ seni \"{identity}\" yapar. Parana ve zaman─▒na yaz─▒k.",
+            "risky": "Dikkatli ol. Bu u├ºu┼ƒ ucuz g├╢r├╝nebilir ama **Stres Skoru: {stress}/10**. Yorgunlu─ƒa de─ƒip de─ƒmeyece─ƒine sen karar ver.",
+            "goodWithTimeSaving": "En ucuza g├╢re **{priceDiff} {currency}** fark var ama yoldan **{timeSaved} saat** kazan─▒yorsun. Konforuna d├╝┼ƒk├╝nsen de─ƒer.",
+            "goodWithPrice": "Fiyat─▒ ├ºok iyi{transferNote}. B├╝t├ºe dostu, mant─▒kl─▒ bir takas.",
+            "balanced": "Dengeli bir se├ºenek. Ne ├ºok pahal─▒ ne ├ºok uzun. {description}"
         },
         "transferNote": " ama {stops} aktarma biraz yorabilir",
         "fareRestrictions": {
-            "noRefund": "İade yok",
-            "noChange": "Değişiklik ücretli",
-            "noSeatSelection": "Koltuk seçimi ücretli",
-            "noMeal": "Yemek ücretli",
-            "cabinBagOnly": "Sadece kabin bagajı"
+            "noRefund": "─░ade yok",
+            "noChange": "De─ƒi┼ƒiklik ├╝cretli",
+            "noSeatSelection": "Koltuk se├ºimi ├╝cretli",
+            "noMeal": "Yemek ├╝cretli",
+            "cabinBagOnly": "Sadece kabin bagaj─▒"
         }
     },
     "pricing": {
         "title": "Travel Guardian Premium",
-        "subtitle": "Seyahatinizi şansa bırakmayın.",
+        "subtitle": "Seyahatinizi ┼ƒansa b─▒rakmay─▒n.",
         "priceMonth": "/ay",
-        "feature1": "7/24 Uçuş Takibi (Sınırsız)",
-        "feature2": "Tazminat Avcısı (%0 Komisyon)",
-        "feature3": "Business Upgrade Fırsatları",
-        "feature4": "Fiyat Arbitraj Uyarıları",
-        "feature5": "Koltuk Casusu (Yan Koltuk Uyarısı)",
-        "feature6": "Öncelikli E-posta Bildirimleri",
-        "cta": "Korumayı Başlat",
-        "secure": "İstediğiniz zaman iptal edebilirsiniz. Güvenli ödeme Stripe ile sağlanır."
+        "feature1": "7/24 U├ºu┼ƒ Takibi (S─▒n─▒rs─▒z)",
+        "feature2": "Tazminat Avc─▒s─▒ (%0 Komisyon)",
+        "feature3": "Business Upgrade F─▒rsatlar─▒",
+        "feature4": "Fiyat Arbitraj Uyar─▒lar─▒",
+        "feature5": "Koltuk Casusu (Yan Koltuk Uyar─▒s─▒)",
+        "feature6": "├ûncelikli E-posta Bildirimleri",
+        "cta": "Korumay─▒ Ba┼ƒlat",
+        "secure": "─░stedi─ƒiniz zaman iptal edebilirsiniz. G├╝venli ├╢deme Stripe ile sa─ƒlan─▒r."
     },
     "Pricing": {
-        "title": "Üyelik Planları",
-        "subtitle": "Her yolculuk tipi için özel koruma paketleri.",
-        "trial": "7 Gün Ücretsiz Deneme (Elite)",
+        "title": "├£yelik Planlar─▒",
+        "subtitle": "Her yolculuk tipi i├ºin ├╢zel koruma paketleri.",
+        "trial": "7 G├╝n ├£cretsiz Deneme (Elite)",
         "monthly": "/ay",
-        "yearly": "/yıl",
+        "yearly": "/y─▒l",
         "plans": {
             "free": {
                 "name": "Free",
@@ -761,16 +761,16 @@
             },
             "elite": {
                 "name": "Elite",
-                "badge": "Aile & İş",
+                "badge": "Aile & ─░┼ƒ",
                 "price": "$19.90",
                 "price_yearly": "$178.20"
             }
         },
         "features": {
             "search_score": "Arama & Skorlama",
-            "scenario_sim": "Senaryo Simülasyonu",
-            "disruption_hunter": "Disruption Hunter",
-            "inbox_parser": "Inbox Parser (E-mail)",
+            "scenario_sim": "Senaryo Sim├╝lasyonu",
+            "disruption_hunter": "Aksama Avcısı",
+            "inbox_parser": "Gelen Kutusu Ayrıştırıcı (E-posta)",
             "schedule_guardian": "Schedule Guardian",
             "junior_guardian": "Junior Guardian",
             "backup_generator": "Backup Generator",
@@ -780,102 +780,102 @@
             "push_notifications": "Push Bildirimleri"
         },
         "values": {
-            "unlimited": "Sınırsız",
-            "limited_3": "Kısıtlı (Günde 3)",
+            "unlimited": "S─▒n─▒rs─▒z",
+            "limited_3": "K─▒s─▒tl─▒ (G├╝nde 3)",
             "link_only": "Sadece Link",
             "auto_track": "Otomatik Takip",
-            "priority": "Öncelikli Destek",
+            "priority": "├ûncelikli Destek",
             "none": "Yok",
-            "tickets_2": "Aylık 2 Bilet",
-            "watch_247": "7/24 Nöbet",
+            "tickets_2": "Ayl─▒k 2 Bilet",
+            "watch_247": "7/24 N├╢bet",
             "full_protection": "Tam Koruma",
-            "crisis_mgmt": "Kriz Yönetimi",
+            "crisis_mgmt": "Kriz Y├╢netimi",
             "list_only": "Sadece Liste",
-            "full_analysis": "Tam Erişim Analizi"
+            "full_analysis": "Tam Eri┼ƒim Analizi"
         },
         "cta": {
             "current": "Mevcut Plan",
-            "upgrade": "Yükselt",
-            "start_trial": "Denemeyi Başlat"
+            "upgrade": "Y├╝kselt",
+            "start_trial": "Denemeyi Ba┼ƒlat"
         },
         "table": {
-            "title": "Özellik Karşılaştırması",
-            "subtitle": "Her planda tam olarak ne aldığınızı görün",
-            "feature": "Özellik",
-            "legend": "Açıklama:",
+            "title": "├ûzellik Kar┼ƒ─▒la┼ƒt─▒rmas─▒",
+            "subtitle": "Her planda tam olarak ne ald─▒─ƒ─▒n─▒z─▒ g├╢r├╝n",
+            "feature": "├ûzellik",
+            "legend": "A├º─▒klama:",
             "included": "Dahil",
-            "limited": "Sınırlı",
-            "notIncluded": "Dahil Değil"
+            "limited": "S─▒n─▒rl─▒",
+            "notIncluded": "Dahil De─ƒil"
         },
         "categories": {
             "search_analysis": "Arama ve Analiz",
-            "monitoring": "İzleme (7/24)",
+            "monitoring": "─░zleme (7/24)",
             "notifications": "Bildirimler",
             "automation": "Otomasyon",
-            "premium_features": "Premium Özellikler"
+            "premium_features": "Premium ├ûzellikler"
         }
     },
     "PricingFeaturesPage": {
-        "title": "Özellik Karşılaştırması",
-        "backToPricing": "Fiyatlandırmaya Dön",
-        "ctaTitle": "Başlamaya hazır mısınız?",
-        "ctaDesc": "Seyahat koruma ihtiyacınıza uygun planı seçin.",
-        "viewPricingPlans": "Fiyatlandırma Planlarını Gör"
+        "title": "├ûzellik Kar┼ƒ─▒la┼ƒt─▒rmas─▒",
+        "backToPricing": "Fiyatland─▒rmaya D├╢n",
+        "ctaTitle": "Ba┼ƒlamaya haz─▒r m─▒s─▒n─▒z?",
+        "ctaDesc": "Seyahat koruma ihtiyac─▒n─▒za uygun plan─▒ se├ºin.",
+        "viewPricingPlans": "Fiyatland─▒rma Planlar─▒n─▒ G├╢r"
     },
     "PricingUpsell": {
-        "startingAt": "Başlangıç",
-        "billedMonthly": "aylık faturalandırılır",
-        "guarantee": "14 gün para iade garantisi",
+        "startingAt": "Ba┼ƒlang─▒├º",
+        "billedMonthly": "ayl─▒k faturaland─▒r─▒l─▒r",
+        "guarantee": "14 g├╝n para iade garantisi",
         "free": {
-            "title": "🚀 Flight Guardian Zekasını Aç",
-            "description": "Gerçek zamanlı aksama uyarıları, EU261 tazminat takibi ve yapay zeka destekli uçuş analizi alın",
-            "feature1": "Canlı uçuş durumu ve gecikme uyarıları",
-            "feature2": "EU261 tazminat hesaplayıcı",
-            "feature3": "Detaylı ikram ve uçak analizi",
-            "cta": "PRO'ya Yükselt"
+            "title": "≡ƒÜÇ Flight Guardian Zekas─▒n─▒ A├º",
+            "description": "Ger├ºek zamanl─▒ aksama uyar─▒lar─▒, EU261 tazminat takibi ve yapay zeka destekli u├ºu┼ƒ analizi al─▒n",
+            "feature1": "Canl─▒ u├ºu┼ƒ durumu ve gecikme uyar─▒lar─▒",
+            "feature2": "EU261 tazminat hesaplay─▒c─▒",
+            "feature3": "Detayl─▒ ikram ve u├ºak analizi",
+            "cta": "PRO'ya Y├╝kselt"
         },
         "elite": {
-            "title": "👑 Elite Güçlerini Aç",
-            "description": "ELITE üyelik ile SMS uyarıları, öncelikli destek ve gelişmiş aksama avcılığı alın",
-            "feature1": "Kritik aksamalarda SMS uyarıları",
-            "feature2": "Öncelikli müşteri desteği",
-            "feature3": "Gelişmiş upgrade fırsat uyarıları",
-            "cta": "ELITE'a Yükselt"
+            "title": "≡ƒææ Elite G├╝├ºlerini A├º",
+            "description": "ELITE ├╝yelik ile SMS uyar─▒lar─▒, ├╢ncelikli destek ve geli┼ƒmi┼ƒ aksama avc─▒l─▒─ƒ─▒ al─▒n",
+            "feature1": "Kritik aksamalarda SMS uyar─▒lar─▒",
+            "feature2": "├ûncelikli m├╝┼ƒteri deste─ƒi",
+            "feature3": "Geli┼ƒmi┼ƒ upgrade f─▒rsat uyar─▒lar─▒",
+            "cta": "ELITE'a Y├╝kselt"
         },
         "compact": {
             "learnMore": "Daha Fazla",
             "free": {
-                "title": "PRO'ya Yükselt",
-                "subtitle": "Gerçek zamanlı uyarıları aç"
+                "title": "PRO'ya Y├╝kselt",
+                "subtitle": "Ger├ºek zamanl─▒ uyar─▒lar─▒ a├º"
             },
             "elite": {
-                "title": "ELITE'a Geç",
-                "subtitle": "SMS uyarıları ve öncelikli destek alın"
+                "title": "ELITE'a Ge├º",
+                "subtitle": "SMS uyar─▒lar─▒ ve ├╢ncelikli destek al─▒n"
             }
         }
     },
     "addTrip": {
-        "title": "Yeni Seyahat İzle",
+        "title": "Yeni Seyahat ─░zle",
         "pnr": "PNR Kodu",
-        "pnrPlaceholder": "Örn: R7X992",
-        "flightNumber": "Uçuş Numarası",
-        "flightPlaceholder": "Örn: TK1984",
-        "start": "Takibi Başlat",
+        "pnrPlaceholder": "├ûrn: R7X992",
+        "flightNumber": "U├ºu┼ƒ Numaras─▒",
+        "flightPlaceholder": "├ûrn: TK1984",
+        "start": "Takibi Ba┼ƒlat",
         "close": "Kapat",
-        "processing": "PNR Sorgulanıyor..."
+        "processing": "PNR Sorgulan─▒yor..."
     },
     "amenity": {
         "title": "Hizmet Kusuru Bildirimi",
-        "subtitle": "Yolculukta bir şeyler ters mi gitti? İşaretleyin, tazminat isteyelim.",
+        "subtitle": "Yolculukta bir ┼ƒeyler ters mi gitti? ─░┼ƒaretleyin, tazminat isteyelim.",
         "wifi": "Wi-Fi Bozuktu",
         "ife": "Ekran/TV Bozuktu",
-        "food": "Yemek Kötü/Yoktu",
-        "seat": "Koltuk Kırıktı",
+        "food": "Yemek K├╢t├╝/Yoktu",
+        "seat": "Koltuk K─▒r─▒kt─▒",
         "crew": "Kaba Personel",
         "target": "Hedef",
-        "summary": "Oluşturulacak Talep Özeti",
-        "send": "Tazminat Talebini Gönder",
-        "sent": "Şikayet İletildi!",
-        "sentDesc": "{airline} Müşteri İlişkileri'ne resmi bir 'Goodwill Compensation' (İyi Niyet Tazminatı) talebi gönderdik. Genellikle 7 gün içinde mil veya hediye çeki tanımlarlar."
+        "summary": "Olu┼ƒturulacak Talep ├ûzeti",
+        "send": "Tazminat Talebini G├╢nder",
+        "sent": "┼₧ikayet ─░letildi!",
+        "sentDesc": "{airline} M├╝┼ƒteri ─░li┼ƒkileri'ne resmi bir 'Goodwill Compensation' (─░yi Niyet Tazminat─▒) talebi g├╢nderdik. Genellikle 7 g├╝n i├ºinde mil veya hediye ├ºeki tan─▒mlarlar."
     }
 }

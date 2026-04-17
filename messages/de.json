@@ -112,15 +112,15 @@
                     "desc": "4 Datenquellen (RapidAPI, Amadeus, Travelpayouts, Duffel) kombiniert, um blinde Flecken zu schließen."
                 },
                 "scoring": {
-                    "title": "Master Flight Scoring",
+                    "title": "Master-Flugbewertung",
                     "desc": "100-Punkte-Engine, die Wert, Risiko, Komfort und Zuverlässigkeit bewertet. Nicht nur billig, sondern sicher und smart."
                 },
                 "disruption": {
-                    "title": "Disruption Hunter + EU261",
+                    "title": "Störungsjäger + EU261",
                     "desc": "Erkennt Verspätungs- und Stornorisiko und prüft Ansprüche bis 600 EUR."
                 },
                 "guardian": {
-                    "title": "Guardian Worker (24/7)",
+                    "title": "Guardian-Monitor (24/7)",
                     "desc": "Cron-basiertes Monitoring alle 15 Minuten. Gate-Wechsel, Verspätung, Storno, Alarm."
                 },
                 "notifications": {
@@ -128,37 +128,37 @@
                     "desc": "E-Mail, SMS und Push mit Schweregraden und Handlungsanweisung."
                 },
                 "inbox": {
-                    "title": "Inbox Parser + Auto Tracking",
+                    "title": "Posteingang-Parser + Auto-Tracking",
                     "desc": "Buchungs-E-Mail weiterleiten, wir parsen PNR, erkennen Reisedaten und starten den Schutz."
                 }
             }
         },
         "scoring": {
             "label": "Monster Nr.10",
-            "title": "Master Flight Scoring Engine",
+            "title": "Master-Flugbewertungs-Engine",
             "subtitle": "Das Gehirn des Systems. Ohne das sind die anderen nur Features.",
             "formula": {
                 "title": "Erweiterte Scoring-Formel",
                 "intro": "Total: 100 Punkte, dann auf eine 10-Punkte-Skala normalisiert.",
                 "items": {
                     "price": {
-                        "title": "1. Price Value Score (20)",
+                        "title": "1. Preis-Leistungs-Score (20)",
                         "desc": "Medianpreis der Route, 20% günstiger = Bonus, 30% teurer = starke Strafe."
                     },
                     "duration": {
-                        "title": "2. Duration Efficiency (15)",
+                        "title": "2. Dauer-Effizienz (15)",
                         "desc": "Schnellste Route als Basis, +25% länger = -5, +40% = -8."
                     },
                     "stops": {
-                        "title": "3. Stop Count (10)",
+                        "title": "3. Anzahl Stopps (10)",
                         "desc": "Direkt = voll, 1 Stopp = -2, 2+ Stopps = -6."
                     },
                     "connection": {
-                        "title": "4. Connection Quality (10)",
+                        "title": "4. Umstiegsqualität (10)",
                         "desc": "<45 Min Risiko, 1-2.5 Std ideal, 5+ Std Ermüdung."
                     },
                     "selfTransfer": {
-                        "title": "5. Self-Transfer Risk (10)",
+                        "title": "5. Eigenständiges Umstiegsrisiko (10)",
                         "desc": "Andere PNR, Low-Cost-Kombi, Terminalwechsel = starke Strafe."
                     }
                 }
@@ -167,23 +167,23 @@
                 "title": "Qualitäts- und Komfort-Stack",
                 "items": {
                     "baggage": {
-                        "title": "6. Baggage Allowance (10)",
+                        "title": "6. Gepäckfreigrenze (10)",
                         "desc": "23kg inklusive = +10, nur Handgepäck = -5, keines = -10."
                     },
                     "reliability": {
-                        "title": "7. Airline Reliability (10)",
+                        "title": "7. Fluglinien-Zuverlässigkeit (10)",
                         "desc": "Pünktlichkeit, Sicherheitshistorie, Reputation."
                     },
                     "aircraft": {
-                        "title": "8. Aircraft Quality (5)",
+                        "title": "8. Flugzeugqualität (5)",
                         "desc": "A350/787 +3, 20 Jahre altes Flugzeug = -2."
                     },
                     "amenity": {
-                        "title": "9. Amenity Score (5)",
+                        "title": "9. Komfort-Score (5)",
                         "desc": "WiFi, IFE, Sitzabstand, Essensqualität."
                     },
                     "airport": {
-                        "title": "10. Airport Difficulty Index (5)",
+                        "title": "10. Flughafen-Schwierigkeitsindex (5)",
                         "desc": "Terminalkomplexität, Umsteige-Leichtigkeit, Sicherheitsdichte."
                     }
                 }
@@ -195,7 +195,7 @@
                 },
                 "risk": {
                     "title": "Risikoflaggen",
-                    "desc": "Rote Hinweise für kurze Umstiege, Self-Transfer-Risiken oder verspätungsanfällige Carrier."
+                    "desc": "Rote Hinweise für kurze Umstiege, Eigen-Transfer-Risiken oder verspätungsanfällige Fluglinien."
                 },
                 "value": {
                     "title": "Wert-Tags",
@@ -222,7 +222,7 @@
                     "ranking": "Risikobewusstes Ranking",
                     "scenario": "Szenario-Simulation",
                     "protection": "Proaktiver Disruption-Schutz",
-                    "compensation": "Leitfaden für Entschädigung und Recovery"
+                    "compensation": "Leitfaden für Entschädigung und Wiederherstellung"
                 }
             }
         },
@@ -570,8 +570,8 @@
         "features": {
             "search_score": "Suche & Bewertung",
             "scenario_sim": "Szenario-Simulation",
-            "disruption_hunter": "Disruption Hunter",
-            "inbox_parser": "Inbox Parser (E-Mail)",
+            "disruption_hunter": "Störungsjäger",
+            "inbox_parser": "Posteingang-Parser (E-Mail)",
             "schedule_guardian": "Zeitplan-Wächter",
             "junior_guardian": "Junior Guardian",
             "backup_generator": "Backup Generator",
