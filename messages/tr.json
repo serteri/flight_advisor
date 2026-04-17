@@ -1,6 +1,7 @@
 {
     "common": {
-        "motto": "Her milde hassasiyet, her uçuşta tutku."
+        "motto": "Her milde hassasiyet, her uçuşta tutku.",
+        "purpose_title": "AMACIMIZ"
     },
     "Navbar": {
         "home": "Ana Sayfa",

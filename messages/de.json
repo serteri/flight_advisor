@@ -1,6 +1,7 @@
 {
     "common": {
-        "motto": "Präzision in jeder Meile, Leidenschaft in jedem Flug."
+        "motto": "Präzision in jeder Meile, Leidenschaft in jedem Flug.",
+        "purpose_title": "UNSER ZIEL"
     },
     "Navbar": {
         "home": "Startseite",

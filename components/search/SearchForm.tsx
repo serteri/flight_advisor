@@ -11,6 +11,7 @@ import { useTranslations, useLocale } from 'next-intl';
 
 export function SearchForm() {
     const t = useTranslations('SearchForm');
+    const tCommon = useTranslations('common');
     const locale = useLocale(); // "en" | "tr" | "de"
     const router = useRouter();
 
@@ -87,32 +88,21 @@ export function SearchForm() {
                 ))}
             </div>
 
-            {/* ─────────────────────────────────────────────────────────────
-                Search Bar Container
-                Layout strategy:
-                  mobile  → flex-col (stacked)
-                  md→xl   → 2-row wrap: row1=FROM+TO, row2=Dates+Guests+Purpose+Button
-                  xl+     → single flex-row, FROM/TO min-w-[250px]
-            ──────────────────────────────────────────────────────────── */}
-            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap relative z-20 warm-hover overflow-hidden">
+            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 relative z-20 warm-hover overflow-hidden">
 
-                {/* ── ROW 1: FROM + TO (full width on md, auto on xl) ── */}
-                <div className="flex flex-row min-w-0 md:basis-full xl:basis-auto xl:flex-[6] xl:min-w-0">
-
-                    {/* FROM */}
-                    <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] md:gap-2">
+                    <div className="min-w-0 overflow-hidden xl:min-w-[250px]">
                         <CitySearchInput
                             label={t('origin_label') || "From"}
                             placeholder={t('origin_placeholder')}
                             onSelect={setOrigin}
                             variant="ghost"
-                            className="h-[88px] w-full rounded-2xl xl:rounded-l-full xl:rounded-r-none transition-colors"
+                            className="h-[88px] w-full rounded-2xl transition-colors"
                         />
                     </div>
 
-                    {/* Plane-icon divider */}
-                    <div className="flex items-center justify-center w-8 shrink-0 relative z-10 pointer-events-none">
-                        <div className="absolute inset-y-0 flex items-center">
+                    <div className="hidden md:flex items-center justify-center relative z-10 pointer-events-none">
+                        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center">
                             <div className="w-px h-full bg-slate-200/55" />
                         </div>
                         <div className="relative bg-white rounded-full p-1 shadow-sm border border-sky-100">
@@ -120,63 +110,53 @@ export function SearchForm() {
                         </div>
                     </div>
 
-                    {/* TO */}
-                    <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="min-w-0 overflow-hidden xl:min-w-[250px]">
                         <CitySearchInput
                             label={t('destination_label') || "To"}
                             placeholder={t('destination_placeholder')}
                             onSelect={setDestination}
                             variant="ghost"
-                            className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors"
+                            className="h-[88px] w-full rounded-2xl transition-colors"
                         />
                     </div>
                 </div>
 
-                {/* Horizontal separator between rows (md → xl only) */}
-                <div className="hidden md:block xl:hidden basis-full h-px bg-slate-200/55" />
-                {/* Vertical divider (xl only, between city group and rest) */}
-                <div className="hidden xl:block w-px bg-slate-200/55 my-3 shrink-0" />
-                {/* Mobile separator */}
-                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
+                <div className="h-px bg-slate-200/55 my-2 mx-2" />
 
-                {/* ── ROW 2: Dates + Passengers + Purpose + Search (full width on md, auto on xl) ── */}
-                <div className="flex flex-row min-w-0 md:basis-full xl:basis-auto xl:flex-1 overflow-hidden">
+                <div className="flex flex-col gap-2 md:grid md:grid-cols-[minmax(0,2fr)_130px_130px_64px] md:gap-2 xl:grid-cols-[minmax(340px,2fr)_150px_150px_64px]">
+                    <div className="relative group min-w-0 overflow-hidden">
+                        <div className="flex h-full min-w-0 overflow-hidden rounded-2xl bg-transparent">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                                <DatePicker
+                                    label={t('date_label') || "Departure"}
+                                    date={date}
+                                    setDate={setDate}
+                                    locale={locale as any}
+                                    variant="ghost"
+                                    className="h-[88px] w-full rounded-2xl md:rounded-r-none transition-colors min-w-0"
+                                />
+                            </div>
 
-                    {/* Dates */}
-                    <div className="relative group flex flex-1 min-w-0 overflow-hidden">
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                            <DatePicker
-                                label={t('date_label') || "Depart"}
-                                date={date}
-                                setDate={setDate}
-                                locale={locale as any}
-                                variant="ghost"
-                                className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors min-w-0"
-                            />
+                            {tripType === 'ROUND_TRIP' && (
+                                <>
+                                    <div className="w-px bg-slate-200/55 my-3 shrink-0" />
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                        <DatePicker
+                                            label={t('return_label') || "Return"}
+                                            date={returnDate}
+                                            setDate={setReturnDate}
+                                            locale={locale as any}
+                                            variant="ghost"
+                                            className="h-[88px] w-full rounded-2xl md:rounded-l-none transition-colors min-w-0"
+                                            placeholder="Add date"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
-
-                        {tripType === 'ROUND_TRIP' && (
-                            <>
-                                <div className="w-px bg-slate-200/55 my-3 shrink-0" />
-                                <div className="flex-1 min-w-0 overflow-hidden">
-                                    <DatePicker
-                                        label={t('return_label') || "Return"}
-                                        date={returnDate}
-                                        setDate={setReturnDate}
-                                        locale={locale as any}
-                                        variant="ghost"
-                                        className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors min-w-0"
-                                        placeholder="Add date"
-                                    />
-                                </div>
-                            </>
-                        )}
                     </div>
 
-                    <div className="w-px bg-slate-200/55 my-3 shrink-0" />
-
-                    {/* Passengers */}
-                    <div className="relative group min-w-0 overflow-hidden shrink-0 w-[120px] xl:w-auto xl:flex-1">
+                    <div className="relative group min-w-0 overflow-hidden">
                         <PassengerSelector
                             adults={adults}
                             setAdults={setAdults}
@@ -187,22 +167,19 @@ export function SearchForm() {
                             cabin={cabin}
                             setCabin={setCabin}
                             variant="ghost"
-                            className="h-[88px] rounded-2xl xl:rounded-none transition-colors min-w-0"
+                            className="h-[88px] rounded-2xl transition-colors min-w-0"
                         />
                     </div>
 
-                    <div className="w-px bg-slate-200/55 my-3 shrink-0" />
-
-                    {/* Travel Purpose */}
-                    <div className="relative group px-3 flex items-center min-w-0 shrink-0 w-[110px] xl:w-auto xl:flex-1">
+                    <div className="relative group px-3 flex items-center min-w-0">
                         <div className="w-full min-w-0">
-                            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">
-                                {t('purpose_label') || "Purpose"}
+                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">
+                                {tCommon('purpose_title')}
                             </label>
                             <select
                                 value={persona}
                                 onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
-                                className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-1.5 text-xs font-semibold text-slate-700 min-w-0"
+                                className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-sm font-semibold text-slate-700 min-w-0"
                             >
                                 <option value="budget">Budget</option>
                                 <option value="comfort">Comfort</option>
@@ -212,7 +189,6 @@ export function SearchForm() {
                         </div>
                     </div>
 
-                    {/* Search Button */}
                     <div className="p-2 flex items-center shrink-0">
                         <Button
                             onClick={handleSearch}
