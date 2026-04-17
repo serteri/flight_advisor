@@ -40,6 +40,13 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const [isExpanded, setIsExpanded] = useState(false);
     const t = useTranslations("FlightSearch");
 
+    // ── DNA field resolution: FlightResult uses `airline`/`airlineCode`, FlightForScoring uses `carrierName`/`carrier` ──
+    const resolvedCarrierName = flight.carrierName || flight.airline || '';
+    const resolvedCarrier = flight.carrier || flight.airlineCode || '';
+    const resolvedStops = flight.stops ?? 0;
+    const resolvedDuration = flight.duration || flight.totalDurationMinutes || 0;
+    const resolvedLayovers: { airport: string; duration: number; city?: string }[] = flight.layovers || [];
+
     // Master Score Data Access
     const masterScore = flight.scoreDetails?.masterBreakdown || flight.masterScore;
     const scoreTotal = masterScore?.total || flight.scores?.total || 0;
@@ -84,22 +91,29 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                 <div className="flex items-center gap-3 md:w-[180px]">
                     <div className="w-8 h-8 relative flex items-center justify-center">
                         <AirlineLogo
-                            carrierCode={flight.carrier}
-                            airlineName={flight.carrierName}
+                            carrierCode={resolvedCarrier}
+                            airlineName={resolvedCarrierName}
                             className="w-full h-full object-contain"
                         />
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="text-sm font-semibold text-slate-700 truncate">
-                            {flight.carrierName}
+                            {resolvedCarrierName || <span className="text-slate-400 italic text-xs">Unknown</span>}
                         </div>
-                        {/* Provider Badge */}
-                        <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
-                            isDuffel 
-                                ? 'bg-emerald-100 text-emerald-700' 
-                                : 'bg-blue-100 text-blue-700'
-                        }`}>
-                            {isDuffel ? '🏛️ Duffel' : '🌐 Kiwi'}
+                        {/* Provider + IATA badges */}
+                        <div className="flex items-center gap-1 flex-wrap">
+                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                                isDuffel 
+                                    ? 'bg-emerald-100 text-emerald-700' 
+                                    : 'bg-blue-100 text-blue-700'
+                            }`}>
+                                {isDuffel ? '🏛️ Duffel' : '🌐 Kiwi'}
+                            </div>
+                            {resolvedCarrier && (
+                                <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                                    {resolvedCarrier}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -119,21 +133,21 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
 
                     {/* Duration & Stops Visual */}
                     <div className="flex flex-col items-center w-32 md:w-40">
-                        <div className="text-xs text-slate-500 mb-1">
-                            {formatDuration(flight.duration)}
+                        <div className="text-xs text-slate-500 mb-1 font-medium">
+                            {resolvedDuration > 0 ? formatDuration(resolvedDuration) : '—'}
                         </div>
                         
-                        {/* Improved Stops Visualization */}
+                        {/* Stops Visualization */}
                         <div className="w-full relative group/stops cursor-help">
                              <div className="w-full h-[1px] bg-slate-300 relative flex items-center justify-center my-1">
-                                {flight.stops > 0 && (
+                                {resolvedStops > 0 && (
                                     <div className="bg-white px-1 flex gap-1">
-                                        {flight.layovers && flight.layovers.length > 0 ? (
-                                            flight.layovers.map((layover, i) => (
+                                        {resolvedLayovers.length > 0 ? (
+                                            resolvedLayovers.map((layover, i) => (
                                                 <div key={i} className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white hover:bg-slate-600 transition-colors" />
                                             ))
                                         ) : (
-                                            Array.from({ length: flight.stops }).map((_, i) => (
+                                            Array.from({ length: resolvedStops }).map((_, i) => (
                                                  <div key={i} className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white" />
                                             ))
                                         )}
@@ -142,23 +156,30 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             </div>
 
                              {/* Hover Detail for Stops */}
-                            {flight.stops > 0 && (
+                            {resolvedStops > 0 && (
                                 <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/stops:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg border border-slate-200">
-                                    {flight.layovers?.map(l => `${l.airport} (${formatDuration(l.duration)})`).join(', ') || `${flight.stops} Stop(s)`}
+                                    {resolvedLayovers.length > 0
+                                        ? resolvedLayovers.map(l => `${l.airport}${l.duration > 0 ? ` (${formatDuration(l.duration)})` : ''}`).join(' → ')
+                                        : `${resolvedStops} stop${resolvedStops > 1 ? 's' : ''}`
+                                    }
                                 </div>
                             )}
                         </div>
 
-                        <div className={`text-xs mt-1 font-medium text-center ${flight.stops === 0 ? 'text-green-600' : 'text-slate-500'}`}>
-                            {flight.stops === 0 ? 'Direct' :
-                                ((flight.layovers?.length ?? 0) > 0 ? 
-                                    <span className="flex flex-col">
-                                        <span>{flight.stops} Stop{flight.stops > 1 ? 's' : ''}</span>
-                                        <span className="text-[10px] text-slate-400">
-                                            {flight.layovers!.map(l => `${l.airport} ${formatDuration(l.duration)}`).join(', ')}
+                        <div className={`text-xs mt-1 font-semibold text-center ${
+                            resolvedStops === 0 ? 'text-green-600' :
+                            resolvedStops === 1 ? 'text-blue-600' :
+                            'text-orange-500'
+                        }`}>
+                            {resolvedStops === 0 ? '✈ Direct' :
+                                (resolvedLayovers.length > 0 ? 
+                                    <span className="flex flex-col items-center">
+                                        <span>{resolvedStops} Stop{resolvedStops > 1 ? 's' : ''}</span>
+                                        <span className="text-[10px] text-slate-400 font-normal">
+                                            via {resolvedLayovers.map(l => l.airport).join(', ')}
                                         </span>
                                     </span>
-                                    : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`
+                                    : `${resolvedStops} Stop${resolvedStops > 1 ? 's' : ''}`
                                 )
                             }
                         </div>
@@ -368,7 +389,73 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                         ))}
                     </div>
 
+                    {/* ✈ FLIGHT DNA STRIP */}
                     <div className="mt-6 pt-4 border-t border-slate-200">
+                        <div className="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white px-4 py-3">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Flight DNA</div>
+                            <div className="flex flex-wrap gap-3">
+                                {/* Airline */}
+                                <div className="flex items-center gap-1.5">
+                                    <Plane className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                    <span className="text-xs font-semibold text-slate-700">
+                                        {resolvedCarrierName || <span className="text-slate-400 italic">Unknown airline</span>}
+                                        {resolvedCarrier && (
+                                            <span className="ml-1 font-mono text-[10px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded border border-slate-200">
+                                                {resolvedCarrier}
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+
+                                <span className="text-slate-200 select-none">|</span>
+
+                                {/* Duration */}
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <span className="text-xs font-semibold text-slate-700">
+                                        {resolvedDuration > 0 ? formatDuration(resolvedDuration) : '—'}
+                                    </span>
+                                </div>
+
+                                <span className="text-slate-200 select-none">|</span>
+
+                                {/* Stops */}
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                        resolvedStops === 0 ? 'bg-green-400' :
+                                        resolvedStops === 1 ? 'bg-blue-400' : 'bg-orange-400'
+                                    }`} />
+                                    <span className={`text-xs font-bold ${
+                                        resolvedStops === 0 ? 'text-green-700' :
+                                        resolvedStops === 1 ? 'text-blue-700' : 'text-orange-600'
+                                    }`}>
+                                        {resolvedStops === 0 ? 'Non-stop' : `${resolvedStops} stop${resolvedStops > 1 ? 's' : ''}`}
+                                    </span>
+                                </div>
+
+                                {/* Layover airports */}
+                                {resolvedLayovers.length > 0 && (
+                                    <>
+                                        <span className="text-slate-200 select-none">|</span>
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                            {resolvedLayovers.map((l, i) => (
+                                                <span
+                                                    key={i}
+                                                    className="text-[10px] font-mono bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded"
+                                                    title={l.duration > 0 ? `${l.city || l.airport} · ${formatDuration(l.duration)} layover` : l.city || l.airport}
+                                                >
+                                                    {l.airport}
+                                                    {l.duration > 0 && <span className="ml-1 text-amber-500">{formatDuration(l.duration)}</span>}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100">
                         <FareExplainer restrictions={flight.fareRestrictions} />
                     </div>
                 </div>
