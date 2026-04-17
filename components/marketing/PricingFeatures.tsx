@@ -8,25 +8,25 @@ export function PricingFeatures() {
 
     const features = [
         // SEARCH & SCORING
-        { key: 'search_score', category: 'Search & Analysis', free: true, guardian: true, elite: true },
-        { key: 'scenario_sim', category: 'Search & Analysis', free: 'limited', guardian: true, elite: true },
-        { key: 'disruption_hunter', category: 'Search & Analysis', free: 'limited', guardian: true, elite: true },
+        { key: 'search_score', category: 'search_analysis', free: true, guardian: true, elite: true },
+        { key: 'scenario_sim', category: 'search_analysis', free: 'limited', guardian: true, elite: true },
+        { key: 'disruption_hunter', category: 'search_analysis', free: 'limited', guardian: true, elite: true },
         
         // MONITORING
-        { key: 'schedule_guardian', category: 'Monitoring (24/7)', free: false, guardian: true, elite: true },
+        { key: 'schedule_guardian', category: 'monitoring', free: false, guardian: true, elite: true },
         
         // NOTIFICATIONS
-        { key: 'email_notifications', category: 'Notifications', free: 'limited', guardian: true, elite: true },
-        { key: 'sms_notifications', category: 'Notifications', free: false, guardian: 'limited', elite: true },
-        { key: 'push_notifications', category: 'Notifications', free: false, guardian: true, elite: true },
+        { key: 'email_notifications', category: 'notifications', free: 'limited', guardian: true, elite: true },
+        { key: 'sms_notifications', category: 'notifications', free: false, guardian: 'limited', elite: true },
+        { key: 'push_notifications', category: 'notifications', free: false, guardian: true, elite: true },
         
         // AUTOMATION
-        { key: 'inbox_parser', category: 'Automation', free: false, guardian: 'limited', elite: true },
+        { key: 'inbox_parser', category: 'automation', free: false, guardian: 'limited', elite: true },
         
         // PREMIUM FEATURES
-        { key: 'junior_guardian', category: 'Premium Features', free: false, guardian: false, elite: true },
-        { key: 'lounge_intel', category: 'Premium Features', free: false, guardian: 'limited', elite: true },
-        { key: 'backup_generator', category: 'Premium Features', free: false, guardian: false, elite: true },
+        { key: 'junior_guardian', category: 'premium_features', free: false, guardian: false, elite: true },
+        { key: 'lounge_intel', category: 'premium_features', free: false, guardian: 'limited', elite: true },
+        { key: 'backup_generator', category: 'premium_features', free: false, guardian: false, elite: true },
     ];
 
     const categories = [...new Set(features.map(f => f.category))];
@@ -39,9 +39,9 @@ export function PricingFeatures() {
     };
 
     const getLabel = (value: boolean | string) => {
-        if (value === true) return 'Included';
+        if (value === true) return t('table.included');
         if (value === false) return '-';
-        if (value === 'limited') return 'Limited';
+        if (value === 'limited') return t('table.limited');
         return '-';
     };
 
@@ -50,10 +50,10 @@ export function PricingFeatures() {
             <div className="container mx-auto px-4 md:px-6">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-slate-900 mb-2">
-                        Feature Comparison
+                        {t('table.title')}
                     </h2>
                     <p className="text-slate-600">
-                        See exactly what you get in each plan
+                        {t('table.subtitle')}
                     </p>
                 </div>
 
@@ -66,7 +66,7 @@ export function PricingFeatures() {
                             <div className="max-w-5xl mx-auto">
                                 {/* Category Header */}
                                 <h3 className="text-lg font-bold text-slate-900 mb-3 px-4 py-2 bg-slate-100 rounded-lg">
-                                    {category}
+                                    {t(`categories.${category}`)}
                                 </h3>
 
                                 {/* Table */}
@@ -74,10 +74,10 @@ export function PricingFeatures() {
                                     <table className="w-full">
                                         <thead>
                                             <tr className="bg-slate-50 border-b border-slate-200">
-                                                <th className="p-4 text-left font-bold text-slate-900">Feature</th>
-                                                <th className="p-4 text-center font-bold text-slate-600 min-w-[100px]">Free</th>
-                                                <th className="p-4 text-center font-bold text-blue-600 min-w-[100px]">Guardian</th>
-                                                <th className="p-4 text-center font-bold text-amber-600 min-w-[100px]">Elite</th>
+                                                <th className="p-4 text-left font-bold text-slate-900">{t('table.feature')}</th>
+                                                <th className="p-4 text-center font-bold text-slate-600 min-w-[100px]">{t('plans.free.name')}</th>
+                                                <th className="p-4 text-center font-bold text-blue-600 min-w-[100px]">{t('plans.guardian.name')}</th>
+                                                <th className="p-4 text-center font-bold text-amber-600 min-w-[100px]">{t('plans.elite.name')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -121,19 +121,19 @@ export function PricingFeatures() {
 
                 {/* Legend */}
                 <div className="max-w-5xl mx-auto mt-12 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-semibold text-slate-900 mb-3">Legend:</p>
+                    <p className="text-sm font-semibold text-slate-900 mb-3">{t('table.legend')}</p>
                     <div className="flex flex-wrap gap-6">
                         <div className="flex items-center gap-2">
                             <Check className="w-4 h-4 text-emerald-500" />
-                            <span className="text-sm text-slate-600">Included</span>
+                            <span className="text-sm text-slate-600">{t('table.included')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <AlertCircle className="w-4 h-4 text-amber-500" />
-                            <span className="text-sm text-slate-600">Limited</span>
+                            <span className="text-sm text-slate-600">{t('table.limited')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Minus className="w-4 h-4 text-slate-300" />
-                            <span className="text-sm text-slate-600">Not Included</span>
+                            <span className="text-sm text-slate-600">{t('table.notIncluded')}</span>
                         </div>
                     </div>
                 </div>

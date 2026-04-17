@@ -434,6 +434,7 @@
     "subtitle": "Enter your flight details. We'll track the prices and alert you when it's time to buy.",
     "heroTitle": "Where are we flying?",
     "heroSubtitle": "Discover the best flight deals",
+    "mottoLabel": "FlightAgent Motto",
     "oneWay": "One Way",
     "roundTrip": "Round Trip",
     "from": "From",
@@ -864,6 +865,61 @@
       "current": "Current Plan",
       "upgrade": "Upgrade",
       "start_trial": "Start Trial"
+    },
+    "table": {
+      "title": "Feature Comparison",
+      "subtitle": "See exactly what you get in each plan",
+      "feature": "Feature",
+      "legend": "Legend:",
+      "included": "Included",
+      "limited": "Limited",
+      "notIncluded": "Not Included"
+    },
+    "categories": {
+      "search_analysis": "Search & Analysis",
+      "monitoring": "Monitoring (24/7)",
+      "notifications": "Notifications",
+      "automation": "Automation",
+      "premium_features": "Premium Features"
+    }
+  },
+  "PricingFeaturesPage": {
+    "title": "Feature Comparison",
+    "backToPricing": "Back to Pricing",
+    "ctaTitle": "Ready to get started?",
+    "ctaDesc": "Choose the plan that suits your travel protection needs.",
+    "viewPricingPlans": "View Pricing Plans"
+  },
+  "PricingUpsell": {
+    "startingAt": "Starting at",
+    "billedMonthly": "billed monthly",
+    "guarantee": "14-day money-back guarantee",
+    "free": {
+      "title": "🚀 Unlock Flight Guardian Intelligence",
+      "description": "Get real-time disruption alerts, EU261 compensation tracking, and AI-powered flight analysis",
+      "feature1": "Live flight status & delay alerts",
+      "feature2": "EU261 compensation calculator",
+      "feature3": "Detailed amenity & aircraft analysis",
+      "cta": "Upgrade to PRO"
+    },
+    "elite": {
+      "title": "👑 Unlock Elite Powers",
+      "description": "Get SMS alerts, priority support, and advanced disruption hunting with ELITE membership",
+      "feature1": "SMS alerts for critical disruptions",
+      "feature2": "Priority customer support",
+      "feature3": "Advanced upgrade opportunity alerts",
+      "cta": "Upgrade to ELITE"
+    },
+    "compact": {
+      "learnMore": "Learn More",
+      "free": {
+        "title": "Upgrade to PRO",
+        "subtitle": "Unlock real-time alerts"
+      },
+      "elite": {
+        "title": "Go ELITE",
+        "subtitle": "Get SMS alerts & priority support"
+      }
     }
   },
   "addTrip": {

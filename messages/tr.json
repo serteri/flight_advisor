@@ -434,6 +434,7 @@
         "subtitle": "Uçuş bilgilerinizi girin. Fiyatları takip edip en uygun zamanda satın almanız için sizi uyaracağız.",
         "heroTitle": "Nereye Uçuyoruz?",
         "heroSubtitle": "En iyi uçuş fırsatlarını keşfedin",
+        "mottoLabel": "FlightAgent Mottosu",
         "oneWay": "Tek Yön",
         "roundTrip": "Gidiş-Dönüş",
         "from": "Nereden",
@@ -796,6 +797,61 @@
             "current": "Mevcut Plan",
             "upgrade": "Yükselt",
             "start_trial": "Denemeyi Başlat"
+        },
+        "table": {
+            "title": "Özellik Karşılaştırması",
+            "subtitle": "Her planda tam olarak ne aldığınızı görün",
+            "feature": "Özellik",
+            "legend": "Açıklama:",
+            "included": "Dahil",
+            "limited": "Sınırlı",
+            "notIncluded": "Dahil Değil"
+        },
+        "categories": {
+            "search_analysis": "Arama ve Analiz",
+            "monitoring": "İzleme (7/24)",
+            "notifications": "Bildirimler",
+            "automation": "Otomasyon",
+            "premium_features": "Premium Özellikler"
+        }
+    },
+    "PricingFeaturesPage": {
+        "title": "Özellik Karşılaştırması",
+        "backToPricing": "Fiyatlandırmaya Dön",
+        "ctaTitle": "Başlamaya hazır mısınız?",
+        "ctaDesc": "Seyahat koruma ihtiyacınıza uygun planı seçin.",
+        "viewPricingPlans": "Fiyatlandırma Planlarını Gör"
+    },
+    "PricingUpsell": {
+        "startingAt": "Başlangıç",
+        "billedMonthly": "aylık faturalandırılır",
+        "guarantee": "14 gün para iade garantisi",
+        "free": {
+            "title": "🚀 Flight Guardian Zekasını Aç",
+            "description": "Gerçek zamanlı aksama uyarıları, EU261 tazminat takibi ve yapay zeka destekli uçuş analizi alın",
+            "feature1": "Canlı uçuş durumu ve gecikme uyarıları",
+            "feature2": "EU261 tazminat hesaplayıcı",
+            "feature3": "Detaylı ikram ve uçak analizi",
+            "cta": "PRO'ya Yükselt"
+        },
+        "elite": {
+            "title": "👑 Elite Güçlerini Aç",
+            "description": "ELITE üyelik ile SMS uyarıları, öncelikli destek ve gelişmiş aksama avcılığı alın",
+            "feature1": "Kritik aksamalarda SMS uyarıları",
+            "feature2": "Öncelikli müşteri desteği",
+            "feature3": "Gelişmiş upgrade fırsat uyarıları",
+            "cta": "ELITE'a Yükselt"
+        },
+        "compact": {
+            "learnMore": "Daha Fazla",
+            "free": {
+                "title": "PRO'ya Yükselt",
+                "subtitle": "Gerçek zamanlı uyarıları aç"
+            },
+            "elite": {
+                "title": "ELITE'a Geç",
+                "subtitle": "SMS uyarıları ve öncelikli destek alın"
+            }
         }
     },
     "addTrip": {

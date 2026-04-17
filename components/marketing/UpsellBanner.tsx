@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { UserTier } from '@/lib/tierUtils';
+import { useTranslations } from 'next-intl';
 
 interface UpsellBannerProps {
     userTier: UserTier;
@@ -13,6 +14,7 @@ interface UpsellBannerProps {
 
 export function UpsellBanner({ userTier, onDismiss }: UpsellBannerProps) {
     const router = useRouter();
+    const t = useTranslations('PricingUpsell');
     const [dismissed, setDismissed] = useState(false);
 
     // Don't show for ELITE users
@@ -32,30 +34,30 @@ export function UpsellBanner({ userTier, onDismiss }: UpsellBannerProps) {
     // Different messaging for FREE vs PRO users
     const config = userTier === 'FREE' 
         ? {
-            title: '🚀 Unlock Flight Guardian Intelligence',
-            description: 'Get real-time disruption alerts, EU261 compensation tracking, and AI-powered flight analysis',
+            title: t('free.title'),
+            description: t('free.description'),
             targetTier: 'PRO',
             price: '$9.90/mo',
             gradient: 'from-blue-600 via-purple-600 to-indigo-600',
             features: [
-                { icon: <Shield className="w-4 h-4" />, text: 'Live flight status & delay alerts' },
-                { icon: <TrendingUp className="w-4 h-4" />, text: 'EU261 compensation calculator' },
-                { icon: <Zap className="w-4 h-4" />, text: 'Detailed amenity & aircraft analysis' }
+                { icon: <Shield className="w-4 h-4" />, text: t('free.feature1') },
+                { icon: <TrendingUp className="w-4 h-4" />, text: t('free.feature2') },
+                { icon: <Zap className="w-4 h-4" />, text: t('free.feature3') }
             ],
-            cta: 'Upgrade to PRO'
+            cta: t('free.cta')
         }
         : {
-            title: '👑 Unlock Elite Powers',
-            description: 'Get SMS alerts, priority support, and advanced disruption hunting with ELITE membership',
+            title: t('elite.title'),
+            description: t('elite.description'),
             targetTier: 'ELITE',
             price: '$19.90/mo',
             gradient: 'from-amber-500 via-orange-500 to-red-500',
             features: [
-                { icon: <Crown className="w-4 h-4" />, text: 'SMS alerts for critical disruptions' },
-                { icon: <Shield className="w-4 h-4" />, text: 'Priority customer support' },
-                { icon: <Zap className="w-4 h-4" />, text: 'Advanced upgrade opportunity alerts' }
+                { icon: <Crown className="w-4 h-4" />, text: t('elite.feature1') },
+                { icon: <Shield className="w-4 h-4" />, text: t('elite.feature2') },
+                { icon: <Zap className="w-4 h-4" />, text: t('elite.feature3') }
             ],
-            cta: 'Upgrade to ELITE'
+            cta: t('elite.cta')
         };
 
     return (
@@ -102,9 +104,9 @@ export function UpsellBanner({ userTier, onDismiss }: UpsellBannerProps) {
                     {/* Right Side - CTA */}
                     <div className="md:text-right">
                         <div className="inline-block mb-3">
-                            <div className="text-white/80 text-xs uppercase tracking-wider mb-1">Starting at</div>
+                            <div className="text-white/80 text-xs uppercase tracking-wider mb-1">{t('startingAt')}</div>
                             <div className="text-4xl font-black text-white">{config.price}</div>
-                            <div className="text-white/70 text-xs">billed monthly</div>
+                            <div className="text-white/70 text-xs">{t('billedMonthly')}</div>
                         </div>
                         <Button
                             onClick={handleUpgrade}
@@ -115,7 +117,7 @@ export function UpsellBanner({ userTier, onDismiss }: UpsellBannerProps) {
                             {config.targetTier === 'ELITE' ? <Crown className="w-5 h-5 ml-2" /> : <Zap className="w-5 h-5 ml-2" />}
                         </Button>
                         <div className="text-white/60 text-xs mt-2">
-                            14-day money-back guarantee
+                            {t('guarantee')}
                         </div>
                     </div>
                 </div>
@@ -129,20 +131,21 @@ export function UpsellBanner({ userTier, onDismiss }: UpsellBannerProps) {
  */
 export function CompactUpsellCard({ userTier }: { userTier: UserTier }) {
     const router = useRouter();
+    const t = useTranslations('PricingUpsell');
 
     if (userTier === 'ELITE') return null;
 
     const config = userTier === 'FREE'
         ? {
-            title: 'Upgrade to PRO',
-            subtitle: 'Unlock real-time alerts',
+            title: t('compact.free.title'),
+            subtitle: t('compact.free.subtitle'),
             gradient: 'from-blue-500 to-purple-600',
             price: '$9.90',
             icon: <Zap className="w-6 h-6" />
         }
         : {
-            title: 'Go ELITE',
-            subtitle: 'Get SMS alerts & priority support',
+            title: t('compact.elite.title'),
+            subtitle: t('compact.elite.subtitle'),
             gradient: 'from-amber-500 to-orange-600',
             price: '$19.90',
             icon: <Crown className="w-6 h-6" />
@@ -162,7 +165,7 @@ export function CompactUpsellCard({ userTier }: { userTier: UserTier }) {
             <h4 className="font-bold text-lg mb-1">{config.title}</h4>
             <p className="text-sm opacity-90 mb-3">{config.subtitle}</p>
             <Button size="sm" variant="secondary" className="w-full font-semibold">
-                Learn More
+                {t('compact.learnMore')}
             </Button>
         </div>
     );

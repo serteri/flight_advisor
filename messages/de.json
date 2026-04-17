@@ -322,6 +322,7 @@
         "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
         "heroTitle": "Wohin fliegen wir?",
         "heroSubtitle": "Entdecken Sie die besten Flugangebote",
+        "mottoLabel": "FlightAgent Motto",
         "oneWay": "Nur Hinflug",
         "roundTrip": "Hin- und Rückflug",
         "from": "Von",
@@ -597,6 +598,61 @@
             "current": "Aktueller Plan",
             "upgrade": "Upgrade",
             "start_trial": "Test starten"
+        },
+        "table": {
+            "title": "Funktionsvergleich",
+            "subtitle": "Sehen Sie genau, was Sie in jedem Plan erhalten",
+            "feature": "Funktion",
+            "legend": "Legende:",
+            "included": "Enthalten",
+            "limited": "Begrenzt",
+            "notIncluded": "Nicht enthalten"
+        },
+        "categories": {
+            "search_analysis": "Suche & Analyse",
+            "monitoring": "Überwachung (24/7)",
+            "notifications": "Benachrichtigungen",
+            "automation": "Automatisierung",
+            "premium_features": "Premium-Funktionen"
+        }
+    },
+    "PricingFeaturesPage": {
+        "title": "Funktionsvergleich",
+        "backToPricing": "Zurück zu Preisen",
+        "ctaTitle": "Bereit loszulegen?",
+        "ctaDesc": "Wählen Sie den Plan, der zu Ihrem Reiseschutz passt.",
+        "viewPricingPlans": "Preispläne ansehen"
+    },
+    "PricingUpsell": {
+        "startingAt": "Ab",
+        "billedMonthly": "monatliche Abrechnung",
+        "guarantee": "14 Tage Geld-zurück-Garantie",
+        "free": {
+            "title": "🚀 Flight Guardian Intelligence freischalten",
+            "description": "Erhalten Sie Echtzeit-Störungswarnungen, EU261-Tracking und KI-gestützte Fluganalyse",
+            "feature1": "Live-Flugstatus & Verspätungswarnungen",
+            "feature2": "EU261-Entschädigungsrechner",
+            "feature3": "Detaillierte Amenity- und Flugzeuganalyse",
+            "cta": "Auf PRO upgraden"
+        },
+        "elite": {
+            "title": "👑 Elite-Powers freischalten",
+            "description": "Mit ELITE erhalten Sie SMS-Warnungen, Prioritäts-Support und erweitertes Disruption-Hunting",
+            "feature1": "SMS-Warnungen bei kritischen Störungen",
+            "feature2": "Prioritäts-Kundensupport",
+            "feature3": "Erweiterte Upgrade-Chancen-Warnungen",
+            "cta": "Auf ELITE upgraden"
+        },
+        "compact": {
+            "learnMore": "Mehr erfahren",
+            "free": {
+                "title": "Auf PRO upgraden",
+                "subtitle": "Echtzeit-Warnungen freischalten"
+            },
+            "elite": {
+                "title": "Zu ELITE",
+                "subtitle": "SMS-Warnungen & Prioritäts-Support"
+            }
         }
     },
     "addTrip": {

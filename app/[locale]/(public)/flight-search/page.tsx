@@ -89,7 +89,7 @@ const fromSelectorCabin = (value: SelectorCabin): SearchCabin => {
 
 export default function SkyscannerSearchPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
             <SearchPageContent />
         </Suspense>
     );
@@ -750,7 +750,7 @@ function SearchPageContent() {
                 <div className="container mx-auto px-4 py-12 max-w-6xl relative">
                     {/* Header */}
                     <div className="text-center mb-10">
-                        <p className="motto-signature text-xs md:text-sm mb-2">FlightAgent Motto</p>
+                        <p className="motto-signature text-xs md:text-sm mb-2">{t('mottoLabel')}</p>
                         <h2 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-3">{tCommon('motto')}</h2>
                         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 flex items-center justify-center gap-4">
                             <div className="p-3 bg-sky-100 rounded-2xl">
@@ -880,7 +880,7 @@ function SearchPageContent() {
                     <div className="container mx-auto px-4 max-w-5xl">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <p className="motto-signature text-xs mb-1">FlightAgent Motto</p>
+                                <p className="motto-signature text-xs mb-1">{t('mottoLabel')}</p>
                                 <h3 className="text-xl md:text-2xl font-extrabold text-sky-900 mb-1">{tCommon('motto')}</h3>
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900">
