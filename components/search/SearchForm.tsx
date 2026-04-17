@@ -88,10 +88,10 @@ export function SearchForm() {
             </div>
 
             {/* Unified Search Bar Container */}
-            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row relative z-20 warm-hover overflow-hidden">
+            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row md:items-stretch relative z-20 warm-hover overflow-hidden">
 
-                {/* Origin */}
-                <div className="relative min-w-0 group overflow-hidden md:flex-[2] md:min-w-[180px] lg:min-w-[220px]">
+                {/* Origin — flex-[3]: city inputs are the primary real estate */}
+                <div className="relative min-w-0 group overflow-hidden md:flex-[3] md:min-w-[160px]">
                     <CitySearchInput
                         label={t('origin_label') || "From"}
                         placeholder={t('origin_placeholder')}
@@ -101,19 +101,19 @@ export function SearchForm() {
                     />
                 </div>
 
-                {/* Divider with plane icon */}
-                <div className="hidden md:flex items-center justify-center md:w-10 lg:w-12 shrink-0 relative z-10 mx-1 pointer-events-none">
+                {/* Plane-icon divider — absolute overlay, steals zero flex space */}
+                <div className="hidden md:flex items-center justify-center w-8 shrink-0 relative z-10 pointer-events-none">
                     <div className="absolute inset-0 flex items-center">
                         <div className="w-px h-full bg-slate-200/55 mx-auto" />
                     </div>
-                    <div className="relative bg-white rounded-full p-1.5 shadow-sm border border-sky-100">
-                        <Plane size={12} className="text-sky-500 fill-sky-500" />
+                    <div className="relative bg-white rounded-full p-1 shadow-sm border border-sky-100">
+                        <Plane size={10} className="text-sky-500 fill-sky-500" />
                     </div>
                 </div>
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
-                {/* Destination */}
-                <div className="relative min-w-0 group overflow-hidden md:flex-[2] md:min-w-[180px] lg:min-w-[220px]">
+                {/* Destination — same priority as origin */}
+                <div className="relative min-w-0 group overflow-hidden md:flex-[3] md:min-w-[160px]">
                     <CitySearchInput
                         label={t('destination_label') || "To"}
                         placeholder={t('destination_placeholder')}
@@ -124,12 +124,12 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200/55 my-4" />
+                <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
-                {/* Date Selection (Dynamic based on Trip Type) */}
-                <div className="relative group flex min-w-0 overflow-hidden md:flex-[1] md:min-w-[220px] lg:min-w-[250px] xl:min-w-[290px]">
-                    <div className="flex-1 min-w-0">
+                {/* Dates — flex-[2]: secondary, but still needs room for 2 pickers */}
+                <div className="relative group flex min-w-0 overflow-hidden md:flex-[2] md:min-w-[140px]">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                         <DatePicker
                             label={t('date_label') || "Depart"}
                             date={date}
@@ -142,8 +142,8 @@ export function SearchForm() {
 
                     {tripType === 'ROUND_TRIP' && (
                         <>
-                            <div className="hidden md:block w-px bg-slate-200/55 my-4" />
-                            <div className="flex-1 min-w-0">
+                            <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
+                            <div className="flex-1 min-w-0 overflow-hidden">
                                 <DatePicker
                                     label={t('return_label') || "Return"}
                                     date={returnDate}
@@ -159,11 +159,11 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200/55 my-4" />
+                <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
-                {/* Passengers */}
-                <div className="relative group min-w-0 overflow-hidden md:flex-[1] md:min-w-[150px] lg:min-w-[170px] xl:min-w-[190px]">
+                {/* Passengers — flex-[1] */}
+                <div className="relative group min-w-0 overflow-hidden md:flex-[1] md:min-w-[110px]">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -178,14 +178,14 @@ export function SearchForm() {
                     />
                 </div>
 
-                {/* Travel Purpose */}
-                <div className="relative group px-1.5 md:px-2 flex items-center min-w-0 md:flex-[0.85] md:min-w-[130px] lg:min-w-[150px]">
-                    <div className="w-full">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">Seyahat Amacı</label>
+                {/* Travel Purpose — flex-[1] */}
+                <div className="relative group px-2 md:px-3 flex items-center min-w-0 md:flex-[1] md:min-w-[100px]">
+                    <div className="w-full min-w-0">
+                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">Amaç</label>
                         <select
                             value={persona}
                             onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
-                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-2 text-xs md:text-sm font-medium text-slate-700 truncate"
+                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-1.5 text-xs font-semibold text-slate-700 truncate min-w-0"
                         >
                             <option value="budget">Budget</option>
                             <option value="comfort">Comfort</option>

@@ -344,7 +344,7 @@ export function DatePicker({
                     flex transition-all duration-200 text-left cursor-pointer
                     ${variant === 'default'
                         ? 'items-center h-14 px-4 pl-12 bg-white border rounded-xl hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                        : 'flex-col justify-center h-full px-2 md:px-2.5 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
+                        : 'flex-col justify-center h-full px-2 md:px-3 bg-transparent border-0 hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
                     }
                     ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}
                     ${error ? 'border-red-500' : (variant === 'default' ? 'border-slate-200' : '')}
@@ -373,12 +373,12 @@ export function DatePicker({
                                         {format(selected, "EEEE", { locale: dateLocale })}
                                     </span>
                                 )}
-                                <span className={`text-slate-900 leading-tight truncate w-full whitespace-nowrap ${variant === "ghost" ? "text-[clamp(10px,1.2vw,14px)] font-semibold" : "text-lg font-bold"}`}>
-                                    {format(selected, variant === "ghost" ? "d MMM ''yy" : "d MMMM yyyy", { locale: dateLocale })}
+                                <span className={`text-slate-900 leading-tight truncate w-full whitespace-nowrap ${variant === "ghost" ? "text-sm font-semibold" : "text-lg font-bold"}`}>
+                                    {format(selected, variant === "ghost" ? "d MMM'' ''yy" : "d MMMM yyyy", { locale: dateLocale })}
                                 </span>
                             </div>
                         )
-                        : <span className={`${variant === "ghost" ? "text-[clamp(10px,1.2vw,14px)] font-semibold truncate w-full whitespace-nowrap" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
+                        : <span className={`${variant === "ghost" ? "text-sm font-semibold truncate w-full whitespace-nowrap" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
                     }
                 </div>
             </button>

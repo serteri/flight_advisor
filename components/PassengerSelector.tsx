@@ -76,7 +76,7 @@ export function PassengerSelector({
                 className={`w-full transition-all text-left cursor-pointer relative
                     ${variant === 'default'
                         ? 'h-14 px-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
-                        : 'h-full flex flex-col justify-center px-2 md:px-2.5 bg-transparent hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
+                        : 'h-full flex flex-col justify-center px-2 md:px-3 bg-transparent hover:bg-slate-100/80 rounded-lg min-w-0 flex-shrink'
                     }
                 `}
             >
@@ -99,7 +99,7 @@ export function PassengerSelector({
                         <div className="text-[10px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none truncate w-full uppercase">
                             {t('travelers_label') || "Travelers & Cabin"}
                         </div>
-                        <div className="text-[clamp(10px,1.2vw,14px)] font-semibold text-slate-900 leading-tight w-full min-w-0">
+                        <div className="text-sm font-semibold text-slate-900 leading-tight w-full min-w-0">
                             <span className="block truncate" title={`${totalPassengers} ${t('passengers_short') || 'Guest'}, ${getCabinShortLabel(cabin)}`}>
                                 {totalPassengers} {t('passengers_short') || "Guest"}, {cabin === 'ECONOMY' ? 'Eco' : cabin === 'BUSINESS' ? 'Business' : cabin === 'FIRST' ? 'First' : 'Prem Eco'}
                             </span>
