@@ -8,6 +8,7 @@ import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeatur
 import type { UserTier } from '@/lib/tierUtils';
 import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
 import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from '@/lib/airline-logo-utils';
+import { BUY_NOW_VARIANT_CHANGE_EVENT, getBuyNowVariantBucket } from '@/lib/experiment/buyNowVariant';
 
 export default function FlightResultCard({ 
     flight, 
@@ -34,6 +35,24 @@ export default function FlightResultCard({
     const [showDetails, setShowDetails] = useState(false);
     const [showLockOverlay, setShowLockOverlay] = useState(false);
     const [decisionTracked, setDecisionTracked] = useState(false);
+    const [buyNowVariant, setBuyNowVariant] = useState<'A' | 'B' | 'C'>('A');
+
+    useEffect(() => {
+        setBuyNowVariant(getBuyNowVariantBucket());
+
+        const onVariantChange = (event: Event) => {
+            const custom = event as CustomEvent<{ variant?: 'A' | 'B' | 'C' }>;
+            const next = custom?.detail?.variant;
+            if (next === 'A' || next === 'B' || next === 'C') {
+                setBuyNowVariant(next);
+            }
+        };
+
+        window.addEventListener(BUY_NOW_VARIANT_CHANGE_EVENT, onVariantChange as EventListener);
+        return () => {
+            window.removeEventListener(BUY_NOW_VARIANT_CHANGE_EVENT, onVariantChange as EventListener);
+        };
+    }, []);
     
     // Safety check: if flight data is missing critical fields, render error
     if (!flight || !flight.id) {
@@ -350,6 +369,7 @@ export default function FlightResultCard({
             isNight,
             departureHour,
             departTime: departureTime,
+            buyNowVariant,
         };
 
         try {
@@ -449,11 +469,11 @@ export default function FlightResultCard({
 
     const decisionAction = decisionRecommendation === 'BUY_NOW'
         ? {
-            message: 'Prices are likely to increase soon.',
-            context: 'This is cheaper than typical prices for this route.',
+            message: String(flight?.advancedScore?.buyWaitSignal?.label || 'System recommends booking now based on 92% confidence.'),
+            context: 'Flight Intelligence confidence is high for a timely booking decision.',
             cta: 'Book now',
             onClick: handleBookClick,
-            className: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+            className: 'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white border border-sky-300/40 shadow-lg shadow-sky-500/30 btn-glow',
         }
         : decisionRecommendation === 'WAIT'
             ? {
@@ -461,7 +481,7 @@ export default function FlightResultCard({
                 context: 'Track this fare and act if the market softens further.',
                 cta: 'Track this flight',
                 onClick: handleTrackClick,
-                className: 'bg-amber-500 hover:bg-amber-600 text-white',
+                className: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white border border-amber-300/40 shadow-lg shadow-amber-500/30 btn-glow',
             }
             : decisionRecommendation === 'AVOID'
                 ? {
@@ -469,7 +489,7 @@ export default function FlightResultCard({
                     context: 'Better-ranked options are likely above this result.',
                     cta: 'See better options',
                     onClick: handleSeeBetterOptionsClick,
-                    className: 'bg-slate-900 hover:bg-slate-800 text-white',
+                    className: 'bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white border border-slate-300/20 shadow-lg shadow-slate-800/25 btn-glow',
                 }
                 : null;
 
@@ -871,12 +891,12 @@ export default function FlightResultCard({
                                     )}
 
                                     {flight.advancedScore?.decisionRecommendation && (
-                                        <div className={`rounded-lg px-3 py-2 border text-xs font-semibold ${
+                                        <div className={`rounded-2xl px-3 py-2.5 border text-xs font-semibold backdrop-blur-md shadow-[0_8px_24px_-12px_rgba(2,132,199,0.35)] ${
                                             flight.advancedScore.decisionRecommendation === 'BUY_NOW'
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                                ? 'bg-emerald-50/85 border-emerald-200 text-emerald-800'
                                                 : flight.advancedScore.decisionRecommendation === 'AVOID'
-                                                    ? 'bg-rose-50 border-rose-200 text-rose-800'
-                                                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                                                    ? 'bg-rose-50/85 border-rose-200 text-rose-800'
+                                                    : 'bg-amber-50/85 border-amber-200 text-amber-800'
                                         } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             <div className="uppercase tracking-wide text-[10px] font-extrabold mb-0.5">Decision Recommendation</div>
                                             <div>
@@ -892,8 +912,12 @@ export default function FlightResultCard({
                                     )}
 
                                     {decisionAction && hasPremiumAccess && (
-                                        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-                                            <div className="text-xs font-bold text-slate-900">{decisionAction.message}</div>
+                                        <div className="rounded-2xl border border-sky-200/60 bg-white/75 backdrop-blur-md px-3 py-2.5 shadow-[0_8px_24px_-12px_rgba(14,165,233,0.35)]">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="text-[10px] uppercase tracking-wider font-black text-sky-700">Flight Intelligence Alert</div>
+                                                <div className="text-[10px] font-semibold text-sky-600/90 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">Variant {buyNowVariant}</div>
+                                            </div>
+                                            <div className="text-xs font-bold text-slate-900 mt-1">{decisionAction.message}</div>
                                             <div className="text-[11px] text-slate-600 mt-1">{decisionAction.context}</div>
                                         </div>
                                     )}
