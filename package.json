@@ -11,7 +11,8 @@
     "check-env": "npx tsx scripts/check_env.ts",
     "test-sky-resolver": "npx tsx scripts/test_sky_resolver.ts",
     "worker": "npx tsx scripts/start-worker.ts",
-    "scheduler": "npx tsx workers/scheduler.ts"
+    "scheduler": "npx tsx workers/scheduler.ts",
+    "seed:flights": "npx tsx scripts/run-daily-searches.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
