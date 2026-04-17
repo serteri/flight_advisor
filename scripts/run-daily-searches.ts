@@ -28,9 +28,9 @@ const BASE_URL = (
   'http://localhost:3000'
 ).replace(/\/$/, '');
 
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 90_000;
 const TOTAL_SEARCHES = 24;
-const CONCURRENCY = 4;
+const CONCURRENCY = 3;
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -167,6 +167,7 @@ async function run() {
 
   for (let i = 0; i < jobs.length; i += CONCURRENCY) {
     const batch = jobs.slice(i, i + CONCURRENCY);
+    console.log(`\n[seed:flights] Running batch ${Math.floor(i / CONCURRENCY) + 1}/${Math.ceil(jobs.length / CONCURRENCY)} (${batch.length} requests)`);
     const outputs = await Promise.all(
       batch.map(async (job) => {
         const result = await callFlightSearch(job.url);
