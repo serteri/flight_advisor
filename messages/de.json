@@ -14,9 +14,16 @@
     "SearchForm": {
         "origin_placeholder": "Von wo?",
         "destination_placeholder": "Wohin?",
+        "origin_label": "Von",
+        "destination_label": "Nach",
+        "date_label": "Hinflug",
+        "return_label": "Rückflug",
+        "passengers_label": "Reisende",
         "search_button": "Suchen",
         "one_way": "Hinflug",
-        "round_trip": "Hin- und Rückflug"
+        "round_trip": "Hin- und Rückflug",
+        "multi_city": "Multi-City",
+        "purpose_label": "Reisezweck"
     },
     "DatePicker": {
         "placeholder": "Datum wählen",

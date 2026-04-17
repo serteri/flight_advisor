@@ -87,124 +87,142 @@ export function SearchForm() {
                 ))}
             </div>
 
-            {/* Unified Search Bar Container */}
-            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row md:items-stretch relative z-20 warm-hover overflow-hidden">
+            {/* ─────────────────────────────────────────────────────────────
+                Search Bar Container
+                Layout strategy:
+                  mobile  → flex-col (stacked)
+                  md→xl   → 2-row wrap: row1=FROM+TO, row2=Dates+Guests+Purpose+Button
+                  xl+     → single flex-row, FROM/TO min-w-[250px]
+            ──────────────────────────────────────────────────────────── */}
+            <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row md:flex-wrap xl:flex-nowrap relative z-20 warm-hover overflow-hidden">
 
-                {/* Origin — flex-[3]: city inputs are the primary real estate */}
-                <div className="relative min-w-0 group overflow-hidden md:flex-[3] md:min-w-[160px]">
-                    <CitySearchInput
-                        label={t('origin_label') || "From"}
-                        placeholder={t('origin_placeholder')}
-                        onSelect={setOrigin}
-                        variant="ghost"
-                        className="h-[88px] w-full rounded-2xl md:rounded-l-full md:rounded-r-none transition-colors"
-                    />
-                </div>
+                {/* ── ROW 1: FROM + TO (full width on md, auto on xl) ── */}
+                <div className="flex flex-row min-w-0 md:basis-full xl:basis-auto xl:flex-[6] xl:min-w-0">
 
-                {/* Plane-icon divider — absolute overlay, steals zero flex space */}
-                <div className="hidden md:flex items-center justify-center w-8 shrink-0 relative z-10 pointer-events-none">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-px h-full bg-slate-200/55 mx-auto" />
-                    </div>
-                    <div className="relative bg-white rounded-full p-1 shadow-sm border border-sky-100">
-                        <Plane size={10} className="text-sky-500 fill-sky-500" />
-                    </div>
-                </div>
-                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
-
-                {/* Destination — same priority as origin */}
-                <div className="relative min-w-0 group overflow-hidden md:flex-[3] md:min-w-[160px]">
-                    <CitySearchInput
-                        label={t('destination_label') || "To"}
-                        placeholder={t('destination_placeholder')}
-                        onSelect={setDestination}
-                        variant="ghost"
-                        className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors"
-                    />
-                </div>
-
-                {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
-                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
-
-                {/* Dates — flex-[2]: secondary, but still needs room for 2 pickers */}
-                <div className="relative group flex min-w-0 overflow-hidden md:flex-[2] md:min-w-[140px]">
+                    {/* FROM */}
                     <div className="flex-1 min-w-0 overflow-hidden">
-                        <DatePicker
-                            label={t('date_label') || "Depart"}
-                            date={date}
-                            setDate={setDate}
-                            locale={locale as any}
+                        <CitySearchInput
+                            label={t('origin_label') || "From"}
+                            placeholder={t('origin_placeholder')}
+                            onSelect={setOrigin}
                             variant="ghost"
-                            className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors min-w-0"
+                            className="h-[88px] w-full rounded-2xl xl:rounded-l-full xl:rounded-r-none transition-colors"
                         />
                     </div>
 
-                    {tripType === 'ROUND_TRIP' && (
-                        <>
-                            <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <DatePicker
-                                    label={t('return_label') || "Return"}
-                                    date={returnDate}
-                                    setDate={setReturnDate}
-                                    locale={locale as any}
-                                    variant="ghost"
-                                    className="h-[88px] w-full rounded-2xl md:rounded-none transition-colors min-w-0"
-                                    placeholder="Add date"
-                                />
-                            </div>
-                        </>
-                    )}
-                </div>
+                    {/* Plane-icon divider */}
+                    <div className="flex items-center justify-center w-8 shrink-0 relative z-10 pointer-events-none">
+                        <div className="absolute inset-y-0 flex items-center">
+                            <div className="w-px h-full bg-slate-200/55" />
+                        </div>
+                        <div className="relative bg-white rounded-full p-1 shadow-sm border border-sky-100">
+                            <Plane size={10} className="text-sky-500 fill-sky-500" />
+                        </div>
+                    </div>
 
-                {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200/55 my-3 shrink-0" />
-                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
-
-                {/* Passengers — flex-[1] */}
-                <div className="relative group min-w-0 overflow-hidden md:flex-[1] md:min-w-[110px]">
-                    <PassengerSelector
-                        adults={adults}
-                        setAdults={setAdults}
-                        childrenCount={childrenCount}
-                        setChildrenCount={setChildrenCount}
-                        infants={infants}
-                        setInfants={setInfants}
-                        cabin={cabin}
-                        setCabin={setCabin}
-                        variant="ghost"
-                        className="h-[88px] rounded-2xl md:rounded-none transition-colors min-w-0"
-                    />
-                </div>
-
-                {/* Travel Purpose — flex-[1] */}
-                <div className="relative group px-2 md:px-3 flex items-center min-w-0 md:flex-[1] md:min-w-[100px]">
-                    <div className="w-full min-w-0">
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">Amaç</label>
-                        <select
-                            value={persona}
-                            onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
-                            className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-1.5 text-xs font-semibold text-slate-700 truncate min-w-0"
-                        >
-                            <option value="budget">Budget</option>
-                            <option value="comfort">Comfort</option>
-                            <option value="business">Business</option>
-                            <option value="family">Family</option>
-                        </select>
+                    {/* TO */}
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                        <CitySearchInput
+                            label={t('destination_label') || "To"}
+                            placeholder={t('destination_placeholder')}
+                            onSelect={setDestination}
+                            variant="ghost"
+                            className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors"
+                        />
                     </div>
                 </div>
 
-                {/* Search Button */}
-                <div className="p-2 md:pl-0">
-                    <Button
-                        onClick={handleSearch}
-                        disabled={!origin || !destination || !date}
-                        className="w-full md:w-[60px] md:h-[60px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-500 hover:to-orange-300 text-white shadow-lg shadow-sky-500/40 hover:shadow-sky-500/60 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 btn-glow"
-                    >
-                        <Search className="h-6 w-6" />
-                        <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>
-                    </Button>
+                {/* Horizontal separator between rows (md → xl only) */}
+                <div className="hidden md:block xl:hidden basis-full h-px bg-slate-200/55" />
+                {/* Vertical divider (xl only, between city group and rest) */}
+                <div className="hidden xl:block w-px bg-slate-200/55 my-3 shrink-0" />
+                {/* Mobile separator */}
+                <div className="md:hidden h-px bg-slate-200/55 mx-4" />
+
+                {/* ── ROW 2: Dates + Passengers + Purpose + Search (full width on md, auto on xl) ── */}
+                <div className="flex flex-row min-w-0 md:basis-full xl:basis-auto xl:flex-1 overflow-hidden">
+
+                    {/* Dates */}
+                    <div className="relative group flex flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                            <DatePicker
+                                label={t('date_label') || "Depart"}
+                                date={date}
+                                setDate={setDate}
+                                locale={locale as any}
+                                variant="ghost"
+                                className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors min-w-0"
+                            />
+                        </div>
+
+                        {tripType === 'ROUND_TRIP' && (
+                            <>
+                                <div className="w-px bg-slate-200/55 my-3 shrink-0" />
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                    <DatePicker
+                                        label={t('return_label') || "Return"}
+                                        date={returnDate}
+                                        setDate={setReturnDate}
+                                        locale={locale as any}
+                                        variant="ghost"
+                                        className="h-[88px] w-full rounded-2xl xl:rounded-none transition-colors min-w-0"
+                                        placeholder="Add date"
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="w-px bg-slate-200/55 my-3 shrink-0" />
+
+                    {/* Passengers */}
+                    <div className="relative group min-w-0 overflow-hidden shrink-0 w-[120px] xl:w-auto xl:flex-1">
+                        <PassengerSelector
+                            adults={adults}
+                            setAdults={setAdults}
+                            childrenCount={childrenCount}
+                            setChildrenCount={setChildrenCount}
+                            infants={infants}
+                            setInfants={setInfants}
+                            cabin={cabin}
+                            setCabin={setCabin}
+                            variant="ghost"
+                            className="h-[88px] rounded-2xl xl:rounded-none transition-colors min-w-0"
+                        />
+                    </div>
+
+                    <div className="w-px bg-slate-200/55 my-3 shrink-0" />
+
+                    {/* Travel Purpose */}
+                    <div className="relative group px-3 flex items-center min-w-0 shrink-0 w-[110px] xl:w-auto xl:flex-1">
+                        <div className="w-full min-w-0">
+                            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">
+                                {t('purpose_label') || "Purpose"}
+                            </label>
+                            <select
+                                value={persona}
+                                onChange={(e) => setPersona(e.target.value as 'budget' | 'comfort' | 'business' | 'family')}
+                                className="w-full h-10 rounded-xl border border-sky-100 bg-sky-50/40 px-1.5 text-xs font-semibold text-slate-700 min-w-0"
+                            >
+                                <option value="budget">Budget</option>
+                                <option value="comfort">Comfort</option>
+                                <option value="business">Business</option>
+                                <option value="family">Family</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Search Button */}
+                    <div className="p-2 flex items-center shrink-0">
+                        <Button
+                            onClick={handleSearch}
+                            disabled={!origin || !destination || !date}
+                            className="w-full md:w-[56px] md:h-[56px] h-14 rounded-xl md:rounded-full bg-gradient-to-r from-sky-600 to-orange-400 hover:from-sky-500 hover:to-orange-300 text-white shadow-lg shadow-sky-500/40 hover:shadow-sky-500/60 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 btn-glow"
+                        >
+                            <Search className="h-5 w-5" />
+                            <span className="md:hidden ml-2 font-bold">{t('search_button')}</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 

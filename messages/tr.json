@@ -464,25 +464,25 @@
             "warningTitle": "Dikkat: Bu bilet bagajsız!",
             "warningDesc": "Eğer yolculuğunuzda bagaj gerekiyorsa, havayolundan ekstra bagaj satın almanız gerekecek. Ortalama maliyet: ~2.500 TL"
         },
-        "errors": {
-            "originRequired": "Lütfen listeden geçerli bir şehir veya havalimanı seçin.",
-            "destinationRequired": "Lütfen listeden geçerli bir şehir veya havalimanı seçin.",
-            "departureDateRequired": "Lütfen gidiş tarihini seçin",
-            "departureDatePast": "Gidiş tarihi geçmişte olamaz",
-            "returnDateRequired": "Gidiş-dönüş biletler için dönüş tarihi gereklidir",
-            "returnDateBeforeDeparture": "Dönüş tarihi gidiş tarihinden sonra olmalıdır",
-            "generic": "Bir hata oluştu. Lütfen tekrar deneyin."
+        "SearchForm": {
+            "origin_placeholder": "Nereden?",
+            "destination_placeholder": "Nereye?",
+            "origin_label": "Nereden",
+            "destination_label": "Nereye",
+            "date_label": "Gidiş Tarihi",
+            "return_label": "Dönüş",
+            "passengers_label": "Yolcular",
+            "search_button": "Uçuş Ara",
+            "one_way": "Tek Yön",
+            "round_trip": "Gidiş-Dönüş",
+            "multi_city": "Çoklu Uçuş",
+            "purpose_label": "Amaç"
         },
-        "layover": {
-            "risk": {
-                "critical": "KRİTİK - Riskli Aktarma!",
-                "high": "Riskli - Hızlı Olun",
-                "medium": "Orta - Rahat ama Dikkatli",
-                "low": "Rahat - Keyfine Bak"
-            },
-            "advice": {
-                "default_short": "Kısa aktarma. Pasaport/Güvenlik kontrolü varsa sıkışabilirsiniz. Koşar adım gidin.",
-                "default_medium": "Aktarma süresi makul. Bir kahve içip dinlenebilirsiniz ama kalkış kapısını önceden bulun.",
+        "DatePicker": {
+            "placeholder": "Tarih seçin",
+            "today": "Bugüne Git",
+            "close": "Kapat"
+        },
                 "default_long": "Bol zamanınız var. Lounge, restoran veya dinlenme alanlarını değerlendirebilirsiniz.",
                 "DXB_short": "Dubai çok büyük. Uçaktan iner inmez koşar adım kapıya!",
                 "DXB_medium": "Terminal 3 tren kullanmayı gerektirebilir. Vaktiniz var ama oyalanmayın.",

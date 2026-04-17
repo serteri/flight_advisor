@@ -57,7 +57,8 @@
     "passengers_label": "Passengers",
     "search_button": "Search Flights",
     "one_way": "One Way",
-    "round_trip": "Round Trip"
+    "round_trip": "Round Trip",
+    "purpose_label": "Purpose"
   },
   "DatePicker": {
     "placeholder": "Select date",
