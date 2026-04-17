@@ -91,7 +91,7 @@ export function SearchForm() {
             <div className="bg-white/85 backdrop-blur-xl rounded-[2rem] flight-deck-shadow border border-white/80 p-2 flex flex-col md:flex-row relative z-20 warm-hover overflow-hidden">
 
                 {/* Origin */}
-                <div className="relative flex-1 min-w-0 group overflow-hidden">
+                <div className="relative min-w-0 group overflow-hidden md:flex-[2] md:min-w-[180px] lg:min-w-[220px]">
                     <CitySearchInput
                         label={t('origin_label') || "From"}
                         placeholder={t('origin_placeholder')}
@@ -102,7 +102,7 @@ export function SearchForm() {
                 </div>
 
                 {/* Divider with plane icon */}
-                <div className="hidden md:flex items-center justify-center w-7 shrink-0 relative z-10">
+                <div className="hidden md:flex items-center justify-center md:w-10 lg:w-12 shrink-0 relative z-10 mx-1 pointer-events-none">
                     <div className="absolute inset-0 flex items-center">
                         <div className="w-px h-full bg-slate-200/55 mx-auto" />
                     </div>
@@ -113,7 +113,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Destination */}
-                <div className="relative flex-1 min-w-0 group overflow-hidden">
+                <div className="relative min-w-0 group overflow-hidden md:flex-[2] md:min-w-[180px] lg:min-w-[220px]">
                     <CitySearchInput
                         label={t('destination_label') || "To"}
                         placeholder={t('destination_placeholder')}
@@ -128,7 +128,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Date Selection (Dynamic based on Trip Type) */}
-                <div className="relative md:w-[360px] lg:w-[400px] xl:w-[430px] group flex min-w-0 flex-shrink overflow-hidden">
+                <div className="relative group flex min-w-0 overflow-hidden md:flex-[1] md:min-w-[220px] lg:min-w-[250px] xl:min-w-[290px]">
                     <div className="flex-1 min-w-0">
                         <DatePicker
                             label={t('date_label') || "Depart"}
@@ -163,7 +163,7 @@ export function SearchForm() {
                 <div className="md:hidden h-px bg-slate-200/55 mx-4" />
 
                 {/* Passengers */}
-                <div className="relative md:w-[170px] lg:w-[200px] xl:w-[220px] group min-w-0 flex-shrink overflow-hidden">
+                <div className="relative group min-w-0 overflow-hidden md:flex-[1] md:min-w-[150px] lg:min-w-[170px] xl:min-w-[190px]">
                     <PassengerSelector
                         adults={adults}
                         setAdults={setAdults}
@@ -179,7 +179,7 @@ export function SearchForm() {
                 </div>
 
                 {/* Travel Purpose */}
-                <div className="relative md:w-[170px] group px-1.5 md:px-2 flex items-center min-w-0">
+                <div className="relative group px-1.5 md:px-2 flex items-center min-w-0 md:flex-[0.85] md:min-w-[130px] lg:min-w-[150px]">
                     <div className="w-full">
                         <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] block mb-1 truncate">Seyahat Amacı</label>
                         <select
