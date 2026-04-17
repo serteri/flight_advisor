@@ -96,10 +96,10 @@ export function PassengerSelector({
 
                 {variant === "ghost" && (
                     <>
-                        <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none truncate w-full uppercase">
+                        <div className="text-[10px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none truncate w-full uppercase">
                             {t('travelers_label') || "Travelers & Cabin"}
                         </div>
-                        <div className="text-sm md:text-base font-semibold text-slate-900 leading-tight w-full min-w-0">
+                        <div className="text-[clamp(10px,1.2vw,14px)] font-semibold text-slate-900 leading-tight w-full min-w-0">
                             <span className="block truncate" title={`${totalPassengers} ${t('passengers_short') || 'Guest'}, ${getCabinShortLabel(cabin)}`}>
                                 {totalPassengers} {t('passengers_short') || "Guest"}, {cabin === 'ECONOMY' ? 'Eco' : cabin === 'BUSINESS' ? 'Business' : cabin === 'FIRST' ? 'First' : 'Prem Eco'}
                             </span>

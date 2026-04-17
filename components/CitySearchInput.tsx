@@ -125,7 +125,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                 >
                     {/* Ghost Variant Label */}
                     {variant === "ghost" && label && (
-                        <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em] mb-1 select-none truncate w-full">
+                        <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] mb-1 select-none truncate w-full">
                             {label}
                         </div>
                     )}
@@ -155,7 +155,7 @@ export function CitySearchInput({ name, label, placeholder, defaultValue, defaul
                         className={cn(
                             "border-0 bg-transparent focus-visible:ring-0 p-0 shadow-none file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                             variant === "default" && "h-14 pl-12 text-lg font-semibold text-slate-800",
-                            variant === "ghost" && "h-auto text-sm md:text-base font-semibold text-slate-900 placeholder:text-slate-300 truncate leading-tight whitespace-nowrap"
+                            variant === "ghost" && "h-auto text-[clamp(10px,1.2vw,14px)] font-semibold text-slate-900 placeholder:text-slate-300 truncate leading-tight whitespace-nowrap"
                         )}
                         autoComplete="off"
                     />

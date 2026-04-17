@@ -12,7 +12,28 @@
 type Cabin = 'economy' | 'business' | 'first';
 type Persona = 'budget' | 'comfort' | 'business' | 'family';
 
-const AIRPORT_POOL = ['LHR', 'DXB', 'JFK', 'SIN', 'BNE', 'IST', 'CDG', 'HND', 'SYD', 'MEL'];
+const AIRPORT_POOL = [
+  'ATL', 'PEK', 'LAX', 'ORD', 'LHR', 'HND', 'PVG', 'CDG', 'DFW', 'AMS',
+  'FRA', 'IST', 'SIN', 'DEN', 'JFK', 'MAD', 'BCN', 'MUC', 'LGW', 'MEL',
+  'SYD', 'BNE', 'PER', 'AKL', 'WLG', 'CHC', 'DXB', 'DOH', 'AUH', 'RUH',
+  'JED', 'CAI', 'CMN', 'CPT', 'JNB', 'NBO', 'ADD', 'LOS', 'ACC', 'DAR',
+  'BKK', 'HKG', 'ICN', 'NRT', 'KIX', 'TPE', 'MNL', 'CGK', 'KUL', 'DEL',
+  'BOM', 'BLR', 'MAA', 'HYD', 'CCU', 'DAC', 'CMB', 'KTM', 'SGN', 'HAN',
+  'SFO', 'SEA', 'BOS', 'MIA', 'IAD', 'EWR', 'YYZ', 'YVR', 'YUL', 'MEX',
+  'GRU', 'GIG', 'EZE', 'SCL', 'LIM', 'BOG', 'PTY', 'CUN', 'LAS', 'PHX',
+  'IAH', 'MSP', 'DTW', 'PHL', 'CLT', 'SAN', 'TPA', 'MCO', 'FLL', 'DCA',
+  'OSL', 'ARN', 'CPH', 'HEL', 'DUB', 'BRU', 'ZRH', 'VIE', 'PRG', 'WAW',
+  'ATH', 'LIS', 'OPO', 'FCO', 'MXP', 'NAP', 'VCE', 'GVA', 'MAN', 'EDI',
+  'GLA', 'BUD', 'OTP', 'SOF', 'BEG', 'ZAG', 'TLL', 'RIX', 'VNO', 'KEF',
+  'GOT', 'BGO', 'SVG', 'TRD', 'BLL', 'ALC', 'AGP', 'PMI', 'IBZ', 'TFS',
+  'MRS', 'NCE', 'LYS', 'TLS', 'HAM', 'DUS', 'BER', 'STR', 'CGN', 'HAJ',
+  'GDN', 'KRK', 'KTW', 'WRO', 'LCA', 'MLA', 'TLV', 'AMM', 'BEY', 'KWI',
+  'MCT', 'BAH', 'MED', 'DMM', 'IKA', 'KHI', 'LHE', 'ISB', 'TRV', 'GOI',
+  'PNQ', 'AMD', 'COK', 'MLE', 'REP', 'PNH', 'RGN', 'VTE', 'BWN', 'DPS',
+  'SUB', 'CEB', 'CRK', 'DVO', 'NAN', 'PPT', 'GUM', 'SPN', 'HNL', 'OGG',
+  'ANC', 'FAI', 'PDX', 'SJC', 'AUS', 'SAT', 'RDU', 'BNA', 'SLC', 'CVG',
+  'CLE', 'CMH', 'PIT', 'IND', 'MSY', 'MCI', 'OKC', 'OMA', 'ABQ', 'TUS'
+] as const;
 
 const CABINS: Cabin[] = ['economy', 'economy', 'business', 'first'];
 const PERSONAS: Persona[] = ['budget', 'comfort', 'business', 'family'];
@@ -29,14 +50,15 @@ const BASE_URL = (
 ).replace(/\/$/, '');
 
 const REQUEST_TIMEOUT_MS = 90_000;
-const TOTAL_SEARCHES = 24;
+const TOTAL_SEARCHES_MIN = 20;
+const TOTAL_SEARCHES_MAX = 30;
 const CONCURRENCY = 3;
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function pick<T>(arr: T[]): T {
+function pick<T>(arr: readonly T[]): T {
   return arr[randInt(0, arr.length - 1)];
 }
 
@@ -145,14 +167,23 @@ async function callFlightSearch(url: string): Promise<{ ok: boolean; status: num
 }
 
 async function run() {
+  const totalSearches = randInt(TOTAL_SEARCHES_MIN, TOTAL_SEARCHES_MAX);
   const jobs: Array<{ url: string; meta: Record<string, unknown> }> = [];
+  const uniqueRoutes = new Set<string>();
 
-  for (let i = 0; i < TOTAL_SEARCHES; i += 1) {
-    jobs.push(buildSearchUrl());
+  while (jobs.length < totalSearches) {
+    const candidate = buildSearchUrl();
+    const routeKey = String(candidate.meta.route || '');
+    if (!routeKey || uniqueRoutes.has(routeKey)) {
+      continue;
+    }
+
+    uniqueRoutes.add(routeKey);
+    jobs.push(candidate);
   }
 
   console.log(`\n[seed:flights] Base URL: ${BASE_URL}`);
-  console.log(`[seed:flights] Planned searches: ${jobs.length} random pairs from pool (${AIRPORT_POOL.join(', ')})`);
+  console.log(`[seed:flights] Planned searches: ${jobs.length} unique random pairs from global pool (${AIRPORT_POOL.length} airports)`);
   if (isDryRun) {
     console.log('[seed:flights] Dry-run mode active, requests will not be sent.\n');
     jobs.forEach((job, idx) => {

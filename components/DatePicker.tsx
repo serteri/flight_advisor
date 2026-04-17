@@ -359,7 +359,7 @@ export function DatePicker({
                 )}
 
                 {variant === "ghost" && label && (
-                    <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none pointer-events-none truncate w-full uppercase">
+                    <div className="text-[10px] font-semibold text-slate-500 tracking-[0.08em] mb-1 leading-none pointer-events-none truncate w-full uppercase">
                         {label}
                     </div>
                 )}
@@ -373,12 +373,12 @@ export function DatePicker({
                                         {format(selected, "EEEE", { locale: dateLocale })}
                                     </span>
                                 )}
-                                <span className={`text-slate-900 leading-tight truncate w-full whitespace-nowrap ${variant === "ghost" ? "text-sm md:text-base font-semibold" : "text-lg font-bold"}`}>
+                                <span className={`text-slate-900 leading-tight truncate w-full whitespace-nowrap ${variant === "ghost" ? "text-[clamp(10px,1.2vw,14px)] font-semibold" : "text-lg font-bold"}`}>
                                     {format(selected, variant === "ghost" ? "d MMM ''yy" : "d MMMM yyyy", { locale: dateLocale })}
                                 </span>
                             </div>
                         )
-                        : <span className={`${variant === "ghost" ? "text-sm md:text-base font-semibold truncate w-full whitespace-nowrap" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
+                        : <span className={`${variant === "ghost" ? "text-[clamp(10px,1.2vw,14px)] font-semibold truncate w-full whitespace-nowrap" : "text-lg font-semibold"} text-slate-400`}>{placeholder || t('placeholder')}</span>
                     }
                 </div>
             </button>
