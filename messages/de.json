@@ -217,7 +217,7 @@
                 }
             },
             "agent": {
-                "title": "Flight Agent",
+                "title": "Flugassistent",
                 "items": {
                     "ranking": "Risikobewusstes Ranking",
                     "scenario": "Szenario-Simulation",
@@ -557,7 +557,7 @@
         }
     },
     "pricing": {
-        "title": "Travel Guardian Premium",
+        "title": "Travel Guardian Premiumschutz",
         "subtitle": "Überlassen Sie Ihre Reise nicht dem Zufall.",
         "priceMonth": "/Monat",
         "feature1": "24/7 Flugverfolgung (Unbegrenzt)",

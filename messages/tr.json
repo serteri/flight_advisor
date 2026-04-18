@@ -248,7 +248,7 @@
                 }
             },
             "agent": {
-                "title": "Flight Agent",
+                "title": "Uçuş Asistanı",
                 "items": {
                     "ranking": "Risk odakl─▒ s─▒ralama",
                     "scenario": "Senaryo sim├╝lasyonu",
@@ -729,7 +729,7 @@
         }
     },
     "pricing": {
-        "title": "Travel Guardian Premium",
+        "title": "Travel Guardian Premium Koruma",
         "subtitle": "Seyahatinizi ┼ƒansa b─▒rakmay─▒n.",
         "priceMonth": "/ay",
         "feature1": "7/24 U├ºu┼ƒ Takibi (S─▒n─▒rs─▒z)",
