@@ -491,9 +491,10 @@ model MonitoredTrip {
 
   // Relationships
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  segments        FlightSegment[] 
+  segments        FlightSegment[]
   passengers      Passenger[]
   alerts          GuardianAlert[]
+  snapshot        TripSnapshot?
 
   @@index([userId])
   @@index([status, nextCheckAt])
@@ -574,6 +575,22 @@ enum TripStatus {
   COMPLETED
   CANCELLED
   ARCHIVED
+}
+
+// Persisted monitoring state — replaces in-memory lastAlertState.
+// One row per trip, upserted after each worker cycle.
+model TripSnapshot {
+  id             String   @id @default(cuid())
+  tripId         String   @unique
+
+  delayMinutes   Int      @default(0)
+  status         String   @default("scheduled")
+  departureGate  String?
+  arrivalGate    String?
+
+  snapshotAt     DateTime @default(now()) @updatedAt
+
+  trip           MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 }
 
 // 🔥 OPENCLAW SEARCH CACHE
