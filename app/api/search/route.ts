@@ -3,6 +3,11 @@ import { searchAllProvidersWithMeta } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';
 import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
 import { hasRecentRouteSearchRecords, persistFlightSearchRecords } from '@/lib/search/flightSearchRecordStore';
+import { deduplicateFlights } from '@/lib/intelligence/flightDeduplicator';
+import { applyRealConfidence } from '@/lib/intelligence/confidenceModel';
+import { applyAlerts } from '@/lib/intelligence/alertEngine';
+import { rankFlights } from '@/lib/intelligence/rankingEngine';
+import { groupIntoVariants, attachVariantMetadata } from '@/lib/intelligence/variantGrouper';
 
 // Vercel Pro Ayarları
 export const maxDuration = 300;
@@ -93,7 +98,15 @@ export async function GET(request: Request) {
             departureDate: queryParams.date,
         });
 
-        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+        // Intelligence pipeline
+        const deduped = deduplicateFlights(allFlights);
+        const { ranked, scoreMap } = rankFlights(deduped, { persona: queryParams.persona as any });
+        const withConfidence = applyRealConfidence(ranked);
+        const withAlerts = applyAlerts(withConfidence, {}, queryParams.date);
+        const variantGroups = groupIntoVariants(withAlerts, scoreMap);
+        const withVariants = attachVariantMetadata(variantGroups, withAlerts);
+
+        const scoredFlights = await applyAdvancedFlightScoring(withVariants, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
@@ -102,7 +115,7 @@ export async function GET(request: Request) {
             expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
             results: scoredFlights,
         });
-        console.log(`✅ searchAllProviders returned ${scoredFlights.length} scored flights`);
+        console.log(`✅ Pipeline: ${allFlights.length} raw → ${deduped.length} deduped → ${scoredFlights.length} scored`);
 
         if (scoredFlights.length === 0) {
             return NextResponse.json([], { status: 200 });
@@ -163,7 +176,14 @@ export async function POST(request: Request) {
             departureDate: queryParams.date,
         });
 
-        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+        const deduped = deduplicateFlights(allFlights);
+        const { ranked, scoreMap } = rankFlights(deduped, { persona: queryParams.persona as any });
+        const withConfidence = applyRealConfidence(ranked);
+        const withAlerts = applyAlerts(withConfidence, {}, queryParams.date);
+        const variantGroups = groupIntoVariants(withAlerts, scoreMap);
+        const withVariants = attachVariantMetadata(variantGroups, withAlerts);
+
+        const scoredFlights = await applyAdvancedFlightScoring(withVariants, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,

@@ -237,5 +237,42 @@ export type FlightResult = {
             cheaperThan: number; // % of historical prices lower than this price
             label: string;
         };
+        // Intelligence Layer v4 — Ranking Engine
+        compositeScore?: number;          // 0–10 composite rank score
+        scoreBreakdown?: {
+            total: number;
+            priceScore: number;
+            durationScore: number;
+            stopScore: number;
+            connectionScore: number;
+            airlineScore: number;
+            baggageScore: number;
+            reliabilityScore: number;
+            persona: string;
+        };
+        // Intelligence Layer v4 — Confidence Model
+        confidenceBreakdown?: {
+            total: number;
+            sourceScore: number;
+            priceAnchorScore: number;
+            freshnessScore: number;
+            seatSignalScore: number;
+            volatilityScore: number;
+            priceClarityScore: number;
+        };
+        // Intelligence Layer v4 — Alert Engine
+        intelAlerts?: Array<{
+            type: string;
+            severity: 'URGENT' | 'WARNING' | 'INFO';
+            headline: string;
+            detail: string;
+            dataPoint: string;
+        }>;
+        // Intelligence Layer v4 — Variant Grouper
+        variantGroupId?: string;
+        isRepresentative?: boolean;
+        variantCount?: number;
+        priceRange?: { min: number; max: number; currency: string };
+        variantRoles?: Array<'CHEAPEST' | 'FASTEST' | 'BEST_VALUE'>;
     };
 };
