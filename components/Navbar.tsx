@@ -29,19 +29,21 @@ export default function Navbar() {
             {/* Floating pill navbar */}
             <nav className="max-w-7xl mx-auto rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-slate-700/40 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]">
                 <div className="px-4 md:px-6">
-                    <div className="flex items-center justify-between h-14">
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center gap-2 font-bold text-lg shrink-0">
-                            <div className="bg-gradient-to-br from-sky-500 to-blue-700 p-1.5 rounded-full text-white shadow-md shadow-blue-500/30">
-                                <Plane size={16} fill="currentColor" />
-                            </div>
-                            <span className="text-slate-900 dark:text-white">
-                                Flight<span className="text-sky-600">Agent</span>
-                            </span>
-                        </Link>
+                    <div className="flex items-center justify-between h-16 gap-4">
+                        {/* Left section: Brand */}
+                        <div className="flex items-center mr-8 shrink-0">
+                            <Link href="/" className="flex items-center gap-2 font-bold text-lg shrink-0">
+                                <div className="bg-gradient-to-br from-sky-500 to-blue-700 p-1.5 rounded-full text-white shadow-md shadow-blue-500/30">
+                                    <Plane size={16} fill="currentColor" />
+                                </div>
+                                <span className="text-slate-900 dark:text-white">
+                                    Flight<span className="text-sky-600">Agent</span>
+                                </span>
+                            </Link>
+                        </div>
 
-                        {/* Center nav links */}
-                        <div className="hidden md:flex items-center gap-6">
+                        {/* Middle section: Navigation */}
+                        <div className="hidden md:flex flex-1 items-center gap-6 min-w-0">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.href}
@@ -58,8 +60,8 @@ export default function Navbar() {
                             ))}
                         </div>
 
-                        {/* Right side */}
-                        <div className="hidden md:flex items-center gap-3">
+                        {/* Right section: Actions */}
+                        <div className="hidden md:flex items-center gap-4 shrink-0">
                             {/* AI Mode badge */}
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-[10px] font-bold tracking-wider select-none">
                                 <Zap size={10} className="fill-sky-500 text-sky-500" />
@@ -69,7 +71,7 @@ export default function Navbar() {
                             <LanguageSwitcher />
 
                             {/* Motto signature badge */}
-                            <div className="hidden lg:flex items-center gap-2">
+                            <div className={cn("items-center gap-2", session ? "hidden xl:flex" : "hidden lg:flex")}>
                                 <div className="w-px h-4 bg-slate-200/60" />
                                 <span className="px-3 py-1 rounded-full bg-sky-500/[0.08] border border-sky-300/20 text-[10px] font-medium italic tracking-wider text-sky-600/80 select-none cursor-default transition-all duration-300 hover:bg-sky-500/[0.15] hover:border-sky-300/40 hover:text-sky-600 hover:drop-shadow-[0_0_8px_rgba(14,165,233,0.45)] whitespace-nowrap">
                                     {t('motto')}
@@ -78,9 +80,11 @@ export default function Navbar() {
 
                             {session ? (
                                 <>
-                                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                        <User size={13} />
-                                        <span className="max-w-[100px] truncate">
+                                    <div className="flex items-center gap-2 text-xs text-slate-500 min-w-0">
+                                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                                            <User size={13} />
+                                        </span>
+                                        <span className="hidden xl:block max-w-[110px] truncate">
                                             {session.user?.name || session.user?.email}
                                         </span>
                                     </div>
