@@ -103,18 +103,18 @@
         "origin_label": "Nereden",
         "destination_label": "Nereye",
         "date_label": "Gidi┼ƒ Tarihi",
+        "return_label": "D├╢n├╝┼ƒ",
         "passengers_label": "Yolcular",
         "search_button": "U├ºu┼ƒ Ara",
         "one_way": "Tek Y├╢n",
-        "round_trip": "Gidi┼ƒ-D├╢n├╝┼ƒ"
+        "round_trip": "Gidi┼ƒ-D├╢n├╝┼ƒ",
+        "multi_city": "├çoklu U├ºu┼ƒ",
+        "purpose_label": "Ama├º"
     },
     "DatePicker": {
         "placeholder": "Tarih se├ºin",
         "today": "Bug├╝ne Git",
         "close": "Kapat"
-    },
-    "SearchForm": {
-        "multi_city": "├çoklu U├ºu┼ƒ"
     },
     "HomePage": {
         "hero": {
@@ -771,10 +771,10 @@
             "scenario_sim": "Senaryo Sim├╝lasyonu",
             "disruption_hunter": "Aksama Avcısı",
             "inbox_parser": "Gelen Kutusu Ayrıştırıcı (E-posta)",
-            "schedule_guardian": "Schedule Guardian",
-            "junior_guardian": "Junior Guardian",
-            "backup_generator": "Backup Generator",
-            "lounge_intel": "Lounge Intelligence",
+            "schedule_guardian": "Takvim Koruyucu",
+            "junior_guardian": "Gen├º Koruyucu",
+            "backup_generator": "Yedek Plan ├£retici",
+            "lounge_intel": "Lounge Zekas─▒",
             "email_notifications": "E-posta Bildirimleri",
             "sms_notifications": "SMS Bildirimleri",
             "push_notifications": "Push Bildirimleri"
