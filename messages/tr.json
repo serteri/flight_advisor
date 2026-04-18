@@ -388,25 +388,25 @@
     },
     "Modules": {
         "disruptionHunter": {
-            "title": "Disruption Hunter",
+            "title": "Aksama Avcısı",
             "desc": "R├╢tar ve ─░ptal takibi yap─▒l─▒yor."
         },
         "priceArbitrage": {
-            "title": "Price Arbitrage",
+            "title": "Fiyat Arbitrajı",
             "desc": "Fiyat d├╝┼ƒ├╝┼ƒ├╝ bekleniyor."
         },
         "seatSpy": {
-            "title": "Seat Spy",
+            "title": "Koltuk Casusu",
             "desc": "Yan koltuk doldu, aksiyon al─▒n.",
             "descEmpty": "Yan koltuk bo┼ƒ."
         },
         "scheduleGuardian": {
-            "title": "Schedule Guardian",
+            "title": "Takvim Koruyucu",
             "desc": "Tarife de─ƒi┼ƒikli─ƒi yok.",
             "descChange": "Tarife de─ƒi┼ƒikli─ƒi tespit edildi."
         },
         "upgradeSniper": {
-            "title": "Upgrade Sniper",
+            "title": "Yükseltme Nişancısı",
             "desc": "Business Class hen├╝z a├º─▒lmad─▒."
         }
     },
@@ -446,9 +446,9 @@
         "optional": "iste─ƒe ba─ƒl─▒",
         "cabin": "Kabin S─▒n─▒f─▒",
         "economy": "Ekonomi",
-        "premiumEconomy": "Premium Economy",
-        "business": "Business",
-        "firstClass": "First Class",
+        "premiumEconomy": "Premium Ekonomi",
+        "business": "İş Sınıfı",
+        "firstClass": "Birinci Sınıf",
         "adults": "Yeti┼ƒkin",
         "passengers": "Yolcu Say─▒s─▒",
         "children": "├çocuk",

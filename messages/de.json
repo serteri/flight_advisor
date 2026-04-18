@@ -322,7 +322,7 @@
         "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
         "heroTitle": "Wohin fliegen wir?",
         "heroSubtitle": "Entdecken Sie die besten Flugangebote",
-        "mottoLabel": "FlightAgent Motto",
+        "mottoLabel": "FlightAgent Leitsatz",
         "oneWay": "Nur Hinflug",
         "roundTrip": "Hin- und Rückflug",
         "from": "Von",
@@ -333,10 +333,10 @@
         "selectDate": "Datum auswählen",
         "optional": "optional",
         "cabin": "Kabinenklasse",
-        "economy": "Economy",
-        "premiumEconomy": "Premium Economy",
-        "business": "Business",
-        "firstClass": "First Class",
+        "economy": "Touristenklasse",
+        "premiumEconomy": "Premium-Economy",
+        "business": "Business-Klasse",
+        "firstClass": "Erste Klasse",
         "adults": "Erwachsene",
         "passengers": "Passagiere",
         "children": "Kinder",
@@ -473,7 +473,7 @@
         },
         "identities": {
             "travelHacker": {
-                "label": "😎 Travel Hacker",
+                "label": "😎 Reise-Hacker",
                 "description": "Sie haben den besten Komfort zum besten Preis bekommen."
             },
             "transferVictim": {
@@ -596,7 +596,7 @@
         },
         "cta": {
             "current": "Aktueller Plan",
-            "upgrade": "Upgrade",
+            "upgrade": "Hochstufen",
             "start_trial": "Test starten"
         },
         "table": {
