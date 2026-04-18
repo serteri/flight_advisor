@@ -22,6 +22,8 @@
     "pricing": "Pricing",
     "features": "Features",
     "blog": "Travel Tips",
+    "aiMode": "AI MODE",
+    "aiModeActive": "AI MODE ACTIVE",
     "login": "Log in",
     "logout": "Log out",
     "dashboard": "Dashboard",
