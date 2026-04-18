@@ -1,37 +1,10 @@
 // services/guardian/disruption.ts
+import { buildAirHelpLink } from '@/lib/monetization/travelpayouts';
 
-export async function getAirHelpLink(flightDetails: any): Promise<string | null> {
-    // Eğer gecikme 180 dakikadan fazlaysa
+export function getAirHelpLink(flightDetails: { delayMinutes: number }): string | null {
     if (flightDetails.delayMinutes >= 180) {
-        try {
-            const response = await fetch("https://api.travelpayouts.com/links/v1/create", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Access-Token": process.env.TRAVELPAYOUTS_TOKEN!
-                },
-                body: JSON.stringify({
-                    trs: 197987, // Senin Proje ID'n
-                    marker: process.env.TRAVELPAYOUTS_MARKER,
-                    links: [{ url: "https://www.airhelp.com/en-int/" }] // AirHelp Ana Sayfası
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.result && data.result.links && data.result.links[0]) {
-                return data.result.links[0].partner_url; // Senin Marker ID'li para kazandıran linkin
-            }
-
-            // Fallback to direct link if API fails
-            return `https://www.airhelp.com/en-int/?utm_source=flightagent&utm_medium=affiliate&utm_campaign=${process.env.TRAVELPAYOUTS_MARKER}`;
-        } catch (error) {
-            console.error("Travelpayouts API error:", error);
-            // Fallback
-            return `https://www.airhelp.com/en-int/?utm_source=flightagent&utm_medium=affiliate&utm_campaign=${process.env.TRAVELPAYOUTS_MARKER}`;
-        }
+        return buildAirHelpLink();
     }
-
     return null;
 }
 
@@ -43,42 +16,30 @@ export interface DisruptionAnalysis {
     affiliateLink?: string;
 }
 
-export async function analyzeDisruption(flight: any): Promise<DisruptionAnalysis> {
+export function analyzeDisruption(flight: any): DisruptionAnalysis {
     const delayMinutes = flight.delayMinutes || 0;
     const status = flight.status || 'ON_TIME';
+    const distance = flight.distance || 1000;
 
-    // EU 261 Compensation Rules
     let compensationAmount = '€0';
     let eligible = false;
     let reason = '';
 
     if (delayMinutes >= 180) {
-        // Calculate compensation based on distance
-        const distance = flight.distance || 1000; // km
-
-        if (distance < 1500) {
-            compensationAmount = '€250';
-        } else if (distance < 3500) {
-            compensationAmount = '€400';
-        } else {
-            compensationAmount = '€600';
-        }
-
+        if (distance < 1500)      compensationAmount = '€250';
+        else if (distance < 3500) compensationAmount = '€400';
+        else                       compensationAmount = '€600';
         eligible = true;
-        reason = `Delay > 3 Hours (${delayMinutes} mins)`;
+        reason = `Delay > 3 hours (${delayMinutes} min)`;
     } else if (status === 'CANCELLED') {
-        compensationAmount = '€600';
+        if (distance < 1500)      compensationAmount = 'up to €250';
+        else if (distance < 3500) compensationAmount = 'up to €400';
+        else                       compensationAmount = 'up to €600';
         eligible = true;
-        reason = 'Flight Cancelled';
+        reason = 'Flight cancelled';
     }
 
-    const affiliateLink = eligible ? await getAirHelpLink({ delayMinutes, status }) : undefined;
+    const affiliateLink = eligible ? getAirHelpLink({ delayMinutes }) ?? undefined : undefined;
 
-    return {
-        eligible,
-        delayMinutes,
-        compensationAmount,
-        reason,
-        affiliateLink: affiliateLink || undefined
-    };
+    return { eligible, delayMinutes, compensationAmount, reason, affiliateLink };
 }

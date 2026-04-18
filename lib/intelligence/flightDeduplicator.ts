@@ -25,7 +25,6 @@ export const SOURCE_TRUST: Record<string, number> = {
     kiwi:         60,
     PRICELINE:    62,
     SERPAPI:      55,
-    TRAVELPAYOUTS:58,
     RAPIDAPI:     50,
     RAPID_API:    50,
     AIR_RAPID:    50,

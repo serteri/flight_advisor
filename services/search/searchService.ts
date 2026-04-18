@@ -2,7 +2,7 @@ import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from './providers/duffel';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
-// Kiwi (auth required), Travelpayouts (unreliable), RapidAPI (removed)
+// Kiwi excluded (requires auth). Travelpayouts removed from search — affiliate links only via lib/monetization/travelpayouts.ts.
 
 export type SearchProvidersMeta = {
   flights: FlightResult[];

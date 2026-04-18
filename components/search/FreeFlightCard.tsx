@@ -56,30 +56,6 @@ export function FreeFlightCard({ flight }: FreeFlightCardProps) {
         }
     };
 
-    // Travelpayouts gibi özel durumlar için farklı kart gösterimi
-    if (flight.source === 'travelpayouts') {
-        return (
-             <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 my-4 shadow-sm">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <p className="font-bold text-slate-800">Daha Fazla Seçenek mi Arıyorsun?</p>
-                        <p className="text-sm text-slate-500">
-                           {flight.from} - {flight.to} için onlarca havayolunu karşılaştır.
-                        </p>
-                    </div>
-                    <a
-                        href={flight.bookingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors whitespace-nowrap"
-                    >
-                        Tümünü Gör
-                    </a>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="bg-white border-2 border-slate-100 hover:border-blue-500 rounded-3xl p-4 my-4 transition-all shadow-sm hover:shadow-lg">
             {/* TEMEL UÇUŞ BİLGİSİ */}

@@ -14,7 +14,14 @@
       "Bash(npm run build)",
       "Bash(timeout /t 5)",
       "mcp__ide__getDiagnostics",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('./messages/en.json', 'utf8'\\)\\); console.log\\('en.json valid'\\)\")",
+      "Bash(node -e \"const msg = JSON.parse\\(require\\('fs'\\).readFileSync\\('./messages/en.json', 'utf8'\\)\\); console.log\\('PricingPage at root:', !!msg.PricingPage\\); console.log\\('title:', msg.PricingPage?.title\\); console.log\\('subtitle:', msg.PricingPage?.subtitle\\); console.log\\('upgradeToPro:', msg.PricingPage?.upgradeToPro\\);\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(xargs grep *)"
     ]
   }
 }

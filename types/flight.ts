@@ -1,6 +1,6 @@
 export type FlightResult = {
   id: string;
-  source: "duffel" | "kiwi" | "travelpayouts";
+  source: "duffel" | "kiwi";
   airline: string;
   flightNumber: string;
   aircraft?: string;
