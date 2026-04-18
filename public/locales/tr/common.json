@@ -13,5 +13,13 @@
   "purpose_budget": "Bütçe",
   "purpose_comfort": "Konfor",
   "purpose_business": "İş",
-  "purpose_family": "Aile"
+  "purpose_family": "Aile",
+  "Navbar": {
+    "pricing": "Fiyatlandırma"
+  },
+  "HomePage": {
+    "scoring": {
+      "subtitle": "Sistemin beyni. Bu olmadan diğerleri sadece özellik olur."
+    }
+  }
 }

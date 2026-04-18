@@ -71,7 +71,10 @@
     "search_button": "Search Flights",
     "one_way": "One Way",
     "round_trip": "Round Trip",
-    "purpose_label": "Purpose"
+    "purpose_label": "Purpose",
+    "invalid_selection": "Please select valid airports and date",
+    "search_error": "An error occurred. Please try again.",
+    "multicity_notice": "Multi-city search is currently optimized for desktop. Please use our concierge service for complex itineraries."
   },
   "DatePicker": {
     "placeholder": "Select date",

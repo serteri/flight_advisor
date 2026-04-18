@@ -34,7 +34,7 @@ export function SearchForm() {
         // SAFETY: Ensure origin and destination have correct structure
         if (!origin?.iata || !destination?.iata || !date) {
             console.error('[SearchForm] Invalid form state:', { origin, destination, date });
-            alert('Please select valid airports and date');
+            alert(t('invalid_selection'));
             return;
         }
 
@@ -63,7 +63,7 @@ export function SearchForm() {
             router.push(`/flight-search?${queryParams.toString()}`);
         } catch (error) {
             console.error('[SearchForm] Error during search:', error);
-            alert('An error occurred. Please try again.');
+            alert(t('search_error'));
         }
     };
 
@@ -205,7 +205,7 @@ export function SearchForm() {
             {/* Multi-City Message (If selected) */}
             {tripType === 'MULTI_CITY' && (
                 <div className="absolute top-full left-0 mt-4 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 text-white text-sm">
-                    ⚠️ Multi-city search is currently optimized for desktop. Please use our concierge service for complex itineraries.
+                    ⚠️ {t('multicity_notice')}
                 </div>
             )}
         </div>

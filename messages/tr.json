@@ -103,18 +103,21 @@
         "origin_label": "Nereden",
         "destination_label": "Nereye",
         "date_label": "Gidiş Tarihi",
+        "return_label": "Dönüş",
         "passengers_label": "Yolcular",
         "search_button": "Uçuş Ara",
         "one_way": "Tek Yön",
-        "round_trip": "Gidiş-Dönüş"
+        "round_trip": "Gidiş-Dönüş",
+        "multi_city": "Çoklu Uçuş",
+        "purpose_label": "Amaç",
+        "invalid_selection": "Lütfen geçerli havalimanları ve tarih seçin",
+        "search_error": "Bir hata oluştu. Lütfen tekrar deneyin.",
+        "multicity_notice": "Çoklu uçuş araması şu anda masaüstü için optimize edilmiştir. Karmaşık rotalar için concierge hizmetimizi kullanın."
     },
     "DatePicker": {
         "placeholder": "Tarih seçin",
         "today": "Bugüne Git",
         "close": "Kapat"
-    },
-    "SearchForm": {
-        "multi_city": "Çoklu Uçuş"
     },
     "HomePage": {
         "hero": {

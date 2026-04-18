@@ -70,7 +70,10 @@
         "one_way": "Hinflug",
         "round_trip": "Hin- und Rückflug",
         "multi_city": "Multi-City",
-        "purpose_label": "Reisezweck"
+        "purpose_label": "Reisezweck",
+        "invalid_selection": "Bitte wählen Sie gültige Flughäfen und ein Datum",
+        "search_error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+        "multicity_notice": "Die Multi-City-Suche ist derzeit für Desktop optimiert. Für komplexe Routen nutzen Sie bitte unseren Concierge-Service."
     },
     "DatePicker": {
         "placeholder": "Datum wählen",

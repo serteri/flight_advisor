@@ -13,5 +13,13 @@
   "purpose_budget": "Budget",
   "purpose_comfort": "Komfort",
   "purpose_business": "Geschäft",
-  "purpose_family": "Familie"
+  "purpose_family": "Familie",
+  "Navbar": {
+    "pricing": "Preise"
+  },
+  "HomePage": {
+    "scoring": {
+      "subtitle": "Das Gehirn des Systems. Ohne das sind die anderen nur Features."
+    }
+  }
 }
