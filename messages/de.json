@@ -422,6 +422,33 @@
             "returnDateRequired": "Für Hin- und Rückflüge ist ein Rückflugdatum erforderlich",
             "returnDateBeforeDeparture": "Das Rückflugdatum muss nach dem Abflugdatum liegen",
             "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+        },
+        "showMore": "Mehr anzeigen ({count} Flüge verbleibend)",
+        "trackingThisFlight": "Sie verfolgen diesen Flug",
+        "layover": {
+            "risk": {
+                "critical": "KRITISCH - Riskanter Umstieg!",
+                "high": "Riskant - Bitte beeilen",
+                "medium": "Mittel - Entspannt, aber aufmerksam",
+                "low": "Entspannt - Genießen Sie Ihre Zeit"
+            },
+            "advice": {
+                "default_short": "Kurzer Aufenthalt. Gehen Sie sofort zum Gate.",
+                "default_medium": "Ausreichend Zeit. Holen Sie sich kurz einen Kaffee, aber finden Sie zuerst Ihr Gate.",
+                "default_long": "Viel Zeit. Genießen Sie Lounge oder Restaurants.",
+                "DXB_short": "Dubai ist riesig. Gehen Sie sofort zügig zum Gate!",
+                "DXB_medium": "Möglicherweise ist der Terminal-3-Zug nötig. Sie haben Zeit, aber bummeln Sie nicht.",
+                "DXB_long": "Viel Zeit in Dubai. Probieren Sie Sleep Pods oder die Marhaba Lounge.",
+                "DOH_short": "Doha ist kompakt, aber unter 60 Minuten riskant. Direkt zum Gate.",
+                "DOH_medium": "Zeit für einen kurzen Kaffee im Orchard, aber prüfen Sie die Gate-Entfernung.",
+                "DOH_long": "Einer der besten Flughäfen der Welt. Schauen Sie sich den Orchard-Garten und Lounges an.",
+                "IST_short": "Der Flughafen Istanbul ist groß. 20 Minuten Fußweg sind möglich. Beeilen Sie sich!",
+                "IST_medium": "Die Wege sind lang. Erst das Gate finden, dann entspannen.",
+                "IST_long": "Die Turkish-Airlines-Business-Lounge ist legendär. Ein Besuch lohnt sich.",
+                "SIN_short": "Changi ist kompakt, aber die Sicherheitskontrolle ist streng. Lassen Sie Jewel aus.",
+                "SIN_medium": "Jewel ist verlockend, aber die Sicherheitskontrolle ist am Gate. Gehen Sie kein Risiko ein.",
+                "SIN_long": "Changi ist weltberühmt. Unbedingt den Jewel-Wasserfall und den Schmetterlingsgarten ansehen."
+            }
         }
     },
     "priceOracle": {
