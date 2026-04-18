@@ -77,7 +77,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const providers = flight.bookingProviders || [];
     const sortedProviders = [...providers].sort((a, b) => a.price - b.price);
     const hasBookingProviders = providers.length > 0; // Changed from > 1 to > 0
-    const isDuffel = flight.source === 'duffel' || flight.source === 'DUFFEL';
+    const isDuffel = flight.source === 'duffel';
     
     // Compute the external booking link using generator (handles Duffel and others)
     const actionLink = generateBookingLink(flight as any);
@@ -240,7 +240,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                         {/* --- DUFFEL: Check Availability (No Booking) --- */}
                         {isDuffel ? (
                              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold h-9 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-                                <a href={actionLink} target="_blank" rel="noopener noreferrer">
+                                <a href={actionLink ?? undefined} target="_blank" rel="noopener noreferrer">
                                     Check Availability <ExternalLink className="w-3 h-3 opacity-70" />
                                 </a>
                             </Button>

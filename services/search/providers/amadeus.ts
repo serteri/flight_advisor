@@ -91,7 +91,7 @@ export async function searchAmadeus(params: HybridSearchParams): Promise<FlightR
 
                 return {
                     id: `AMADEUS_${offer.id}`,
-                    source: 'DUFFEL' as FlightSource, // Using DUFFEL as source type for now
+                    source: 'amadeus' as FlightSource,
                     airline: firstSegment.carrierCode,
                     airlineLogo: `https://images.kiwi.com/airlines/64/${firstSegment.carrierCode}.png`,
                     flightNumber: `${firstSegment.carrierCode}${firstSegment.number}`,

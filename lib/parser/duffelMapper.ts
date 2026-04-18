@@ -234,7 +234,7 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
 
     return {
         id: offer.id,
-        source: 'DUFFEL' as FlightSource,
+        source: 'duffel' as FlightSource,
         airline: firstSegment.operating_carrier?.name || "Airline",
         airlineLogo: firstSegment.operating_carrier?.logo_symbol_url || "",
         flightNumber: fullFlightNumber,

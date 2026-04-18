@@ -1,4 +1,4 @@
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
 import { toMinutes } from '@/lib/search/flightSearchRecordStore';
 
 const RAPID_API_KEY = process.env.RAPID_API_KEY;
@@ -831,7 +831,7 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
 
                 return {
                     id: `PRICELINE_${sourceId}`,
-                    source: 'PRICELINE' as any,
+                    source: 'priceline' as FlightSource,
                     airline,
                     airlineLogo,
                     flightNumber,

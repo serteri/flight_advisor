@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
@@ -551,7 +551,7 @@ function mapCachedRecordsToFlights(
 
         return {
             id: `CACHE_PRICELINE_${record.flightNumber}_${record.createdAt.getTime()}_${index}`,
-            source: 'PRICELINE',
+            source: 'priceline' as FlightSource,
             airline: airlineName,
             airlineCode: record.airlineCode ?? undefined,
             flightNumber: record.flightNumber,
@@ -656,7 +656,7 @@ export async function GET(request: Request) {
 
         if (!shouldSkipPriceline) {
             const freshPricelineFlights = allFlights.filter(
-                (flight) => String(flight.source || '').toUpperCase() === 'PRICELINE'
+                (flight) => flight.source === 'priceline'
             );
             await persistPricelineRawCache(freshPricelineFlights, {
                 origin: queryParams.origin,

@@ -139,8 +139,8 @@ function isOvernightLayover(durationMin: number): boolean {
 
 function hasSelfTransfer(flight: FlightResult): boolean {
     // Kiwi / OTA-stitched flights are self-transfer by nature
-    const src = (flight.source || '').toUpperCase();
-    if (src === 'KIWI' || src === 'SERPAPI') return (flight.stops ?? 0) > 0;
+    const src = (flight.source || '').toLowerCase();
+    if (src === 'kiwi' || src === 'serpapi') return (flight.stops ?? 0) > 0;
     // Check for mixed-PNR signal in segments
     const segs = Array.isArray(flight.segments) ? flight.segments : [];
     const pnrs = new Set(segs.map((s: any) => s?.bookingCode || s?.pnr || s?.ticketingStatus).filter(Boolean));

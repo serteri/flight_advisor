@@ -1,4 +1,4 @@
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
 
 /**
  * KIWI.COM (TEQUILA API)
@@ -131,7 +131,7 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
 
         const flightResult: FlightResult = {
           id: `kiwi_${flight.id || Math.random().toString(36).substr(2, 9)}`,
-          source: 'KIWI' as any,
+          source: 'kiwi' as FlightSource,
           airline: Array.from(airlines)[0] || flight.airlines?.[0] || 'Multiple',
           flightNumber: firstRoute.flight_no || 'KIWI',
           from: params.origin,

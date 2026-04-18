@@ -21,8 +21,8 @@ export default function BookButton({ flight, label }: BookButtonProps) {
             deepLink: flight.bookingLink
         });
 
-        // Open in new tab
-        window.open(link, '_blank');
+        // Open in new tab (no-op if no link available)
+        if (link) window.open(link, '_blank');
     };
 
     return (

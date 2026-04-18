@@ -299,8 +299,9 @@ export default function FlightResultCard({
     const estimatedTotalCost = flight.advancedScore?.estimatedTotalCost;
     const personalBias = flight.advancedScore?.personalBias;
     const decisionRecommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
-    const sourceLabel = source === 'DUFFEL' ? 'DUFFEL' : (source === 'PRICELINE' || source === 'SERPAPI') ? 'PRICELINE' : 'KIWI';
-    const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : (source === 'PRICELINE' || source === 'SERPAPI') ? '⚡ Priceline' : '🌐 Kiwi';
+    const src = (source || '').toLowerCase();
+    const sourceLabel = src === 'duffel' ? 'DUFFEL' : (src === 'priceline' || src === 'serpapi') ? 'PRICELINE' : 'KIWI';
+    const sourceSubLabel = src === 'duffel' ? '🏛️ Duffel' : (src === 'priceline' || src === 'serpapi') ? '⚡ Priceline' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
     const localizeValueTag = (tag: string) => {
         // Tags are now always English from the scoring engine.
@@ -516,7 +517,7 @@ export default function FlightResultCard({
 
             {/* 🏷️ KAYNAK ETİKETİ (ÜÇLÜ MOTOR) */}
             <div className="absolute top-0 left-0 z-20">
-                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${source === 'DUFFEL' ? 'bg-emerald-600' : 'bg-blue-600'
+                <span className={`text-[10px] font-black px-3 py-1 rounded-tl-[16px] rounded-br-[8px] text-white ${src === 'duffel' ? 'bg-emerald-600' : 'bg-blue-600'
                     }`}>
                     {sourceLabel}
                 </span>
@@ -579,7 +580,7 @@ export default function FlightResultCard({
                             <div className="flex gap-2 items-center mt-1">
                                 <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{flightNumber}</span>
                                 {/* Provider Source Badge */}
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${source === 'DUFFEL' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${src === 'duffel' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                                     }`}>
                                     {sourceSubLabel}
                                 </span>

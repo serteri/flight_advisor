@@ -17,21 +17,21 @@ export function DataSourceIndicator({ flights }: { flights: any[] }) {
         const sourceCounts: Record<string, number> = {};
         
         flights.forEach(flight => {
-            const source = flight.source || 'UNKNOWN';
+            const source = (flight.source || 'unknown').toLowerCase();
             sourceCounts[source] = (sourceCounts[source] || 0) + 1;
         });
 
         const sourceList: DataSourceStatus[] = [
             {
                 name: 'DUFFEL',
-                status: sourceCounts['DUFFEL'] > 0 ? 'active' : 'inactive',
-                count: sourceCounts['DUFFEL'] || 0,
+                status: sourceCounts['duffel'] > 0 ? 'active' : 'inactive',
+                count: sourceCounts['duffel'] || 0,
                 color: 'emerald'
             },
             {
                 name: 'PRICELINE',
-                status: (sourceCounts['PRICELINE'] || sourceCounts['SERPAPI']) > 0 ? 'active' : 'inactive',
-                count: (sourceCounts['PRICELINE'] || 0) + (sourceCounts['SERPAPI'] || 0),
+                status: (sourceCounts['priceline'] || sourceCounts['serpapi']) > 0 ? 'active' : 'inactive',
+                count: (sourceCounts['priceline'] || 0) + (sourceCounts['serpapi'] || 0),
                 color: 'violet'
             }
         ];

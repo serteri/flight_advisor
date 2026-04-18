@@ -21,7 +21,12 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(sed -n '550,560p' app/api/flight-search/route.ts)",
+      "Bash(sed -n '625,665p' app/api/flight-search/route.ts)",
+      "Bash(sed -n '78,82p' components/FlightCard.tsx)",
+      "Bash(sed -n '295,310p' components/search/FlightResultCard.tsx)",
+      "Bash(sed -n '515,525p' components/search/FlightResultCard.tsx)"
     ]
   }
 }
