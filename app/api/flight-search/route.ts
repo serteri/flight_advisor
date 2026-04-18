@@ -626,7 +626,7 @@ export async function GET(request: Request) {
                   queryParams.destination,
                   queryParams.date,
                   PRICELINE_CACHE_WINDOW_MINUTES,
-                  'PRICELINE'
+                  'priceline'
               )
             : [];
 

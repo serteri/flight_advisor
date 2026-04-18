@@ -538,7 +538,7 @@ const resolveDuration = (item: any, segments: any[], layovers: any[]) => {
             segmentPlusLayovers,
             providerLooksBroken,
             resolvedDuration: resolved,
-            provider: 'PRICELINE',
+            provider: 'priceline',
         },
     };
 };

@@ -26,7 +26,23 @@
       "Bash(sed -n '625,665p' app/api/flight-search/route.ts)",
       "Bash(sed -n '78,82p' components/FlightCard.tsx)",
       "Bash(sed -n '295,310p' components/search/FlightResultCard.tsx)",
-      "Bash(sed -n '515,525p' components/search/FlightResultCard.tsx)"
+      "Bash(sed -n '515,525p' components/search/FlightResultCard.tsx)",
+      "Bash(sed -n '520,535p' \"app/[locale]/\\(public\\)/flight-search/page.tsx\")",
+      "Bash(sed -n '195,215p' components/search/FlightResultCard.tsx)",
+      "Bash(sed -n '85,100p' components/search/FreeFlightCard.tsx)",
+      "Bash(sed -n '17,33p' lib/intelligence/flightDeduplicator.ts)",
+      "Bash(sed -n '1,10p' \"app/api/searchFlights/route.ts\")",
+      "Bash(sed -n '140,155p' \"app/api/searchFlights/route.ts\")",
+      "Bash(sed -n '355,365p' lib/search/flightSearchRecordStore.ts)",
+      "Bash(sed -n '680,695p' lib/search/flightSearchRecordStore.ts)",
+      "Bash(sed -n '690,705p' \"app/[locale]/\\(public\\)/flight-search/page.tsx\")",
+      "Bash(sed -n '625,635p' app/api/flight-search/route.ts)",
+      "Bash(sed -n '538,542p' lib/providers/priceline.ts)",
+      "Bash(sed -n '725,730p' lib/search/flightSearchRecordStore.ts)",
+      "Bash(sed -n '780,790p' lib/search/flightSearchRecordStore.ts)",
+      "Bash(sed -n '775,795p' lib/search/flightSearchRecordStore.ts)",
+      "Bash(sed -n '536,545p' lib/providers/priceline.ts)",
+      "Bash(grep -v \"sourceLabel\\\\|sourceSubLabel\\\\|name:.*DUFFEL\\\\|name:.*PRICELINE\\\\|DataSource\\\\|<option\\\\|// \\\\|^\\\\s*//\")"
     ]
   }
 }

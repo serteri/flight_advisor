@@ -53,7 +53,7 @@ function clamp(v: number, min: number, max: number): number {
 
 /** Source reliability: GDS = 95, OTA scraper = 55 */
 function sourceScore(flight: FlightResult): number {
-    return SOURCE_TRUST[flight.source] ?? 58;
+    return SOURCE_TRUST[(flight.source || '').toLowerCase()] ?? 58;
 }
 
 /**

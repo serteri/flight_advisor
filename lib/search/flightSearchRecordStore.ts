@@ -357,7 +357,7 @@ export async function persistSearchAnalytics(
 
     const groupedByProvider = new Map<string, number[]>();
     for (const flight of validFlights) {
-        const provider = String(flight.source || 'UNKNOWN').toUpperCase();
+        const provider = String(flight.source || 'unknown').toLowerCase();
         const price = Number(flight.price);
         if (!groupedByProvider.has(provider)) {
             groupedByProvider.set(provider, []);
@@ -684,7 +684,7 @@ export async function getRecentRouteSearchRecords(
             .map((record: any) => ({
                 flightNumber: String(record.flightNumber || ''),
                 price: Number(record.price || 0),
-                provider: String(record.provider || 'UNKNOWN').toUpperCase(),
+                provider: String(record.provider || 'unknown').toLowerCase(),
                 createdAt: new Date(record.createdAt),
                 airlineName: record.airlineName ?? null,
                 airlineCode: record.airlineCode ?? null,
@@ -726,7 +726,7 @@ export async function getRecentPricelineRawCache(
                     lt: end,
                 },
                 provider: {
-                    equals: 'PRICELINE',
+                    equals: 'priceline',
                     mode: 'insensitive',
                 },
                 flightNumber: PRICELINE_CACHE_FLIGHT_NUMBER,
@@ -781,10 +781,10 @@ export async function persistPricelineRawCache(
                 destination: options.destination,
                 departureDate,
                 price: Math.min(...validFlights.map((flight) => Number(flight.price))),
-                provider: 'PRICELINE',
+                provider: 'priceline',
                 cacheStatus: 'SUCCESS',
                 rawResponse: {
-                    provider: 'PRICELINE',
+                    provider: 'priceline',
                     cachedAt: new Date().toISOString(),
                     flights: validFlights,
                 },

@@ -519,11 +519,12 @@ function SearchPageContent() {
     const filteredResults = useMemo(() => {
         return sortedResults.filter((flight) => {
             const airline = String(flight.airline || "").trim();
-            const source = String(flight.source || "").toUpperCase();
+            const src = (flight.source || "").toLowerCase();
+            const filterSrc = (filters.source || "").toLowerCase();
             const stops = Number(flight.stops || 0);
 
             const airlineMatch = filters.airline === "ALL" || airline === filters.airline;
-            const sourceMatch = filters.source === "ALL" || source === filters.source;
+            const sourceMatch = filters.source === "ALL" || src === filterSrc;
 
             const stopMatch =
                 filters.stops === "ALL" ||
@@ -694,7 +695,7 @@ function SearchPageContent() {
                     flightId: flight.id,
                     flightNumber: flight.flightNumber,
                     airline: flight.airline,
-                    provider: String(flight.source || '').toUpperCase(),
+                    provider: String(flight.source || '').toLowerCase(),
                     origin: String(flight.from || '').toUpperCase(),
                     destination: String(flight.to || '').toUpperCase(),
                     departureDate: String(flight.departTime || '').slice(0, 10),

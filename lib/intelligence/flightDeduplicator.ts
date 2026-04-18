@@ -15,20 +15,12 @@ import { FlightResult } from '@/types/hybridFlight';
 
 // ── Source Trust Levels (0–100) ──────────────────────────────────────────────
 export const SOURCE_TRUST: Record<string, number> = {
-    AMADEUS:      95,
-    SABRE:        93,
-    NDC_QF:       95,
-    NDC_EK:       95,
-    DUFFEL:       80,
-    duffel:       80,
-    KIWI:         60,
-    kiwi:         60,
-    PRICELINE:    62,
-    SERPAPI:      55,
-    RAPIDAPI:     50,
-    RAPID_API:    50,
-    AIR_RAPID:    50,
-    SKY_RAPID:    52,
+    amadeus:  95,
+    duffel:   80,
+    priceline: 62,
+    kiwi:     60,
+    serpapi:  55,
+    rapidapi: 50,
 };
 
 // ── Internal marker key ──────────────────────────────────────────────────────
@@ -172,7 +164,7 @@ function mergeCluster(cluster: FlightResult[], clusterKey: string): FlightResult
 
     // Sort by trust descending — most authoritative source first
     const byTrust = [...cluster].sort(
-        (a, b) => (SOURCE_TRUST[b.source] || 50) - (SOURCE_TRUST[a.source] || 50)
+        (a, b) => (SOURCE_TRUST[(b.source || '').toLowerCase()] ?? 50) - (SOURCE_TRUST[(a.source || '').toLowerCase()] ?? 50)
     );
 
     const primary = byTrust[0];

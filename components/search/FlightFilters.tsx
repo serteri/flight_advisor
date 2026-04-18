@@ -5,7 +5,7 @@ import { Filter } from "lucide-react";
 export type FlightFilterState = {
     airline: string;
     stops: "ALL" | "DIRECT" | "ONE_STOP" | "TWO_PLUS";
-    source: "ALL" | "DUFFEL" | "PRICELINE";
+    source: "ALL" | "duffel" | "priceline";
 };
 
 interface FlightFiltersProps {
@@ -80,8 +80,8 @@ export function FlightFilters({
                         className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
                     >
                         <option value="ALL">All sources</option>
-                        <option value="DUFFEL">Duffel</option>
-                        <option value="PRICELINE">Priceline</option>
+                        <option value="duffel">Duffel</option>
+                        <option value="priceline">Priceline</option>
                     </select>
                 </label>
             </div>
