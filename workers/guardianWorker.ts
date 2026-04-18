@@ -153,10 +153,12 @@ export async function processFlightMonitoring() {
             }
 
             // Persist new snapshot (upsert — idempotent on cold start)
+            // Destructure to ensure tripId is never passed in the update payload
+            const { tripId: _tid, ...safeSnapshot } = { tripId: trip.id, ...newSnapshot };
             await prisma.tripSnapshot.upsert({
                 where: { tripId: trip.id },
-                create: { tripId: trip.id, ...newSnapshot },
-                update: newSnapshot,
+                create: { tripId: trip.id, ...safeSnapshot },
+                update: safeSnapshot,
             });
 
             // Advance next check window

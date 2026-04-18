@@ -20,6 +20,7 @@
 
 import { FlightResult } from '@/types/hybridFlight';
 import { SOURCE_TRUST } from './flightDeduplicator';
+import { normalizeSource } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ function clamp(v: number, min: number, max: number): number {
 
 /** Source reliability: GDS = 95, OTA scraper = 55 */
 function sourceScore(flight: FlightResult): number {
-    return SOURCE_TRUST[(flight.source || '').toLowerCase()] ?? 58;
+    return SOURCE_TRUST[normalizeSource(flight.source)] ?? 58;
 }
 
 /**

@@ -25,6 +25,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useSession } from "next-auth/react";
 import type { UserTier } from "@/lib/tierUtils";
 import { getBuyNowVariantBucket } from '@/lib/experiment/buyNowVariant';
+import { normalizeSource } from '@/lib/utils';
 
 // Popular destinations for quick selection
 const popularDestinations = [
@@ -519,8 +520,8 @@ function SearchPageContent() {
     const filteredResults = useMemo(() => {
         return sortedResults.filter((flight) => {
             const airline = String(flight.airline || "").trim();
-            const src = (flight.source || "").toLowerCase();
-            const filterSrc = (filters.source || "").toLowerCase();
+            const src = normalizeSource(flight.source);
+            const filterSrc = normalizeSource(filters.source);
             const stops = Number(flight.stops || 0);
 
             const airlineMatch = filters.airline === "ALL" || airline === filters.airline;

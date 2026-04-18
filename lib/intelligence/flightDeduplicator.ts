@@ -12,6 +12,7 @@
 
 import crypto from 'crypto';
 import { FlightResult } from '@/types/hybridFlight';
+import { normalizeSource } from '@/lib/utils';
 
 // ── Source Trust Levels (0–100) ──────────────────────────────────────────────
 export const SOURCE_TRUST: Record<string, number> = {
@@ -164,7 +165,7 @@ function mergeCluster(cluster: FlightResult[], clusterKey: string): FlightResult
 
     // Sort by trust descending — most authoritative source first
     const byTrust = [...cluster].sort(
-        (a, b) => (SOURCE_TRUST[(b.source || '').toLowerCase()] ?? 50) - (SOURCE_TRUST[(a.source || '').toLowerCase()] ?? 50)
+        (a, b) => (SOURCE_TRUST[normalizeSource(b.source)] ?? 50) - (SOURCE_TRUST[normalizeSource(a.source)] ?? 50)
     );
 
     const primary = byTrust[0];

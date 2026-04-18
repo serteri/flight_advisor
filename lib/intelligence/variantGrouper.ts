@@ -17,6 +17,7 @@
 
 import { FlightResult } from '@/types/hybridFlight';
 import { getFlightKey, SOURCE_TRUST } from './flightDeduplicator';
+import { normalizeSource } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,10 +109,10 @@ function electRepresentative(
 ): FlightResult {
     return flights.reduce((best, f) => {
         const score = (scoreMap.get(getFlightKey(f)) ?? 0) * 10 +
-            (SOURCE_TRUST[(f.source || '').toLowerCase()] ?? 50) * 0.5 +
+            (SOURCE_TRUST[normalizeSource(f.source)] ?? 50) * 0.5 +
             ((f as any).seatsRemaining != null ? 8 : 0);
         const bestScore = (scoreMap.get(getFlightKey(best)) ?? 0) * 10 +
-            (SOURCE_TRUST[(best.source || '').toLowerCase()] ?? 50) * 0.5 +
+            (SOURCE_TRUST[normalizeSource(best.source)] ?? 50) * 0.5 +
             ((best as any).seatsRemaining != null ? 8 : 0);
         return score > bestScore ? f : best;
     }, flights[0]);
