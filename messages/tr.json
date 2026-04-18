@@ -143,15 +143,15 @@
                     "desc": "4 veri kaynağı (RapidAPI, Amadeus, Travelpayouts, Duffel) birleşir ve kör noktalar kapanır."
                 },
                 "scoring": {
-                    "title": "Master Flight Scoring",
+                    "title": "Ana Uçuş Skorlaması",
                     "desc": "100 puanlık motor değer, risk, konfor ve güvenilirliği puanlar. Sadece ucuz değil, akıllı."
                 },
                 "disruption": {
-                    "title": "Disruption Hunter + EU261",
+                    "title": "Aksama Avcısı + EU261",
                     "desc": "Rötar ve iptal riskini yakalar, 600 EUR'a kadar tazminat uygunluğunu kontrol eder."
                 },
                 "guardian": {
-                    "title": "Guardian Worker (24/7)",
+                    "title": "Guardian İzleyici (7/24)",
                     "desc": "Her 15 dakikada izleme. Kapı değişimi, rötar, iptal, alarm."
                 },
                 "notifications": {
@@ -159,38 +159,38 @@
                     "desc": "Email, SMS ve push. Seviye bazlı uyarılar ve aksiyon rehberi."
                 },
                 "inbox": {
-                    "title": "Inbox Parser + Otomatik Takip",
+                    "title": "Gelen Kutusu Ayrıştırıcı + Otomatik Takip",
                     "desc": "Rezervasyon mailini ilet, PNR parse eder, veriyi çeker ve korumayı başlatır."
                 }
             }
         },
         "scoring": {
             "label": "Canavar No.10",
-            "title": "Master Flight Scoring Engine",
+            "title": "Ana Uçuş Skorlama Motoru",
             "subtitle": "Sistemin beyni. Bu olmadan diğerleri sadece özellik olur.",
             "formula": {
                 "title": "Geliştirilmiş Skorlama Formülü",
                 "intro": "Toplam: 100 puan, sonra 10 puanlık skora normalize edilir.",
                 "items": {
                     "price": {
-                        "title": "1. Price Value Score (20)",
+                        "title": "1. Fiyat-Değer Skoru (20)",
                         "desc": "medyan rota fiyatı, %20 ucuz = bonus, %30 pahalı = ağır ceza."
                     },
                     "duration": {
-                        "title": "2. Duration Efficiency (15)",
+                        "title": "2. Süre Verimliliği (15)",
                         "desc": "en hızlı rota referans, %25 uzun = -5, %40 = -8."
                     },
                     "stops": {
-                        "title": "3. Stop Count (10)",
-                        "desc": "direkt = full, 1 aktarma = -2, 2+ aktarma = -6."
+                        "title": "3. Aktarma Sayısı (10)",
+                        "desc": "direkt = tam puan, 1 aktarma = -2, 2+ aktarma = -6."
                     },
                     "connection": {
-                        "title": "4. Connection Quality (10)",
+                        "title": "4. Bağlantı Kalitesi (10)",
                         "desc": "<45dk risk, 1-2.5 saat ideal, 5+ saat yıpratıcı."
                     },
                     "selfTransfer": {
-                        "title": "5. Self-Transfer Risk (10)",
-                        "desc": "farklı PNR, low-cost kombinasyonu, terminal değişimi = ağır ceza."
+                        "title": "5. Kendi Aktarma Riski (10)",
+                        "desc": "farklı PNR, düşük maliyetli kombinasyon, terminal değişimi = ağır ceza."
                     }
                 }
             },
@@ -198,23 +198,23 @@
                 "title": "Kalite ve Konfor Katmanı",
                 "items": {
                     "baggage": {
-                        "title": "6. Baggage Allowance (10)",
-                        "desc": "23kg dahil = +10, kabin only = -5, yok = -10."
+                        "title": "6. Bagaj Hakkı (10)",
+                        "desc": "23kg dahil = +10, sadece kabin bagajı = -5, yok = -10."
                     },
                     "reliability": {
-                        "title": "7. Airline Reliability (10)",
+                        "title": "7. Havayolu Güvenilirliği (10)",
                         "desc": "zamanında kalkış, güvenlik geçmişi, itibar."
                     },
                     "aircraft": {
-                        "title": "8. Aircraft Quality (5)",
+                        "title": "8. Uçak Kalitesi (5)",
                         "desc": "A350/787 +3, 20 yıllık uçak = -2."
                     },
                     "amenity": {
-                        "title": "9. Amenity Score (5)",
+                        "title": "9. Olanak Skoru (5)",
                         "desc": "WiFi, IFE, koltuk aralığı, yemek kalitesi."
                     },
                     "airport": {
-                        "title": "10. Airport Difficulty Index (5)",
+                        "title": "10. Havalimanı Zorluk Endeksi (5)",
                         "desc": "terminal karmaşıklığı, aktarma kolaylığı, güvenlik yoğunluğu."
                     }
                 }
@@ -226,7 +226,7 @@
                 },
                 "risk": {
                     "title": "Risk Bayrakları",
-                    "desc": "Kısa bağlantılar, self-transfer riskleri veya rötar eğilimli taşıyıcılar için kırmızı uyarılar."
+                    "desc": "Kısa bağlantılar, kendi aktarma riskleri veya rötar eğilimli taşıyıcılar için kırmızı uyarılar."
                 },
                 "value": {
                     "title": "Değer Etiketleri",
@@ -248,7 +248,7 @@
                 }
             },
             "agent": {
-                "title": "Flight Agent",
+                "title": "Uçuş Asistanı",
                 "items": {
                     "ranking": "Risk odaklı sıralama",
                     "scenario": "Senaryo simülasyonu",
@@ -388,7 +388,7 @@
     },
     "Modules": {
         "disruptionHunter": {
-            "title": "Disruption Hunter",
+            "title": "Aksama Avcısı",
             "desc": "Rötar ve İptal takibi yapılıyor."
         },
         "priceArbitrage": {
@@ -769,8 +769,8 @@
         "features": {
             "search_score": "Arama & Skorlama",
             "scenario_sim": "Senaryo Simülasyonu",
-            "disruption_hunter": "Disruption Hunter",
-            "inbox_parser": "Inbox Parser (E-mail)",
+            "disruption_hunter": "Aksama Avcısı",
+            "inbox_parser": "Gelen Kutusu Ayrıştırıcı (E-posta)",
             "schedule_guardian": "Schedule Guardian",
             "junior_guardian": "Junior Guardian",
             "backup_generator": "Backup Generator",
