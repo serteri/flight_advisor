@@ -8,11 +8,18 @@
     "to": "To",
     "passengers": "Passengers",
     "cabin_class": "Cabin Class",
-    "search_flights": "Search Flights"
+    "search_flights": "Search Flights",
+    "add_date": "Add Date",
+    "travel_purpose": "Travel Purpose",
+    "purpose_budget": "Budget",
+    "purpose_comfort": "Comfort",
+    "purpose_business": "Business",
+    "purpose_family": "Family"
   },
   "Navbar": {
     "home": "Home",
     "search": "Search Flights",
+    "pricing": "Pricing",
     "features": "Features",
     "blog": "Travel Tips",
     "login": "Log in",
@@ -132,13 +139,7 @@
     "scoring": {
       "label": "Monster No.10",
       "title": "Master Flight Scoring Engine",
-          "search_flights": "Search Flights",
-          "add_date": "Add Date",
-          "travel_purpose": "Travel Purpose",
-          "purpose_budget": "Budget",
-          "purpose_comfort": "Comfort",
-          "purpose_business": "Business",
-            "purpose_family": "Family",
+      "subtitle": "The brain of the system. Without this, others are just features.",
       "formula": {
         "title": "Advanced Scoring Formula",
         "intro": "Total: 100 points then normalized to a 10-point score.",
@@ -146,8 +147,6 @@
           "pricing": "Pricing",
           "price": {
             "title": "1. Price Value Score (20)",
-          "aiMode": "AI MODE",
-          "aiModeActive": "AI MODE ACTIVE",
             "desc": "median route price, 20% cheaper = bonus, 30% higher = heavy penalty."
           },
           "duration": {
