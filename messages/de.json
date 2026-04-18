@@ -331,7 +331,7 @@
         "departureDate": "Abflugdatum",
         "returnDate": "Rückflugdatum",
         "selectDate": "Datum auswählen",
-        "optional": "optional",
+        "optional": "optional (freiwillig)",
         "cabin": "Kabinenklasse",
         "economy": "Touristenklasse",
         "premiumEconomy": "Premium-Economy",
