@@ -67,32 +67,32 @@ export function getFlightPros(flight: FlightData, context: MarketContext): strin
     // Priority 1: Speed - Being fast is the #1 concern for travelers
     const durationThreshold = context.marketMinDuration * 1.10; // Within 10%
     if (flight.totalDuration <= durationThreshold) {
-        pros.push({ priority: 1, text: "⚡ En hızlı seçeneklerden biri" });
+        pros.push({ priority: 1, text: "One of the fastest options for this route" });
     }
 
     // Priority 2: Comfort - Premium airlines provide peace of mind
     if (flight.airlineTier === 'PREMIUM') {
-        pros.push({ priority: 2, text: "💎 Premium havayolu konforu" });
+        pros.push({ priority: 2, text: "Premium airline comfort and reliability" });
     }
 
     // Priority 3: Value - Good price relative to market
     if (flight.price <= context.marketMedianPrice) {
-        pros.push({ priority: 3, text: "💰 Fiyat/performans oranı yüksek" });
+        pros.push({ priority: 3, text: "Strong price-to-quality ratio" });
     }
 
     // Priority 4: Efficiency - Quick connection = less stress
     if (flight.stops === 1 && flight.layoverDuration < 180 && flight.layoverDuration > 75) {
-        pros.push({ priority: 4, text: "✅ Verimli aktarma süresi" });
+        pros.push({ priority: 4, text: "Efficient connection time" });
     }
 
     // Priority 5: Hardware - Modern aircraft = better experience
     if (flight.aircraftScore >= 8) {
-        pros.push({ priority: 5, text: "✈️ Yeni nesil uçak, modern kabin" });
+        pros.push({ priority: 5, text: "Next-gen aircraft, modern cabin" });
     }
 
     // Direct flight is always a pro
     if (flight.stops === 0) {
-        pros.push({ priority: 1.5, text: "🎯 Direkt uçuş, aktarma yok" });
+        pros.push({ priority: 1.5, text: "Direct flight — no connections" });
     }
 
     // Sort by priority and return top 3
@@ -115,7 +115,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.layoverDuration > 0 && flight.layoverDuration < 75) {
         risks.push({
             type: "tight_connection",
-            label: "⚠️ Riskli Aktarma (<1s 15dk)"
+            label: "Tight connection — under 75 min transfer"
         });
     }
 
@@ -123,7 +123,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.hasAirportChange) {
         risks.push({
             type: "airport_change",
-            label: "🚨 Havalimanı Değişikliği"
+            label: "Airport change required"
         });
     }
 
@@ -131,7 +131,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.isOvernight) {
         risks.push({
             type: "overnight",
-            label: "🌙 Gece Aktarması"
+            label: "Overnight layover"
         });
     }
 
@@ -139,7 +139,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.layoverDuration > 360) {
         risks.push({
             type: "long_layover",
-            label: "⏳ Uzun Bekleme (+6 saat)"
+            label: "Long layover (6h+)"
         });
     }
 
@@ -147,7 +147,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.aircraftScore < 5) {
         risks.push({
             type: "old_cabin",
-            label: "🏚️ Eski Kabin"
+            label: "Older cabin — reduced comfort"
         });
     }
 
@@ -155,7 +155,7 @@ export function getRiskFlags(flight: FlightData): RiskFlag[] {
     if (flight.airlineTier === 'LCC' && flight.totalDuration > 360) {
         risks.push({
             type: "lcc_long_haul",
-            label: "💺 Düşük maliyetli havayolu (uzun yolculuk)"
+            label: "Budget carrier on a long-haul route"
         });
     }
 
@@ -188,28 +188,28 @@ export function getTradeOffs(
 
         // What the user gains by paying more
         if (timeSavedMinutes > 60) {
-            gains.push(`+${timeSavedHours} saat zaman kazanıyorsun`);
+            gains.push(`+${timeSavedHours}h faster travel time`);
         }
         if (selectedFlight.stops < cheapestFlight.stops) {
-            gains.push(`Daha az aktarma (${selectedFlight.stops} vs ${cheapestFlight.stops})`);
+            gains.push(`Fewer connections (${selectedFlight.stops} vs ${cheapestFlight.stops})`);
         }
         if (selectedFlight.airlineTier === 'PREMIUM' && cheapestFlight.airlineTier !== 'PREMIUM') {
-            gains.push("Premium havayolu konforu");
+            gains.push("Premium airline comfort");
         }
         if (cheapestFlight.hasAirportChange && !selectedFlight.hasAirportChange) {
-            gains.push("Havalimanı değişikliği yok");
+            gains.push("No airport change required");
         }
 
         // What the user loses
         if (priceDiff > 0) {
-            losses.push(`-${formatPrice(priceDiff, currency)} daha pahalı`);
+            losses.push(`${formatPrice(priceDiff, currency)} more expensive`);
         }
 
         if (gains.length > 0 || losses.length > 0) {
             tradeOffs.vsCheapest = {
                 text: priceDiff > 0
-                    ? `Bu uçuşu seçerek ${formatPrice(priceDiff, currency)} fazla ödüyorsun ama...`
-                    : "Bu uçuş en ucuz seçenek!",
+                    ? `You're paying ${formatPrice(priceDiff, currency)} more than the cheapest option, but...`
+                    : "This is the cheapest option in this search.",
                 gains,
                 losses
             };
@@ -227,22 +227,22 @@ export function getTradeOffs(
 
         // What the user gains by going slower
         if (moneySaved > 0) {
-            gains.push(`+${formatPrice(moneySaved, currency)} tasarruf`);
+            gains.push(`Save ${formatPrice(moneySaved, currency)} vs. the fastest option`);
         }
 
         // What the user loses
         if (timeAddedMinutes > 60) {
-            losses.push(`-${timeAddedHours} saat daha uzun yolculuk`);
+            losses.push(`${timeAddedHours}h longer travel time`);
         }
         if (selectedFlight.stops > fastestFlight.stops) {
-            losses.push(`Daha fazla aktarma (${selectedFlight.stops} vs ${fastestFlight.stops})`);
+            losses.push(`More connections (${selectedFlight.stops} vs ${fastestFlight.stops})`);
         }
 
         if (gains.length > 0 || losses.length > 0) {
             tradeOffs.vsFastest = {
                 text: moneySaved > 0
-                    ? `En hızlı yerine bunu seçerek ${formatPrice(moneySaved, currency)} tasarruf edebilirsin.`
-                    : "Bu zaten en hızlı veya benzer sürede!",
+                    ? `Choosing this over the fastest option saves you ${formatPrice(moneySaved, currency)}.`
+                    : "This is already among the fastest options.",
                 gains,
                 losses
             };

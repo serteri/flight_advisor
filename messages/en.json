@@ -275,36 +275,36 @@
         "title": "Save",
         "desc": "Book when we notify you of the price drop."
       }
-    },
-        "PricingPage": {
-          "title": "Pricing",
-          "subtitle": "Unlock risk intelligence and route-level price insights.",
-          "back": "Back",
-          "monthlyPro": "Monthly Pro",
-          "proDesc": "Unlimited analysis + proactive premium alerts.",
-          "proItem1": "Risk Analysis (Delay + Connection)",
-          "proItem2": "Price Intelligence & Trend Forecast",
-          "proItem3": "Detailed Score Breakdown",
-          "proItem4": "Smart route notifications",
-          "connecting": "Connecting to Stripe...",
-          "upgradeToPro": "Upgrade to Pro",
-          "oneTimeReport": "One-time Flight Report",
-          "reportDesc": "Deep report only for this route, no subscription.",
-          "reportItem1": "Route-specific risk scan",
-          "reportItem2": "Price baseline vs route average",
-          "reportItem3": "Personalized recommendation summary",
-          "buyOneTime": "Buy One-time Report"
-        },
-        "BlogPage": {
-          "title": "Travel Guides & Tips",
-          "subtitle": "Expert advice on finding the best flight deals, hidden gems, and travel hacks from the FlightAdvisor team.",
-          "backToHome": "Back to Home",
-          "backToGuides": "Back to Guides",
-          "tag": "Travel Tips",
-          "ctaTitle": "Ready to explore?",
-          "ctaDesc": "Start your search on FlightAdvisor and find the best deals for your next adventure.",
-          "ctaButton": "Search Flights Now"
-        }
+    }
+  },
+  "PricingPage": {
+    "title": "Upgrade to Pro",
+    "subtitle": "Make smarter booking decisions with real-time flight intelligence.",
+    "back": "Back",
+    "monthlyPro": "Pro — Monthly",
+    "proDesc": "Full decision engine access: risk scores, price trends, and proactive alerts for every search.",
+    "proItem1": "Delay & connection risk analysis",
+    "proItem2": "Price intelligence with trend forecasting",
+    "proItem3": "Full 10-criteria score breakdown",
+    "proItem4": "Smart route price alerts",
+    "connecting": "Connecting to Stripe...",
+    "upgradeToPro": "Start Pro — $19/month",
+    "oneTimeReport": "One-time Flight Report",
+    "reportDesc": "A single deep-dive report for one route. No subscription required.",
+    "reportItem1": "Route-specific risk & connection scan",
+    "reportItem2": "Price baseline vs route average",
+    "reportItem3": "Personalized BUY / WAIT / AVOID recommendation",
+    "buyOneTime": "Get Report — $4.99"
+  },
+  "BlogPage": {
+    "title": "Travel Guides & Tips",
+    "subtitle": "Expert advice on finding the best flight deals, hidden gems, and travel hacks from the FlightAdvisor team.",
+    "backToHome": "Back to Home",
+    "backToGuides": "Back to Guides",
+    "tag": "Travel Tips",
+    "ctaTitle": "Ready to explore?",
+    "ctaDesc": "Start your search on FlightAdvisor and find the best deals for your next adventure.",
+    "ctaButton": "Search Flights Now"
   },
   "AboutPage": {
     "title": "About FlightAdvisor",

@@ -634,24 +634,24 @@ const generateScoreExplanation = (
     minConnectionMinutes: number,
 ): string => {
     const parts: string[] = [];
-    if (flight.stops === 0) parts.push('direkt uçuş');
+    if (flight.stops === 0) parts.push('direct flight');
     if (priceIntel.label === 'Strong deal')
-        parts.push(`fiyatı ortalamanın %${Math.abs(priceIntel.deltaPercent)} altında`);
+        parts.push(`~${Math.abs(priceIntel.deltaPercent)}% below the route average`);
     else if (priceIntel.label === 'Below average')
-        parts.push('fiyatı ortalamanın altında');
+        parts.push('below route average price');
     else if (priceIntel.label === 'Expect increase')
-        parts.push('fiyatı yükselme eğiliminde');
-    const bagNote = comfortNotes.find(n => n.toLowerCase().includes('bagaj'));
-    if (bagNote) parts.push(bagNote.replace(/^Check-in/, 'check-in').toLowerCase());
-    if (comfortNotes.some(n => n.toLowerCase().includes('yemek'))) parts.push('yemek servisi dahil');
-    if (breakdown.duration >= 13) parts.push('kısa seyahat süresi');
+        parts.push('price trending upward');
+    const bagNote = comfortNotes.find(n => n.toLowerCase().includes('baggage'));
+    if (bagNote) parts.push(bagNote.toLowerCase());
+    if (comfortNotes.some(n => n.toLowerCase().includes('meal'))) parts.push('meal included');
+    if (breakdown.duration >= 13) parts.push('efficient travel time');
     if (connectionRisk === 'critical' && minConnectionMinutes > 0)
-        parts.push(`${minConnectionMinutes}dk kritik aktarma riski`);
+        parts.push(`${minConnectionMinutes}min critical connection risk`);
     else if (connectionRisk === 'high' && minConnectionMinutes > 0)
-        parts.push(`${minConnectionMinutes}dk'lık sıkı aktarma`);
-    if (comfortNotes.some(n => n.includes('Top-tier'))) parts.push('üst düzey havayolu güvenilirliği');
-    if (parts.length === 0) return `Bu uçuş dengeli profiliyle ${displayScore.toFixed(1)} puan aldı.`;
-    return `Bu uçuş ${parts.slice(0, 3).join(', ')} nedeniyle ${displayScore.toFixed(1)} puan aldı.`;
+        parts.push(`tight ${minConnectionMinutes}min connection`);
+    if (comfortNotes.some(n => n.includes('Top-tier'))) parts.push('top-tier airline reliability');
+    if (parts.length === 0) return `Scored ${displayScore.toFixed(1)} — a balanced option across all criteria.`;
+    return `Scored ${displayScore.toFixed(1)} for ${parts.slice(0, 3).join(', ')}.`;
 };
 // ── End Intelligence Layer v2 ─────────────────────────────────────────────
 
@@ -718,11 +718,11 @@ const scoreFlight = (
 
     // Set comfort notes based on relative price score
     if (priceScoreValue >= 16) {
-        comfortNotes.push('Fiyat rota ortalamasına göre çok avantajlı');
+        comfortNotes.push('Price is significantly below the route average');
     } else if (priceScoreValue >= 12) {
-        comfortNotes.push('Fiyat rota ortalamasına göre avantajlı');
+        comfortNotes.push('Price is below the route average');
     } else if (priceScoreValue < 6) {
-        riskFlags.push('Fiyat rota ortalamasına göre yüksek');
+        riskFlags.push('Price is above the route average');
     }
 
     // ── RELATIVE DURATION SCORING ─────────────────────────────────────────────
@@ -739,9 +739,9 @@ const scoreFlight = (
     breakdown.duration = Math.round(durationScoreValue);
 
     if (durationScoreValue >= 13) {
-        comfortNotes.push('Kısa seyahat süresi');
+        comfortNotes.push('Short travel time');
     } else if (durationScoreValue < 6) {
-        riskFlags.push('Uzun toplam seyahat süresi');
+        riskFlags.push('Long total travel time');
     }
 
     // ── REFERENCE PRICE FOR INTEL (separate from relative scoring) ──────────────
@@ -763,16 +763,16 @@ const scoreFlight = (
     let stopsScore = Math.round(baseStopsScore * stopsMultiplier);
     if (flight.stops > 0 && directPenaltyBoost > 0) {
         stopsScore -= Math.round(directPenaltyBoost * Math.max(1, flight.stops));
-        riskFlags.push('Kişisel tercihe gore aktarma cezası artırıldı');
+        riskFlags.push('Connection penalty applied based on your preferences');
     }
     if (flight.stops >= 2 && avoidMultiStopWeight > 0) {
         stopsScore -= Math.round(avoidMultiStopWeight * (flight.stops - 1));
-        riskFlags.push('Kullanıcı geçmişinde çok aktarmalı uçuşlar sıkça elendi');
+        riskFlags.push('Multi-stop flights frequently avoided in your history');
     }
     breakdown.stops = clamp(stopsScore, 0, 10);
-    
+
     if (flight.stops >= 2) {
-        riskFlags.push('Çoklu aktarma');
+        riskFlags.push('Multiple connections');
     }
 
     // ── CONNECTION RISK: computed from real segment timestamps ──────────────
@@ -836,7 +836,7 @@ const scoreFlight = (
     const selfTransfer = hasSelfTransferRisk(flight);
     breakdown.selfTransfer = selfTransfer ? 0 : 10;
     if (selfTransfer) {
-        riskFlags.push('Kendi Transferin');
+        riskFlags.push('Self-transfer required');
     }
 
     const checkedBaggage = Number(flight.policies?.baggageKg || 0);
@@ -846,35 +846,35 @@ const scoreFlight = (
 
     if (checkedBaggage >= 20) {
         breakdown.baggage = 10;
-        comfortNotes.push('20kg+ check-in bagaj dahil');
+        comfortNotes.push('20kg+ checked baggage included');
     } else if (checkedBaggage >= 15) {
         breakdown.baggage = 9;
-        comfortNotes.push('Check-in bagaj dahil');
+        comfortNotes.push('Checked baggage included');
     } else if (checkedBaggage > 0) {
         breakdown.baggage = 7;
-        comfortNotes.push('Sınırlı check-in bagaj');
+        comfortNotes.push('Limited checked baggage');
     } else if (hasCheckedByType) {
         breakdown.baggage = 8;
-        comfortNotes.push('Check-in bagaj dahil (ağırlık bilgisi sınırlı)');
+        comfortNotes.push('Checked baggage included (weight info limited)');
     } else if (checkedBaggage <= 0 && cabinBaggage > 0) {
         breakdown.baggage = 5;
-        riskFlags.push('Sadece kabin bagajı');
+        riskFlags.push('Cabin baggage only');
     } else {
         breakdown.baggage = 4;
-        riskFlags.push('Check-in bagaj dahil değil');
+        riskFlags.push('No checked baggage included');
     }
 
     const reliability = resolveReliability(flight.airline);
     breakdown.reliability = clamp(reliability.score, 0, 10);
     if (reliability.isTopAirline) {
-        comfortNotes.push('Top-tier havayolu itibarı');
+        comfortNotes.push('Top-tier airline reputation');
     } else {
-        riskFlags.push('Top-30 havayolu dışında');
+        riskFlags.push('Outside top-30 airlines');
     }
     if (breakdown.reliability >= 8) {
-        comfortNotes.push('Havayolu zamanında kalkış performansı güçlü');
+        comfortNotes.push('Strong on-time departure record');
     } else if (breakdown.reliability <= 6) {
-        riskFlags.push('On-time güvenilirliği düşük');
+        riskFlags.push('Below-average on-time reliability');
     }
 
     // ── DELAY HEURISTIC: airline hierarchy + route-length bonus, no fake % ─────
@@ -889,11 +889,11 @@ const scoreFlight = (
     let aircraftScore = 2;
     if (aircraftCode.includes('A35') || aircraftCode.includes('B78')) {
         aircraftScore += 3;
-        comfortNotes.push('Yeni nesil uçak (A350/787 ailesi)');
+        comfortNotes.push('Next-gen aircraft (A350/787 family)');
     }
     if (aircraftAge >= 20) {
         aircraftScore -= 2;
-        riskFlags.push('Eski Uçak');
+        riskFlags.push('Older aircraft');
     }
     breakdown.aircraft = clamp(aircraftScore, 0, 5);
 
@@ -902,15 +902,15 @@ const scoreFlight = (
     let amenitiesScore = 0;
     if (flight.amenities?.hasWifi || flight.wifi) {
         amenitiesScore += 2;
-        comfortNotes.push('WiFi mevcut');
+        comfortNotes.push('WiFi available');
     }
     if (flight.amenities?.entertainment || flight.entertainment) {
         amenitiesScore += 1.5;
-        comfortNotes.push('IFE eğlence sistemi mevcut');
+        comfortNotes.push('In-flight entertainment available');
     }
     if (mealIncluded) {
         amenitiesScore += 1.5;
-        comfortNotes.push('Yemek servisi dahil');
+        comfortNotes.push('Meal service included');
     }
     breakdown.amenities = clamp(Math.round(amenitiesScore), 0, 5);
 
@@ -949,14 +949,14 @@ const scoreFlight = (
     const totalScore = clamp(Number(separatedScore.toFixed(2)), 0, 100);
     const displayScore = Number((totalScore / 10).toFixed(1));
 
-    let valueTag = 'Dengeli Seçenek';
+    let valueTag = 'Balanced Option';
     const resolvedPersona = resolvePersona(context.persona as PersonaInput);
     const personaScore = computePersonaScore(breakdown, resolvedPersona);
     const priceIntel = computePriceIntel(validPrice, referencePrice, priceReferenceSource);
     const confidenceScore = computeConfidenceScore(flight);
     const finalRiskFlags = Array.from(new Set([
         ...riskFlags,
-        ...(context.markInvalidData ? ['Veri Hatası', context.invalidReason || 'Gerçekçi olmayan süre tespit edildi.'] : []),
+        ...(context.markInvalidData ? ['Data Error', context.invalidReason || 'Unrealistic duration detected.'] : []),
     ]));
     const finalComfortNotes = Array.from(new Set(comfortNotes));
     const explanation = context.markInvalidData
@@ -1001,11 +1001,11 @@ const scoreFlight = (
     if (avoidNightWeight > 0) personalBiasRationale.push('negative_learning_night');
 
     if (breakdown.priceValue >= 16 && totalScore >= 75) {
-        valueTag = 'En İyi Fiyat/Performans';
+        valueTag = 'Best Value';
     } else if (breakdown.amenities >= 4 && breakdown.duration >= 12) {
-        valueTag = 'En Konforlu Seçenek';
+        valueTag = 'Most Comfortable';
     } else if (breakdown.reliability >= 8 && breakdown.connection >= 8) {
-        valueTag = 'Düşük Riskli Seçenek';
+        valueTag = 'Lowest Risk';
     }
 
     return {
@@ -1022,7 +1022,7 @@ const scoreFlight = (
             breakdown,
             riskFlags: finalRiskFlags,
             comfortNotes: finalComfortNotes,
-            valueTag: context.markInvalidData ? 'Veri Hatası' : valueTag,
+            valueTag: context.markInvalidData ? 'Data Error' : valueTag,
             dataQuality: context.markInvalidData ? 'invalid' : 'valid',
             dataErrorReason: context.markInvalidData ? context.invalidReason : undefined,
             personaScore,
@@ -1099,16 +1099,18 @@ const buildBuyNowLabelByVariant = (
     avgPriceRoute: number,
     currentPrice: number,
 ): string => {
+    const savings = Math.max(1, Math.round(avgPriceRoute - currentPrice));
+    const pct = Math.round(((avgPriceRoute - currentPrice) / avgPriceRoute) * 100);
+
     if (variant === 'A') {
-        return 'System recommends booking now based on 92% confidence.';
+        return `Book within 24–48h — this fare is ~${pct}% below the route average.`;
     }
 
     if (variant === 'B') {
-        return 'Prices likely to increase within 72h — Secure this deal now.';
+        return `Prices are likely to rise from here. Lock in this fare now.`;
     }
 
-    const savings = Math.max(1, Math.round(avgPriceRoute - currentPrice));
-    return `Save $${savings} by booking today vs. historical average.`;
+    return `Save ~$${savings} vs. the route average by booking today.`;
 };
 
 /**
@@ -1285,23 +1287,31 @@ const computeConfidenceScoreV2 = (
     flight: FlightResult,
     routeInsight: RouteInsightInput,
     trend: RouteTrendSignal | null,
+    priceDeltaPct?: number,
+    dealTier?: 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE',
 ): number => {
-    const baseDataQuality = flight.advancedScore?.dataQuality === 'invalid' ? 25 : 80;
-    const coverageScore = clamp(Math.round((Number(routeInsight.searchCount || 0) / 30) * 100), 15, 100);
+    const baseDataQuality = flight.advancedScore?.dataQuality === 'invalid' ? 25 : 72;
+    const coverageScore = clamp(Math.round((Number(routeInsight.searchCount || 0) / 30) * 100), 15, 85);
     const trendClarityScore = trend
-        ? trend.clarity === 'clear'
-            ? 90
-            : trend.clarity === 'mixed'
-                ? 65
-                : 40
+        ? trend.clarity === 'clear' ? 90 : trend.clarity === 'mixed' ? 65 : 40
         : 35;
     const volatilityStability = clamp(100 - Math.round(Number(routeInsight.volatility || 0) * 2), 20, 100);
 
+    // Per-flight: clearer price position = stronger signal = higher confidence
+    const priceSignalStrength = priceDeltaPct !== undefined
+        ? clamp(Math.abs(priceDeltaPct) * 280, 10, 82)
+        : 38;
+
+    // Extreme deal tiers produce clearer, more actionable signals
+    const dealClarityBonus = dealTier === 'RARE_DEAL' ? 10 : dealTier === 'EXPENSIVE' ? 8 : dealTier === 'GOOD_DEAL' ? 4 : 0;
+
     const weighted =
-        baseDataQuality * 0.4 +
-        coverageScore * 0.25 +
-        trendClarityScore * 0.2 +
-        volatilityStability * 0.15;
+        baseDataQuality * 0.28 +
+        coverageScore * 0.18 +
+        trendClarityScore * 0.17 +
+        volatilityStability * 0.12 +
+        priceSignalStrength * 0.25 +
+        dealClarityBonus;
 
     return clamp(Math.round(weighted), 10, 99);
 };
@@ -1310,32 +1320,41 @@ const buildRegretInsight = (
     pricePositionScore: number,
     trend: RouteTrendSignal | null,
     volatility: number,
+    priceDeltaPct?: number,
 ): string => {
     if (pricePositionScore >= 0.12) {
-        return 'This is cheaper than typical prices for this route.';
+        const pct = priceDeltaPct !== undefined ? Math.round(Math.abs(priceDeltaPct) * 100) : Math.round(pricePositionScore * 100);
+        return `This fare is ~${pct}% below the typical price for this route.`;
     }
 
     if (trend && trend.trendSignal === 'RISING') {
-        return 'Prices are trending upward - waiting may cost more.';
+        return 'Recent searches show prices trending upward — waiting may cost more, not less.';
     }
 
     if (trend && trend.trendSignal === 'FALLING') {
-        return 'Recent searches show prices easing, so waiting could be beneficial.';
+        return 'Recent searches show a downward trend over the last 3 days — waiting could save you money.';
     }
 
     if (volatility >= 25) {
-        return 'Prices are still unstable - waiting could be beneficial.';
+        return 'Prices on this route are volatile and have swung significantly — timing your booking matters.';
     }
 
-    return 'This price is close to normal for the route, so timing matters more than hype.';
+    if (priceDeltaPct !== undefined && priceDeltaPct >= 0.10) {
+        const pct = Math.round(priceDeltaPct * 100);
+        return `This fare is ~${pct}% above the route average — consider other options in this search.`;
+    }
+
+    return 'This price is close to the route average — no strong timing signal right now.';
 };
 
 const computeDecisionRecommendation = (params: {
     routeInsight: RouteInsightInput;
     pricePositionScore: number;
+    priceDeltaPct: number;
     confidenceScore: number;
     daysUntilDeparture: number;
     trend: RouteTrendSignal | null;
+    dealTier: 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE';
 }): {
     recommendation: DecisionRecommendation;
     confidence: number;
@@ -1343,23 +1362,41 @@ const computeDecisionRecommendation = (params: {
 } => {
     const volatility = Number(params.routeInsight.volatility || 0);
     const trendSignal = params.trend?.trendSignal || 'STABLE';
-    const timePressure: 'HIGH' | 'MEDIUM' | 'LOW' =
-        params.daysUntilDeparture < 14 ? 'HIGH' : params.daysUntilDeparture <= 30 ? 'MEDIUM' : 'LOW';
+    const daysLeft = params.daysUntilDeparture;
+    const delta = params.priceDeltaPct; // negative = cheaper than avg, positive = more expensive
+    const { dealTier } = params;
 
-    let recommendation: DecisionRecommendation = 'WAIT';
+    let recommendation: DecisionRecommendation;
 
-    if (params.pricePositionScore >= 0.12 && timePressure !== 'LOW' && trendSignal !== 'FALLING') {
-        recommendation = 'BUY_NOW';
-    } else if (params.pricePositionScore <= 0.02 && volatility >= 25) {
+    // AVOID: price meaningfully above average and not trending down
+    if (delta >= 0.12 && trendSignal !== 'FALLING') {
         recommendation = 'AVOID';
-    } else if (params.pricePositionScore > 0.02 && params.pricePositionScore < 0.12 && timePressure === 'LOW' && trendSignal === 'FALLING') {
+    } else if (dealTier === 'EXPENSIVE' && delta >= 0.05) {
+        recommendation = 'AVOID';
+    }
+    // BUY_NOW: clearly below average with no signal of further drop
+    else if (delta <= -0.08 && trendSignal !== 'FALLING') {
+        recommendation = 'BUY_NOW';
+    }
+    // BUY_NOW: rare deal regardless of trend
+    else if (dealTier === 'RARE_DEAL' && trendSignal !== 'FALLING') {
+        recommendation = 'BUY_NOW';
+    }
+    // BUY_NOW: last-moment window — price at/near average, departure imminent
+    else if (daysLeft <= 10 && delta <= 0.04 && trendSignal !== 'RISING') {
+        recommendation = 'BUY_NOW';
+    }
+    // Default: WAIT — price unclear or trend favors waiting
+    else {
         recommendation = 'WAIT';
     }
 
     const alignmentBonus =
-        (recommendation === 'BUY_NOW' && trendSignal !== 'FALLING' ? 12 : 0) +
+        (recommendation === 'BUY_NOW' && (trendSignal === 'RISING' || trendSignal === 'STABLE') ? 12 : 0) +
         (recommendation === 'WAIT' && trendSignal === 'FALLING' ? 10 : 0) +
-        (recommendation === 'AVOID' && volatility >= 25 ? 10 : 0);
+        (recommendation === 'AVOID' && (volatility >= 18 || trendSignal === 'RISING') ? 10 : 0) +
+        (dealTier === 'RARE_DEAL' && recommendation === 'BUY_NOW' ? 8 : 0) +
+        (dealTier === 'EXPENSIVE' && recommendation === 'AVOID' ? 8 : 0);
 
     const decisionConfidence = clamp(
         Math.round(params.confidenceScore * 0.75 + alignmentBonus),
@@ -1367,22 +1404,38 @@ const computeDecisionRecommendation = (params: {
         99,
     );
 
+    const pctDiff = Math.round(Math.abs(delta) * 100);
+
     let reason: string;
     if (recommendation === 'BUY_NOW') {
-        reason = 'This fare is cheaper than the route average, time pressure is building, and recent searches do not suggest a drop.';
+        if (dealTier === 'RARE_DEAL') {
+            reason = `This is among the cheapest fares seen on this route — a rare deal that won't last long.`;
+        } else if (delta <= -0.15) {
+            reason = `This fare is ~${pctDiff}% below the route average. Given current trends, prices are more likely to rise than fall from here.`;
+        } else if (daysLeft <= 10) {
+            reason = `With only ${daysLeft} days to departure, fares on this route typically rise. This price is at or below average — booking now avoids last-minute surges.`;
+        } else {
+            reason = `This fare is below the route average and the trend doesn't suggest further drops. Booking now is the lower-risk move.`;
+        }
     } else if (recommendation === 'AVOID') {
-        reason = 'This option is expensive relative to the route average and price volatility is still high.';
+        if (delta >= 0.25) {
+            reason = `At ~${pctDiff}% above the route average, this fare is significantly overpriced. Better-value options are available in this search.`;
+        } else if (trendSignal === 'RISING') {
+            reason = `This fare started above average and prices on this route are trending upward — a combination that rarely improves.`;
+        } else {
+            reason = `This option is priced above what's typical for this route. Other flights in this search offer stronger value for the same trip.`;
+        }
     } else {
-        reason = trendSignal === 'FALLING'
-            ? 'Recent searches indicate prices are softening and there is still time before departure.'
-            : 'The price is not yet a standout deal, so monitoring is the safer move.';
+        if (trendSignal === 'FALLING') {
+            reason = `Prices on this route are trending down. Waiting ${daysLeft > 7 ? '2–4 days' : '1–2 days'} and checking again could yield a lower fare.`;
+        } else if (volatility >= 20) {
+            reason = `This route shows price volatility — fares have been shifting recently. Tracking this flight and rechecking in 2–3 days is worth doing.`;
+        } else {
+            reason = `The price is close to the route average with no strong signal either way. Monitoring for a few days before committing is a reasonable approach.`;
+        }
     }
 
-    return {
-        recommendation,
-        confidence: decisionConfidence,
-        reason,
-    };
+    return { recommendation, confidence: decisionConfidence, reason };
 };
 
 /**
@@ -1442,22 +1495,22 @@ export function applyRouteIntelligenceFeatures(
         );
         const dealTier = computeDealTier(price, effectiveRouteInsight, batchMin, batchMax);
         const regretStat = computeRegretStat(price, effectiveRouteInsight, batchMin, batchMax);
-        const pricePositionScore = computePricePositionScore(price, Number(effectiveRouteInsight.avgPriceRoute || batchAvg || 0));
-        const confidenceScore = computeConfidenceScoreV2(flight, effectiveRouteInsight, trendSignal || null);
-        const regretInsight = buildRegretInsight(pricePositionScore, trendSignal || null, Number(effectiveRouteInsight.volatility || 0));
+        const avgForDelta = Number(effectiveRouteInsight.avgPriceRoute || batchAvg || price);
+        const priceDeltaPct = avgForDelta > 0 ? (price - avgForDelta) / avgForDelta : 0;
+        const pricePositionScore = computePricePositionScore(price, avgForDelta);
+        const confidenceScore = computeConfidenceScoreV2(flight, effectiveRouteInsight, trendSignal || null, priceDeltaPct, dealTier);
+        const regretInsight = buildRegretInsight(pricePositionScore, trendSignal || null, Number(effectiveRouteInsight.volatility || 0), priceDeltaPct);
         const decision = computeDecisionRecommendation({
             routeInsight: effectiveRouteInsight,
             pricePositionScore,
+            priceDeltaPct,
             confidenceScore,
             daysUntilDeparture,
             trend: trendSignal || null,
+            dealTier,
         });
 
-        const explanation = decision.recommendation === 'BUY_NOW'
-            ? 'Better value than a typical fare for this route, with signals supporting action now.'
-            : decision.recommendation === 'AVOID'
-                ? 'Poor value relative to route pricing, and current market conditions do not justify urgency.'
-                : 'Current signals favor patience over immediate booking.';
+        const explanation = decision.reason;
 
         return {
             ...flight,
@@ -1535,7 +1588,7 @@ export async function applyAdvancedFlightScoring(
         .map((flight) => {
             const markInvalidData = isInvalidBneIstDuration(flight);
             const invalidReason = markInvalidData
-                ? 'BNE-IST için 14 saatin altındaki toplam süre gerçekçi değil.'
+                ? 'Total duration under 14h for BNE-IST is not realistic.'
                 : undefined;
 
             return scoreFlight(flight, {

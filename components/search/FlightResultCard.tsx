@@ -303,19 +303,17 @@ export default function FlightResultCard({
     const sourceSubLabel = source === 'DUFFEL' ? '🏛️ Duffel' : (source === 'PRICELINE' || source === 'SERPAPI') ? '⚡ Priceline' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';
     const localizeValueTag = (tag: string) => {
-        const locale = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
-        const isEnglish = locale === 'en';
-        if (!isEnglish) return tag;
-
-        const map: Record<string, string> = {
+        // Tags are now always English from the scoring engine.
+        // Map any legacy Turkish tags that may exist in cached data.
+        const legacyMap: Record<string, string> = {
             'En İyi Fiyat/Performans': 'Best Value',
-            'Dengeli Seçenek': 'Balanced Choice',
+            'Dengeli Seçenek': 'Balanced Option',
             'Ekonomik Seçenek': 'Budget Option',
             'En Konforlu Seçenek': 'Most Comfortable',
-            'Düşük Riskli Seçenek': 'Low Risk Choice',
+            'Düşük Riskli Seçenek': 'Lowest Risk',
             'Veri Hatası': 'Data Error',
         };
-        return map[tag] || tag;
+        return legacyMap[tag] || tag;
     };
     const displayScore =
         typeof flight.agentScore === 'number' && Number.isFinite(flight.agentScore)
@@ -335,7 +333,7 @@ export default function FlightResultCard({
                 wifiStatus === 'available'
                         ? t('wifi_available')
                         : wifiStatus === 'check_with_airline'
-                            ? (isTrLocale ? 'Havayoluna sor' : 'Check airline')
+                            ? (isTrLocale ? 'Havayoluna sor' : 'Check with airline')
                             : wifiStatus === 'unknown'
                                 ? (isTrLocale ? 'Bilgi yok' : 'Info unavailable')
                                 : t('wifi_none');
@@ -398,7 +396,7 @@ export default function FlightResultCard({
         }
         sendSelectionEvent('TRACK_CLICKED');
         onUserAction?.('TRACK_CLICKED');
-        alert("✅ Uçuş takibe alındı! Fiyat düşerse haber vereceğiz.");
+        alert("Flight tracked. We'll notify you if the price drops.");
     };
 
     const openCheckout = async (plan: 'PRO', billingCycle: 'monthly' | 'yearly' = 'monthly') => {
@@ -467,26 +465,29 @@ export default function FlightResultCard({
         setDecisionTracked(true);
     }, [decisionTracked, flight?.advancedScore?.decisionRecommendation]);
 
+    const decisionReason = String(flight?.advancedScore?.decisionReason || '');
+    const buyWaitLabel = String(flight?.advancedScore?.buyWaitSignal?.label || '');
+
     const decisionAction = decisionRecommendation === 'BUY_NOW'
         ? {
-            message: String(flight?.advancedScore?.buyWaitSignal?.label || 'System recommends booking now based on 92% confidence.'),
-            context: 'Flight Intelligence confidence is high for a timely booking decision.',
+            message: buyWaitLabel || decisionReason || 'This fare is below the route average — book before prices rise.',
+            context: 'Book within 24–48h to lock in this price before it increases.',
             cta: 'Book now',
             onClick: handleBookClick,
             className: 'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white border border-sky-300/40 shadow-lg shadow-sky-500/30 btn-glow',
         }
         : decisionRecommendation === 'WAIT'
             ? {
-                message: 'Prices may drop - consider waiting.',
-                context: 'Track this fare and act if the market softens further.',
+                message: decisionReason || 'No strong signal to book now. Track this flight and recheck in 2–3 days.',
+                context: 'Track this fare and act when the market softens.',
                 cta: 'Track this flight',
                 onClick: handleTrackClick,
                 className: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white border border-amber-300/40 shadow-lg shadow-amber-500/30 btn-glow',
             }
             : decisionRecommendation === 'AVOID'
                 ? {
-                    message: 'This price is higher than usual.',
-                    context: 'Better-ranked options are likely above this result.',
+                    message: decisionReason || 'This fare is above the route average. Better-value options are available.',
+                    context: 'Skip this option and compare other results in this search.',
                     cta: 'See better options',
                     onClick: handleSeeBetterOptionsClick,
                     className: 'bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white border border-slate-300/20 shadow-lg shadow-slate-800/25 btn-glow',
@@ -754,7 +755,7 @@ export default function FlightResultCard({
                                 <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
                                     {flight.policies?.baggageKg > 0
-                                        ? `${flight.policies.baggageKg}kg Dahil`
+                                        ? `${flight.policies.baggageKg}kg Included`
                                         : String(flight.baggage || '').toLowerCase() === 'checked'
                                             ? (isTrLocale ? 'Check-in Dahil' : 'Checked Included')
                                             : String(flight.baggage || '').toLowerCase() === 'cabin'
@@ -783,8 +784,8 @@ export default function FlightResultCard({
                     {!hasPremiumAccess && (
                         <div className="mt-4 rounded-2xl border border-sky-200/80 bg-white/60 backdrop-blur-md px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between soft-card-shadow">
                             <div>
-                                <p className="text-sm font-semibold text-slate-900">Keşfedilmeyi Bekleyen Intelligence</p>
-                                <p className="text-xs text-slate-600">Risk ve fiyat içgörülerini aç, en doğru kararı güvenle ver.</p>
+                                <p className="text-sm font-semibold text-slate-900">Unlock Full Flight Intelligence</p>
+                                <p className="text-xs text-slate-600">See risk scores, price trends, and a clear BUY / WAIT / AVOID recommendation for this flight.</p>
                             </div>
                             <button
                                 onClick={() => setShowLockOverlay(true)}
@@ -802,14 +803,14 @@ export default function FlightResultCard({
 
                             const confScore: number = intel.confidenceScore ?? 0;
                             const confColor = confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
-                            const confLabel = confScore >= 80 ? 'Yüksek' : confScore >= 50 ? 'Orta' : 'Düşük';
+                            const confLabel = confScore >= 80 ? 'High' : confScore >= 50 ? 'Moderate' : 'Low';
 
                             const priceIntelConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
-                                'Strong deal':      { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Güçlü İndirim' },
-                                'Below average':    { icon: '✅', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'Ortalamanın Altında' },
-                                'Fair price':       { icon: '📊', colorClass: 'bg-slate-100 text-slate-600 border-slate-300', label: 'Ortalama Fiyat' },
-                                'Monitor price':    { icon: '⏳', colorClass: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Fiyat Yükseliyor' },
-                                'Expect increase':  { icon: '📈', colorClass: 'bg-rose-100 text-rose-700 border-rose-300', label: 'Hızlı Artama Bekleniyor' },
+                                'Strong deal':      { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Strong Deal' },
+                                'Below average':    { icon: '✅', colorClass: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'Below Average' },
+                                'Fair price':       { icon: '📊', colorClass: 'bg-slate-100 text-slate-600 border-slate-300', label: 'Fair Price' },
+                                'Monitor price':    { icon: '⏳', colorClass: 'bg-amber-100 text-amber-700 border-amber-300', label: 'Price Rising' },
+                                'Expect increase':  { icon: '📈', colorClass: 'bg-rose-100 text-rose-700 border-rose-300', label: 'Expect Increase' },
                             };
                             const pIntel = intel.priceIntel;
                             const pConf = pIntel ? priceIntelConfig[pIntel.label] : null;
@@ -836,7 +837,7 @@ export default function FlightResultCard({
                                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
                                     {/* Confidence score — always visible */}
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Veri Kalitesi</span>
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Data Confidence</span>
                                         <div className="flex items-center gap-1.5">
                                             <span className={`w-2 h-2 rounded-full ${confColor}`} />
                                             <span className="text-xs font-bold text-slate-700">{confLabel} ({confScore}%)</span>
