@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy provider path retained for historical reference.
+ * Not wired into active runtime search aggregation (services/search/searchService.ts).
+ */
 import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { searchFlights } from '@/lib/amadeus';
 

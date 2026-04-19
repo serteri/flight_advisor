@@ -1,4 +1,11 @@
 
+
+/**
+ * @deprecated
+ * Legacy orchestration worker (seat/upgrade/disruption blend).
+ * Not part of active runtime monitoring path.
+ * Active path: app/api/cron/guardian -> workers/guardianWorker.ts
+ */
 import { prisma } from '@/lib/prisma';
 import { analyzeDisruption } from '@/services/guardian/disruption';
 import { checkSeatComfort } from '@/services/guardian/seatSpy';

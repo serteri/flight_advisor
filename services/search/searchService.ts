@@ -47,12 +47,11 @@ export async function searchAllProviders(params: HybridSearchParams): Promise<Un
   return flights;
 }
 
-// ── LEGACY PIPELINE (ISOLATED) ────────────────────────────────────────────────
+// ── RUNTIME STATUS ─────────────────────────────────────────────────────────────
 //
-// @deprecated — Legacy FlightResult passthrough pipeline.
-// This function is only called when:
-//   1. USE_UNIFIED_PIPELINE=false (explicit rollback)
-// ── LEGACY PIPELINE DEPRECATED (PHASE 7) ──────────────────────────────────────
+// Active runtime path is UnifiedFlight-only.
+// Search aggregation in this file feeds canonical scoring path directly.
+// Legacy passthrough pipeline has been retired.
 
 // ── MAIN SEARCH PIPELINE ──────────────────────────────────────────────────────
 

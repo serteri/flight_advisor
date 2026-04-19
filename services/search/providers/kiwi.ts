@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy provider path retained for reference/testing.
+ * Not wired into active runtime search aggregation (services/search/searchService.ts).
+ */
 import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
 
 /**

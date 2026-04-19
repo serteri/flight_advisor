@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy BullMQ price/disruption processor.
+ * Not used by active guardian monitoring path.
+ */
 import { getRealTimeFlightData } from '@/lib/flightaware';
 import connection from '@/lib/redis';
 import { prisma } from '@/lib/prisma';

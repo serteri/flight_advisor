@@ -1,4 +1,9 @@
 // workers/flightMonitor.ts
+/**
+ * @deprecated
+ * Disabled legacy BullMQ monitor scaffold (exports null queue/worker).
+ * Kept only as historical reference; not part of active runtime path.
+ */
 import { Queue, Worker } from 'bullmq';
 import { prisma } from '../lib/prisma'; // Adjust import path as needed
 import { checkAmadeusPrice, checkFlightAwareStatus } from '../services/api'; // Using the API layer we created

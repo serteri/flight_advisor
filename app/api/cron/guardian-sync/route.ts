@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy cron alias. Active runtime cron entry is /api/cron/guardian (see vercel.json).
+ * Kept for backward compatibility with old external triggers.
+ */
 import { NextResponse } from 'next/server';
 import { processFlightMonitoring } from '@/workers/guardianWorker';
 

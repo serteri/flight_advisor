@@ -1,4 +1,9 @@
 // app/api/webhooks/email/route.ts
+/**
+ * @deprecated
+ * Legacy AI-based email parser webhook.
+ * Active MVP ingestion path is /api/webhooks/email-ingest (deterministic parser flow).
+ */
 import { NextResponse } from 'next/server';
 import { parseFlightEmail } from '@/lib/parser/aiParser';
 import { prisma } from '@/lib/prisma';

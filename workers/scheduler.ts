@@ -1,4 +1,9 @@
 // workers/scheduler.ts
+/**
+ * @deprecated
+ * Legacy Redis/BullMQ scheduler loop.
+ * Active runtime scheduler is Vercel cron hitting /api/cron/guardian.
+ */
 import 'dotenv/config';
 import { prisma } from '@/lib/prisma';
 import { flightMonitorQueue } from './queue';

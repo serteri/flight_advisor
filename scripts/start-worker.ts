@@ -1,4 +1,9 @@
 // scripts/start-worker.ts
+/**
+ * @deprecated
+ * Legacy BullMQ worker bootstrap (imports workers/processor.ts).
+ * Active disruption monitoring runtime path is cron -> workers/guardianWorker.ts.
+ */
 import { config } from 'dotenv';
 config(); // Load env vars
 
