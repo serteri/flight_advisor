@@ -1085,6 +1085,7 @@ const scoreFlight = (
         priceIntel,
         riskFlags: finalRiskFlags,
         comfortNotes: finalComfortNotes,
+        explanation,
         tags: flight.tags || [],
         estimatedTotalCost: {
             currency: String(flight.currency || 'AUD').toUpperCase(),

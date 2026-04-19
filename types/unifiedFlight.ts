@@ -212,6 +212,8 @@ export type FlightScore = {
     alerts?: FlightAlert[];
     riskFlags?: string[];
     comfortNotes?: string[];
+    /** Human-readable score explanation from generateScoreExplanation() */
+    explanation?: string;
     /** UI tags derived from scoring: "Best Value", "Direct", etc. */
     tags?: string[];
     /** Variant grouping — set by variantGrouper */

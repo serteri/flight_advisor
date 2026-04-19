@@ -482,10 +482,20 @@ export default function FlightResultCard({
         ''
     );
 
-    const baggageType = String(flight.baggage || '').toLowerCase();
-    const checkedBagKg = Number(flight.policies?.baggageKg || 0);
-    const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
-    const rawCheckedSummary = String(flight.baggageSummary?.checked || '').trim();
+    const canonicalBag = (
+        flight.baggage &&
+        typeof flight.baggage === 'object' &&
+        !Array.isArray(flight.baggage) &&
+        'included' in (flight.baggage as object)
+    ) ? flight.baggage as { included: boolean; checked?: { kg?: number; label?: string }; cabin?: { kg?: number; label?: string } }
+      : null;
+
+    const baggageType = canonicalBag
+        ? (canonicalBag.included ? 'checked' : 'not_included')
+        : String(flight.baggage || '').toLowerCase();
+    const checkedBagKg = canonicalBag?.checked?.kg ?? Number((flight.policies as any)?.baggageKg || 0);
+    const cabinBagKg = canonicalBag?.cabin?.kg ?? Number((flight.policies as any)?.cabinBagKg || 7);
+    const rawCheckedSummary = canonicalBag?.checked?.label ?? String(flight.baggageSummary?.checked || '').trim();
     const normalizedSummary = rawCheckedSummary.toLowerCase();
 
     const baggageInfo = (() => {
@@ -877,7 +887,7 @@ export default function FlightResultCard({
                             const intel = flight.advancedScore || flight.score;
                             if (!intel) return null;
 
-                            const confRaw = intel.confidenceScore;
+                            const confRaw = (intel as any).confidence ?? (intel as any).confidenceScore;
                             const confScore: number | null = (typeof confRaw === 'number' && Number.isFinite(confRaw)) ? confRaw : null;
                             const confColor = confScore === null ? 'bg-slate-400' : confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
                             const confLabel = confScore === null

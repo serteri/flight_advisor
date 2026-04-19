@@ -247,10 +247,21 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
 
     const segs = Array.isArray(flight.segments) ? flight.segments.filter((s: any) => s) : [];
     const lays = Array.isArray(flight.layovers) ? flight.layovers : [];
-    const checkedBagKg = Number(flight.policies?.baggageKg || 0);
-    const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
-    const baggageType = String(flight.baggage || '').toLowerCase();
-    const checkedSummary = String(flight.baggageSummary?.checked || '').toLowerCase();
+
+    const canonicalBag = (
+        flight.baggage &&
+        typeof flight.baggage === 'object' &&
+        !Array.isArray(flight.baggage) &&
+        'included' in (flight.baggage as object)
+    ) ? flight.baggage as { included: boolean; checked?: { kg?: number; label?: string }; cabin?: { kg?: number; label?: string } }
+      : null;
+
+    const checkedBagKg = canonicalBag?.checked?.kg ?? Number((flight.policies as any)?.baggageKg || 0);
+    const cabinBagKg = canonicalBag?.cabin?.kg ?? Number((flight.policies as any)?.cabinBagKg || 7);
+    const baggageType = canonicalBag
+        ? (canonicalBag.included ? 'checked' : 'not_included')
+        : String(flight.baggage || '').toLowerCase();
+    const checkedSummary = (canonicalBag?.checked?.label ?? String(flight.baggageSummary?.checked || '')).toLowerCase();
     const explicitExcludedByType = ['none', 'no_checked', 'no_checked_bag', 'excluded', 'not_included', 'no'].includes(baggageType);
     const explicitExcludedBySummary =
         checkedSummary.includes('not included') ||
@@ -292,7 +303,42 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         return `${h}h ${m}m`;
     };
 
-    const breakdown = flight.advancedScore?.breakdown;
+    // Build a unified score bridge from either legacy advancedScore or current ScoredFlight.score
+    const rawAdvScore = flight.advancedScore;
+    const rawScore = flight.score;
+
+    const normalizeBreakdown = (b: any) => {
+        if (!b) return null;
+        if ('priceValue' in b) return b; // already in legacy display format
+        return {
+            priceValue: b.priceScore ?? 0,
+            duration: b.durationScore ?? 0,
+            stops: b.stopScore ?? 0,
+            connection: b.connectionScore ?? 0,
+            selfTransfer: b.selfTransferScore ?? 0,
+            baggage: b.baggageScore ?? 0,
+            reliability: b.reliabilityScore ?? 0,
+            aircraft: b.airlineScore ?? 0,
+            amenities: b.amenitiesScore ?? 0,
+            airportIndex: b.airportIndexScore ?? 0,
+        };
+    };
+
+    const advScore = rawAdvScore ?? (rawScore ? {
+        displayScore: Number(rawScore.composite ?? 0),
+        confidenceScore: Number(rawScore.confidence ?? (rawScore as any).confidenceScore ?? 0),
+        breakdown: normalizeBreakdown(rawScore.breakdown),
+        priceReference: null,
+        tradeoff: null,
+        dataQuality: null as string | null,
+        dataErrorReason: null as string | null,
+        explanation: (rawScore as any).explanation ?? null,
+        riskFlags: rawScore.riskFlags ?? [],
+        comfortNotes: rawScore.comfortNotes ?? [],
+        priceIntel: rawScore.priceIntel ?? null,
+    } : null);
+
+    const breakdown = advScore?.breakdown;
     const breakdownRows = breakdown
         ? [
             { label: "Price Value", value: `${breakdown.priceValue}/20` },
@@ -307,7 +353,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
             { label: "Airport Index", value: `${breakdown.airportIndex}/5` },
         ]
         : [];
-    const tradeoff = flight.advancedScore?.tradeoff || (breakdown
+    const tradeoff = advScore?.tradeoff || (breakdown
         ? {
             price: Math.round((breakdown.priceValue / 20) * 100),
             time: Math.round((breakdown.duration / 15) * 100),
@@ -414,19 +460,19 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                         </div>
                     )}
 
-                    {flight.advancedScore && (
+                    {advScore && (
                         <div className="bg-white p-3 rounded border space-y-3 relative">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-bold text-base">{labels.scoreBreakdown}</h3>
                                 <div className="text-right">
                                     <div className="text-sm text-slate-500">{labels.total}</div>
                                     <div className="text-2xl font-black text-blue-700">
-                                        {flight.advancedScore.displayScore.toFixed(1)} / 10
+                                        {Number(advScore.displayScore ?? 0).toFixed(1)} / 10
                                     </div>
                                 </div>
                             </div>
                             {(() => {
-                                const confRaw = flight.advancedScore.confidenceScore;
+                                const confRaw = advScore.confidenceScore;
                                 const confVal: number | null = (typeof confRaw === 'number' && Number.isFinite(confRaw)) ? confRaw : null;
                                 const confDot = confVal === null ? 'bg-slate-400' : confVal >= 80 ? 'bg-green-500' : confVal >= 50 ? 'bg-amber-400' : 'bg-rose-400';
                                 const confText = confVal === null
@@ -450,11 +496,11 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                                     </div>
                                 ))}
                             </div>
-                            {flight.advancedScore.priceReference && (
+                            {advScore.priceReference && (
                                 <div className={`text-xs text-slate-500 bg-slate-50 rounded px-2 py-1.5 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
-                                    {labels.priceReference}: {flight.advancedScore.priceReference.source === 'historicalMedian' ? labels.historicalMedianUsed : labels.liveAverageUsed}
-                                    {Number.isFinite(flight.advancedScore.priceReference.amount) && flight.advancedScore.priceReference.amount > 0
-                                        ? ` (${Math.round(flight.advancedScore.priceReference.amount)} ${flight.currency || 'USD'})`
+                                    {labels.priceReference}: {advScore.priceReference.source === 'historicalMedian' ? labels.historicalMedianUsed : labels.liveAverageUsed}
+                                    {Number.isFinite(advScore.priceReference.amount) && advScore.priceReference.amount > 0
+                                        ? ` (${Math.round(advScore.priceReference.amount)} ${flight.currency || 'USD'})`
                                         : ''}
                                 </div>
                             )}
@@ -503,29 +549,29 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                         </div>
                     )}
 
-                    {flight.advancedScore?.dataQuality === 'invalid' && (
+                    {advScore?.dataQuality === 'invalid' && (
                         <div className="bg-red-50 border border-red-200 rounded p-3">
                             <h3 className="font-bold text-red-700 mb-1 text-base">⚠️ {labels.dataError}</h3>
                             <p className="text-xs text-red-700">
-                                {flight.advancedScore.dataErrorReason || labels.dataErrorFallback}
+                                {advScore.dataErrorReason || labels.dataErrorFallback}
                             </p>
                         </div>
                     )}
 
-                    {flight.advancedScore?.explanation && (
+                    {advScore?.explanation && (
                         <div className={`bg-indigo-50 border border-indigo-200 rounded p-3 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                             <h3 className="font-bold text-indigo-700 mb-1 text-base">🧠 {labels.explanationEngine}</h3>
-                            <p className="text-xs text-indigo-800">{flight.advancedScore.explanation}</p>
+                            <p className="text-xs text-indigo-800">{advScore.explanation}</p>
                         </div>
                     )}
 
-                    {flight.advancedScore && (
+                    {advScore && (
                         <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                             <div className="bg-rose-50 border border-rose-200 p-3 rounded">
                                 <h3 className="font-bold text-rose-700 mb-2 text-base">🚩 {labels.riskFlags}</h3>
-                                {flight.advancedScore.riskFlags.length > 0 ? (
+                                {(advScore.riskFlags ?? []).length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-rose-700">
-                                        {flight.advancedScore.riskFlags.map((flag: any) => (
+                                        {(advScore.riskFlags ?? []).map((flag: any) => (
                                             <li key={flag}>• {translateRiskFlag(flag)}</li>
                                         ))}
                                     </ul>
@@ -535,9 +581,9 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                             </div>
                             <div className="bg-emerald-50 border border-emerald-200 p-3 rounded">
                                 <h3 className="font-bold text-emerald-700 mb-2 text-base">🛡️ {labels.comfortNotes}</h3>
-                                {flight.advancedScore.comfortNotes.length > 0 ? (
+                                {(advScore.comfortNotes ?? []).length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-emerald-700">
-                                        {flight.advancedScore.comfortNotes.map((note: any) => (
+                                        {(advScore.comfortNotes ?? []).map((note: any) => (
                                             <li key={note}>• {translateComfortNote(note)}</li>
                                         ))}
                                     </ul>
