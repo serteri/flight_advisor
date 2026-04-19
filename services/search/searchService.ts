@@ -1,4 +1,5 @@
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
+import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
@@ -140,7 +141,7 @@ async function searchAllProvidersInternal(
           providerDuration: Number(flight.duration) || 0,
           timestampDuration,
           resolvedDuration: Number(flight.duration) || timestampDuration || 0,
-          provider: String(flight.source || 'UNKNOWN'),
+          provider: normalizeSource(flight.source),
           fallback: true,
         },
       } as FlightResult;

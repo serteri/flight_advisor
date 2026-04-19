@@ -24,6 +24,7 @@
  */
 
 import { FlightResult } from '@/types/hybridFlight';
+import { normalizeSource } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ function isOvernightLayover(durationMin: number): boolean {
 
 function hasSelfTransfer(flight: FlightResult): boolean {
     // Kiwi / OTA-stitched flights are self-transfer by nature
-    const src = (flight.source || '').toLowerCase();
+    const src = normalizeSource(flight.source);
     if (src === 'kiwi' || src === 'serpapi') return (flight.stops ?? 0) > 0;
     // Check for mixed-PNR signal in segments
     const segs = Array.isArray(flight.segments) ? flight.segments : [];

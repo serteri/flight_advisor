@@ -696,7 +696,7 @@ function SearchPageContent() {
                     flightId: flight.id,
                     flightNumber: flight.flightNumber,
                     airline: flight.airline,
-                    provider: String(flight.source || '').toLowerCase(),
+                    provider: normalizeSource(flight.source),
                     origin: String(flight.from || '').toUpperCase(),
                     destination: String(flight.to || '').toUpperCase(),
                     departureDate: String(flight.departTime || '').slice(0, 10),

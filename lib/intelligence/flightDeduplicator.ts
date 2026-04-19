@@ -20,8 +20,8 @@ export const SOURCE_TRUST: Record<string, number> = {
     duffel:   80,
     priceline: 62,
     kiwi:     60,
-    serpapi:  55,
-    rapidapi: 50,
+    rapidapi: 55,
+    serpapi:  50,
 };
 
 // ── Internal marker key ──────────────────────────────────────────────────────

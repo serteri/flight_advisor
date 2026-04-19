@@ -8,6 +8,7 @@ import { findVirtualInterlineFlights } from "@/lib/virtualInterlining";
 import { getAllFlights } from "@/lib/flightAggregator";
 import { persistFlightSearchRecords } from "@/lib/search/flightSearchRecordStore";
 import { FlightSource } from "@/types/hybridFlight";
+import { normalizeSource } from "@/lib/utils";
 
 // Currency Mapping Helper
 function getCurrencyForCountry(country?: string): string {
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
         await persistFlightSearchRecords(
             allFlights.map((flight: any) => ({
                 id: String(flight.id || `${flight.flightNumber || "UNKNOWN"}-${from}-${to}`),
-                source: ((flight.source || 'duffel') as string).toLowerCase() as FlightSource,
+                source: normalizeSource(flight.source) as FlightSource,
                 airline: String(flight.airline || "Unknown Airline"),
                 flightNumber: String(flight.flightNumber || "UNKNOWN"),
                 from: String(flight.from || from),

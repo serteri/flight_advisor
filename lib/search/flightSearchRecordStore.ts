@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { FlightResult } from '@/types/hybridFlight';
+import { normalizeSource } from '@/lib/utils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRICELINE_CACHE_FLIGHT_NUMBER = '__PRICELINE_CACHE__';
@@ -277,7 +278,7 @@ export async function persistFlightSearchRecords(
                 destination: options.destination,
                 departureDate,
                 price: Number(flight.price),
-                provider: (flight.source || 'UNKNOWN').toString(),
+                provider: normalizeSource(flight.source),
                 airlineName: resolveAirlineName(flight),
                 airlineCode: resolveAirlineCode(flight),
                 stops: resolveStops(flight),
@@ -357,7 +358,7 @@ export async function persistSearchAnalytics(
 
     const groupedByProvider = new Map<string, number[]>();
     for (const flight of validFlights) {
-        const provider = String(flight.source || 'unknown').toLowerCase();
+        const provider = normalizeSource(flight.source);
         const price = Number(flight.price);
         if (!groupedByProvider.has(provider)) {
             groupedByProvider.set(provider, []);

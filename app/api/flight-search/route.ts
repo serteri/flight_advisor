@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
 import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
+import { normalizeSource } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
@@ -656,7 +657,7 @@ export async function GET(request: Request) {
 
         if (!shouldSkipPriceline) {
             const freshPricelineFlights = allFlights.filter(
-                (flight) => flight.source === 'priceline'
+                (flight) => normalizeSource(flight.source) === 'priceline'
             );
             await persistPricelineRawCache(freshPricelineFlights, {
                 origin: queryParams.origin,

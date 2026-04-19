@@ -22,6 +22,7 @@ import { AirlineLogo } from "@/components/AirlineLogo";
 import { useTranslations } from "next-intl";
 import { FareExplainer } from "@/components/FareExplainer";
 import { generateBookingLink } from '@/lib/booking/linkGenerator';
+import { normalizeSource } from '@/lib/utils';
 import WatchButton from "@/components/flights/WatchButton";
 import { FlightForScoring } from "@/lib/flightTypes";
 
@@ -77,7 +78,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const providers = flight.bookingProviders || [];
     const sortedProviders = [...providers].sort((a, b) => a.price - b.price);
     const hasBookingProviders = providers.length > 0; // Changed from > 1 to > 0
-    const isDuffel = flight.source === 'duffel';
+    const isDuffel = normalizeSource(flight.source) === 'duffel';
     
     // Compute the external booking link using generator (handles Duffel and others)
     const actionLink = generateBookingLink(flight as any);

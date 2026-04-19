@@ -9,6 +9,7 @@ import type { UserTier } from '@/lib/tierUtils';
 import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
 import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from '@/lib/airline-logo-utils';
 import { BUY_NOW_VARIANT_CHANGE_EVENT, getBuyNowVariantBucket } from '@/lib/experiment/buyNowVariant';
+import { normalizeSource } from '@/lib/utils';
 
 export default function FlightResultCard({ 
     flight, 
@@ -69,7 +70,7 @@ export default function FlightResultCard({
     const arrivalTime = flight.arrivalTime || flight.arriveTime;
     const airline = flight.airline || 'Unknown Airline';
     const flightNumber = flight.flightNumber || 'N/A';
-    const source = flight.source || 'UNKNOWN';
+    const source = normalizeSource(flight.source);
     const origin = flight.origin || flight.from || 'XXX';
     const destination = flight.destination || flight.to || 'XXX';
     const price = flight.price || 0;
@@ -299,7 +300,7 @@ export default function FlightResultCard({
     const estimatedTotalCost = flight.advancedScore?.estimatedTotalCost;
     const personalBias = flight.advancedScore?.personalBias;
     const decisionRecommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
-    const src = (source || '').toLowerCase();
+    const src = source;
     const sourceLabel = src === 'duffel' ? 'DUFFEL' : (src === 'priceline' || src === 'serpapi') ? 'PRICELINE' : 'KIWI';
     const sourceSubLabel = src === 'duffel' ? '🏛️ Duffel' : (src === 'priceline' || src === 'serpapi') ? '⚡ Priceline' : '🌐 Kiwi';
     const hasInvalidData = flight.advancedScore?.dataQuality === 'invalid';

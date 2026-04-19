@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Database, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { normalizeSource } from '@/lib/utils';
 
 interface DataSourceStatus {
     name: string;
@@ -17,7 +18,7 @@ export function DataSourceIndicator({ flights }: { flights: any[] }) {
         const sourceCounts: Record<string, number> = {};
         
         flights.forEach(flight => {
-            const source = (flight.source || 'unknown').toLowerCase();
+            const source = normalizeSource(flight.source);
             sourceCounts[source] = (sourceCounts[source] || 0) + 1;
         });
 
