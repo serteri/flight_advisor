@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ChannelResponse } from "@/services/notifications/types";
-import { NotificationProviderManager } from "@/services/notifications/providers";
+import { EmailChannel } from "@/services/notifications/channels/email";
+import { SmsChannel } from "@/services/notifications/channels/sms";
 import { GuardianEvent } from "@/workers/guardianWorker";
 
 // Helper sleep mapping
@@ -63,7 +64,44 @@ async function reclaimStaleProcessingDelivery(
     return reclaimedRows[0] ?? null;
 }
 
-const notificationProvider = NotificationProviderManager.getInstance();
+const emailChannel = EmailChannel.getInstance();
+const smsChannel = SmsChannel.getInstance();
+
+async function sendGuardianEmail(to: string, subject: string, body: string, tripId: string): Promise<ChannelResponse> {
+    const result = await emailChannel.send(to, {
+        userId: 'guardian-system',
+        tripId,
+        type: 'DISRUPTION',
+        title: subject,
+        message: body,
+        priority: 'CRITICAL',
+    });
+
+    return {
+        success: result.success,
+        providerMessageId: result.id,
+        channel: 'EMAIL',
+        error: result.success ? undefined : 'EMAIL channel unavailable or provider rejected request',
+    };
+}
+
+async function sendGuardianSMS(to: string, body: string, tripId: string): Promise<ChannelResponse> {
+    const result = await smsChannel.send(to, {
+        userId: 'guardian-system',
+        tripId,
+        type: 'DISRUPTION',
+        title: 'Trip Protection Alert',
+        message: body,
+        priority: 'CRITICAL',
+    });
+
+    return {
+        success: result.success,
+        providerMessageId: result.id,
+        channel: 'SMS',
+        error: result.success ? undefined : 'SMS channel unavailable or provider rejected request',
+    };
+}
 
 // ── ATOMIC LOCKING & RETRY STRATEGY ENVELOPE ──
 
@@ -316,12 +354,7 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
     if (user.email) {
         const emailKey = `${eventId}:EMAIL`;
         notifications.push(attemptDispatch(
-            () => notificationProvider.sendEmail({
-                to: user.email!,
-                subject,
-                text: body,
-                html: `<p>${body}</p>`,
-            }),
+            () => sendGuardianEmail(user.email!, subject, body, event.tripId),
             emailKey,
             eventId,
             event.tripId,
@@ -336,10 +369,7 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
 
         if (user.phoneNumber) {
             notifications.push(attemptDispatch(
-                () => notificationProvider.sendSMS({
-                    to: user.phoneNumber!,
-                    text: body,
-                }),
+                () => sendGuardianSMS(user.phoneNumber!, body, event.tripId),
                 smsKey,
                 eventId,
                 event.tripId,
