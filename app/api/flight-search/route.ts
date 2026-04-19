@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
+// TODO: Phase 7 — Replace FlightResult with ScoredFlight (UnifiedFlight + score) in API response
 import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
+import { applyAdvancedFlightScoring, applyAdvancedFlightScoringUnified, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 import { getCityFromAirportCode } from '@/lib/airport-utils';
 import {
     hasRecentRouteSearchRecords,
@@ -17,6 +18,10 @@ import {
     persistPricelineRawCache,
 } from '@/lib/search/flightSearchRecordStore';
 import { normalizeBuyNowVariant } from '@/lib/experiment/buyNowVariant';
+import { toUnifiedFlights, toScoredFlight, fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
+import type { UnifiedFlight, ScoredFlight } from '@/types/unifiedFlight';
+import { useUnifiedPipeline, useUnifiedDebug, getPipelineMetrics } from '@/lib/featureFlags';
+import { logScoreVisibility, logPerformanceTiming, isDebugLoggingEnabled } from '@/lib/observability/logger';
 
 // @ts-ignore
 import airports from 'airports';
@@ -591,6 +596,7 @@ export async function GET(request: Request) {
     }
 
     try {
+        const routeStartTime = Date.now();
         const queryParams = buildQueryParams(searchParams);
         const buyNowVariant = normalizeBuyNowVariant(searchParams.get('buyNowVariant')) || 'A';
         const cacheKey = buildCacheKey(queryParams);
@@ -655,8 +661,15 @@ export async function GET(request: Request) {
         });
         const allFlights = providerMeta.flights;
 
+        // (Removed shadow metrics from SearchProvidersMeta)
+
+        // ── PHASE 7: Backward compatibility for caches ──────────────────────────
+        // The record store currently expects legacy FlightResult shape.
+        // We use fromUnifiedForScoring to create a backward-compatible mapping.
+        const rawFlightsForCache = allFlights.map(fromUnifiedForScoring);
+
         if (!shouldSkipPriceline) {
-            const freshPricelineFlights = allFlights.filter(
+            const freshPricelineFlights = rawFlightsForCache.filter(
                 (flight) => normalizeSource(flight.source) === 'priceline'
             );
             await persistPricelineRawCache(freshPricelineFlights, {
@@ -666,13 +679,13 @@ export async function GET(request: Request) {
             });
         }
 
-        await persistFlightSearchRecords(allFlights, {
+        await persistFlightSearchRecords(rawFlightsForCache, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
         });
 
-        await persistSearchAnalytics(allFlights, {
+        await persistSearchAnalytics(rawFlightsForCache, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
@@ -688,7 +701,9 @@ export async function GET(request: Request) {
             );
         }
 
-        const scoredFlights = await applyAdvancedFlightScoring(allFlights, {
+        // ── SCORING: Feature-flag gated pipeline ─────────────────────────────
+        const isUnifiedMode = providerMeta.pipelineMode === 'unified';
+        const scoringOptions = {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
@@ -696,7 +711,24 @@ export async function GET(request: Request) {
             persona: queryParams.persona,
             preferenceProfile: preferenceProfile || undefined,
             personalBiasProfile: personalBiasProfile || undefined,
-        });
+        };
+
+        let scoredFlights: FlightResult[];
+        let scoringMs = 0;
+        const scoringStart = Date.now();
+        
+        if (isUnifiedMode) {
+            // UNIFIED PATH: Score via UnifiedFlight[] bridge
+            console.log(`✅ [UNIFIED PIPELINE] Scoring ${allFlights.length} flights via unified entry point`);
+            scoredFlights = await applyAdvancedFlightScoringUnified(
+                allFlights,
+                scoringOptions,
+            );
+        } else {
+            // LEGACY PATH (default): Score FlightResult[] directly
+            scoredFlights = await applyAdvancedFlightScoring(rawFlightsForCache, scoringOptions);
+        }
+        scoringMs = Date.now() - scoringStart;
 
         const routeInsight = await getRouteInsightForDate(
             queryParams.origin,
@@ -768,8 +800,56 @@ export async function GET(request: Request) {
             });
         }
 
+        // ── Debug/shadow unified data for internal verification ──────────────
+        // Only included in response when UNIFIED_DEBUG env flag is truthy.
+        // This NEVER affects the production API contract.
+        const includeDebugUnified = useUnifiedDebug();
+        let _debug: Record<string, unknown> | undefined;
+        
+        const routeTotalMs = Date.now() - routeStartTime;
+        
+        if (includeDebugUnified || isDebugLoggingEnabled()) {
+            const finalUnified = toUnifiedFlights(intelligentFlights);
+            const metrics = getPipelineMetrics();
+            const obs = providerMeta._debugObservability;
+            _debug = {
+                pipelineMode: providerMeta.pipelineMode,
+                unifiedCount: finalUnified.length,
+                sampleFlight: finalUnified[0] || null,
+                pipelineMetrics: {
+                    totalRequests: metrics.totalRequests,
+                    unifiedSuccess: metrics.unifiedSuccess,
+                    legacyFallback: metrics.legacyFallback,
+                    legacyExplicit: metrics.legacyExplicit,
+                    fallbackRate: metrics.fallbackRate,
+                },
+                ...(obs ? {
+                    totalFlightsFetched: obs.totalFlightsFetched,
+                    droppedViaValidation: obs.droppedViaValidation,
+                    providerStats: obs.providerStats,
+                } : {}),
+                timing: {
+                    providerFetchTime: obs?.providerFetchTime || 0,
+                    scoringTime: scoringMs,
+                    totalTime: routeTotalMs,
+                }
+            };
+        }
+
+        // Phase 7: Return pure ScoredFlight array
+        const finalResults = intelligentFlights.map((flight) => toScoredFlight(flight));
+        
+        if (finalResults.length > 0) {
+            const scores = finalResults.map(f => f.score.composite).filter(s => typeof s === 'number');
+            if (scores.length > 0) {
+                logScoreVisibility(Math.min(...scores), Math.max(...scores));
+            }
+        }
+        
+        logPerformanceTiming(providerMeta._debugObservability?.providerFetchTime || 0, scoringMs, routeTotalMs);
+
         return NextResponse.json({
-            results: intelligentFlights,
+            results: finalResults,
             proactiveTips,
             viewerAccess,
             warnings: providerMeta.warnings,
@@ -777,6 +857,7 @@ export async function GET(request: Request) {
                 hit: false,
                 source: shouldSkipPriceline ? 'db-priceline-cache+live-duffel' : 'live',
             },
+            ...(_debug ? { _debug } : {}),
         });
     } catch (error) {
         console.error('[FLIGHT_SEARCH_API] Error:', error);

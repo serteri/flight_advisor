@@ -178,7 +178,34 @@ export type FlightScore = {
     };
     decisionRecommendation?: "BUY_NOW" | "WAIT" | "AVOID";
     decisionConfidence?: number;
+    decisionReason?: string;
     trendSignal?: "RISING" | "FALLING" | "STABLE";
+    buyWaitSignal?: {
+        action: 'BUY' | 'MONITOR' | 'WAIT';
+        label: string;
+        urgencyDays?: number;
+        variant?: 'A' | 'B' | 'C';
+    };
+    routeIntelligence?: {
+        avgPriceRoute: number;
+        volatility: number;
+        searchCount?: number;
+        rollingAvgPrice?: number;
+        bookingWindowPattern?: unknown;
+        recommendedBookingWindowDays?: number | null;
+        observedMinPrice?: number;
+        observedMaxPrice?: number;
+    };
+    estimatedTotalCost?: {
+        currency: string;
+        baseFare: number;
+        estimatedBaggageFee: number;
+        estimatedMealCost: number;
+        estimatedSeatSelectionCost?: number;
+        estimatedAirportTransferCost?: number;
+        estimatedHiddenFeeBuffer?: number;
+        total: number;
+    };
     alerts?: FlightAlert[];
     /** UI tags derived from scoring: "Best Value", "Direct", etc. */
     tags?: string[];

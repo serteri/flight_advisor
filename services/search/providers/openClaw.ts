@@ -1,3 +1,9 @@
+/**
+ * @deprecated — DEAD CODE. OpenClaw AI provider disabled (returns [] at line 36).
+ * All code after `return []` is unreachable. Only referenced from test-search.ts.
+ * Safe to delete in Phase 7.
+ * DO NOT import in production code.
+ */
 import { prisma } from '@/lib/prisma';
 
 // Tip tanımı

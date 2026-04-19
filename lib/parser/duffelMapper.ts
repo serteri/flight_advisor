@@ -257,7 +257,44 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
             hasMeal: true,
             baggage: baggageLabel
         },
-        segments: segs,
+        segments: segs.map((seg: any) => {
+            const segDep = seg.departing_at || '';
+            const segArr = seg.arriving_at || '';
+            const segOrigin = getIata(seg.origin);
+            const segDest = getIata(seg.destination);
+            const segCarrierCode = seg.operating_carrier?.iata_code || seg.marketing_carrier?.iata_code || '';
+            const segCarrierName = seg.operating_carrier?.name || seg.marketing_carrier?.name || '';
+            const segFlightNo = seg.operating_carrier_flight_number || seg.marketing_carrier_flight_number || '';
+            const segAircraft = seg.aircraft?.name || seg.aircraft?.iata_code || '';
+
+            let segDuration = parseDurationToMinutes(seg.duration);
+            if (segDuration <= 0 && segDep && segArr) {
+                try {
+                    const depMs = new Date(segDep).getTime();
+                    const arrMs = new Date(segArr).getTime();
+                    if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
+                        segDuration = Math.round((arrMs - depMs) / 60000);
+                    }
+                } catch { /* fallback to 0 */ }
+            }
+
+            return {
+                from: segOrigin,
+                to: segDest,
+                departure: segDep,
+                arrival: segArr,
+                departing_at: segDep,
+                arriving_at: segArr,
+                duration: segDuration,
+                carrier: segCarrierCode,
+                airline: segCarrierName,
+                flightNumber: `${segCarrierCode}${segFlightNo}`,
+                aircraft: segAircraft,
+                operating_carrier: seg.operating_carrier || { iata_code: segCarrierCode, name: segCarrierName },
+                origin: seg.origin || { iata_code: segOrigin },
+                destination: seg.destination || { iata_code: segDest },
+            };
+        }),
         layovers,
         deepLink: undefined,
         bookingLink: undefined,

@@ -318,13 +318,13 @@ export default function FlightResultCard({
         return legacyMap[tag] || tag;
     };
     const displayScore =
-        typeof flight.agentScore === 'number' && Number.isFinite(flight.agentScore)
-            ? flight.agentScore
+        typeof flight.score?.composite === 'number' && Number.isFinite(flight.score.composite)
+            ? flight.score.composite
             : typeof flight.advancedScore?.displayScore === 'number' && Number.isFinite(flight.advancedScore.displayScore)
                 ? flight.advancedScore.displayScore
                 : typeof flight.score === 'number' && Number.isFinite(flight.score)
                     ? flight.score
-                    : 0;
+                    : typeof flight.agentScore === 'number' ? flight.agentScore : 0;
 
         const localeCode = (typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '').toLowerCase();
         const isTrLocale = localeCode === 'tr';

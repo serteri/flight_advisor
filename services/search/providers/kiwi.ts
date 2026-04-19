@@ -145,7 +145,25 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
           currency: flight.currency || params.currency || 'EUR',
           cabinClass: 'economy',
           layovers: layovers.length > 0 ? layovers : undefined,
-          segments: routes,
+          segments: routes.map((r: any) => ({
+            from: String(r.flyFrom || '').toUpperCase(),
+            to: String(r.flyTo || '').toUpperCase(),
+            departure: r.dTime ? new Date(r.dTime * 1000).toISOString() : '',
+            arrival: r.aTime ? new Date(r.aTime * 1000).toISOString() : '',
+            departing_at: r.dTime ? new Date(r.dTime * 1000).toISOString() : '',
+            arriving_at: r.aTime ? new Date(r.aTime * 1000).toISOString() : '',
+            duration: r.aTime && r.dTime ? Math.max(0, Math.round((r.aTime - r.dTime) / 60)) : 0,
+            carrier: String(r.airline || '').toUpperCase(),
+            airline: String(r.airline || ''),
+            flightNumber: String(r.flight_no || ''),
+            aircraft: '',
+            operating_carrier: {
+              iata_code: String(r.operating_carrier || r.airline || '').toUpperCase(),
+              name: String(r.airline || ''),
+            },
+            origin: { iata_code: String(r.flyFrom || '').toUpperCase() },
+            destination: { iata_code: String(r.flyTo || '').toUpperCase() },
+          })),
           deepLink: flight.deep_link,
           bookingLink: flight.booking_token ? `https://www.kiwi.com/deep?from=${params.origin}&to=${params.destination}&departure=${dateFormatted}&booking_token=${flight.booking_token}` : undefined
         };

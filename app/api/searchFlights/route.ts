@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
         await persistFlightSearchRecords(
             allFlights.map((flight: any) => ({
                 id: String(flight.id || `${flight.flightNumber || "UNKNOWN"}-${from}-${to}`),
-                source: flight.source as FlightSource,
+                source: flight.source,
                 airline: String(flight.airline || "Unknown Airline"),
                 flightNumber: String(flight.flightNumber || "UNKNOWN"),
                 from: String(flight.from || from),

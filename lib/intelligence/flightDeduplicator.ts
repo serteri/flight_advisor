@@ -15,13 +15,13 @@ import { FlightResult } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 
 // ── Source Trust Levels (0–100) ──────────────────────────────────────────────
+// Only active FlightSource members are included (duffel|priceline|kiwi|rapidapi).
+// Dead sources (amadeus, serpapi) intentionally excluded — they never produce flights.
 export const SOURCE_TRUST: Record<string, number> = {
-    amadeus:  95,
-    duffel:   80,
+    duffel:    80,
     priceline: 62,
-    kiwi:     60,
-    rapidapi: 55,
-    serpapi:  50,
+    kiwi:      60,
+    rapidapi:  55,
 };
 
 // ── Internal marker key ──────────────────────────────────────────────────────

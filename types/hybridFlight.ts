@@ -1,10 +1,8 @@
 ﻿export type FlightSource =
     | "duffel"
-    | "amadeus"
     | "priceline"
     | "kiwi"
-    | "rapidapi"
-    | "serpapi";
+    | "rapidapi";
 
 export type CabinClass = "economy" | "premium" | "business" | "first";
 

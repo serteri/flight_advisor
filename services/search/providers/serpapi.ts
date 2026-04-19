@@ -1,3 +1,8 @@
+/**
+ * @deprecated — DEAD CODE. SerpApi provider retired in Phase 1.
+ * Only referenced from legacy debug scripts. Safe to delete in Phase 7.
+ * DO NOT import in production code.
+ */
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchPriceline } from '@/lib/providers/priceline';
 

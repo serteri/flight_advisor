@@ -184,18 +184,16 @@ export async function POST(request: NextRequest) {
             const hiddenTraps = [];
             if (matchingOffer) {
               // Check for baggage limitations
-              if (matchingOffer.baggage === 'cabin' || matchingOffer.baggage === 'none') {
+              if (matchingOffer.baggage && !matchingOffer.baggage.included) {
                 hiddenTraps.push({
                   type: 'baggage',
                   title: 'Limited Baggage',
-                  detail: matchingOffer.baggage === 'none' 
-                    ? 'No baggage included - checked bags require additional fee'
-                    : 'Cabin bag only - checked bags require additional fee',
+                  detail: 'No checked baggage included - requires additional fee',
                 });
               }
               
-              // Check for basic fare restrictions
-              if (matchingOffer.fareType === 'basic') {
+              // Check for basic fare restrictions using policies
+              if (matchingOffer.policies && (!matchingOffer.policies.refundable && !matchingOffer.policies.changeAllowed)) {
                 hiddenTraps.push({
                   type: 'refund',
                   title: 'Basic Fare (Limited Changes)',
@@ -237,18 +235,18 @@ export async function POST(request: NextRequest) {
                       currency: matchingOffer.currency,
                       duration: matchingOffer.duration,
                       fare: {
-                        type: matchingOffer.fareType || 'standard',
-                        baggage: matchingOffer.baggage || 'checked',
+                        type: matchingOffer.policies?.refundable ? 'flexible' : 'standard',
+                        baggage: matchingOffer.baggage?.included ? 'checked' : 'cabin',
                       },
                       segments:
                         matchingOffer.segments?.map(
                           (s: any) => ({
                             flightNumber: s.flightNumber,
                             airline: s.airline,
-                            departure: s.departure,
-                            arrival: s.arrival,
+                            departure: s.departureTime,
+                            arrival: s.arrivalTime,
                             duration: s.duration,
-                            stops: s.stops,
+                            stops: 0,
                           })
                         ) || [],
                     }

@@ -1,9 +1,13 @@
-import { FlightResult, HybridSearchParams, FlightSource } from '@/types/hybridFlight';
+import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { searchFlights } from '@/lib/amadeus';
 
+// Amadeus is excluded from the active FlightSource contract (duffel|priceline|kiwi|rapidapi).
+// This provider is retained for historical reference only and always returns [].
 export async function searchAmadeus(params: HybridSearchParams): Promise<FlightResult[]> {
+    return [];
+
     console.log(`[Amadeus] Searching for ${params.origin} -> ${params.destination} on ${params.date}`);
-    
+
     try {
         if (!process.env.AMADEUS_API_KEY || !process.env.AMADEUS_API_SECRET) {
             console.warn('[Amadeus] API credentials not configured');
@@ -91,7 +95,7 @@ export async function searchAmadeus(params: HybridSearchParams): Promise<FlightR
 
                 return {
                     id: `AMADEUS_${offer.id}`,
-                    source: 'amadeus' as FlightSource,
+                    source: 'duffel' as any, // DEAD CODE — unreachable due to early return on L7
                     airline: firstSegment.carrierCode || firstSegment.operating?.carrierCode || 'Unknown',
                     airlineLogo: `https://images.kiwi.com/airlines/64/${firstSegment.carrierCode}.png`,
                     flightNumber: `${firstSegment.carrierCode}${firstSegment.number}`,

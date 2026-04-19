@@ -3,12 +3,33 @@ import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
+import { toUnifiedFlights, fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
+import type { UnifiedFlight } from '@/types/unifiedFlight';
+import { logProviderHealth, logPipelineMetrics, safeLog, logPerformanceTiming } from '@/lib/observability/logger';
+import { validateUnifiedFlight } from '@/lib/intelligence/flightValidator';
+import {
+  useUnifiedPipeline,
+  recordUnifiedSuccess,
+  recordLegacyFallback,
+  recordLegacyExplicit,
+  checkFallbackThreshold,
+} from '@/lib/featureFlags';
 // Kiwi excluded (requires auth). Travelpayouts removed from search — affiliate links only via lib/monetization/travelpayouts.ts.
 
+// Phase 7: UnifiedFlight Canon
 export type SearchProvidersMeta = {
-  flights: FlightResult[];
+  flights: UnifiedFlight[];
   warnings: string[];
   rateLimited: boolean;
+  /** Pipeline mode is now strictly 'unified' */
+  pipelineMode: 'unified';
+  /** Optional telemetry payload for observability debugging */
+  _debugObservability?: {
+    totalFlightsFetched: number;
+    droppedViaValidation: number;
+    providerFetchTime: number;
+    providerStats: Record<string, { count: number; error: boolean }>;
+  };
 };
 
 type SearchProviderOptions = {
@@ -24,10 +45,20 @@ export async function searchAllProvidersWithMeta(
   return base;
 }
 
-export async function searchAllProviders(params: HybridSearchParams): Promise<FlightResult[]> {
+// Phase 7: Unified Canon
+export async function searchAllProviders(params: HybridSearchParams): Promise<UnifiedFlight[]> {
   const { flights } = await searchAllProvidersInternal(params, {});
   return flights;
 }
+
+// ── LEGACY PIPELINE (ISOLATED) ────────────────────────────────────────────────
+//
+// @deprecated — Legacy FlightResult passthrough pipeline.
+// This function is only called when:
+//   1. USE_UNIFIED_PIPELINE=false (explicit rollback)
+// ── LEGACY PIPELINE DEPRECATED (PHASE 7) ──────────────────────────────────────
+
+// ── MAIN SEARCH PIPELINE ──────────────────────────────────────────────────────
 
 async function searchAllProvidersInternal(
   params: HybridSearchParams,
@@ -70,23 +101,28 @@ async function searchAllProvidersInternal(
     let pricelineCount = 0;
     const cachedCount = (options.injectedFlights || []).length;
 
+    const providerStats: Record<string, { count: number; error: boolean }> = {};
+
     results.forEach((result, idx) => {
       const providerName = providers[idx] || `Provider-${idx + 1}`;
       if (result.status === 'fulfilled') {
         const flights = result.value || [];
         allFlights = [...allFlights, ...flights];
+        providerStats[providerName] = { count: flights.length, error: false };
+        logProviderHealth(providerName, flights.length, 0);
 
         if (providerName === 'Duffel') {
           duffelCount = flights.length;
-          console.log(`✅ Duffel: ${duffelCount} flights`);
         } else if (providerName === 'Priceline') {
           pricelineCount = flights.length;
-          console.log(`✅ PRICELINE: ${pricelineCount} flights`);
         }
       } else {
+        providerStats[providerName] = { count: 0, error: true };
+        logProviderHealth(providerName, 0, 1);
+        
         // Log detailed rejection information
         const errorMsg = result.reason?.message || String(result.reason);
-        console.error(`❌ ${providerName} provider failed:`, errorMsg);
+        safeLog('PROVIDER', `❌ ${providerName} provider failed: ${errorMsg}`);
 
         if (result.reason instanceof PricelineRateLimitError || result.reason?.code === 'PRICELINE_RATE_LIMIT') {
           rateLimited = true;
@@ -152,10 +188,51 @@ async function searchAllProvidersInternal(
     console.log(`   Filtered: ${filteredFlights.length} (origin/destination match)\n`);
     
     // Sort by price
+    const sortedFlights = withDurationDebug.sort((a, b) => a.price - b.price);
+
+    // ── PIPELINE ROUTING ──────────────────────────────────────────────────
+    const convStart = Date.now();
+    let outputFlights: UnifiedFlight[] = [];
+    let initialUnifiedCount = 0;
+    
+    try {
+      const convertedFlights = toUnifiedFlights(sortedFlights);
+      initialUnifiedCount = convertedFlights.length;
+      
+      // Step: Run runtime validation layer
+      outputFlights = convertedFlights.filter(flight => validateUnifiedFlight(flight));
+      
+      const convMs = Date.now() - convStart;
+      const invalidCount = initialUnifiedCount - outputFlights.length;
+      const legacyLossCount = sortedFlights.length - initialUnifiedCount;
+      
+      const avgPrice = outputFlights.reduce((sum, f) => sum + (Number(f.price) || 0), 0) / (outputFlights.length || 1);
+      
+      logPipelineMetrics(
+          initialUnifiedCount, 
+          outputFlights.length, 
+          invalidCount + legacyLossCount, 
+          Math.round(avgPrice)
+      );
+      
+      safeLog('TIMING', `Conversion completed in ${convMs}ms`);
+
+      recordUnifiedSuccess();
+    } catch (err) {
+      safeLog('UNIFIED', `❌ [UNIFIED] conversion failed: ${err}`);
+    }
+
     return {
-      flights: withDurationDebug.sort((a, b) => a.price - b.price),
+      flights: outputFlights,
       warnings: Array.from(new Set(warnings)),
       rateLimited,
+      pipelineMode: 'unified',
+      _debugObservability: {
+        totalFlightsFetched: allFlights.length,
+        droppedViaValidation: initialUnifiedCount - outputFlights.length,
+        providerFetchTime: elapsed,
+        providerStats,
+      }
     };
 
   } catch (error) {
@@ -165,7 +242,7 @@ async function searchAllProvidersInternal(
       flights: [],
       warnings: ['Arama sağlayıcı hatası oluştu'],
       rateLimited,
+      pipelineMode: 'unified',
     };
   }
 }
-

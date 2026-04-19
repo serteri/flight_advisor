@@ -2,6 +2,8 @@ import { FlightResult, FlightSource } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 import { hasIncludedMeal } from '@/lib/meal-utils';
+import type { UnifiedFlight } from '@/types/unifiedFlight';
+import { fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
 
 // @ts-ignore
 import airports from 'airports';
@@ -230,8 +232,9 @@ const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
                 const [normalizedSrc, airline] = entry.split(':');
                 const flightData = flightGroup.find(f => normalizeSource(f.source) === normalizedSrc && f.airline === airline);
                 return {
-                    // Preserve original provider identity from the matched flight, not the normalized key
-                    source: (flightData?.source ?? normalizedSrc) as FlightSource,
+                    // Preserve original provider identity — flightData.source is already FlightSource.
+                    // Fallback to baseFlight.source (also FlightSource), never to the raw normalizedSrc string.
+                    source: flightData?.source ?? baseFlight.source,
                     airline,
                     price: flightData?.price || baseFlight.price,
                     currency: flightData?.currency || baseFlight.currency,
@@ -1609,4 +1612,51 @@ export async function applyAdvancedFlightScoring(
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));
+}
+
+// ── PHASE 3: UnifiedFlight scoring entry point ────────────────────────────────
+//
+// This is a PARALLEL entry point — it does NOT replace applyAdvancedFlightScoring.
+// It accepts UnifiedFlight[], converts them to FlightResult via the adapter bridge,
+// then delegates to the existing scoring logic.
+//
+// Usage:
+//   const scored = await applyAdvancedFlightScoringUnified(unifiedFlights, options);
+//
+// When Phase 4 migrates the scoring engine internals to read UnifiedFlight directly,
+// this bridge will be removed.
+
+/**
+ * Runtime type guard: checks if the first element has `departureTime` (UnifiedFlight)
+ * instead of `departTime` (FlightResult).
+ */
+export function isUnifiedFlightArray(
+    input: FlightResult[] | UnifiedFlight[]
+): input is UnifiedFlight[] {
+    if (input.length === 0) return false;
+    return 'departureTime' in input[0] && !('departTime' in input[0]);
+}
+
+/**
+ * Score UnifiedFlight[] by converting them to FlightResult[] and delegating
+ * to the existing applyAdvancedFlightScoring.
+ *
+ * Returns FlightResult[] (scored) — caller can convert back via toUnifiedFlight
+ * if needed.
+ */
+export async function applyAdvancedFlightScoringUnified(
+    flights: UnifiedFlight[],
+    options?: {
+        origin?: string;
+        destination?: string;
+        departureDate?: string;
+        useHistoricalMedian?: boolean;
+        persona?: PersonaInput;
+        preferenceProfile?: PreferenceProfile;
+        personalBiasProfile?: PersonalBiasProfile;
+    }
+): Promise<FlightResult[]> {
+    // Bridge: UnifiedFlight[] → FlightResult[] → existing scoring → FlightResult[]
+    const asFlightResults = flights.map(fromUnifiedForScoring);
+    return applyAdvancedFlightScoring(asFlightResults, options);
 }

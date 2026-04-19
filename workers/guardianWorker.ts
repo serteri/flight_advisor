@@ -1,13 +1,35 @@
 // workers/guardianWorker.ts
 import { prisma } from "@/lib/prisma";
 import { getFlightStatus } from "@/services/flightStatusService";
-import { NotificationDispatcher } from "@/services/notifications/dispatcher";
-import { UserPreferences, UserTier, ToneOfVoice } from "@/services/notifications/types";
 import { TripStatus } from "@prisma/client";
+
+export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED';
+export type GuardianEventSeverity = 'low' | 'medium' | 'high';
+
+export interface GuardianEvent {
+    tripId: string;
+    type: GuardianEventType;
+    severity: GuardianEventSeverity;
+    previous: any;
+    current: any;
+    detectedAt: string;
+}
+
+const normalizeFlightStatus = (rawStatus: string, delayMins: number): 'ON_TIME' | 'DELAYED' | 'CANCELLED' => {
+    if (rawStatus === 'cancelled') return 'CANCELLED';
+    if (delayMins >= 15) return 'DELAYED';
+    return 'ON_TIME';
+};
+
+const getDelayBucket = (minutes: number): number => {
+    if (minutes >= 60) return 60;
+    if (minutes >= 30) return 30;
+    if (minutes >= 15) return 15;
+    return 0;
+};
 
 export async function processFlightMonitoring() {
     console.log("🛡️ [GUARDIAN WORKER] Starting monitoring cycle...");
-    const dispatcher = NotificationDispatcher.getInstance();
 
     try {
         const now = new Date();
@@ -18,20 +40,18 @@ export async function processFlightMonitoring() {
             },
             include: {
                 segments: true,
-                user: true,
                 snapshot: true,
             }
         });
 
-        console.log(`🔎 Found ${activeTrips.length} trips to check.`);
+        console.log(`🔎 Found ${activeTrips.length} active trips to check.`);
+
+        const generatedEvents: GuardianEvent[] = [];
 
         for (const trip of activeTrips) {
-            console.log(`   Processing Trip: ${trip.pnr} (${trip.routeLabel})`);
             const segment = trip.segments[0];
             if (!segment) continue;
 
-            // Load persisted snapshot or use safe defaults.
-            // This replaces the in-memory lastAlertState which reset on every cold start.
             const previousState = trip.snapshot ?? {
                 delayMinutes: 0,
                 status: 'scheduled',
@@ -40,8 +60,7 @@ export async function processFlightMonitoring() {
             };
 
             const dateStr = new Date(segment.departureDate).toISOString().split('T')[0];
-            console.log(`   🔍 Checking ${segment.flightNumber} on ${dateStr}...`);
-
+            
             let statusResult;
             try {
                 statusResult = await getFlightStatus(segment.flightNumber, dateStr);
@@ -63,105 +82,110 @@ export async function processFlightMonitoring() {
                 arrivalGate: previousState.arrivalGate,
             };
 
-            // A) CANCELLATION
-            if (currentStatus.status === 'cancelled' && previousState.status !== 'cancelled') {
-                console.log(`🚨 FLIGHT CANCELLED: ${segment.flightNumber}`);
+            // ── Normalization & Explicit Time Computation ──
+            const safeParseMs = (isoStr: string | undefined): number => {
+                if (!isoStr) return 0;
+                const ms = new Date(isoStr).getTime();
+                return isNaN(ms) ? 0 : ms;
+            };
+            
+            const reqScheduled = safeParseMs(currentStatus.scheduledArrival) || safeParseMs(currentStatus.scheduledDeparture);
+            const reqActual = safeParseMs(currentStatus.actualArrival || currentStatus.estimatedArrival) || safeParseMs(currentStatus.actualDeparture);
 
-                await dispatcher.dispatch(getUserPrefs(trip.user), {
-                    userId: trip.userId,
+            let explicitDelayMinutes = 0;
+            if (reqScheduled > 0 && reqActual > 0 && reqActual > reqScheduled) {
+                explicitDelayMinutes = Math.round((reqActual - reqScheduled) / 60000);
+            }
+            
+            const computedStatus = normalizeFlightStatus(currentStatus.status, explicitDelayMinutes);
+
+            // A) CANCELLATION & STATUS CHANGE
+            if (computedStatus === 'CANCELLED' && previousState.status !== 'CANCELLED') {
+                generatedEvents.push({
                     tripId: trip.id,
-                    type: 'DISRUPTION',
-                    title: '🚨 Flight Cancelled - EU261 Compensation!',
-                    message: `Flight ${segment.flightNumber} is CANCELLED. You may be eligible for €${currentStatus.compensationAmount || 600} compensation under EU261.`,
-                    priority: 'CRITICAL',
-                    data: {
-                        flightNumber: segment.flightNumber,
-                        amount: `€${currentStatus.compensationAmount || 600}`,
-                        destination: segment.destination,
-                        isEU261: true,
-                        reason: 'Flight cancelled',
-                    }
+                    type: 'CANCELLED',
+                    severity: 'high',
+                    previous: previousState.status,
+                    current: 'CANCELLED',
+                    detectedAt: new Date().toISOString()
                 });
-
-                newSnapshot.status = 'cancelled';
+                newSnapshot.status = 'CANCELLED';
+                newSnapshot.delayMinutes = 0;
+            } else if (computedStatus !== previousState.status && computedStatus !== 'CANCELLED') {
+                newSnapshot.status = computedStatus;
             }
 
-            // B) DELAY
-            const totalDelay = currentStatus.arrivalDelayMinutes || currentStatus.departureDelayMinutes || 0;
+            // B) DELAY (Milestone Bucketing)
+            if (computedStatus !== 'CANCELLED') {
+                const prevBucket = getDelayBucket(previousState.delayMinutes);
+                const currBucket = getDelayBucket(explicitDelayMinutes);
 
-            if (trip.watchDelay && totalDelay > 0) {
-                const delayDiff = totalDelay - previousState.delayMinutes;
-
-                if (delayDiff >= 15) {
-                    const isEU261 = totalDelay >= 180;
-                    const priority = isEU261 ? 'CRITICAL' : 'WARNING';
-
-                    console.log(`⚠️ DELAY: ${totalDelay} mins (EU261: ${isEU261})`);
-
-                    const message = isEU261
-                        ? `Flight ${segment.flightNumber} delayed ${totalDelay}min! EU261 compensation of €${currentStatus.compensationAmount || 400} may apply.`
-                        : `Flight ${segment.flightNumber} delayed ${totalDelay} minutes.`;
-
-                    await dispatcher.dispatch(getUserPrefs(trip.user), {
-                        userId: trip.userId,
+                if (currBucket > prevBucket) {
+                    const severity = currBucket >= 60 ? 'high' : 'medium';
+                    
+                    generatedEvents.push({
                         tripId: trip.id,
-                        type: 'DISRUPTION',
-                        title: isEU261 ? '💰 Major Delay - EU261!' : `⏱️ Flight Delayed (${totalDelay}m)`,
-                        message,
-                        priority,
-                        data: {
-                            flightNumber: segment.flightNumber,
-                            amount: isEU261 ? `€${currentStatus.compensationAmount || 400}` : '€0',
-                            destination: segment.destination,
-                            isEU261,
-                            delayMinutes: totalDelay,
-                        }
+                        type: 'DELAY',
+                        severity,
+                        previous: `${previousState.delayMinutes}min (Bucket ${prevBucket})`,
+                        current: `${explicitDelayMinutes}min (Bucket ${currBucket})`,
+                        detectedAt: new Date().toISOString()
                     });
-
-                    newSnapshot.delayMinutes = totalDelay;
                 }
+                
+                // Always sync the absolute latency to allow progressive resolution
+                newSnapshot.delayMinutes = explicitDelayMinutes;
             }
 
             // C) GATE CHANGE
             const newDepGate = currentStatus.departureGate ?? null;
             const newArrGate = currentStatus.arrivalGate ?? null;
+            
             const gateChanged =
                 (newDepGate && newDepGate !== previousState.departureGate && previousState.departureGate !== null) ||
                 (newArrGate && newArrGate !== previousState.arrivalGate && previousState.arrivalGate !== null);
 
             if (gateChanged) {
-                console.log(`🚪 GATE CHANGE detected for ${segment.flightNumber}`);
-
-                await dispatcher.dispatch(getUserPrefs(trip.user), {
-                    userId: trip.userId,
+                generatedEvents.push({
                     tripId: trip.id,
                     type: 'GATE_CHANGE',
-                    title: 'Gate Changed',
-                    message: `Flight ${segment.flightNumber} gate changed. Departure: ${newDepGate ?? 'TBD'}`,
-                    priority: 'OPPORTUNITY',
-                    data: {
-                        flightNumber: segment.flightNumber,
-                        oldDepartureGate: previousState.departureGate,
-                        newDepartureGate: newDepGate,
-                        oldArrivalGate: previousState.arrivalGate,
-                        newArrivalGate: newArrGate,
-                    }
+                    severity: 'low',
+                    previous: {
+                        departureGate: previousState.departureGate,
+                        arrivalGate: previousState.arrivalGate
+                    },
+                    current: {
+                        departureGate: newDepGate,
+                        arrivalGate: newArrGate
+                    },
+                    detectedAt: new Date().toISOString()
                 });
 
                 newSnapshot.departureGate = newDepGate;
                 newSnapshot.arrivalGate = newArrGate;
             }
 
-            // Persist new snapshot (upsert — idempotent on cold start)
-            // Destructure to ensure tripId is never passed in the update payload
-            const { tripId: _tid, ...safeSnapshot } = { tripId: trip.id, ...newSnapshot };
+            // 4. Update Snapshot Identity (upsert ensures idempotency)
+            const { tripId: _tid, id: _sid, snapshotAt: _sa, ...updatePayload } = { ...newSnapshot } as any;
+
             await prisma.tripSnapshot.upsert({
                 where: { tripId: trip.id },
-                create: { tripId: trip.id, ...safeSnapshot },
-                update: safeSnapshot,
+                create: { 
+                    tripId: trip.id, 
+                    delayMinutes: newSnapshot.delayMinutes,
+                    status: newSnapshot.status,
+                    departureGate: newSnapshot.departureGate,
+                    arrivalGate: newSnapshot.arrivalGate
+                },
+                update: {
+                    delayMinutes: newSnapshot.delayMinutes,
+                    status: newSnapshot.status,
+                    departureGate: newSnapshot.departureGate,
+                    arrivalGate: newSnapshot.arrivalGate
+                },
             });
 
-            // Advance next check window
+            // 5. Advance next check window
             const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);
             await prisma.monitoredTrip.update({
                 where: { id: trip.id },
@@ -169,32 +193,30 @@ export async function processFlightMonitoring() {
             });
         }
 
+        // 6. Log Generated Events
+        if (generatedEvents.length > 0) {
+            console.log(`\n🎉 [GUARDIAN] ${generatedEvents.length} distinct events detected:\n`);
+            generatedEvents.forEach(event => {
+                const messageMap = {
+                    'DELAY': `Delay detected: +${Number(event.current) - Number(event.previous)}min`,
+                    'CANCELLED': `Flight cancelled!`,
+                    'GATE_CHANGE': `Gate change detected.`
+                };
+                
+                console.log(`[GUARDIAN] ${messageMap[event.type]} (tripId=${event.tripId})`);
+                console.log(`   └ Severity: ${event.severity} | DetectedAt: ${event.detectedAt}`);
+                console.log(`   └ Prev: ${JSON.stringify(event.previous)} -> Curr: ${JSON.stringify(event.current)}`);
+            });
+            console.log("\n");
+        } else {
+            console.log("✈️ [GUARDIAN] No critical changes detected on active trips.");
+        }
+
         console.log("✅ [GUARDIAN WORKER] Cycle complete.");
-        return { success: true, processed: activeTrips.length };
+        return { success: true, processed: activeTrips.length, events: generatedEvents };
 
     } catch (error) {
         console.error("❌ [GUARDIAN WORKER] Error:", error);
         return { success: false, error };
     }
-}
-
-function getUserPrefs(user: any): UserPreferences {
-    const userPlan = (user.subscriptionPlan || 'FREE') as UserTier;
-    const isPro = userPlan === 'PRO' || userPlan === 'ELITE';
-
-    return {
-        tier: userPlan,
-        tone: (user.notificationTone || 'STANDARD') as ToneOfVoice,
-        channels: {
-            email: true,
-            push: isPro,
-            sms: userPlan === 'ELITE',
-            telegram: !!user.telegramId
-        },
-        contact: {
-            email: user.email,
-            phone: user.phoneNumber || '',
-            telegramId: user.telegramId
-        }
-    };
 }
