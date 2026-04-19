@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
 import { getFlightStatus } from "@/services/flightStatusService";
+import { assessEu261ForDisruption, isEu261Carrier, isEu261Country } from "@/services/guardian/eu261Rules";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
 import airports from 'airports';
 
@@ -35,17 +36,6 @@ const getDelayBucket = (minutes: number): number => {
     return 0;
 };
 
-const EU_COUNTRIES = new Set([
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
-    'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
-    'SI', 'ES', 'SE',
-]);
-
-const EU_CARRIER_CODES = new Set([
-    'AF', 'AZ', 'BA', 'BT', 'DY', 'EI', 'EW', 'FI', 'FR', 'IB', 'KL', 'LH', 'LO',
-    'LX', 'OS', 'SK', 'TP', 'U2', 'VY', 'W6',
-]);
-
 const normalizeCode = (value: unknown): string => String(value || '').trim().toUpperCase();
 
 const makeDetailHash = (detail: unknown): string => {
@@ -63,23 +53,46 @@ const buildEventId = (tripId: string, eventType: GuardianEventType, subType: str
     return `${tripId}:${eventType}:${subType}:${detailHash}`;
 };
 
-const isEuDepartureAirport = (iata: string): boolean => {
+const getAirportData = (iata: string): any | null => {
     const code = normalizeCode(iata);
-    if (!code) return false;
+    if (!code) return null;
 
     const airport = (airports as any[]).find((item: any) => normalizeCode(item?.iata) === code);
+    return airport || null;
+};
+
+const getAirportCountryCode = (iata: string): string | null => {
+    const airport = getAirportData(iata);
     const country = normalizeCode(airport?.country);
-    return country ? EU_COUNTRIES.has(country) : false;
+    return country || null;
 };
 
-const isEuCarrier = (carrierCode: string): boolean => {
-    const code = normalizeCode(carrierCode);
-    return code ? EU_CARRIER_CODES.has(code) : false;
+const getAirportCoordinates = (iata: string): { lat: number; lon: number } | null => {
+    const airport = getAirportData(iata);
+    const lat = Number(airport?.lat);
+    const lon = Number(airport?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { lat, lon };
 };
 
-const resolveEu261Eligibility = (segment: { origin?: string; airlineCode?: string } | null | undefined): boolean => {
-    if (!segment) return false;
-    return isEuDepartureAirport(String(segment.origin || '')) || isEuCarrier(String(segment.airlineCode || ''));
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+const getDistanceKm = (originIata: string, destinationIata: string): number | null => {
+    const from = getAirportCoordinates(originIata);
+    const to = getAirportCoordinates(destinationIata);
+    if (!from || !to) return null;
+
+    const earthRadiusKm = 6371;
+    const dLat = toRadians(to.lat - from.lat);
+    const dLon = toRadians(to.lon - from.lon);
+    const fromLat = toRadians(from.lat);
+    const toLat = toRadians(to.lat);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(fromLat) * Math.cos(toLat);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(earthRadiusKm * c);
 };
 
 const TRIP_LEASE_MS = 10 * 60 * 1000;
@@ -344,7 +357,20 @@ export async function processFlightMonitoring() {
                     newSnapshot.status = computedStatus;
                     newSnapshot.statusDetail = `status=${computedStatus}|raw=unreliable`;
                 } else if (computedStatus === 'CANCELLED' && previousState.status !== 'CANCELLED') {
-                    const eligibleEU261 = resolveEu261Eligibility(segment);
+                    const departureCountryCode = getAirportCountryCode(String(segment.origin || ''));
+                    const departsFromScope = departureCountryCode ? isEu261Country(departureCountryCode) : undefined;
+                    const carrierInScope = segment.airlineCode ? isEu261Carrier(String(segment.airlineCode)) : undefined;
+                    const distanceKm = getDistanceKm(String(segment.origin || ''), String(segment.destination || ''));
+                    const eu261Assessment = assessEu261ForDisruption({
+                        eventType: 'CANCELLED',
+                        departureAirport: String(segment.origin || ''),
+                        arrivalAirport: String(segment.destination || ''),
+                        carrier: String(segment.airlineCode || ''),
+                        departsFromScope,
+                        carrierInScope,
+                        distanceKm,
+                    });
+                    const eligibleEU261 = eu261Assessment.eligible === true;
                     queueDispatch({
                         type: 'CANCELLED',
                         subType: 'status_cancelled',
@@ -353,12 +379,14 @@ export async function processFlightMonitoring() {
                         current: {
                             status: 'CANCELLED',
                             eligibleEU261,
+                            eu261Assessment,
                         }
                     }, {
                         cancellationMarker: 'status_cancelled',
                         previousStatus: previousState.status,
                         currentStatus: 'CANCELLED',
                         eligibleEU261,
+                        eu261Assessment,
                     });
                     newSnapshot.status = 'CANCELLED';
                     newSnapshot.delayMinutes = 0;
@@ -377,9 +405,21 @@ export async function processFlightMonitoring() {
 
                     if (currBucket > prevBucket && currBucket >= 15) {
                         const severityMap: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'high' };
-                        const eligibleEU261 = explicitDelayMinutes > 180
-                            ? resolveEu261Eligibility(segment)
-                            : false;
+                        const departureCountryCode = getAirportCountryCode(String(segment.origin || ''));
+                        const departsFromScope = departureCountryCode ? isEu261Country(departureCountryCode) : undefined;
+                        const carrierInScope = segment.airlineCode ? isEu261Carrier(String(segment.airlineCode)) : undefined;
+                        const distanceKm = getDistanceKm(String(segment.origin || ''), String(segment.destination || ''));
+                        const eu261Assessment = assessEu261ForDisruption({
+                            eventType: 'DELAY',
+                            delayMinutes: explicitDelayMinutes,
+                            departureAirport: String(segment.origin || ''),
+                            arrivalAirport: String(segment.destination || ''),
+                            carrier: String(segment.airlineCode || ''),
+                            departsFromScope,
+                            carrierInScope,
+                            distanceKm,
+                        });
+                        const eligibleEU261 = eu261Assessment.eligible === true;
                         
                         queueDispatch({
                             type: 'DELAY',
@@ -390,6 +430,7 @@ export async function processFlightMonitoring() {
                                 delayMinutes: explicitDelayMinutes,
                                 bucket: currBucket,
                                 eligibleEU261,
+                                eu261Assessment,
                             }
                         }, {
                             transition: transitionMarker,
@@ -399,6 +440,7 @@ export async function processFlightMonitoring() {
                             fromBucket: prevBucket,
                             bucket: currBucket,
                             eligibleEU261,
+                            eu261Assessment,
                         });
 
                         if (eligibleEU261) {

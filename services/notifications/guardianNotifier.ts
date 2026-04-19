@@ -67,7 +67,38 @@ async function reclaimStaleProcessingDelivery(
 const emailChannel = EmailChannel.getInstance();
 const smsChannel = SmsChannel.getInstance();
 
-async function sendGuardianEmail(to: string, subject: string, body: string, tripId: string): Promise<ChannelResponse> {
+type Eu261Assessment = {
+    eligible: true | false | 'unknown';
+    reason: string;
+    compensationRange: 'EUR_250' | 'EUR_400' | 'EUR_600' | null;
+    confidence: 'low' | 'medium';
+};
+
+const getEu261Assessment = (event: GuardianEvent): Eu261Assessment | null => {
+    const assessment = (event.current as any)?.eu261Assessment;
+    if (!assessment || typeof assessment !== 'object') return null;
+    return assessment as Eu261Assessment;
+};
+
+const formatEu261Hint = (assessment: Eu261Assessment | null): string => {
+    if (!assessment) return '';
+
+    const compText = assessment.compensationRange
+        ? ` Potential compensation band: ${assessment.compensationRange.replace('EUR_', 'EUR ')}.`
+        : '';
+
+    if (assessment.eligible === true) {
+        return ` EU261 check: likely eligible (${assessment.confidence} confidence).${compText}`;
+    }
+
+    if (assessment.eligible === false) {
+        return ` EU261 check: currently appears out of scope (${assessment.confidence} confidence).`;
+    }
+
+    return ` EU261 check: scope is currently unclear (${assessment.confidence} confidence).`;
+};
+
+async function sendGuardianEmail(to: string, subject: string, body: string, tripId: string, eu261Assessment: Eu261Assessment | null): Promise<ChannelResponse> {
     const result = await emailChannel.send(to, {
         userId: 'guardian-system',
         tripId,
@@ -75,6 +106,7 @@ async function sendGuardianEmail(to: string, subject: string, body: string, trip
         title: subject,
         message: body,
         priority: 'CRITICAL',
+        data: eu261Assessment ? { eu261Assessment } : undefined,
     });
 
     return {
@@ -85,7 +117,7 @@ async function sendGuardianEmail(to: string, subject: string, body: string, trip
     };
 }
 
-async function sendGuardianSMS(to: string, body: string, tripId: string): Promise<ChannelResponse> {
+async function sendGuardianSMS(to: string, body: string, tripId: string, eu261Assessment: Eu261Assessment | null): Promise<ChannelResponse> {
     const result = await smsChannel.send(to, {
         userId: 'guardian-system',
         tripId,
@@ -93,6 +125,7 @@ async function sendGuardianSMS(to: string, body: string, tripId: string): Promis
         title: 'Trip Protection Alert',
         message: body,
         priority: 'CRITICAL',
+        data: eu261Assessment ? { eu261Assessment } : undefined,
     });
 
     return {
@@ -309,16 +342,18 @@ interface FormattedMessage {
 }
 
 const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
+    const eu261Hint = formatEu261Hint(getEu261Assessment(event));
+
     switch (event.type) {
         case 'DELAY':
             return {
                 subject: 'Flight Delay Notice',
-                body: `Your flight has been updated. ${event.current}. We recommend keeping a close eye on the terminal boards.`
+                body: `Your flight has been updated. We recommend keeping a close eye on the terminal boards.${eu261Hint}`
             };
         case 'CANCELLED':
             return {
                 subject: 'URGENT: Flight Cancelled',
-                body: `URGENT: Your monitored flight has been CANCELLED. Please contact your airline immediately.`
+                body: `URGENT: Your monitored flight has been CANCELLED. Please contact your airline immediately.${eu261Hint}`
             };
         case 'DATA_ISSUE':
             return {
@@ -347,6 +382,7 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
     }
 
     const eventId = event.eventId || `${event.tripId}:${event.type}`;
+    const eu261Assessment = getEu261Assessment(event);
     const { subject, body } = mapEventToMessage(event);
     const notifications: Promise<void>[] = [];
 
@@ -354,7 +390,7 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
     if (user.email) {
         const emailKey = `${eventId}:EMAIL`;
         notifications.push(attemptDispatch(
-            () => sendGuardianEmail(user.email!, subject, body, event.tripId),
+            () => sendGuardianEmail(user.email!, subject, body, event.tripId, eu261Assessment),
             emailKey,
             eventId,
             event.tripId,
@@ -369,7 +405,7 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
 
         if (user.phoneNumber) {
             notifications.push(attemptDispatch(
-                () => sendGuardianSMS(user.phoneNumber!, body, event.tripId),
+                () => sendGuardianSMS(user.phoneNumber!, body, event.tripId, eu261Assessment),
                 smsKey,
                 eventId,
                 event.tripId,
