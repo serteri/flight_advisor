@@ -1,4 +1,4 @@
-import { FlightResult } from '@/types/hybridFlight';
+import { FlightResult, FlightSource } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 import { hasIncludedMeal } from '@/lib/meal-utils';
@@ -227,10 +227,11 @@ const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
         // Create soldBy array with unique airline/source combinations
         const soldBy: typeof baseFlight.soldBy = Array.from(soldBySet)
             .map((entry) => {
-                const [source, airline] = entry.split(':');
-                const flightData = flightGroup.find(f => normalizeSource(f.source) === source && f.airline === airline);
+                const [normalizedSrc, airline] = entry.split(':');
+                const flightData = flightGroup.find(f => normalizeSource(f.source) === normalizedSrc && f.airline === airline);
                 return {
-                    source: source as any,
+                    // Preserve original provider identity from the matched flight, not the normalized key
+                    source: (flightData?.source ?? normalizedSrc) as FlightSource,
                     airline,
                     price: flightData?.price || baseFlight.price,
                     currency: flightData?.currency || baseFlight.currency,

@@ -91,7 +91,7 @@ export async function searchSkyScrapper(params: {
 
       return {
         id: `RAPID_${item.id || Math.random()}`,
-        source: 'SKY_SCANNER_PRO' as FlightSource, // Keeping internal ID for consistency
+        source: 'rapidapi' as FlightSource,
         airline: item.legs?.[0]?.carriers?.marketing?.[0]?.name || "Unknown Airline",
         airlineLogo: item.legs?.[0]?.carriers?.marketing?.[0]?.logoUrl,
         flightNumber: item.legs?.[0]?.carriers?.marketing?.[0]?.alternateId || "FLT",

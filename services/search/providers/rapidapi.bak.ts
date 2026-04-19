@@ -260,7 +260,7 @@ export async function searchSkyScrapper(params: {
 
       return {
         id: `SKY_${item.id || Math.random()}`,
-        source: 'SKY_SCANNER_PRO' as FlightSource,
+        source: 'rapidapi' as FlightSource,
         airline: firstLeg?.carriers?.marketing?.[0]?.name || "Airline",
         airlineLogo: firstLeg?.carriers?.marketing?.[0]?.logoUrl,
         flightNumber: firstLeg?.carriers?.marketing?.[0]?.alternateId || "FLY",
