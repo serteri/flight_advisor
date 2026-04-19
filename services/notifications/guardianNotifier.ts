@@ -1,7 +1,7 @@
 // services/notifications/guardianNotifier.ts
 import { randomUUID } from "node:crypto";
 
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { GuardianEvent } from "@/workers/guardianWorker";
 
@@ -22,6 +22,43 @@ function isStaleProcessing(updatedAt: Date, leaseExpiresAt: Date | null, now: Da
     const leaseExpired = !leaseExpiresAt || leaseExpiresAt.getTime() <= now.getTime();
 
     return leaseExpired && updatedAt.getTime() <= staleCutoff;
+}
+
+async function reclaimStaleProcessingDelivery(
+    eventId: string,
+    tripId: string,
+    channel: DeliveryChannel,
+    claimId: string,
+    now: Date
+) {
+    const staleCutoff = new Date(now.getTime() - STALE_PROCESSING_MS);
+    const processingLeaseExpiresAt = new Date(now.getTime() + DELIVERY_LEASE_MS);
+
+    const reclaimedRows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+        UPDATE "NotificationDelivery"
+        SET
+            "tripId" = ${tripId},
+            "claimedAt" = ${now},
+            "processingLeaseId" = ${claimId},
+            "processingLeaseExpiresAt" = ${processingLeaseExpiresAt},
+            "attemptCount" = "attemptCount" + 1,
+            "lastError" = 'Recovered stale processing claim',
+            "sentAt" = NULL,
+            "updatedAt" = ${now}
+        WHERE
+            "eventId" = ${eventId}
+            AND "channel" = ${channel}
+            AND "status" = 'processing'
+            AND "updatedAt" < ${staleCutoff}
+            AND "attemptCount" < ${MAX_STALE_RECLAIM_ATTEMPTS}
+            AND (
+                "processingLeaseExpiresAt" IS NULL
+                OR "processingLeaseExpiresAt" <= ${now}
+            )
+        RETURNING "id"
+    `);
+
+    return reclaimedRows[0] ?? null;
 }
 
 // ── CHANNEL ABSTRACTIONS (MOCK ADAPTERS) ──
@@ -112,32 +149,11 @@ async function claimNotificationDelivery(
                     return { kind: 'skip', reason: 'stale-processing' };
                 }
 
-                const reclaimed = await prisma.notificationDelivery.updateMany({
-                    where: {
-                        eventId,
-                        channel,
-                        status: 'processing',
-                        updatedAt: { lt: new Date(now.getTime() - STALE_PROCESSING_MS) },
-                        attemptCount: { lt: MAX_STALE_RECLAIM_ATTEMPTS },
-                        OR: [
-                            { processingLeaseExpiresAt: null },
-                            { processingLeaseExpiresAt: { lte: now } }
-                        ]
-                    },
-                    data: {
-                        tripId,
-                        claimedAt: now,
-                        processingLeaseId: claimId,
-                        processingLeaseExpiresAt,
-                        attemptCount: { increment: 1 },
-                        lastError: 'Recovered stale processing claim',
-                        sentAt: null
-                    }
-                });
+                const reclaimed = await reclaimStaleProcessingDelivery(eventId, tripId, channel, claimId, now);
 
-                if (reclaimed.count > 0) {
+                if (reclaimed) {
                     console.warn(`♻️ [NOTIFIER] Reclaimed stale processing row for ${channelKey}.`);
-                    return { kind: 'claimed', deliveryId: existingDelivery.id, claimId, mode: 'stale-reclaimed' };
+                    return { kind: 'claimed', deliveryId: reclaimed.id, claimId, mode: 'stale-reclaimed' };
                 }
 
                 console.log(`🔒 [NOTIFIER] Stale reclaim raced on ${channelKey}. Another worker won the claim.`);
