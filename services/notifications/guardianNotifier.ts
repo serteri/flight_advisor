@@ -8,12 +8,21 @@ import { GuardianEvent } from "@/workers/guardianWorker";
 // Helper sleep mapping
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const DELIVERY_LEASE_MS = 5 * 60 * 1000;
+const STALE_PROCESSING_MS = 5 * 60 * 1000;
+const MAX_STALE_RECLAIM_ATTEMPTS = 2;
 
 type DeliveryChannel = 'EMAIL' | 'SMS';
 
 type DeliveryClaim =
-    | { kind: 'claimed'; deliveryId: string; claimId: string }
+    | { kind: 'claimed'; deliveryId: string; claimId: string; mode: 'new' | 'failed' | 'stale-reclaimed' }
     | { kind: 'skip'; reason: 'already-finalized' | 'claimed-by-other-worker' | 'stale-processing' };
+
+function isStaleProcessing(updatedAt: Date, leaseExpiresAt: Date | null, now: Date) {
+    const staleCutoff = now.getTime() - STALE_PROCESSING_MS;
+    const leaseExpired = !leaseExpiresAt || leaseExpiresAt.getTime() <= now.getTime();
+
+    return leaseExpired && updatedAt.getTime() <= staleCutoff;
+}
 
 // ── CHANNEL ABSTRACTIONS (MOCK ADAPTERS) ──
 
@@ -54,14 +63,16 @@ async function claimNotificationDelivery(
             }
         });
 
-        return { kind: 'claimed', deliveryId: delivery.id, claimId };
+        return { kind: 'claimed', deliveryId: delivery.id, claimId, mode: 'new' };
     } catch (error) {
         const existingDelivery = await prisma.notificationDelivery.findUnique({
             where: { eventId_channel: { eventId, channel } },
             select: {
                 id: true,
                 status: true,
-                processingLeaseExpiresAt: true
+                processingLeaseExpiresAt: true,
+                updatedAt: true,
+                attemptCount: true
             }
         });
 
@@ -87,7 +98,7 @@ async function claimNotificationDelivery(
             });
 
             if (reclaimed.count > 0) {
-                return { kind: 'claimed', deliveryId: existingDelivery.id, claimId };
+                return { kind: 'claimed', deliveryId: existingDelivery.id, claimId, mode: 'failed' };
             }
 
             console.log(`🔒 [NOTIFIER] Claim raced on ${channelKey}. Another worker won the retry lease.`);
@@ -95,9 +106,42 @@ async function claimNotificationDelivery(
         }
 
         if (existingDelivery.status === 'processing') {
-            if (existingDelivery.processingLeaseExpiresAt && existingDelivery.processingLeaseExpiresAt <= now) {
-                console.warn(`⚠️ [NOTIFIER] Stale processing record detected for ${channelKey}. Skipping automatic retry to avoid duplicate delivery.`);
-                return { kind: 'skip', reason: 'stale-processing' };
+            if (isStaleProcessing(existingDelivery.updatedAt, existingDelivery.processingLeaseExpiresAt, now)) {
+                if (existingDelivery.attemptCount >= MAX_STALE_RECLAIM_ATTEMPTS) {
+                    console.warn(`⚠️ [NOTIFIER] Stale processing row for ${channelKey} already consumed its safe reclaim attempt.`);
+                    return { kind: 'skip', reason: 'stale-processing' };
+                }
+
+                const reclaimed = await prisma.notificationDelivery.updateMany({
+                    where: {
+                        eventId,
+                        channel,
+                        status: 'processing',
+                        updatedAt: { lt: new Date(now.getTime() - STALE_PROCESSING_MS) },
+                        attemptCount: { lt: MAX_STALE_RECLAIM_ATTEMPTS },
+                        OR: [
+                            { processingLeaseExpiresAt: null },
+                            { processingLeaseExpiresAt: { lte: now } }
+                        ]
+                    },
+                    data: {
+                        tripId,
+                        claimedAt: now,
+                        processingLeaseId: claimId,
+                        processingLeaseExpiresAt,
+                        attemptCount: { increment: 1 },
+                        lastError: 'Recovered stale processing claim',
+                        sentAt: null
+                    }
+                });
+
+                if (reclaimed.count > 0) {
+                    console.warn(`♻️ [NOTIFIER] Reclaimed stale processing row for ${channelKey}.`);
+                    return { kind: 'claimed', deliveryId: existingDelivery.id, claimId, mode: 'stale-reclaimed' };
+                }
+
+                console.log(`🔒 [NOTIFIER] Stale reclaim raced on ${channelKey}. Another worker won the claim.`);
+                return { kind: 'skip', reason: 'claimed-by-other-worker' };
             }
 
             console.log(`🔒 [NOTIFIER] Active claim already exists for ${channelKey}.`);
@@ -187,15 +231,17 @@ async function attemptDispatch(
         return;
     }
 
+    const maxAttempts = claim.mode === 'stale-reclaimed' ? 1 : maxRetries + 1;
+
     // 2. DISPATCH & SYNC
-    for (let currentAttempt = 0; currentAttempt <= maxRetries; currentAttempt++) {
+    for (let currentAttempt = 0; currentAttempt < maxAttempts; currentAttempt++) {
         try {
             await dispatchFn();
             await markDeliverySent(claim.deliveryId, claim.claimId);
             return;
         } catch (err: any) {
-            if (currentAttempt === maxRetries) {
-                console.error(`🚨 [NOTIFIER] Complete delivery failure for ${channelKey} after ${maxRetries} retries: ${err.message}`);
+            if (currentAttempt === maxAttempts - 1) {
+                console.error(`🚨 [NOTIFIER] Complete delivery failure for ${channelKey} after ${maxAttempts} attempt(s): ${err.message}`);
                 await markDeliveryFailed(claim.deliveryId, claim.claimId, err.message);
                 return; // Suppress throwing to avoid cascading loop failures. Handled gracefully.
             }
