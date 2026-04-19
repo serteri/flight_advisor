@@ -250,12 +250,30 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
     const checkedBagKg = Number(flight.policies?.baggageKg || 0);
     const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
     const baggageType = String(flight.baggage || '').toLowerCase();
+    const checkedSummary = String(flight.baggageSummary?.checked || '').toLowerCase();
+    const explicitExcludedByType = ['none', 'no_checked', 'no_checked_bag', 'excluded', 'not_included', 'no'].includes(baggageType);
+    const explicitExcludedBySummary =
+        checkedSummary.includes('not included') ||
+        checkedSummary.includes('no checked') ||
+        checkedSummary.includes('checked not included') ||
+        checkedSummary.includes('dahil degil') ||
+        checkedSummary.includes('dahil değil') ||
+        checkedSummary.includes('hari') ||
+        checkedSummary.includes('excluded');
+    const explicitCabinBySummary =
+        checkedSummary.includes('cabin only') ||
+        checkedSummary.includes('only cabin') ||
+        checkedSummary.includes('sadece kabin');
     const checkedBagText =
         checkedBagKg > 0
             ? `${checkedBagKg}kg`
             : baggageType === 'checked'
                 ? labels.yes
-                : labels.checkedNotIncluded;
+                : baggageType === 'cabin' || explicitCabinBySummary
+                    ? `${cabinBagKg}kg ${labels.cabin}`
+                    : explicitExcludedByType || explicitExcludedBySummary
+                        ? labels.checkedNotIncluded
+                        : labels.wifiCheckAirline;
 
     const totalSegmentMinutes = segs.reduce((sum: number, s: any) => sum + segmentDurationMinutes(s), 0);
     const totalLayoverMinutes = lays.reduce((sum: number, l: any) => sum + toMinutes(l?.duration), 0);

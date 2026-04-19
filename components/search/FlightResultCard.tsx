@@ -464,12 +464,12 @@ export default function FlightResultCard({
 
     useEffect(() => {
         if (decisionTracked) return;
-        if (!flight?.advancedScore?.decisionRecommendation) return;
+        if (!decisionRecommendation) return;
 
         sendSelectionEvent('DECISION_SHOWN');
         onUserAction?.('DECISION_SHOWN');
         setDecisionTracked(true);
-    }, [decisionTracked, flight?.advancedScore?.decisionRecommendation]);
+    }, [decisionTracked, decisionRecommendation]);
 
     const decisionReason = String(
         flight?.advancedScore?.decisionReason ||
@@ -489,22 +489,39 @@ export default function FlightResultCard({
     const normalizedSummary = rawCheckedSummary.toLowerCase();
 
     const baggageInfo = (() => {
+        const explicitExcludedByType = ['none', 'no_checked', 'no_checked_bag', 'excluded', 'not_included', 'no'].includes(baggageType);
+        const explicitCabinOnlyBySummary =
+            normalizedSummary.includes('cabin only') ||
+            normalizedSummary.includes('only cabin') ||
+            normalizedSummary.includes('sadece kabin');
+        const explicitExcludedBySummary =
+            normalizedSummary.includes('not included') ||
+            normalizedSummary.includes('no checked') ||
+            normalizedSummary.includes('checked not included') ||
+            normalizedSummary.includes('dahil degil') ||
+            normalizedSummary.includes('dahil değil') ||
+            normalizedSummary.includes('hari') ||
+            normalizedSummary.includes('excluded');
+
         if (checkedBagKg > 0) {
             return { label: `${checkedBagKg}kg Included`, tone: 'included' as const };
         }
         if (baggageType === 'checked') {
             return { label: isTrLocale ? 'Check-in Dahil' : 'Checked Included', tone: 'included' as const };
         }
-        if (baggageType === 'cabin') {
+        if (baggageType === 'cabin' || explicitCabinOnlyBySummary) {
             return { label: `${cabinBagKg}kg ${isTrLocale ? 'Kabin' : 'Cabin Only'}`, tone: 'limited' as const };
         }
         if (normalizedSummary.includes('check with airline') || normalizedSummary.includes('havayoluna')) {
             return { label: isTrLocale ? 'Havayoluna sor' : 'Check with airline', tone: 'unknown' as const };
         }
-        if (rawCheckedSummary) {
-            return { label: rawCheckedSummary, tone: 'excluded' as const };
+        if (explicitExcludedByType || explicitExcludedBySummary) {
+            return { label: isTrLocale ? 'Dahil Değil' : 'Not Included', tone: 'excluded' as const };
         }
-        return { label: isTrLocale ? 'Dahil Değil' : 'Not Included', tone: 'excluded' as const };
+        if (rawCheckedSummary) {
+            return { label: rawCheckedSummary, tone: 'unknown' as const };
+        }
+        return { label: isTrLocale ? 'Havayoluna sor' : 'Check with airline', tone: 'unknown' as const };
     })();
 
     const mealAmenityText = `${t('meal')}: ${mealLabel}`;
@@ -515,24 +532,18 @@ export default function FlightResultCard({
         ? {
             message: buyWaitLabel || decisionReason || 'This fare is below the route average — book before prices rise.',
             context: 'Check fare within 24–48h to lock in this price before it increases.',
-            cta: 'View fare details',
-            onClick: handleBookClick,
             className: 'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white border border-sky-300/40 shadow-lg shadow-sky-500/30 btn-glow',
         }
         : decisionRecommendation === 'WAIT'
             ? {
                 message: decisionReason || 'No strong signal to act now. Track this flight and recheck in 2–3 days.',
                 context: 'Track this fare and act when the market softens.',
-                cta: 'Track this flight',
-                onClick: handleTrackClick,
                 className: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white border border-amber-300/40 shadow-lg shadow-amber-500/30 btn-glow',
             }
             : decisionRecommendation === 'AVOID'
                 ? {
                     message: decisionReason || 'This fare is above the route average. Better-value options are available.',
                     context: 'Skip this option and compare other results in this search.',
-                    cta: 'See better options',
-                    onClick: handleSeeBetterOptionsClick,
                     className: 'bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white border border-slate-300/20 shadow-lg shadow-slate-800/25 btn-glow',
                 }
                 : null;
@@ -863,7 +874,7 @@ export default function FlightResultCard({
 
                         {/* ── Intelligence Panel v2 ────────────────────────────────── */}
                         {(() => {
-                            const intel = flight.advancedScore;
+                            const intel = flight.advancedScore || flight.score;
                             if (!intel) return null;
 
                             const confScore: number = intel.confidenceScore ?? 0;
@@ -977,22 +988,22 @@ export default function FlightResultCard({
                                         </div>
                                     )}
 
-                                    {flight.advancedScore?.regretInsight && (
+                                    {(flight.advancedScore?.regretInsight || flight.score?.regretInsight) && (
                                         <p className={`text-xs font-semibold leading-relaxed rounded-lg px-2.5 py-2 border bg-blue-50 text-blue-800 border-blue-200 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
-                                            🧠 {flight.advancedScore.regretInsight}
+                                            🧠 {flight.advancedScore?.regretInsight || flight.score?.regretInsight}
                                         </p>
                                     )}
 
                                     {/* Regret Minimization Stat — psychological framing */}
-                                    {flight.advancedScore?.regretStat && (
+                                    {(flight.advancedScore?.regretStat || flight.score?.regretStat) && (
                                         <p className={`text-xs font-semibold leading-relaxed rounded-lg px-2.5 py-2 border ${
-                                            (flight.advancedScore.regretStat.cheaperThan ?? 50) <= 25
+                                            ((flight.advancedScore?.regretStat || flight.score?.regretStat)?.cheaperThan ?? 50) <= 25
                                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                                : (flight.advancedScore.regretStat.cheaperThan ?? 50) <= 50
+                                                : ((flight.advancedScore?.regretStat || flight.score?.regretStat)?.cheaperThan ?? 50) <= 50
                                                     ? 'bg-blue-50 text-blue-800 border-blue-200'
                                                     : 'bg-slate-50 text-slate-700 border-slate-200'
                                         } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
-                                            📊 {flight.advancedScore.regretStat.label}
+                                            📊 {(flight.advancedScore?.regretStat || flight.score?.regretStat)?.label}
                                         </p>
                                     )}
 
@@ -1012,7 +1023,7 @@ export default function FlightResultCard({
                     {/* KONTROL ET BUTONU - View Analysis */}
                     <div className="mt-4 pt-4 border-t border-slate-100">
                         <button
-                            onClick={decisionAction ? decisionAction.onClick : handleDetailsClick}
+                            onClick={handleDetailsClick}
                             className={`w-full font-semibold py-2 px-4 rounded-xl transition-all hover:scale-105 flex items-center justify-center gap-2 ${
                                 decisionAction
                                     ? `${decisionAction.className}`
@@ -1022,7 +1033,7 @@ export default function FlightResultCard({
                             }`}
                         >
                             <Eye className="w-4 h-4" />
-                            {decisionAction ? decisionAction.cta : t('view_analysis')}
+                            {t('view_analysis')}
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
                     </div>
