@@ -24,13 +24,13 @@ import { FareExplainer } from "@/components/FareExplainer";
 import { generateBookingLink } from '@/lib/booking/linkGenerator';
 import { normalizeSource } from '@/lib/utils';
 import WatchButton from "@/components/flights/WatchButton";
-import { FlightForScoring } from "@/lib/flightTypes";
+import type { ScoredFlight } from "@/types/unifiedFlight";
 
 import { MasterScoreBadge } from "@/components/flights/MasterScoreBadge";
 import { MasterScoreCard } from "@/components/flights/MasterScoreCard";
 
 interface FlightCardProps {
-    flight: FlightForScoring;
+    flight: ScoredFlight & Record<string, any>;
     searchParams?: any;
     bestPrice?: number;
     bestDuration?: number;
@@ -41,16 +41,15 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     const [isExpanded, setIsExpanded] = useState(false);
     const t = useTranslations("FlightSearch");
 
-    // ── DNA field resolution: FlightResult uses `airline`/`airlineCode`, FlightForScoring uses `carrierName`/`carrier` ──
-    const resolvedCarrierName = flight.carrierName || flight.airline || '';
-    const resolvedCarrier = flight.carrier || flight.airlineCode || '';
+    const resolvedCarrierName = flight.airline || '';
+    const resolvedCarrier = flight.segments?.[0]?.carrier || '';
     const resolvedStops = flight.stops ?? 0;
     const resolvedDuration = flight.duration || flight.totalDurationMinutes || 0;
     const resolvedLayovers: { airport: string; duration: number; city?: string }[] = flight.layovers || [];
 
     // Master Score Data Access
     const masterScore = flight.scoreDetails?.masterBreakdown || flight.masterScore;
-    const scoreTotal = masterScore?.total || flight.scores?.total || 0;
+    const scoreTotal = masterScore?.total || flight.score?.composite || 0;
     // Normalize score to 100 if it's 0-10
     const normalizedScore = scoreTotal <= 10 ? scoreTotal * 10 : scoreTotal;
 
@@ -66,9 +65,9 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
     };
 
     // Calculate times
-    const segments = flight.segments || [];
-    const firstSegment = segments[0] || {};
-    const lastSegment = segments[segments.length - 1] || {};
+    const segments = (flight.segments || []) as any[];
+    const firstSegment: any = segments[0] || {};
+    const lastSegment: any = segments[segments.length - 1] || {};
 
     // Determine "Best" badges
     const isCheapest = bestPrice && flight.price <= bestPrice * 1.05;
@@ -125,7 +124,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     {/* Departure */}
                     <div className="text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
-                            {formatTime(firstSegment.departure)}
+                            {formatTime(firstSegment.departureTime || firstSegment.departure)}
                         </div>
                         <div className="text-xs text-slate-500 mt-1 font-medium">
                             {firstSegment.from}
@@ -189,7 +188,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     {/* Arrival */}
                     <div className="text-right md:text-left">
                         <div className="text-lg font-bold text-slate-900 leading-none">
-                            {formatTime(lastSegment.arrival)}
+                            {formatTime(lastSegment.arrivalTime || lastSegment.arrival)}
                         </div>
                         <div className="text-xs text-slate-500 mt-1 font-medium">
                             {lastSegment.to}
@@ -218,13 +217,13 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                             {Math.round(flight.price).toLocaleString()} <span className="text-sm font-normal text-slate-500">{flight.currency}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
-                            {flight.baggageIncluded ? (
+                            {flight.baggage?.included ? (
                                 <span className="text-emerald-600 flex items-center gap-0.5"><Luggage className="w-3 h-3" /> Inc.</span>
                             ) : (
                                 <span className="text-slate-400 flex items-center gap-0.5" title="Baggage info unavailable"><Luggage className="w-3 h-3" /> ?</span>
                             )}
                             <span className="text-slate-300">|</span>
-                             {flight.travelClass || "Economy"}
+                             {flight.cabinClass || "economy"}
                         </div>
                     </div>
 
@@ -373,7 +372,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                                     {formatDuration(seg.duration)}
                                     <span className="w-1 h-1 rounded-full bg-slate-300" />
                                     <Plane className="w-3 h-3" />
-                                    {seg.carrierName} ({seg.carrier}{seg.flightNumber})
+                                    {seg.carrier} ({seg.carrier}{seg.flightNumber})
                                 </div>
 
                                 <div>
@@ -457,7 +456,7 @@ export function FlightCard({ flight, bestPrice, bestDuration }: FlightCardProps)
                     </div>
 
                     <div className="pt-2 border-t border-slate-100">
-                        <FareExplainer restrictions={flight.fareRestrictions} />
+                        <FareExplainer restrictions={(flight as any).fareRestrictions} />
                     </div>
                 </div>
             )}

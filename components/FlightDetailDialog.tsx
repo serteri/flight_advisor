@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FlightResult } from "@/types/hybridFlight";
 import { Plane, Clock, Luggage, Utensils, Wifi, Info } from "lucide-react";
 import { AirlineLogo } from "./AirlineLogo";
 import { TrackButton } from "@/components/TrackButton";
@@ -11,7 +10,7 @@ import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from "@/lib/meal-uti
 import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from "@/lib/airline-logo-utils";
 
 interface FlightDetailDialogProps {
-    flight: FlightResult | null;
+    flight: any;
     open: boolean;
     onClose: () => void;
     canTrack?: boolean;
@@ -246,7 +245,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         return map[note] || note;
     };
 
-    const segs = Array.isArray(flight.segments) ? flight.segments.filter(s => s) : [];
+    const segs = Array.isArray(flight.segments) ? flight.segments.filter((s: any) => s) : [];
     const lays = Array.isArray(flight.layovers) ? flight.layovers : [];
     const checkedBagKg = Number(flight.policies?.baggageKg || 0);
     const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
@@ -258,8 +257,8 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                 ? labels.yes
                 : labels.checkedNotIncluded;
 
-    const totalSegmentMinutes = segs.reduce((sum, s) => sum + segmentDurationMinutes(s), 0);
-    const totalLayoverMinutes = lays.reduce((sum, l: any) => sum + toMinutes(l?.duration), 0);
+    const totalSegmentMinutes = segs.reduce((sum: number, s: any) => sum + segmentDurationMinutes(s), 0);
+    const totalLayoverMinutes = lays.reduce((sum: number, l: any) => sum + toMinutes(l?.duration), 0);
     const calculatedTotalDuration = totalSegmentMinutes + totalLayoverMinutes;
     const displayTotalDuration = toMinutes(flight.duration || 0) || calculatedTotalDuration;
 
@@ -468,7 +467,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                                 <h3 className="font-bold text-rose-700 mb-2 text-base">🚩 {labels.riskFlags}</h3>
                                 {flight.advancedScore.riskFlags.length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-rose-700">
-                                        {flight.advancedScore.riskFlags.map((flag) => (
+                                        {flight.advancedScore.riskFlags.map((flag: any) => (
                                             <li key={flag}>• {translateRiskFlag(flag)}</li>
                                         ))}
                                     </ul>
@@ -480,7 +479,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                                 <h3 className="font-bold text-emerald-700 mb-2 text-base">🛡️ {labels.comfortNotes}</h3>
                                 {flight.advancedScore.comfortNotes.length > 0 ? (
                                     <ul className="space-y-1.5 text-sm text-emerald-700">
-                                        {flight.advancedScore.comfortNotes.map((note) => (
+                                        {flight.advancedScore.comfortNotes.map((note: any) => (
                                             <li key={note}>• {translateComfortNote(note)}</li>
                                         ))}
                                     </ul>

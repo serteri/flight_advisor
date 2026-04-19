@@ -1,12 +1,12 @@
-import { FlightResult } from '@/types/hybridFlight';
+import type { ScoredFlight } from '@/types/unifiedFlight';
 import { analyzeForJunior } from '@/services/guardian/juniorGuardian';
 
 interface JuniorBadgeProps {
-    flight: FlightResult;
+    flight: ScoredFlight;
 }
 
 export default function JuniorBadge({ flight }: JuniorBadgeProps) {
-    const analysis = analyzeForJunior(flight);
+    const analysis = analyzeForJunior(flight as any);
 
     if (!analysis) return null;
 

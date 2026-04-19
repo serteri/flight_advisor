@@ -2,10 +2,10 @@
 
 import { ExternalLink } from 'lucide-react';
 import { generateBookingLink } from '@/lib/booking/linkGenerator';
-import { FlightResult } from '@/types/hybridFlight';
+import type { ScoredFlight } from '@/types/unifiedFlight';
 
 interface BookButtonProps {
-    flight: FlightResult;
+    flight: ScoredFlight;
     label?: string; // Optional custom label
 }
 
@@ -15,10 +15,10 @@ export default function BookButton({ flight, label }: BookButtonProps) {
         const link = generateBookingLink({
             origin: flight.from,
             destination: flight.to,
-            departureDate: flight.departTime, // Note: This will be handled correctly by updated linkGenerator
-            departureTime: flight.departTime, // Pass both to be safe for linkGenerator
+            departureDate: flight.departureTime,
+            departureTime: flight.departureTime,
             source: flight.source,
-            deepLink: flight.bookingLink
+            deepLink: flight.bookingLink || flight.deepLink
         });
 
         // Open in new tab (no-op if no link available)

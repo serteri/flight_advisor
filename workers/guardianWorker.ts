@@ -1,9 +1,10 @@
 // workers/guardianWorker.ts
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
 import { getFlightStatus } from "@/services/flightStatusService";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
+import airports from 'airports';
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -12,6 +13,8 @@ export interface GuardianEvent {
     eventId?: string;
     tripId: string;
     type: GuardianEventType;
+    subType?: string;
+    detailHash?: string;
     severity: GuardianEventSeverity;
     previous: any;
     current: any;
@@ -32,8 +35,45 @@ const getDelayBucket = (minutes: number): number => {
     return 0;
 };
 
-const generateEventKey = (tripId: string, eventType: string, bucket?: number) => {
-    return bucket ? `${tripId}:${eventType}:${bucket}` : `${tripId}:${eventType}`;
+const EU_COUNTRIES = new Set([
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+    'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
+    'SI', 'ES', 'SE',
+]);
+
+const EU_CARRIER_CODES = new Set([
+    'AF', 'AZ', 'BA', 'BT', 'DY', 'EI', 'EW', 'FI', 'FR', 'IB', 'KL', 'LH', 'LO',
+    'LX', 'OS', 'SK', 'TP', 'U2', 'VY', 'W6',
+]);
+
+const normalizeCode = (value: unknown): string => String(value || '').trim().toUpperCase();
+
+const makeDetailHash = (detail: unknown): string => {
+    const payload = typeof detail === 'string' ? detail : JSON.stringify(detail || {});
+    return createHash('sha1').update(payload).digest('hex').slice(0, 10);
+};
+
+const buildEventId = (tripId: string, eventType: GuardianEventType, subType: string, detailHash: string) => {
+    return `${tripId}:${eventType}:${subType}:${detailHash}`;
+};
+
+const isEuDepartureAirport = (iata: string): boolean => {
+    const code = normalizeCode(iata);
+    if (!code) return false;
+
+    const airport = (airports as any[]).find((item: any) => normalizeCode(item?.iata) === code);
+    const country = normalizeCode(airport?.country);
+    return country ? EU_COUNTRIES.has(country) : false;
+};
+
+const isEuCarrier = (carrierCode: string): boolean => {
+    const code = normalizeCode(carrierCode);
+    return code ? EU_CARRIER_CODES.has(code) : false;
+};
+
+const resolveEu261Eligibility = (segment: { origin?: string; airlineCode?: string } | null | undefined): boolean => {
+    if (!segment) return false;
+    return isEuDepartureAirport(String(segment.origin || '')) || isEuCarrier(String(segment.airlineCode || ''));
 };
 
 const TRIP_LEASE_MS = 10 * 60 * 1000;
@@ -103,6 +143,10 @@ async function finalizeTripCycle(tripId: string, leaseId: string, checkedAt: Dat
     dataQuality: string;
     departureGate: string | null;
     arrivalGate: string | null;
+    statusDetail: string | null;
+    gateDetail: string | null;
+    lastEventId: string | null;
+    eu261Eligible: boolean;
 }) {
     return prisma.$transaction(async (tx) => {
         const releasedLease = await tx.monitoredTrip.updateMany({
@@ -127,14 +171,22 @@ async function finalizeTripCycle(tripId: string, leaseId: string, checkedAt: Dat
                 status: snapshot.status,
                 dataQuality: snapshot.dataQuality,
                 departureGate: snapshot.departureGate,
-                arrivalGate: snapshot.arrivalGate
+                arrivalGate: snapshot.arrivalGate,
+                statusDetail: snapshot.statusDetail,
+                gateDetail: snapshot.gateDetail,
+                lastEventId: snapshot.lastEventId,
+                eu261Eligible: snapshot.eu261Eligible
             },
             update: {
                 delayMinutes: snapshot.delayMinutes,
                 status: snapshot.status,
                 dataQuality: snapshot.dataQuality,
                 departureGate: snapshot.departureGate,
-                arrivalGate: snapshot.arrivalGate
+                arrivalGate: snapshot.arrivalGate,
+                statusDetail: snapshot.statusDetail,
+                gateDetail: snapshot.gateDetail,
+                lastEventId: snapshot.lastEventId,
+                eu261Eligible: snapshot.eu261Eligible
             }
         });
 
@@ -162,7 +214,11 @@ export async function processFlightMonitoring() {
                     status: 'scheduled',
                     departureGate: null,
                     arrivalGate: null,
-                    dataQuality: 'UNKNOWN'
+                    dataQuality: 'UNKNOWN',
+                    statusDetail: null,
+                    gateDetail: null,
+                    lastEventId: null,
+                    eu261Eligible: false
                 };
 
                 const newSnapshot = {
@@ -170,7 +226,11 @@ export async function processFlightMonitoring() {
                     status: previousState.status,
                     departureGate: previousState.departureGate,
                     arrivalGate: previousState.arrivalGate,
-                    dataQuality: previousState.dataQuality
+                    dataQuality: previousState.dataQuality,
+                    statusDetail: previousState.statusDetail,
+                    gateDetail: previousState.gateDetail,
+                    lastEventId: previousState.lastEventId,
+                    eu261Eligible: Boolean(previousState.eu261Eligible)
                 };
 
                 if (!segment) {
@@ -193,15 +253,21 @@ export async function processFlightMonitoring() {
                     console.warn(`   ⚠️ Exception during status fetch: ${err.message}`);
                 }
 
-                const queueDispatch = (event: Omit<GuardianEvent, 'tripId' | 'detectedAt'>, bucket?: number) => {
-                    const key = generateEventKey(trip.id, event.type, bucket);
+                const queueDispatch = (
+                    event: Omit<GuardianEvent, 'tripId' | 'detectedAt' | 'eventId' | 'detailHash'>,
+                    details: unknown,
+                ) => {
+                    const detailHash = makeDetailHash(details);
+                    const key = buildEventId(trip.id, event.type, event.subType || 'general', detailHash);
                     const eventPayload = {
                         eventId: key,
+                        detailHash,
                         tripId: trip.id,
                         detectedAt: new Date().toISOString(),
                         ...event
                     };
                     generatedEvents.push(eventPayload);
+                    newSnapshot.lastEventId = key;
                     
                     if (trip.user) {
                         notificationPromises.push(notifyGuardianEvent(eventPayload, trip.user));
@@ -252,26 +318,43 @@ export async function processFlightMonitoring() {
                     if (previousState.status !== 'UNKNOWN' && previousState.status !== 'scheduled' && previousState.status !== 'CANCELLED') {
                         queueDispatch({
                             type: 'DATA_ISSUE',
+                            subType: 'status_unknown',
                             severity: 'medium',
                             previous: previousState.status,
                             current: 'UNKNOWN'
+                        }, {
+                            previousStatus: previousState.status,
+                            currentStatus: 'UNKNOWN',
                         });
                     }
                     newSnapshot.dataQuality = currentDataQuality;
                     newSnapshot.status = computedStatus;
+                    newSnapshot.statusDetail = `status=${computedStatus}|raw=unreliable`;
                 } else if (computedStatus === 'CANCELLED' && previousState.status !== 'CANCELLED') {
+                    const eligibleEU261 = resolveEu261Eligibility(segment);
                     queueDispatch({
                         type: 'CANCELLED',
+                        subType: 'status_cancelled',
                         severity: 'high',
                         previous: previousState.status,
-                        current: 'CANCELLED'
+                        current: {
+                            status: 'CANCELLED',
+                            eligibleEU261,
+                        }
+                    }, {
+                        previousStatus: previousState.status,
+                        currentStatus: 'CANCELLED',
+                        eligibleEU261,
                     });
                     newSnapshot.status = 'CANCELLED';
                     newSnapshot.delayMinutes = 0;
                     newSnapshot.dataQuality = currentDataQuality;
+                    newSnapshot.statusDetail = `status=CANCELLED|eligibleEU261=${eligibleEU261}`;
+                    newSnapshot.eu261Eligible = eligibleEU261;
                 } else {
                     newSnapshot.status = computedStatus;
                     newSnapshot.dataQuality = currentDataQuality;
+                    newSnapshot.statusDetail = `status=${computedStatus}|delay=${explicitDelayMinutes}`;
                 }
 
                 if (computedStatus !== 'CANCELLED' && computedStatus !== 'UNKNOWN') {
@@ -280,13 +363,30 @@ export async function processFlightMonitoring() {
 
                     if (currBucket > prevBucket && currBucket >= 15) {
                         const severityMap: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'high' };
+                        const eligibleEU261 = explicitDelayMinutes > 180
+                            ? resolveEu261Eligibility(segment)
+                            : false;
                         
                         queueDispatch({
                             type: 'DELAY',
+                            subType: `delay_bucket_${currBucket}`,
                             severity: severityMap[currBucket] || 'high',
                             previous: `${previousState.delayMinutes}min`,
-                            current: `${explicitDelayMinutes}min (Bucket ${currBucket})`
-                        }, currBucket);
+                            current: {
+                                delayMinutes: explicitDelayMinutes,
+                                bucket: currBucket,
+                                eligibleEU261,
+                            }
+                        }, {
+                            fromDelay: previousState.delayMinutes,
+                            toDelay: explicitDelayMinutes,
+                            bucket: currBucket,
+                            eligibleEU261,
+                        });
+
+                        if (eligibleEU261) {
+                            newSnapshot.eu261Eligible = true;
+                        }
                     }
                     
                     newSnapshot.delayMinutes = explicitDelayMinutes;
@@ -298,8 +398,17 @@ export async function processFlightMonitoring() {
                         (newArrGate && newArrGate !== previousState.arrivalGate && previousState.arrivalGate !== null);
 
                     if (gateChanged) {
+                        const changedDeparture = newDepGate !== previousState.departureGate;
+                        const changedArrival = newArrGate !== previousState.arrivalGate;
+                        const gateSubType = changedDeparture && changedArrival
+                            ? 'gate_change_both'
+                            : changedDeparture
+                                ? 'gate_change_departure'
+                                : 'gate_change_arrival';
+
                         queueDispatch({
                             type: 'GATE_CHANGE',
+                            subType: gateSubType,
                             severity: 'low',
                             previous: {
                                 departureGate: previousState.departureGate,
@@ -309,10 +418,16 @@ export async function processFlightMonitoring() {
                                 departureGate: newDepGate,
                                 arrivalGate: newArrGate
                             }
+                        }, {
+                            previousDepartureGate: previousState.departureGate,
+                            currentDepartureGate: newDepGate,
+                            previousArrivalGate: previousState.arrivalGate,
+                            currentArrivalGate: newArrGate,
                         });
                     }
                     newSnapshot.departureGate = newDepGate;
                     newSnapshot.arrivalGate = newArrGate;
+                    newSnapshot.gateDetail = `dep:${previousState.departureGate || 'N/A'}>${newDepGate || 'N/A'}|arr:${previousState.arrivalGate || 'N/A'}>${newArrGate || 'N/A'}`;
                 }
 
                 const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);

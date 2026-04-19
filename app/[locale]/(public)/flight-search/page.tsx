@@ -20,7 +20,7 @@ import { DataSourceIndicator } from "@/components/DataSourceIndicator";
 import { FlightSortBar, SortOption } from "@/components/FlightSortBar";
 import { PassengerSelector } from "@/components/PassengerSelector";
 import { Suspense } from "react";
-import { FlightResult } from "@/types/hybridFlight";
+import type { ScoredFlight } from "@/types/unifiedFlight";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useSession } from "next-auth/react";
 import type { UserTier } from "@/lib/tierUtils";
@@ -106,9 +106,9 @@ function SearchPageContent() {
     const locale = useLocale() as "en" | "tr" | "de";
     const [loading, setLoading] = useState(false);
     const [tripType, setTripType] = useState<"oneWay" | "roundTrip">("oneWay");
-    const [results, setResults] = useState<FlightResult[]>([]);
+    const [results, setResults] = useState<ScoredFlight[]>([]);
     const [proactiveTips, setProactiveTips] = useState<ProactiveTip[]>([]);
-    const [sortedResults, setSortedResults] = useState<FlightResult[]>([]);
+    const [sortedResults, setSortedResults] = useState<ScoredFlight[]>([]);
     const [currentSort, setCurrentSort] = useState<SortOption>("best");
     const [filters, setFilters] = useState<FlightFilterState>({
         airline: "ALL",
@@ -404,7 +404,7 @@ function SearchPageContent() {
         setToIata(dest.iata);
     };
 
-    const sortFlights = (flights: FlightResult[], sortBy: SortOption): FlightResult[] => {
+    const sortFlights = (flights: ScoredFlight[], sortBy: SortOption): ScoredFlight[] => {
         const sorted = [...flights];
 
         const parseNumeric = (value: unknown): number => {
@@ -416,7 +416,7 @@ function SearchPageContent() {
             return 0;
         };
 
-        const resolvePrice = (flight: FlightResult) => {
+        const resolvePrice = (flight: ScoredFlight) => {
             const direct = parseNumeric((flight as any).price);
             if (direct > 0) return direct;
 
@@ -431,12 +431,12 @@ function SearchPageContent() {
             return Number.isFinite(providerPrice) && providerPrice > 0 ? providerPrice : Number.MAX_SAFE_INTEGER;
         };
 
-        const resolveDuration = (flight: FlightResult) => {
+        const resolveDuration = (flight: ScoredFlight) => {
             const direct = parseNumeric((flight as any).duration);
             if (direct > 0) return direct;
 
-            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
-            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            const depMs = flight.departureTime ? new Date(flight.departureTime).getTime() : NaN;
+            const arrMs = flight.arrivalTime ? new Date(flight.arrivalTime).getTime() : NaN;
             if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
                 return Math.round((arrMs - depMs) / 60000);
             }
@@ -444,22 +444,21 @@ function SearchPageContent() {
             return Number.MAX_SAFE_INTEGER;
         };
 
-        const resolveAgentScore = (flight: FlightResult) => {
-            const score = Number(flight.agentScore ?? flight.advancedScore?.displayScore ?? flight.score ?? 0);
+        const resolveAgentScore = (flight: ScoredFlight) => {
+            const score = Number(flight.score?.composite ?? 0);
             return Number.isFinite(score) ? score : 0;
         };
 
-        const resolveDecisionPriority = (flight: FlightResult) => {
-            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+        const resolveDecisionPriority = (flight: ScoredFlight) => {
+            const recommendation = String(flight.score?.decisionRecommendation || '').toUpperCase();
             if (recommendation === 'BUY_NOW') return 0;
             if (recommendation === 'WAIT') return 1;
             if (recommendation === 'AVOID') return 2;
             return 1;
         };
 
-        const isBestValue = (flight: FlightResult) => {
-            const tag = (flight.advancedScore?.valueTag || '').toString().toLowerCase();
-            return tag.includes('en i̇yi fiyat/performans') || tag.includes('en iyi fiyat/performans') || tag.includes('best value');
+        const isBestValue = (flight: ScoredFlight) => {
+            return (flight.score?.tags || []).some((tag) => String(tag).toLowerCase().includes('best value'));
         };
         
         switch (sortBy) {
@@ -537,12 +536,12 @@ function SearchPageContent() {
         });
     }, [sortedResults, filters]);
 
-    const getFlightKey = (flight: FlightResult) =>
-        `${flight.id}|${flight.source}|${flight.flightNumber}|${flight.departTime}`;
+    const getFlightKey = (flight: ScoredFlight) =>
+        `${flight.id}|${flight.source}|${flight.flightNumber}|${flight.departureTime}`;
 
     const championData = useMemo(() => {
-        const decisionPriority = (flight: FlightResult) => {
-            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+        const decisionPriority = (flight: ScoredFlight) => {
+            const recommendation = String(flight.score?.decisionRecommendation || '').toUpperCase();
             if (recommendation === 'BUY_NOW') return 0;
             if (recommendation === 'WAIT') return 1;
             if (recommendation === 'AVOID') return 2;
@@ -553,8 +552,8 @@ function SearchPageContent() {
             const decisionDiff = decisionPriority(a) - decisionPriority(b);
             if (decisionDiff !== 0) return decisionDiff;
 
-            const scoreA = Number(a.advancedScore?.totalScore ?? a.agentScore ?? a.advancedScore?.displayScore ?? a.score ?? 0);
-            const scoreB = Number(b.advancedScore?.totalScore ?? b.agentScore ?? b.advancedScore?.displayScore ?? b.score ?? 0);
+            const scoreA = Number(a.score?.composite ?? 0);
+            const scoreB = Number(b.score?.composite ?? 0);
             return scoreB - scoreA;
         });
         const empty = { ordered: list, labels: {} as Record<string, ChampionBadge> };
@@ -568,39 +567,39 @@ function SearchPageContent() {
             }
             return 0;
         };
-        const resolvePrice = (flight: FlightResult) => {
+        const resolvePrice = (flight: ScoredFlight) => {
             const direct = parseNum((flight as any).price);
             if (direct > 0) return direct;
             return Number.MAX_SAFE_INTEGER;
         };
-        const resolveDuration = (flight: FlightResult) => {
+        const resolveDuration = (flight: ScoredFlight) => {
             const direct = parseNum((flight as any).duration);
             if (direct > 0) return direct;
-            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
-            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            const depMs = flight.departureTime ? new Date(flight.departureTime).getTime() : NaN;
+            const arrMs = flight.arrivalTime ? new Date(flight.arrivalTime).getTime() : NaN;
             if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) {
                 return Math.round((arrMs - depMs) / 60000);
             }
             return Number.MAX_SAFE_INTEGER;
         };
-        const resolveScore = (flight: FlightResult) => {
-            const score = Number(flight.advancedScore?.totalScore ?? flight.agentScore ?? flight.advancedScore?.displayScore ?? flight.score ?? 0);
+        const resolveScore = (flight: ScoredFlight) => {
+            const score = Number(flight.score?.composite ?? 0);
             return Number.isFinite(score) ? score : 0;
         };
-        const resolveRisk = (flight: FlightResult) => {
-            const connectionRisk = flight.advancedScore?.connectionRisk || 'low';
+        const resolveRisk = (flight: ScoredFlight) => {
+            const connectionRisk: string = 'low';
             const connectionRiskScore = connectionRisk === 'critical' ? 4 : connectionRisk === 'high' ? 3 : connectionRisk === 'medium' ? 2 : 1;
-            const delayPenalty = Number(flight.advancedScore?.delayProbability || 18) / 10;
-            const reliabilityPenalty = (10 - Number(flight.advancedScore?.breakdown?.reliability || 5)) / 2;
-            const selfTransferPenalty = Number(flight.advancedScore?.breakdown?.selfTransfer || 10) < 10 ? 2 : 0;
+            const delayPenalty = 1.8;
+            const reliabilityPenalty = (10 - Number(flight.score?.breakdown?.reliabilityScore || 5)) / 2;
+            const selfTransferPenalty = Number(flight.score?.breakdown?.selfTransferScore || 10) < 10 ? 2 : 0;
             return connectionRiskScore + delayPenalty + reliabilityPenalty + selfTransferPenalty;
         };
 
         const labels: Record<string, ChampionBadge> = {};
         const selectedKeys = new Set<string>();
-        const champions: FlightResult[] = [];
+        const champions: ScoredFlight[] = [];
 
-        const pickChampion = (label: ChampionBadge, comparator: (a: FlightResult, b: FlightResult) => number) => {
+        const pickChampion = (label: ChampionBadge, comparator: (a: ScoredFlight, b: ScoredFlight) => number) => {
             const candidate = [...list].sort(comparator).find((f) => !selectedKeys.has(getFlightKey(f)));
             if (!candidate) return;
             const key = getFlightKey(candidate);
@@ -611,8 +610,8 @@ function SearchPageContent() {
 
         pickChampion('Best Overall', (a, b) => resolveScore(b) - resolveScore(a));
         pickChampion('Best Value', (a, b) => {
-            const valueA = Number(a.advancedScore?.breakdown?.priceValue || 0);
-            const valueB = Number(b.advancedScore?.breakdown?.priceValue || 0);
+            const valueA = Number(a.score?.breakdown?.priceScore || 0);
+            const valueB = Number(b.score?.breakdown?.priceScore || 0);
             if (valueA !== valueB) return valueB - valueA;
             return resolvePrice(a) - resolvePrice(b);
         });
@@ -625,8 +624,8 @@ function SearchPageContent() {
 
     const rankedResults = useMemo(() => {
         const base = championData.ordered;
-        const decisionPriority = (flight: FlightResult) => {
-            const recommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+        const decisionPriority = (flight: ScoredFlight) => {
+            const recommendation = String(flight.score?.decisionRecommendation || '').toUpperCase();
             if (recommendation === 'BUY_NOW') return 0;
             if (recommendation === 'WAIT') return 1;
             if (recommendation === 'AVOID') return 2;
@@ -638,7 +637,7 @@ function SearchPageContent() {
             .sort((a, b) => {
                 const decisionDiff = decisionPriority(a) - decisionPriority(b);
                 if (decisionDiff !== 0) return decisionDiff;
-                return Number(b.advancedScore?.totalScore || 0) - Number(a.advancedScore?.totalScore || 0);
+                return Number(b.score?.composite || 0) - Number(a.score?.composite || 0);
             });
 
         const parseNum = (value: unknown): number => {
@@ -649,22 +648,22 @@ function SearchPageContent() {
             }
             return 0;
         };
-        const resolveDuration = (flight: FlightResult) => {
+        const resolveDuration = (flight: ScoredFlight) => {
             const direct = parseNum((flight as any).duration);
             if (direct > 0) return direct;
-            const depMs = flight.departTime ? new Date(flight.departTime).getTime() : NaN;
-            const arrMs = flight.arriveTime ? new Date(flight.arriveTime).getTime() : NaN;
+            const depMs = flight.departureTime ? new Date(flight.departureTime).getTime() : NaN;
+            const arrMs = flight.arrivalTime ? new Date(flight.arrivalTime).getTime() : NaN;
             if (Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs) return Math.round((arrMs - depMs) / 60000);
             return Number.MAX_SAFE_INTEGER;
         };
 
         result.forEach((flight) => {
             const currentPrice = parseNum(flight.price);
-            const avgPriceRoute = parseNum((flight as any).advancedScore?.routeIntelligence?.avgPriceRoute);
+            const avgPriceRoute = parseNum((flight as any).score?.routeIntelligence?.avgPriceRoute);
             if (avgPriceRoute > 0 && currentPrice > 0) {
                 const delta = Math.round(Math.abs(avgPriceRoute - currentPrice));
                 if (delta >= 10) {
-                    flight.counterfactualNote = currentPrice > avgPriceRoute
+                    (flight as any).counterfactualNote = currentPrice > avgPriceRoute
                         ? `Bu fiyat rota ortalamasından $${delta} daha pahalı.`
                         : `Bu fiyat rota ortalamasından $${delta} daha ucuz.`;
                 }
@@ -675,7 +674,7 @@ function SearchPageContent() {
     }, [championData]);
 
     const buyNowCount = useMemo(
-        () => rankedResults.filter((flight) => String(flight.advancedScore?.decisionRecommendation || '').toUpperCase() === 'BUY_NOW').length,
+        () => rankedResults.filter((flight) => String(flight.score?.decisionRecommendation || '').toUpperCase() === 'BUY_NOW').length,
         [rankedResults]
     );
 
@@ -699,18 +698,18 @@ function SearchPageContent() {
                     provider: normalizeSource(flight.source),
                     origin: String(flight.from || '').toUpperCase(),
                     destination: String(flight.to || '').toUpperCase(),
-                    departureDate: String(flight.departTime || '').slice(0, 10),
+                    departureDate: String(flight.departureTime || '').slice(0, 10),
                     selectedPrice: Number(flight.price) || null,
-                    selectedScore: Number(flight.agentScore ?? flight.advancedScore?.displayScore ?? 0) || null,
+                    selectedScore: Number(flight.score?.composite ?? 0) || null,
                     rank: null,
                     totalResults: rankedResults.length,
                     currency: String(flight.currency || 'AUD').toUpperCase(),
                     isDirect: Number(flight.stops) === 0,
                     stopCount: Number(flight.stops || 0),
-                    departTime: flight.departTime,
-                    decisionRecommendation: flight.advancedScore?.decisionRecommendation || null,
-                    decisionConfidence: Number(flight.advancedScore?.decisionConfidence || 0) || null,
-                    routeAveragePrice: Number(flight.advancedScore?.routeIntelligence?.avgPriceRoute || 0) || null,
+                    departTime: flight.departureTime,
+                    decisionRecommendation: flight.score?.decisionRecommendation || null,
+                    decisionConfidence: Number(flight.score?.decisionConfidence || 0) || null,
+                    routeAveragePrice: Number(flight.score?.routeIntelligence?.avgPriceRoute || 0) || null,
                     buyNowVariant: getBuyNowVariantBucket(),
                 };
 
@@ -945,7 +944,7 @@ function SearchPageContent() {
                                             null;
                                         return (
                                     <FlightResultCard
-                                        key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departTime}-${index}`}
+                                        key={`${flight.id}-${flight.source}-${flight.flightNumber}-${flight.departureTime}-${index}`}
                                         flight={flight}
                                         championBadge={championData.labels[getFlightKey(flight)]}
                                         isPremium={isPremiumUser}
@@ -958,10 +957,10 @@ function SearchPageContent() {
                                             totalResults: rankedResults.length,
                                             competitorPrice: nearbyCompetitor ? Number(nearbyCompetitor.price || 0) : null,
                                             competitorScore:
-                                                nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.agentScore))
-                                                    ? Number(nearbyCompetitor.agentScore)
-                                                    : nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.advancedScore?.displayScore))
-                                                        ? Number(nearbyCompetitor.advancedScore?.displayScore)
+                                                nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.score?.composite))
+                                                    ? Number(nearbyCompetitor.score?.composite)
+                                                    : nearbyCompetitor && Number.isFinite(Number(nearbyCompetitor.score?.confidence))
+                                                        ? Number(nearbyCompetitor.score?.confidence)
                                                         : null,
                                         }}
                                     />

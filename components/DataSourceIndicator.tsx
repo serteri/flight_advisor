@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Database, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import { normalizeSource } from '@/lib/utils';
+import type { ScoredFlight } from '@/types/unifiedFlight';
 
 interface DataSourceStatus {
     name: string;
@@ -11,7 +12,7 @@ interface DataSourceStatus {
     color: string;
 }
 
-export function DataSourceIndicator({ flights }: { flights: any[] }) {
+export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
     const [sources, setSources] = useState<DataSourceStatus[]>([]);
 
     useEffect(() => {

@@ -592,6 +592,10 @@ model TripSnapshot {
   dataQuality    String   @default("UNKNOWN") // "HIGH", "LOW", "UNKNOWN"
   departureGate  String?
   arrivalGate    String?
+  statusDetail   String?
+  gateDetail     String?
+  lastEventId    String?
+  eu261Eligible  Boolean  @default(false)
 
   snapshotAt     DateTime @default(now()) @updatedAt
 
