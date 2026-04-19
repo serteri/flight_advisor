@@ -1,4 +1,23 @@
-import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
+import type { UnifiedFlight } from '@/types/unifiedFlight';
+
+type ScoringFlight = {
+    price: UnifiedFlight['price'];
+    stops: UnifiedFlight['stops'];
+    airline: UnifiedFlight['airline'];
+} & {
+    legal?: {
+        isRefundable?: boolean;
+    };
+    amenities?: {
+        hasWifi?: boolean;
+        hasPower?: boolean;
+        hasMeal?: boolean;
+        baggage?: string;
+    };
+    baggageSummary?: {
+        totalWeight?: string;
+    };
+};
 
 export interface ScoreDetails {
     total: number;
@@ -119,7 +138,7 @@ interface ScoringContext {
     hasChild: boolean;
 }
 
-export function scoreFlightV3(flight: FlightResult, context: ScoringContext): { score: number, penalties: string[], pros: string[] } {
+export function scoreFlightV3(flight: ScoringFlight, context: ScoringContext): { score: number, penalties: string[], pros: string[] } {
     let score = 10.0;
     const penalties: string[] = [];
     const pros: string[] = [];
@@ -206,12 +225,12 @@ export function scoreFlightV3(flight: FlightResult, context: ScoringContext): { 
 }
 
 // Wrapper for backward compatibility or simple usage
-export function scoreFlight(flight: FlightResult): number {
+export function scoreFlight(flight: ScoringFlight): number {
     // Default context if not provided (assume no child, minPrice = price)
     return scoreFlightV3(flight, { minPrice: flight.price, hasChild: false }).score;
 }
 
-export function generateInsights(flight: FlightResult): { pros: string[], cons: string[], stressMap: string[], recommendationText: string } {
+export function generateInsights(flight: ScoringFlight): { pros: string[], cons: string[], stressMap: string[], recommendationText: string } {
     // Re-use V3 logic for consistency
     // Note: In a real app, calculate context properly
     const { score, penalties, pros } = scoreFlightV3(flight, { minPrice: flight.price, hasChild: false });

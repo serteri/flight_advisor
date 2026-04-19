@@ -35,7 +35,6 @@ type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
     canonicalPolicies?: UnifiedFlight['policies'];
     tags?: string[];
     score?: number;
-    advancedScore?: any;
 };
 
 const toScoringFlight = (unified: UnifiedFlight): ScoringFlight => ({
@@ -731,7 +730,7 @@ const scoreFlight = (
         preferenceProfile?: PreferenceProfile;
         personalBiasProfile?: PersonalBiasProfile;
     }
-) => {
+): ScoredFlight => {
     const breakdown: ScoreBreakdown = {
         priceValue: 0,
         duration: 0,
@@ -1068,64 +1067,54 @@ const scoreFlight = (
         valueTag = 'Lowest Risk';
     }
 
-    return {
-        ...flight,
-        duration: durationMinutes,
-        agentScore: displayScore,
-        advancedScore: {
-            totalScore,
-            displayScore,
-            priceReference: {
-                source: priceReferenceSource,
-                amount: Number.isFinite(referencePrice) ? referencePrice : 0,
-            },
-            breakdown,
-            riskFlags: finalRiskFlags,
-            comfortNotes: finalComfortNotes,
-            valueTag: context.markInvalidData ? 'Data Error' : valueTag,
-            dataQuality: context.markInvalidData ? 'invalid' : 'valid',
-            dataErrorReason: context.markInvalidData ? context.invalidReason : undefined,
-            personaScore,
-            persona: resolvedPersona,
-            delayProbability,
-            delayRiskLabel,    // Semantic label: 'Low delay risk' | 'Typical delay risk (~20%)' | etc.
-            connectionRisk,
-            connectionLabel,   // UX label: 'Non-stop' | 'Good connection window' | 'Tight connection window' | etc.
-            minConnectionMinutes,
-            priceIntel,
-            confidenceScore,
-            forYouBonus: Number((preferenceBonusRaw / 10).toFixed(2)),
-            personalBias: {
-                priceWeightBoost,
-                directPenaltyBoost,
-                loyaltyAirline: loyaltyAirline || null,
-                loyaltyBoost,
-                avoidMultiStopWeight,
-                avoidNightWeight,
-                biasScore: Number((personalBiasBonusRaw / 10).toFixed(2)),
-                rationale: personalBiasRationale,
-            },
-            estimatedTotalCost: {
-                currency: String(flight.currency || 'AUD').toUpperCase(),
-                baseFare: Number(validPrice.toFixed(2)),
-                estimatedBaggageFee,
-                estimatedMealCost,
-                estimatedSeatSelectionCost,
-                estimatedAirportTransferCost,
-                estimatedHiddenFeeBuffer,
-                total: estimatedTotalCost,
-            },
-            hiddenCostBreakdown: {
-                baggage: estimatedBaggageFee,
-                meals: estimatedMealCost,
-                seatSelection: estimatedSeatSelectionCost,
-                airportTransfer: estimatedAirportTransferCost,
-                hiddenFeeBuffer: estimatedHiddenFeeBuffer,
-            },
-            explanation,
-            tradeoff,
+    const score: FlightScore = {
+        composite: displayScore,
+        confidence: confidenceScore,
+        breakdown: {
+            priceScore: breakdown.priceValue,
+            durationScore: breakdown.duration,
+            stopScore: breakdown.stops,
+            connectionScore: breakdown.connection,
+            selfTransferScore: breakdown.selfTransfer,
+            airlineScore: breakdown.aircraft,
+            baggageScore: breakdown.baggage,
+            reliabilityScore: breakdown.reliability,
+            amenitiesScore: breakdown.amenities,
+            airportIndexScore: breakdown.airportIndex,
         },
-    } as ScoringFlight;
+        priceIntel,
+        riskFlags: finalRiskFlags,
+        comfortNotes: finalComfortNotes,
+        tags: flight.tags || [],
+        estimatedTotalCost: {
+            currency: String(flight.currency || 'AUD').toUpperCase(),
+            baseFare: Number(validPrice.toFixed(2)),
+            estimatedBaggageFee,
+            estimatedMealCost,
+            estimatedSeatSelectionCost,
+            estimatedAirportTransferCost,
+            estimatedHiddenFeeBuffer,
+            total: estimatedTotalCost,
+        },
+    };
+
+    const {
+        departTime: _departTime,
+        arriveTime: _arriveTime,
+        baggage: _legacyBaggage,
+        policies: _legacyPolicies,
+        canonicalBaggage,
+        canonicalPolicies,
+        ...rest
+    } = flight;
+
+    return {
+        ...(rest as UnifiedFlight),
+        duration: durationMinutes,
+        baggage: canonicalBaggage,
+        policies: canonicalPolicies,
+        score,
+    };
 };
 
 // ── FLIGHT INTELLIGENCE PHASE 1 ──────────────────────────────────────────
@@ -1341,39 +1330,6 @@ const computePricePositionScore = (price: number, avgPrice: number): number => {
     }
 
     return clamp(1 - (price / avgPrice), 0, 1);
-};
-
-const computeConfidenceScoreV2 = (
-    flight: ScoringFlight,
-    routeInsight: RouteInsightInput,
-    trend: RouteTrendSignal | null,
-    priceDeltaPct?: number,
-    dealTier?: 'RARE_DEAL' | 'GOOD_DEAL' | 'NORMAL' | 'EXPENSIVE',
-): number => {
-    const baseDataQuality = flight.advancedScore?.dataQuality === 'invalid' ? 25 : 72;
-    const coverageScore = clamp(Math.round((Number(routeInsight.searchCount || 0) / 30) * 100), 15, 85);
-    const trendClarityScore = trend
-        ? trend.clarity === 'clear' ? 90 : trend.clarity === 'mixed' ? 65 : 40
-        : 35;
-    const volatilityStability = clamp(100 - Math.round(Number(routeInsight.volatility || 0) * 2), 20, 100);
-
-    // Per-flight: clearer price position = stronger signal = higher confidence
-    const priceSignalStrength = priceDeltaPct !== undefined
-        ? clamp(Math.abs(priceDeltaPct) * 280, 10, 82)
-        : 38;
-
-    // Extreme deal tiers produce clearer, more actionable signals
-    const dealClarityBonus = dealTier === 'RARE_DEAL' ? 10 : dealTier === 'EXPENSIVE' ? 8 : dealTier === 'GOOD_DEAL' ? 4 : 0;
-
-    const weighted =
-        baseDataQuality * 0.28 +
-        coverageScore * 0.18 +
-        trendClarityScore * 0.17 +
-        volatilityStability * 0.12 +
-        priceSignalStrength * 0.25 +
-        dealClarityBonus;
-
-    return clamp(Math.round(weighted), 10, 99);
 };
 
 const buildRegretInsight = (
@@ -1596,54 +1552,6 @@ export function applyRouteIntelligenceFeatures(
     });
 }
 
-const toCanonicalScoredFlight = (flight: ScoringFlight): ScoredFlight => {
-    const adv = (flight.advancedScore || {}) as any;
-
-    const score: FlightScore = {
-        composite: adv.displayScore || flight.score || 0,
-        confidence: adv.confidenceScore || 0,
-        breakdown: {
-            priceScore: adv.breakdown?.priceValue || 0,
-            durationScore: adv.breakdown?.duration || 0,
-            stopScore: adv.breakdown?.stops || 0,
-            connectionScore: adv.breakdown?.connection || 0,
-            selfTransferScore: adv.breakdown?.selfTransfer || 0,
-            airlineScore: adv.breakdown?.aircraft || 0,
-            baggageScore: adv.breakdown?.baggage || 0,
-            reliabilityScore: adv.breakdown?.reliability || 0,
-            amenitiesScore: adv.breakdown?.amenities || 0,
-            airportIndexScore: adv.breakdown?.airportIndex || 0,
-        },
-        priceIntel: adv.priceIntel,
-        decisionRecommendation: adv.decisionRecommendation,
-        decisionConfidence: adv.decisionConfidence,
-        decisionReason: adv.decisionReason,
-        trendSignal: adv.trendSignal,
-        alerts: adv.intelAlerts,
-        riskFlags: adv.riskFlags || [],
-        comfortNotes: adv.comfortNotes || [],
-        tags: flight.tags || [],
-        buyWaitSignal: adv.buyWaitSignal,
-        routeIntelligence: adv.routeIntelligence,
-        estimatedTotalCost: adv.estimatedTotalCost,
-        variantGroupId: adv.variantGroupId,
-        isRepresentative: adv.isRepresentative,
-        variantCount: adv.variantCount,
-        priceRange: adv.priceRange,
-    };
-
-    const unified: UnifiedFlight = {
-        ...(flight as unknown as UnifiedFlight),
-        baggage: flight.canonicalBaggage,
-        policies: flight.canonicalPolicies,
-    };
-
-    return {
-        ...unified,
-        score,
-    };
-};
-
 export async function applyAdvancedFlightScoring(
     flights: UnifiedFlight[],
     options?: {
@@ -1698,7 +1606,7 @@ export async function applyAdvancedFlightScoring(
         }
     }
 
-    const scoredFlights = deduplicatedFlights
+    return deduplicatedFlights
         .map((flight) => {
             const markInvalidData = isInvalidBneIstDuration(asUnifiedFlightForMetrics(flight));
             const invalidReason = markInvalidData
@@ -1720,8 +1628,6 @@ export async function applyAdvancedFlightScoring(
                 personalBiasProfile: options?.personalBiasProfile,
             });
         })
-        .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));
-
-    return scoredFlights.map((flight) => toCanonicalScoredFlight(flight));
+        .sort((a, b) => (b.score?.composite || 0) - (a.score?.composite || 0));
 }
 
