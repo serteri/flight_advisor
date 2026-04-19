@@ -485,6 +485,8 @@ model MonitoredTrip {
   lastCheckedAt   DateTime?
   nextCheckAt     DateTime
   checkFrequency  Int        @default(60)
+  processingLeaseId        String?
+  processingLeaseExpiresAt DateTime?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -495,9 +497,11 @@ model MonitoredTrip {
   passengers      Passenger[]
   alerts          GuardianAlert[]
   snapshot        TripSnapshot?
+  deliveries      NotificationDelivery[]
 
   @@index([userId])
   @@index([status, nextCheckAt])
+  @@index([status, nextCheckAt, processingLeaseExpiresAt])
 }
 
 model Passenger {
@@ -585,12 +589,35 @@ model TripSnapshot {
 
   delayMinutes   Int      @default(0)
   status         String   @default("scheduled")
+  dataQuality    String   @default("UNKNOWN") // "HIGH", "LOW", "UNKNOWN"
   departureGate  String?
   arrivalGate    String?
 
   snapshotAt     DateTime @default(now()) @updatedAt
 
   trip           MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+// Ledger checking payload redundancies natively bypassing rapid crash iterations
+model NotificationDelivery {
+  id        String   @id @default(cuid())
+  eventId   String
+  tripId    String
+  channel   String   // "EMAIL", "SMS"
+  status    String   // "processing", "sent", "failed", "skipped"
+  sentAt    DateTime?
+  claimedAt DateTime?
+  processingLeaseId        String?
+  processingLeaseExpiresAt DateTime?
+  attemptCount Int      @default(0)
+  lastError   String?
+  updatedAt   DateTime  @updatedAt
+
+  trip      MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  @@unique([eventId, channel])
+  @@index([tripId])
+  @@index([status, processingLeaseExpiresAt])
 }
 
 // 🔥 OPENCLAW SEARCH CACHE
