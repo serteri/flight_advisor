@@ -271,9 +271,13 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                 ? labels.yes
                 : baggageType === 'cabin' || explicitCabinBySummary
                     ? `${cabinBagKg}kg ${labels.cabin}`
-                    : explicitExcludedByType || explicitExcludedBySummary
-                        ? labels.checkedNotIncluded
-                        : labels.wifiCheckAirline;
+                    : checkedSummary.includes('check with airline') || checkedSummary.includes('havayoluna')
+                        ? labels.wifiCheckAirline
+                        : explicitExcludedByType || explicitExcludedBySummary
+                            ? labels.checkedNotIncluded
+                            : checkedSummary
+                                ? checkedSummary
+                                : (isTr ? 'Bagaj bilgisi yok' : 'Baggage info unavailable');
 
     const totalSegmentMinutes = segs.reduce((sum: number, s: any) => sum + segmentDurationMinutes(s), 0);
     const totalLayoverMinutes = lays.reduce((sum: number, l: any) => sum + toMinutes(l?.duration), 0);
@@ -421,6 +425,23 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                                     </div>
                                 </div>
                             </div>
+                            {(() => {
+                                const confRaw = flight.advancedScore.confidenceScore;
+                                const confVal: number | null = (typeof confRaw === 'number' && Number.isFinite(confRaw)) ? confRaw : null;
+                                const confDot = confVal === null ? 'bg-slate-400' : confVal >= 80 ? 'bg-green-500' : confVal >= 50 ? 'bg-amber-400' : 'bg-rose-400';
+                                const confText = confVal === null
+                                    ? (isTr ? 'Güven bilgisi yok' : 'Confidence unavailable')
+                                    : confVal >= 80 ? `High (${confVal}%)` : confVal >= 50 ? `Moderate (${confVal}%)` : `Low (${confVal}%)`;
+                                return (
+                                    <div className="flex items-center justify-between bg-slate-50 rounded px-2 py-1.5 text-sm">
+                                        <span className="font-semibold text-slate-600">{isTr ? 'Veri Güveni' : 'Data Confidence'}</span>
+                                        <span className="flex items-center gap-1.5 font-bold text-slate-900">
+                                            <span className={`w-2 h-2 rounded-full ${confDot}`} />
+                                            {confText}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
                             <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 text-sm ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                 {breakdownRows.map((row) => (
                                     <div key={row.label} className="flex justify-between bg-slate-50 rounded px-2 py-1.5">
@@ -457,7 +478,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
 
                             {!hasPremiumAccess && (
                                 <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 space-y-2">
-                                    <p className="text-xs font-semibold text-blue-800">Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı Pro üyelikte tam görünür.</p>
+                                    <p className="text-xs font-semibold text-blue-800">{isTr ? 'Risk Analizi, Fiyat Tahmini ve Detaylı Skor Dağılımı Pro üyelikte tam görünür.' : 'Risk analysis, price forecast, and full score breakdown are visible with Pro membership.'}</p>
                                     <button
                                         onClick={() => openPricingPage('pro')}
                                         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-md"
@@ -475,7 +496,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                         </div>
                     )}
 
-                    {flight.counterfactualNote && (
+                    {flight.counterfactualNote && (isTr || !/[şğüöçİıŞĞÜÖÇ]|Bu fiyat|rota ortalaması|daha ucuz|daha pahalı/i.test(flight.counterfactualNote)) && (
                         <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
                             <h3 className="font-bold text-indigo-700 mb-1 text-base">🤖 {labels.counterfactual}</h3>
                             <p className="text-xs text-indigo-800">{flight.counterfactualNote}</p>

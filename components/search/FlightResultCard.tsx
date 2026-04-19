@@ -521,7 +521,7 @@ export default function FlightResultCard({
         if (rawCheckedSummary) {
             return { label: rawCheckedSummary, tone: 'unknown' as const };
         }
-        return { label: isTrLocale ? 'Havayoluna sor' : 'Check with airline', tone: 'unknown' as const };
+        return { label: isTrLocale ? 'Bagaj bilgisi yok' : 'Baggage info unavailable', tone: 'unknown' as const };
     })();
 
     const mealAmenityText = `${t('meal')}: ${mealLabel}`;
@@ -877,9 +877,12 @@ export default function FlightResultCard({
                             const intel = flight.advancedScore || flight.score;
                             if (!intel) return null;
 
-                            const confScore: number = intel.confidenceScore ?? 0;
-                            const confColor = confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
-                            const confLabel = confScore >= 80 ? 'High' : confScore >= 50 ? 'Moderate' : 'Low';
+                            const confRaw = intel.confidenceScore;
+                            const confScore: number | null = (typeof confRaw === 'number' && Number.isFinite(confRaw)) ? confRaw : null;
+                            const confColor = confScore === null ? 'bg-slate-400' : confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
+                            const confLabel = confScore === null
+                                ? (isTrLocale ? 'Güven bilgisi yok' : 'Confidence unavailable')
+                                : confScore >= 80 ? 'High' : confScore >= 50 ? 'Moderate' : 'Low';
 
                             const priceIntelConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
                                 'Strong deal':      { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Strong Deal' },
@@ -916,12 +919,14 @@ export default function FlightResultCard({
                                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Data Confidence</span>
                                         <div className="flex items-center gap-1.5">
                                             <span className={`w-2 h-2 rounded-full ${confColor}`} />
-                                            <span className="text-xs font-bold text-slate-700">{confLabel} ({confScore}%)</span>
+                                            <span className="text-xs font-bold text-slate-700">
+                                                {confScore === null ? confLabel : `${confLabel} (${confScore}%)`}
+                                            </span>
                                         </div>
                                     </div>
 
                                     {/* Confidence statement — shown when score >= 60 */}
-                                    {confScore >= 60 && (
+                                    {confScore !== null && confScore >= 60 && (
                                         <div className={`rounded-lg px-3 py-2 text-xs font-semibold ${confScore >= 80 ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
                                             {confScore >= 80
                                                 ? `✅ We are ${confScore}% confident this is a great deal`
@@ -961,7 +966,7 @@ export default function FlightResultCard({
                                         </p>
                                     )}
 
-                                    {flight.counterfactualNote && (
+                                    {flight.counterfactualNote && (isTrLocale || !/[şğüöçİıŞĞÜÖÇ]|Bu fiyat|rota ortalaması|daha ucuz|daha pahalı/i.test(flight.counterfactualNote)) && (
                                         <p className={`text-xs text-indigo-700 leading-relaxed bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             🤖 {flight.counterfactualNote}
                                         </p>
