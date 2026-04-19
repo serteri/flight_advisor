@@ -95,7 +95,13 @@
         "flightIntelligenceAlert": "Uçuş Zekası Uyarısı",
         "unlockIntelligence": "Zekayı Aç",
         "seatDataUnavailable": "Koltuk verisi mevcut değil",
-        "tenCriteriaEngine": "10 Kriterli Motor"
+        "tenCriteriaEngine": "10 Kriterli Motor",
+        "dataSources": "Veri Kaynakları",
+        "active": "Aktif",
+        "flightsFoundLower": "uçuş bulundu",
+        "noResultsLower": "sonuç yok",
+        "totalResults": "Toplam Sonuç",
+        "totalFlightsLabel": "{count} Uçuş"
     },
     "SearchForm": {
         "origin_placeholder": "Nereden?",
@@ -469,8 +475,8 @@
         "searching": "Uçuşlar Aranıyor...",
         "searchingDesc": "En iyi fırsatları bulmak için yüzlerce havayolunu tarıyoruz",
         "popularDestinations": "Popüler destinasyonlar",
-        "topFlightsToBookNow": "Şimdi Alınabilecek En İyi Uçuşlar",
-        "topFlightsSummary": "{count, plural, one {# uçuş şu anda güçlü bir rezervasyon fırsatı olarak işaretli.} other {# uçuş şu anda güçlü rezervasyon fırsatları olarak işaretli.}}",
+        "topFlightsToBookNow": "Şu Anda İzlenecek En İyi Uçuşlar",
+        "topFlightsSummary": "{count, plural, one {# uçuş şu anda güçlü bir fiyat fırsatı olarak işaretli.} other {# uçuş şu anda güçlü fiyat fırsatları olarak işaretli.}}",
         "proactiveTip": "Proaktif Öneri",
         "upgradePlans": "Yükseltme Planları",
         "monthlyProTitle": "Aylık Pro ($19)",

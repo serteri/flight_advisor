@@ -510,14 +510,14 @@ export default function FlightResultCard({
     const decisionAction = decisionRecommendation === 'BUY_NOW'
         ? {
             message: buyWaitLabel || decisionReason || 'This fare is below the route average — book before prices rise.',
-            context: 'Book within 24–48h to lock in this price before it increases.',
-            cta: 'Book now',
+            context: 'Check fare within 24–48h to lock in this price before it increases.',
+            cta: 'Open booking options',
             onClick: handleBookClick,
             className: 'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white border border-sky-300/40 shadow-lg shadow-sky-500/30 btn-glow',
         }
         : decisionRecommendation === 'WAIT'
             ? {
-                message: decisionReason || 'No strong signal to book now. Track this flight and recheck in 2–3 days.',
+                message: decisionReason || 'No strong signal to act now. Track this flight and recheck in 2–3 days.',
                 context: 'Track this fare and act when the market softens.',
                 cta: 'Track this flight',
                 onClick: handleTrackClick,
@@ -1175,33 +1175,6 @@ export default function FlightResultCard({
                             )}
                         </div>
 
-                        {/* BUY / WAIT Signal */}
-                        {(() => {
-                            const sig = flight.advancedScore?.buyWaitSignal || flight.score?.buyWaitSignal;
-                            const fallbackAction = decisionRecommendation === 'BUY_NOW'
-                                ? 'BUY'
-                                : decisionRecommendation === 'WAIT'
-                                    ? 'WAIT'
-                                    : decisionRecommendation === 'AVOID'
-                                        ? 'WAIT'
-                                        : 'MONITOR';
-                            const fallbackLabel = decisionRecommendation
-                                ? (decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : decisionRecommendation)
-                                : '';
-                            const signal = sig || (fallbackLabel ? { action: fallbackAction, label: fallbackLabel } : null);
-                            if (!signal) return null;
-                            const cfg: Record<string, { icon: string; cls: string }> = {
-                                BUY:     { icon: '🟢', cls: 'bg-green-50 text-green-800 border-green-300' },
-                                MONITOR: { icon: '🟡', cls: 'bg-amber-50 text-amber-800 border-amber-300' },
-                                WAIT:    { icon: '🔴', cls: 'bg-rose-50 text-rose-800 border-rose-300' },
-                            };
-                            const c = cfg[signal.action] ?? cfg.MONITOR;
-                            return (
-                                <div className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-center ${c.cls}`}>
-                                    {c.icon} {signal.label}
-                                </div>
-                            );
-                        })()}
                     </div>
 
                     {/* PUAN DETAYLARI (NEDEN BU PUAN?) */}

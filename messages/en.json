@@ -66,7 +66,13 @@
     "flightIntelligenceAlert": "Flight Intelligence Alert",
     "unlockIntelligence": "Unlock Intelligence",
     "seatDataUnavailable": "Seat data not available",
-    "tenCriteriaEngine": "10-Criteria Engine"
+    "tenCriteriaEngine": "10-Criteria Engine",
+    "dataSources": "Data Sources",
+    "active": "Active",
+    "flightsFoundLower": "flights found",
+    "noResultsLower": "no results",
+    "totalResults": "Total Results",
+    "totalFlightsLabel": "{count} Flights"
   },
   "SearchForm": {
     "multi_city": "Multi-city",
@@ -470,8 +476,8 @@
     "searching": "Searching Flights...",
     "searchingDesc": "We are scanning hundreds of airlines to find the best deals",
     "popularDestinations": "Popular destinations",
-    "topFlightsToBookNow": "Top Flights To Book Now",
-    "topFlightsSummary": "{count, plural, one {# flight is currently flagged as a strong booking opportunity.} other {# flights are currently flagged as strong booking opportunities.}}",
+    "topFlightsToBookNow": "Top Flights to Watch Now",
+    "topFlightsSummary": "{count, plural, one {# flight is currently flagged as a strong fare opportunity.} other {# flights are currently flagged as strong fare opportunities.}}",
     "proactiveTip": "Proactive Tip",
     "upgradePlans": "Upgrade Plans",
     "monthlyProTitle": "Monthly Pro ($19)",
