@@ -1,8 +1,7 @@
-import { toScoredFlight } from '@/lib/adapters/toUnifiedFlight';
 import { normalizeSource } from '@/lib/utils';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 import { hasIncludedMeal } from '@/lib/meal-utils';
-import type { UnifiedFlight, ScoredFlight } from '@/types/unifiedFlight';
+import type { UnifiedFlight, ScoredFlight, FlightScore } from '@/types/unifiedFlight';
 
 type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
     departTime: string;
@@ -39,6 +38,22 @@ type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
     advancedScore?: any;
 };
 type FlightResult = ScoringFlight;
+
+const toScoringFlight = (unified: UnifiedFlight): ScoringFlight => ({
+    ...unified,
+    departTime: unified.departureTime,
+    arriveTime: unified.arrivalTime,
+    baggage: unified.baggage?.included ? 'checked' : '',
+    canonicalBaggage: unified.baggage,
+    policies: {
+        baggageKg: unified.baggage?.checked?.kg,
+        cabinBagKg: unified.baggage?.cabin?.kg,
+        refundable: unified.policies?.refundable,
+        changeAllowed: unified.policies?.changeAllowed,
+        changeFee: unified.policies?.changeFee,
+    },
+    canonicalPolicies: unified.policies,
+});
 
 const asUnifiedFlightForMetrics = (flight: FlightResult): UnifiedFlight => ({
     ...(flight as unknown as UnifiedFlight),
@@ -1582,8 +1597,56 @@ export function applyRouteIntelligenceFeatures(
     });
 }
 
+const toCanonicalScoredFlight = (flight: FlightResult): ScoredFlight => {
+    const adv = (flight.advancedScore || {}) as any;
+
+    const score: FlightScore = {
+        composite: adv.displayScore || flight.score || 0,
+        confidence: adv.confidenceScore || 0,
+        breakdown: {
+            priceScore: adv.breakdown?.priceValue || 0,
+            durationScore: adv.breakdown?.duration || 0,
+            stopScore: adv.breakdown?.stops || 0,
+            connectionScore: adv.breakdown?.connection || 0,
+            selfTransferScore: adv.breakdown?.selfTransfer || 0,
+            airlineScore: adv.breakdown?.aircraft || 0,
+            baggageScore: adv.breakdown?.baggage || 0,
+            reliabilityScore: adv.breakdown?.reliability || 0,
+            amenitiesScore: adv.breakdown?.amenities || 0,
+            airportIndexScore: adv.breakdown?.airportIndex || 0,
+        },
+        priceIntel: adv.priceIntel,
+        decisionRecommendation: adv.decisionRecommendation,
+        decisionConfidence: adv.decisionConfidence,
+        decisionReason: adv.decisionReason,
+        trendSignal: adv.trendSignal,
+        alerts: adv.intelAlerts,
+        riskFlags: adv.riskFlags || [],
+        comfortNotes: adv.comfortNotes || [],
+        tags: flight.tags || [],
+        buyWaitSignal: adv.buyWaitSignal,
+        routeIntelligence: adv.routeIntelligence,
+        estimatedTotalCost: adv.estimatedTotalCost,
+        variantGroupId: adv.variantGroupId,
+        isRepresentative: adv.isRepresentative,
+        variantCount: adv.variantCount,
+        priceRange: adv.priceRange,
+    };
+
+    const unified: UnifiedFlight = {
+        ...(flight as unknown as UnifiedFlight),
+        baggage: flight.canonicalBaggage,
+        policies: flight.canonicalPolicies,
+    };
+
+    return {
+        ...unified,
+        score,
+    };
+};
+
 export async function applyAdvancedFlightScoring(
-    flights: FlightResult[],
+    flights: UnifiedFlight[],
     options?: {
         origin?: string;
         destination?: string;
@@ -1593,9 +1656,11 @@ export async function applyAdvancedFlightScoring(
         preferenceProfile?: PreferenceProfile;
         personalBiasProfile?: PersonalBiasProfile;
     }
-): Promise<FlightResult[]> {
+): Promise<ScoredFlight[]> {
+    const scoringFlights = flights.map(toScoringFlight);
+
     // ── DEDUPLICATION: Merge flights with same departure, arrival, route, operating_airline ──
-    const deduplicatedFlights = deduplicateFlights(flights);
+    const deduplicatedFlights = deduplicateFlights(scoringFlights);
 
     const validPrices = deduplicatedFlights
         .map((flight) => Number(flight.price))
@@ -1634,7 +1699,7 @@ export async function applyAdvancedFlightScoring(
         }
     }
 
-    return deduplicatedFlights
+    const scoredFlights = deduplicatedFlights
         .map((flight) => {
             const markInvalidData = isInvalidBneIstDuration(asUnifiedFlightForMetrics(flight));
             const invalidReason = markInvalidData
@@ -1657,63 +1722,6 @@ export async function applyAdvancedFlightScoring(
             });
         })
         .sort((a, b) => (b.advancedScore?.totalScore || 0) - (a.advancedScore?.totalScore || 0));
-}
 
-// ── PHASE 3: UnifiedFlight scoring entry point ────────────────────────────────
-//
-// This is a PARALLEL entry point — it does NOT replace applyAdvancedFlightScoring.
-// It accepts UnifiedFlight[], converts them to FlightResult via the adapter bridge,
-// then delegates to the existing scoring logic.
-//
-// Usage:
-//   const scored = await applyAdvancedFlightScoringUnified(unifiedFlights, options);
-//
-// When Phase 4 migrates the scoring engine internals to read UnifiedFlight directly,
-// this bridge will be removed.
-
-/**
- * Runtime type guard: checks if the first element has `departureTime` (UnifiedFlight)
- * instead of `departTime` (FlightResult).
- */
-export function isUnifiedFlightArray(
-    input: FlightResult[] | UnifiedFlight[]
-): input is UnifiedFlight[] {
-    if (input.length === 0) return false;
-    return 'departureTime' in input[0] && !('departTime' in input[0]);
-}
-
-/**
- * Score UnifiedFlight[] with legacy-compatible internal scoring shape,
- * then return canonical ScoredFlight[] output.
- */
-export async function applyAdvancedFlightScoringUnified(
-    flights: UnifiedFlight[],
-    options?: {
-        origin?: string;
-        destination?: string;
-        departureDate?: string;
-        useHistoricalMedian?: boolean;
-        persona?: PersonaInput;
-        preferenceProfile?: PreferenceProfile;
-        personalBiasProfile?: PersonalBiasProfile;
-    }
-): Promise<ScoredFlight[]> {
-    const asScoringFlights: FlightResult[] = flights.map((unified) => ({
-        ...unified,
-        departTime: unified.departureTime,
-        arriveTime: unified.arrivalTime,
-        baggage: unified.baggage?.included ? 'checked' : '',
-        canonicalBaggage: unified.baggage,
-        policies: {
-            baggageKg: unified.baggage?.checked?.kg,
-            cabinBagKg: unified.baggage?.cabin?.kg,
-            refundable: unified.policies?.refundable,
-            changeAllowed: unified.policies?.changeAllowed,
-            changeFee: unified.policies?.changeFee,
-        },
-        canonicalPolicies: unified.policies,
-    }));
-
-    const scored = await applyAdvancedFlightScoring(asScoringFlights, options);
-    return scored.map((flight) => toScoredFlight(flight as any));
+    return scoredFlights.map((flight) => toCanonicalScoredFlight(flight));
 }

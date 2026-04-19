@@ -4,7 +4,7 @@ import { HybridSearchParams } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { applyAdvancedFlightScoringUnified, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
+import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 import { getCityFromAirportCode } from '@/lib/airport-utils';
 import {
     hasRecentRouteSearchRecords,
@@ -719,7 +719,7 @@ export async function GET(request: Request) {
         const scoringStart = Date.now();
 
         console.log(`✅ [UNIFIED PIPELINE] Scoring ${allFlights.length} flights via canonical unified entry point`);
-        scoredFlights = await applyAdvancedFlightScoringUnified(
+        scoredFlights = await applyAdvancedFlightScoring(
             allFlights,
             scoringOptions,
         );

@@ -13,11 +13,11 @@
  * DEFAULT: true — UnifiedFlight pipeline is the primary execution path.
  *
  * Flow (unified, default):
- *   FlightResult[] → toUnifiedFlights() → fromUnifiedForScoring() → FlightResult[]
- *   Scoring via applyAdvancedFlightScoringUnified()
+ *   Provider output → toUnifiedFlights() → UnifiedFlight[]
+ *   Scoring via applyAdvancedFlightScoring()
  *
  * Flow (legacy, fallback):
- *   FlightResult[] → applyAdvancedFlightScoring()
+ *   Disabled (unified is primary runtime path)
  *
  * The final API response shape remains FlightResult-compatible regardless.
  *
