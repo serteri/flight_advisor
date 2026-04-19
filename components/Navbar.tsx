@@ -21,13 +21,14 @@ export default function Navbar() {
 
     // Close user dropdown when clicking outside
     useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
+        function handleClickOutside(e: MouseEvent | Event) {
             if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
                 setUserMenuOpen(false);
             }
         }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        // Use 'click' instead of 'mousedown' to allow item handlers to complete first
+        document.addEventListener('click', handleClickOutside, true);
+        return () => document.removeEventListener('click', handleClickOutside, true);
     }, []);
 
     const navLinks = [
@@ -112,20 +113,27 @@ export default function Navbar() {
 
                                     {/* Dropdown */}
                                     {userMenuOpen && (
-                                        <div className="absolute right-0 top-[calc(100%+8px)] w-48 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                                        <div className="absolute right-0 top-[calc(100%+8px)] w-48 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150" onClick={(e) => e.stopPropagation()}>
                                             <div className="px-3 py-2 border-b border-slate-100 mb-1">
                                                 <p className="text-[11px] text-slate-400 font-medium truncate">{displayName}</p>
                                             </div>
                                             <Link
                                                 href="/dashboard"
-                                                onClick={() => setUserMenuOpen(false)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setUserMenuOpen(false);
+                                                }}
                                                 className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-colors rounded-lg mx-1"
                                             >
                                                 <LayoutDashboard size={14} />
                                                 {tNav('dashboard')}
                                             </Link>
                                             <button
-                                                onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: '/' }); }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setUserMenuOpen(false);
+                                                    signOut({ callbackUrl: '/' });
+                                                }}
                                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors rounded-lg mx-1"
                                             >
                                                 <LogOut size={14} />
@@ -202,7 +210,7 @@ export default function Navbar() {
                                     </span>
                                     <span className="truncate text-xs">{displayName}</span>
                                 </div>
-                                <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
+                                <Link href="/dashboard" onClick={(e) => { e.stopPropagation(); setMobileOpen(false); }}>
                                     <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 text-white text-sm font-semibold btn-glow">
                                         {tNav('dashboard')}
                                     </Button>
@@ -210,7 +218,7 @@ export default function Navbar() {
                                 <Button
                                     variant="outline"
                                     className="w-full rounded-xl justify-start gap-2 mt-1"
-                                    onClick={() => { setMobileOpen(false); signOut({ callbackUrl: '/' }); }}
+                                    onClick={(e) => { e.stopPropagation(); setMobileOpen(false); signOut({ callbackUrl: '/' }); }}
                                 >
                                     <LogOut size={15} /> {tNav('logout')}
                                 </Button>
