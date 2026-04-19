@@ -27,25 +27,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async jwt({ token }) {
             try {
-                if (!token.sub) return token;
+                if (!token.sub) {
+                    // No user ID - return token with defaults
+                    return {
+                        ...token,
+                        isPremium: false,
+                        subscriptionPlan: 'FREE'
+                    };
+                }
 
                 // Fetch user to get subscription status
+                // This may fail if: DB was reset, user was deleted, or schema changed
+                // In any case, we return a valid token with defaults
                 const existingUser = await prisma.user.findUnique({
                     where: { id: token.sub }
                 });
 
+                // User exists in DB - use their settings
                 if (existingUser) {
-                    token.isPremium = existingUser.isPremium;
-                    token.subscriptionPlan = existingUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined;
+                    return {
+                        ...token,
+                        isPremium: existingUser.isPremium,
+                        subscriptionPlan: existingUser.subscriptionPlan as 'FREE' | 'PRO' | 'ELITE' | undefined
+                    };
                 }
 
-                return token;
+                // User doesn't exist in DB (e.g., DB was reset)
+                // Return token with defaults - still valid for logout
+                return {
+                    ...token,
+                    isPremium: false,
+                    subscriptionPlan: 'FREE'
+                };
             } catch (error) {
-                console.error('[AUTH JWT ERROR]', error);
-                // Return token with defaults on error
-                token.isPremium = false;
-                token.subscriptionPlan = 'FREE';
-                return token;
+                console.error('[AUTH JWT ERROR] Failed to fetch user subscription status, returning defaults', error);
+                // Always return a valid token, even if DB lookup fails
+                // This ensures logout and other operations still work after DB reset
+                return {
+                    ...token,
+                    isPremium: false,
+                    subscriptionPlan: 'FREE'
+                };
             }
         }
     },

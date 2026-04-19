@@ -129,10 +129,15 @@ export default function Navbar() {
                                                 {tNav('dashboard')}
                                             </Link>
                                             <button
-                                                onClick={(e) => {
+                                                onClick={async (e) => {
                                                     e.stopPropagation();
                                                     setUserMenuOpen(false);
-                                                    signOut({ callbackUrl: '/' });
+                                                    try {
+                                                        await signOut({ callbackUrl: '/', redirect: true });
+                                                    } catch (error) {
+                                                        console.error('[LOGOUT ERROR]', error);
+                                                        window.location.href = '/';
+                                                    }
                                                 }}
                                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors rounded-lg mx-1"
                                             >
@@ -218,7 +223,16 @@ export default function Navbar() {
                                 <Button
                                     variant="outline"
                                     className="w-full rounded-xl justify-start gap-2 mt-1"
-                                    onClick={(e) => { e.stopPropagation(); setMobileOpen(false); signOut({ callbackUrl: '/' }); }}
+                                    onClick={async (e) => { 
+                                        e.stopPropagation(); 
+                                        setMobileOpen(false);
+                                        try {
+                                            await signOut({ callbackUrl: '/', redirect: true });
+                                        } catch (error) {
+                                            console.error('[LOGOUT ERROR]', error);
+                                            window.location.href = '/';
+                                        }
+                                    }}
                                 >
                                     <LogOut size={15} /> {tNav('logout')}
                                 </Button>
