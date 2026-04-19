@@ -53,6 +53,12 @@ const makeDetailHash = (detail: unknown): string => {
     return createHash('sha1').update(payload).digest('hex').slice(0, 10);
 };
 
+const buildTransitionMarker = (snapshot: any): string => {
+    const snapshotAt = snapshot?.snapshotAt ? new Date(snapshot.snapshotAt).toISOString() : 'initial';
+    const status = normalizeCode(snapshot?.status || 'UNKNOWN');
+    return `${status}@${snapshotAt}`;
+};
+
 const buildEventId = (tripId: string, eventType: GuardianEventType, subType: string, detailHash: string) => {
     return `${tripId}:${eventType}:${subType}:${detailHash}`;
 };
@@ -218,7 +224,8 @@ export async function processFlightMonitoring() {
                     statusDetail: null,
                     gateDetail: null,
                     lastEventId: null,
-                    eu261Eligible: false
+                    eu261Eligible: false,
+                    snapshotAt: null,
                 };
 
                 const newSnapshot = {
@@ -232,6 +239,8 @@ export async function processFlightMonitoring() {
                     lastEventId: previousState.lastEventId,
                     eu261Eligible: Boolean(previousState.eu261Eligible)
                 };
+
+                const transitionMarker = buildTransitionMarker(previousState);
 
                 if (!segment) {
                     const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);
@@ -323,8 +332,12 @@ export async function processFlightMonitoring() {
                             previous: previousState.status,
                             current: 'UNKNOWN'
                         }, {
+                            issueKind: 'status_unreliable',
+                            transition: transitionMarker,
                             previousStatus: previousState.status,
                             currentStatus: 'UNKNOWN',
+                            previousDataQuality: previousState.dataQuality,
+                            currentDataQuality,
                         });
                     }
                     newSnapshot.dataQuality = currentDataQuality;
@@ -342,6 +355,7 @@ export async function processFlightMonitoring() {
                             eligibleEU261,
                         }
                     }, {
+                        cancellationMarker: 'status_cancelled',
                         previousStatus: previousState.status,
                         currentStatus: 'CANCELLED',
                         eligibleEU261,
@@ -378,8 +392,11 @@ export async function processFlightMonitoring() {
                                 eligibleEU261,
                             }
                         }, {
+                            transition: transitionMarker,
+                            statusTransition: `${previousState.status}->${computedStatus}`,
                             fromDelay: previousState.delayMinutes,
                             toDelay: explicitDelayMinutes,
+                            fromBucket: prevBucket,
                             bucket: currBucket,
                             eligibleEU261,
                         });
@@ -419,6 +436,7 @@ export async function processFlightMonitoring() {
                                 arrivalGate: newArrGate
                             }
                         }, {
+                            transition: transitionMarker,
                             previousDepartureGate: previousState.departureGate,
                             currentDepartureGate: newDepGate,
                             previousArrivalGate: previousState.arrivalGate,
