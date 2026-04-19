@@ -109,7 +109,7 @@ export async function searchKiwi(params: HybridSearchParams): Promise<FlightResu
         const arriveTime = new Date(flight.aTime * 1000).toISOString();
 
         // Duration in minutes
-        const durationMins = Math.floor(flight.duration?.total || 0) / 60;
+        const durationMins = Math.round((flight.duration?.total || 0) / 60);
 
         // Airline extraction
         const airlines = new Set<string>();

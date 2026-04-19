@@ -92,7 +92,7 @@ export async function searchAmadeus(params: HybridSearchParams): Promise<FlightR
                 return {
                     id: `AMADEUS_${offer.id}`,
                     source: 'amadeus' as FlightSource,
-                    airline: firstSegment.carrierCode,
+                    airline: firstSegment.carrierCode || firstSegment.operating?.carrierCode || 'Unknown',
                     airlineLogo: `https://images.kiwi.com/airlines/64/${firstSegment.carrierCode}.png`,
                     flightNumber: `${firstSegment.carrierCode}${firstSegment.number}`,
                     aircraft: firstSegment.aircraft?.code,

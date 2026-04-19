@@ -248,7 +248,7 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         arriveTime: arrivalDate,
         duration: durationMins,
         durationLabel: durationText,
-        stops: segs.length - 1,
+        stops: Math.max(0, segs.length - 1),
         price: Math.max(0, parseFloat(offer.total_amount) || 0),
         currency: offer.total_currency || 'USD',
         cabinClass: 'economy',

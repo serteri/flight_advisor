@@ -112,7 +112,7 @@ export async function searchOpenClaw(params: { origin: string, destination: stri
     // TypeScript'e uygun dönüş
     return savedFlights.map(f => ({
       id: f.id,
-      source: 'OPENCLAW',
+      source: 'duffel',
       airline: f.airline,
       airlineLogo: "",
       flightNumber: f.flightNumber,
