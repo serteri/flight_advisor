@@ -259,7 +259,11 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
     const checkedBagKg = canonicalBag?.checked?.kg ?? Number((flight.policies as any)?.baggageKg || 0);
     const cabinBagKg = canonicalBag?.cabin?.kg ?? Number((flight.policies as any)?.cabinBagKg || 7);
     const baggageType = canonicalBag
-        ? (canonicalBag.included ? 'checked' : 'not_included')
+        ? (canonicalBag.included
+            ? 'checked'
+            : canonicalBag.cabin
+                ? 'cabin'
+                : 'not_included')
         : String(flight.baggage || '').toLowerCase();
     const checkedSummary = (canonicalBag?.checked?.label ?? String(flight.baggageSummary?.checked || '')).toLowerCase();
     const explicitExcludedByType = ['none', 'no_checked', 'no_checked_bag', 'excluded', 'not_included', 'no'].includes(baggageType);

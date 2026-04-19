@@ -491,7 +491,11 @@ export default function FlightResultCard({
       : null;
 
     const baggageType = canonicalBag
-        ? (canonicalBag.included ? 'checked' : 'not_included')
+        ? (canonicalBag.included
+            ? 'checked'
+            : canonicalBag.cabin
+                ? 'cabin'
+                : 'not_included')
         : String(flight.baggage || '').toLowerCase();
     const checkedBagKg = canonicalBag?.checked?.kg ?? Number((flight.policies as any)?.baggageKg || 0);
     const cabinBagKg = canonicalBag?.cabin?.kg ?? Number((flight.policies as any)?.cabinBagKg || 7);

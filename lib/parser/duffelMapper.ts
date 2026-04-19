@@ -92,145 +92,101 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         }
     }
 
-    // Improve baggage display: try multiple fields and extract actual kg/piece data
-    let baggageLabel = 'Kontrol Et';
     let baggageKg: number | undefined;
     let cabinBagKg: number | undefined;
-    let checkedBaggage = 'Kontrol Et';
-    let cabinBaggage = '1 Parça';
-    
-    // ✅ NEW: Extract refund/change conditions from Duffel's conditions object
+    let checkedBaggageLabel: string | undefined;
+    let cabinBaggageLabel: string | undefined;
+    // null = unknown (Duffel didn't provide data), true = included, false = explicitly not included
+    let baggageIncluded: boolean | null = null;
+
     let refundable = false;
     let changeAllowed = false;
     let changeFee: string | undefined;
-    
-    // ✅ NEW: Extract aircraft type
     let aircraftType: string | undefined;
-    
+
     try {
-        // Extract aircraft info from first segment
         if (firstSegment.aircraft) {
             aircraftType = firstSegment.aircraft.name || firstSegment.aircraft.iata_code;
-            console.log(`[Duffel Mapper] Aircraft: ${aircraftType}`);
         }
-        
-        // Extract conditions (refund/change policies)
+
         if (offer.conditions) {
-            console.log(`[Duffel Mapper] Conditions:`, JSON.stringify(offer.conditions, null, 2));
-            
-            // Check refund conditions
-            if (offer.conditions.refund_before_departure) {
-                const refundCondition = offer.conditions.refund_before_departure;
-                refundable = refundCondition.allowed === true;
-                console.log(`[Duffel Mapper] Refundable: ${refundable}`);
+            if (offer.conditions.refund_before_departure?.allowed === true) {
+                refundable = true;
             }
-            
-            // Check change conditions
             if (offer.conditions.change_before_departure) {
-                const changeCondition = offer.conditions.change_before_departure;
-                changeAllowed = changeCondition.allowed === true;
-                
-                if (changeCondition.penalty_amount && changeCondition.penalty_currency) {
-                    changeFee = `${changeCondition.penalty_amount} ${changeCondition.penalty_currency}`;
-                } else if (changeAllowed) {
-                    changeFee = 'Ücret Detayları İçin Kontrol Et';
-                }
-                console.log(`[Duffel Mapper] Change Allowed: ${changeAllowed}, Fee: ${changeFee || 'N/A'}`);
-            }
-        }
-        
-        // Debug: Log entire offer structure for baggage
-        console.log(`[Duffel Mapper] Offer ID: ${offer.id}`);
-        console.log(`[Duffel Mapper] Passengers:`, JSON.stringify(offer.passengers, null, 2));
-        console.log(`[Duffel Mapper] Available Services:`, JSON.stringify(offer.available_services?.slice(0, 2), null, 2));
-        console.log(`[Duffel Mapper] Conditions:`, JSON.stringify(offer.conditions, null, 2));
-        
-        // Try available_services first (Duffel v2 API)
-        if (offer.available_services && offer.available_services.length > 0) {
-            const baggageServices = offer.available_services.filter((s: any) => 
-                s.type === 'baggage' || s.metadata?.type === 'baggage'
-            );
-            console.log(`[Duffel Mapper] Found ${baggageServices.length} baggage services`);
-            
-            if (baggageServices.length > 0) {
-                const checkedService = baggageServices.find((s: any) => 
-                    s.metadata?.maximum_weight_kg || s.maximum_weight_kg
-                );
-                if (checkedService) {
-                    baggageKg = checkedService.metadata?.maximum_weight_kg || checkedService.maximum_weight_kg;
-                    baggageLabel = 'Dahil';
-                    checkedBaggage = `${baggageKg}kg`;
-                    console.log(`[Duffel Mapper] Found checked bag from services: ${baggageKg}kg`);
+                const cc = offer.conditions.change_before_departure;
+                changeAllowed = cc.allowed === true;
+                if (cc.penalty_amount && cc.penalty_currency) {
+                    changeFee = `${cc.penalty_amount} ${cc.penalty_currency}`;
                 }
             }
         }
-        
-        // Try passengers.baggages
+
+        // Primary source: passengers[0].baggages contains INCLUDED baggage (not purchasable add-ons).
+        // available_services are purchasable extras — do NOT use them for included status.
         const pax = offer.passengers?.[0];
-        if (pax?.baggages && pax.baggages.length > 0) {
-            console.log(`[Duffel Mapper] Passenger baggages:`, JSON.stringify(pax.baggages, null, 2));
-            
-            const checkedBag = pax.baggages.find((b: any) => b.type === 'checked');
-            const cabinBag = pax.baggages.find((b: any) => b.type === 'carry_on');
-            
+
+        if (pax && Array.isArray(pax.baggages)) {
+            // Duffel provided baggage data — trust it completely
+            const checkedBag = pax.baggages.find(
+                (b: any) => b.type === 'checked' && Number(b.quantity ?? 0) > 0
+            );
+            const cabinBag = pax.baggages.find(
+                (b: any) => b.type === 'carry_on' && Number(b.quantity ?? 0) > 0
+            );
+
             if (checkedBag) {
-                baggageLabel = 'Dahil';
-                const qty = checkedBag.quantity || 1;
+                baggageIncluded = true;
+                const qty = Number(checkedBag.quantity) || 1;
                 if (checkedBag.weight_value && checkedBag.weight_unit) {
-                    baggageKg = checkedBag.weight_value;
-                    checkedBaggage = `${qty} x ${checkedBag.weight_value}${checkedBag.weight_unit}`;
+                    baggageKg = Number(checkedBag.weight_value);
+                    checkedBaggageLabel = `${qty} x ${checkedBag.weight_value}${checkedBag.weight_unit}`;
                 } else {
-                    checkedBaggage = `${qty} Parça`;
+                    checkedBaggageLabel = qty > 1 ? `${qty} pieces` : `${qty} piece`;
                 }
-                console.log(`[Duffel Mapper] Found checked bag from pax: ${checkedBaggage}`);
+            } else {
+                // baggages array was provided by Duffel but contains no checked bags → explicitly excluded
+                baggageIncluded = false;
             }
-            
+
             if (cabinBag) {
-                const qty = cabinBag.quantity || 1;
+                const qty = Number(cabinBag.quantity) || 1;
                 if (cabinBag.weight_value && cabinBag.weight_unit) {
-                    cabinBagKg = cabinBag.weight_value;
-                    cabinBaggage = `${qty} x ${cabinBag.weight_value}${cabinBag.weight_unit}`;
+                    cabinBagKg = Number(cabinBag.weight_value);
+                    cabinBaggageLabel = `${qty} x ${cabinBag.weight_value}${cabinBag.weight_unit}`;
                 } else {
-                    cabinBaggage = `${qty} Parça`;
-                }
-                console.log(`[Duffel Mapper] Found cabin bag from pax: ${cabinBaggage}`);
-            }
-        }
-        
-        // Try segment-level passengers
-        if (!baggageKg && firstSlice.segments && firstSlice.segments[0].passengers) {
-            const segPax = firstSlice.segments[0].passengers[0];
-            console.log(`[Duffel Mapper] Segment passengers:`, JSON.stringify(segPax, null, 2));
-            
-            if (segPax?.baggages && segPax.baggages.length > 0) {
-                const checkedBag = segPax.baggages.find((b: any) => b.type === 'checked');
-                if (checkedBag && checkedBag.quantity > 0) {
-                    baggageLabel = 'Dahil';
-                    checkedBaggage = `${checkedBag.quantity} Parça`;
-                    console.log(`[Duffel Mapper] Found checked bag from segment passengers: ${checkedBaggage}`);
+                    cabinBaggageLabel = `${qty} piece(s)`;
                 }
             }
-        }
-        
-        // Fallback to conditions or default
-        if (!baggageKg && offer.conditions) {
-            console.log(`[Duffel Mapper] Checking conditions for baggage info...`);
-            // Some airlines include baggage info in conditions
-        }
-        
-        // Final fallback
-        if (baggageLabel === 'Kontrol Et') {
-            console.warn(`[Duffel Mapper] No baggage information found for offer ${offer.id}`);
-            baggageLabel = 'Dahil';
-            baggageKg = 20; // Standard economy assumption
-            checkedBaggage = '1 x 20kg (Standart)';
+        } else {
+            // Fall back to segment-level passenger baggages
+            const segBaggages = firstSlice.segments?.[0]?.passengers?.[0]?.baggages;
+            if (Array.isArray(segBaggages)) {
+                const checkedBag = segBaggages.find(
+                    (b: any) => b.type === 'checked' && Number(b.quantity ?? 0) > 0
+                );
+                if (checkedBag) {
+                    baggageIncluded = true;
+                    const qty = Number(checkedBag.quantity) || 1;
+                    checkedBaggageLabel = checkedBag.weight_value
+                        ? `${qty} x ${checkedBag.weight_value}${checkedBag.weight_unit || 'kg'}`
+                        : `${qty} piece(s)`;
+                    if (checkedBag.weight_value) baggageKg = Number(checkedBag.weight_value);
+                } else {
+                    baggageIncluded = false;
+                }
+            }
+            // If neither source has data: baggageIncluded stays null (truly unknown)
         }
     } catch (e) {
         console.error('[Duffel Mapper] Baggage parsing error:', e);
-        baggageLabel = 'Dahil';
-        baggageKg = 20;
-        checkedBaggage = '1 x 20kg (Standart)';
+        // Leave baggageIncluded = null (unknown) on error — do not invent data
     }
+
+    const baggageFieldValue: 'checked' | 'none' | undefined =
+        baggageIncluded === true ? 'checked'
+        : baggageIncluded === false ? 'none'
+        : undefined;
 
     return {
         id: offer.id,
@@ -252,10 +208,10 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         price: Math.max(0, parseFloat(offer.total_amount) || 0),
         currency: offer.total_currency || 'USD',
         cabinClass: 'economy',
+        baggage: baggageFieldValue,
         amenities: {
             hasWifi: false,
             hasMeal: true,
-            baggage: baggageLabel
         },
         segments: segs.map((seg: any) => {
             const segDep = seg.departing_at || '';
@@ -299,16 +255,20 @@ export function mapDuffelToPremiumAgent(offer: any): FlightResult {
         deepLink: undefined,
         bookingLink: undefined,
         policies: {
-            baggageKg,
-            cabinBagKg,
-            refundable, // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
-            changeAllowed, // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
-            changeFee // ✅ NOW EXTRACTED FROM DUFFEL CONDITIONS
+            ...(baggageKg ? { baggageKg } : {}),
+            ...(cabinBagKg ? { cabinBagKg } : {}),
+            refundable,
+            changeAllowed,
+            ...(changeFee ? { changeFee } : {}),
         },
-        baggageSummary: {
-            checked: checkedBaggage,
-            cabin: cabinBaggage,
-            totalWeight: baggageKg ? `${baggageKg}kg` : 'Kontrol Et'
-        }
+        ...(baggageIncluded !== null ? {
+            baggageSummary: {
+                checked: baggageIncluded
+                    ? (checkedBaggageLabel || (baggageKg ? `${baggageKg}kg` : 'Included'))
+                    : 'Not included',
+                cabin: cabinBaggageLabel || (cabinBagKg ? `${cabinBagKg}kg` : ''),
+                totalWeight: baggageKg ? `${baggageKg}kg` : '',
+            },
+        } : {}),
     };
 }

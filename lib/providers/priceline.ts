@@ -355,7 +355,7 @@ const parseWeightKg = (value: unknown): number => {
 const resolveBaggage = (
     item: any,
     airline: string
-): { baggageText: string; checkedKg: number; cabinKg: number; checkedIncluded: boolean } => {
+): { baggageText: string; checkedKg: number; cabinKg: number; checkedIncluded: boolean; explicitlyExcluded: boolean } => {
     const baggageRaw =
         item?.baggage ||
         item?.fare?.baggage ||
@@ -422,40 +422,56 @@ const resolveBaggage = (
         checkedKgFromText ||
         (parsedKg > 0 ? parsedKg : 0);
 
+    // cabinKg: only use real data — no artificial default.
+    // 0 means "no cabin data found" which signals unknown state downstream.
     const cabinKg =
         parseWeightKg(item?.policies?.cabinBagKg) ||
         parseWeightKg(item?.fare?.cabinBaggageKg) ||
         parseWeightKg(item?.carryOn?.kg) ||
         parseWeightKg(item?.baggageInfo?.cabinBaggageKg) ||
         cabinKgFromText ||
-        7;
+        0;
 
     const checkedIncluded = checkedKg > 0 || (!explicitNoCheckedFromText && isFullServiceCarrier(airline));
 
     if (checkedIncluded && checkedKg > 0) {
         return {
-            baggageText: `${checkedKg}kg Dahil`,
+            baggageText: `${checkedKg}kg included`,
             checkedKg,
             cabinKg,
             checkedIncluded: true,
+            explicitlyExcluded: false,
         };
     }
 
     if (checkedIncluded) {
-        const inferredCheckedKg = checkedKg > 0 ? checkedKg : 20;
+        // FSC inference: carrier almost certainly includes bags, but we have no kg data — don't invent weight.
         return {
-            baggageText: `${inferredCheckedKg}kg Dahil`,
-            checkedKg: inferredCheckedKg,
+            baggageText: 'Included',
+            checkedKg: 0,
             cabinKg,
             checkedIncluded: true,
+            explicitlyExcluded: false,
         };
     }
 
+    if (explicitNoCheckedFromText) {
+        return {
+            baggageText: baggageText || 'Not included',
+            checkedKg: 0,
+            cabinKg,
+            checkedIncluded: false,
+            explicitlyExcluded: true,
+        };
+    }
+
+    // Unknown: no explicit data and not a full-service carrier — do not assume exclusion.
     return {
-        baggageText: baggageText || 'Bagaj dahil değil',
+        baggageText: '',
         checkedKg: 0,
-        cabinKg,
+        cabinKg: 0,   // suppress cabin default so downstream sees truly-no-data
         checkedIncluded: false,
+        explicitlyExcluded: false,
     };
 };
 
@@ -844,7 +860,11 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                     stops: Math.max(0, segments.length - 1),
                     price: normalizedFare.price,
                     currency: normalizedFare.currency,
-                    baggage: baggage.checkedIncluded ? 'checked' : baggage.cabinKg > 0 ? 'cabin' : 'none',
+                    baggage: baggage.checkedIncluded
+                        ? 'checked'
+                        : baggage.explicitlyExcluded
+                            ? (baggage.cabinKg > 0 ? 'cabin' : 'none')
+                            : undefined,
                     cabinClass: (params.cabin || 'economy') as any,
                     layovers,
                     segments: segments.map((segment: any) => ({
@@ -990,18 +1010,20 @@ export async function searchPriceline(params: HybridSearchParams): Promise<Fligh
                         baggage: baggage.baggageText,
                     } as any,
                     policies: {
-                        baggageKg: baggage.checkedKg,
-                        cabinBagKg: baggage.cabinKg,
+                        ...(baggage.checkedKg > 0 ? { baggageKg: baggage.checkedKg } : {}),
+                        ...(baggage.cabinKg > 0 ? { cabinBagKg: baggage.cabinKg } : {}),
                     },
-                    baggageSummary: {
-                        checked: baggage.checkedIncluded
-                            ? `${baggage.checkedKg || 20}kg Dahil`
-                            : 'Dahil Değil',
-                        cabin: `${baggage.cabinKg || 7}kg Kabin`,
-                        totalWeight: baggage.checkedIncluded
-                            ? `${(baggage.checkedKg || 20) + (baggage.cabinKg || 7)}kg`
-                            : `${baggage.cabinKg || 7}kg`,
-                    },
+                    ...(baggage.checkedIncluded || baggage.explicitlyExcluded ? {
+                        baggageSummary: {
+                            checked: baggage.checkedIncluded
+                                ? (baggage.checkedKg > 0 ? `${baggage.checkedKg}kg` : 'Included')
+                                : 'Not included',
+                            cabin: baggage.cabinKg > 0 ? `${baggage.cabinKg}kg` : '',
+                            totalWeight: baggage.checkedKg > 0
+                                ? `${baggage.checkedKg + baggage.cabinKg}kg`
+                                : '',
+                        },
+                    } : {}),
                     durationDebug: {
                         ...duration.debug,
                         priceNormalization: {
