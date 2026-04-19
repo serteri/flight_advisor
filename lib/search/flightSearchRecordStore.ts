@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { FlightResult } from '@/types/hybridFlight';
+import type { UnifiedFlight } from '@/types/unifiedFlight';
 import { normalizeSource } from '@/lib/utils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -59,12 +59,12 @@ const toUpperIata = (value: unknown): string | null => {
     return /^[A-Z0-9]{3,4}$/.test(code) ? code : null;
 };
 
-const extractFirstSegment = (flight: FlightResult): any | null => {
+const extractFirstSegment = (flight: UnifiedFlight): any | null => {
     if (!Array.isArray(flight.segments) || flight.segments.length === 0) return null;
     return flight.segments[0] || null;
 };
 
-const resolveAirlineCode = (flight: FlightResult): string | null => {
+const resolveAirlineCode = (flight: UnifiedFlight): string | null => {
     const firstSegment = extractFirstSegment(flight);
     const candidates = [
         (flight as any)?.airlineCode,
@@ -88,7 +88,7 @@ const resolveAirlineCode = (flight: FlightResult): string | null => {
     return inferred ? inferred[1] : null;
 };
 
-const resolveAirlineName = (flight: FlightResult): string | null => {
+const resolveAirlineName = (flight: UnifiedFlight): string | null => {
     const firstSegment = extractFirstSegment(flight);
     const candidates = [
         (flight as any)?.airlineName,
@@ -109,7 +109,7 @@ const resolveAirlineName = (flight: FlightResult): string | null => {
     return null;
 };
 
-const resolveStops = (flight: FlightResult): number => {
+const resolveStops = (flight: UnifiedFlight): number => {
     const directStops = Number((flight as any)?.stops);
     if (Number.isFinite(directStops) && directStops >= 0) {
         return Math.floor(directStops);
@@ -122,7 +122,7 @@ const resolveStops = (flight: FlightResult): number => {
     return 0;
 };
 
-const resolveLayoverAirports = (flight: FlightResult): string[] => {
+const resolveLayoverAirports = (flight: UnifiedFlight): string[] => {
     const result = new Set<string>();
 
     if (Array.isArray(flight.layovers)) {
@@ -192,11 +192,11 @@ export const normalizeUtcDate = (dateInput: string): Date => {
     return new Date(`${datePart}T00:00:00.000Z`);
 };
 
-export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
+export const resolveFlightDurationMinutes = (flight: UnifiedFlight): number => {
     const providerDuration = toMinutes(flight.duration);
 
-    const depMs = flight.departTime ? parseIsoDateToUtcMs(String(flight.departTime)) : NaN;
-    const arrMs = flight.arriveTime ? parseIsoDateToUtcMs(String(flight.arriveTime)) : NaN;
+    const depMs = flight.departureTime ? parseIsoDateToUtcMs(String(flight.departureTime)) : NaN;
+    const arrMs = flight.arrivalTime ? parseIsoDateToUtcMs(String(flight.arrivalTime)) : NaN;
     const timestampDuration =
         Number.isFinite(depMs) && Number.isFinite(arrMs) && arrMs > depMs
             ? Math.round((arrMs - depMs) / 60000)
@@ -208,8 +208,8 @@ export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
                   const direct = toMinutes(segment?.duration);
                   if (direct > 0) return direct;
 
-                  const segDep = segment?.departing_at || segment?.departure || segment?.departure_time;
-                  const segArr = segment?.arriving_at || segment?.arrival || segment?.arrival_time;
+                  const segDep = segment?.departureTime || segment?.departing_at || segment?.departure || segment?.departure_time;
+                  const segArr = segment?.arrivalTime || segment?.arriving_at || segment?.arrival || segment?.arrival_time;
                   const segDepMs = segDep ? parseIsoDateToUtcMs(String(segDep)) : NaN;
                   const segArrMs = segArr ? parseIsoDateToUtcMs(String(segArr)) : NaN;
 
@@ -251,7 +251,7 @@ export const resolveFlightDurationMinutes = (flight: FlightResult): number => {
     return 0;
 };
 
-export const isInvalidBneIstDuration = (flight: FlightResult): boolean => {
+export const isInvalidBneIstDuration = (flight: UnifiedFlight): boolean => {
     const from = (flight.from || '').toString().toUpperCase();
     const to = (flight.to || '').toString().toUpperCase();
     const routeMatch = from === 'BNE' && to === 'IST';
@@ -262,7 +262,7 @@ export const isInvalidBneIstDuration = (flight: FlightResult): boolean => {
 };
 
 export async function persistFlightSearchRecords(
-    flights: FlightResult[],
+    flights: UnifiedFlight[],
     options: { origin: string; destination: string; departureDate: string }
 ) {
     const departureDate = normalizeUtcDate(options.departureDate);
@@ -284,8 +284,8 @@ export async function persistFlightSearchRecords(
                 stops: resolveStops(flight),
                 totalDurationMinutes: totalDurationMinutes > 0 ? totalDurationMinutes : null,
                 layoverAirports: resolveLayoverAirports(flight),
-                departureTime: toOptionalDate(flight.departTime),
-                arrivalTime: toOptionalDate(flight.arriveTime),
+                departureTime: toOptionalDate(flight.departureTime),
+                arrivalTime: toOptionalDate(flight.arrivalTime),
             };
         });
 
@@ -336,7 +336,7 @@ export async function persistFlightSearchRecords(
 }
 
 export async function persistSearchAnalytics(
-    flights: FlightResult[],
+    flights: UnifiedFlight[],
     options: SearchAnalyticsOptions
 ): Promise<void> {
     const normalizedOrigin = String(options.origin || '').toUpperCase();
@@ -707,7 +707,7 @@ export async function getRecentPricelineRawCache(
     destination: string,
     departureDate: string,
     windowMinutes = 20
-): Promise<FlightResult[] | null> {
+): Promise<UnifiedFlight[] | null> {
     const start = normalizeUtcDate(departureDate);
     const end = new Date(start.getTime() + DAY_MS);
     const recentFrom = new Date(Date.now() - windowMinutes * 60 * 1000);
@@ -752,7 +752,7 @@ export async function getRecentPricelineRawCache(
             return null;
         }
 
-        return flights as FlightResult[];
+        return flights as UnifiedFlight[];
     } catch (error: any) {
         console.warn('[FLIGHT_SEARCH_RECORD] raw Priceline cache lookup skipped:', error?.message || error);
         return null;
@@ -760,7 +760,7 @@ export async function getRecentPricelineRawCache(
 }
 
 export async function persistPricelineRawCache(
-    flights: FlightResult[],
+    flights: UnifiedFlight[],
     options: { origin: string; destination: string; departureDate: string }
 ): Promise<void> {
     const departureDate = normalizeUtcDate(options.departureDate);

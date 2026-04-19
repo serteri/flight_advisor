@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
-// TODO: Phase 7 — Replace FlightResult with ScoredFlight (UnifiedFlight + score) in API response
-import { FlightResult, FlightSource, HybridSearchParams } from '@/types/hybridFlight';
+import { HybridSearchParams } from '@/types/hybridFlight';
 import { normalizeSource } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { applyAdvancedFlightScoring, applyAdvancedFlightScoringUnified, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
+import { applyAdvancedFlightScoringUnified, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 import { getCityFromAirportCode } from '@/lib/airport-utils';
 import {
     hasRecentRouteSearchRecords,
@@ -18,7 +17,6 @@ import {
     persistPricelineRawCache,
 } from '@/lib/search/flightSearchRecordStore';
 import { normalizeBuyNowVariant } from '@/lib/experiment/buyNowVariant';
-import { toUnifiedFlights, toScoredFlight, fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
 import type { UnifiedFlight, ScoredFlight } from '@/types/unifiedFlight';
 import { useUnifiedPipeline, useUnifiedDebug, getPipelineMetrics } from '@/lib/featureFlags';
 import { logScoreVisibility, logPerformanceTiming, isDebugLoggingEnabled } from '@/lib/observability/logger';
@@ -519,7 +517,7 @@ type CachedFlightRecord = {
 function mapCachedRecordsToFlights(
     records: CachedFlightRecord[],
     params: HybridSearchParams
-): FlightResult[] {
+): UnifiedFlight[] {
     const uniqueByFlightNumber = new Map<string, CachedFlightRecord>();
 
     for (const record of records) {
@@ -534,11 +532,11 @@ function mapCachedRecordsToFlights(
         : `${params.date}T00:00:00.000Z`;
 
     return Array.from(uniqueByFlightNumber.values()).map((record, index) => {
-        const departTime = record.departureTime
+        const departureTime = record.departureTime
             ? record.departureTime.toISOString()
             : fallbackDepartureIso;
 
-        const arriveTime = record.arrivalTime
+        const arrivalTime = record.arrivalTime
             ? record.arrivalTime.toISOString()
             : (record.totalDurationMinutes && record.departureTime
                 ? new Date(record.departureTime.getTime() + record.totalDurationMinutes * 60 * 1000).toISOString()
@@ -557,31 +555,40 @@ function mapCachedRecordsToFlights(
 
         return {
             id: `CACHE_PRICELINE_${record.flightNumber}_${record.createdAt.getTime()}_${index}`,
-            source: 'priceline' as FlightSource,
+            source: 'priceline',
             airline: airlineName,
-            airlineCode: record.airlineCode ?? undefined,
             flightNumber: record.flightNumber,
             from: params.origin.toUpperCase(),
             to: params.destination.toUpperCase(),
-            departTime,
-            arriveTime,
+            departureTime,
+            arrivalTime,
             duration: record.totalDurationMinutes ?? 0,
             stops,
             price: Number(record.price),
             currency: params.currency || 'AUD',
-            cabinClass: (params.cabin || 'economy') as any,
+            cabinClass: (params.cabin || 'economy') as 'economy' | 'premium' | 'business' | 'first',
             layovers,
-            segments: [],
+            segments: [
+                {
+                    from: params.origin.toUpperCase(),
+                    to: params.destination.toUpperCase(),
+                    departureTime,
+                    arrivalTime,
+                    duration: record.totalDurationMinutes ?? 0,
+                    carrier: (record.airlineCode || 'PR').toUpperCase(),
+                    flightNumber: record.flightNumber,
+                },
+            ],
+            baggage: {
+                included: false,
+                checked: { label: 'Not included' },
+                cabin: { kg: 7, label: '7kg' },
+            },
             policies: {
-                baggageKg: 0,
-                cabinBagKg: 7,
+                refundable: false,
+                changeAllowed: false,
             },
-            durationDebug: {
-                provider: 'PRICELINE_DB_CACHE',
-                cachedAt: record.createdAt.toISOString(),
-                fallback: true,
-            },
-        } as FlightResult;
+        };
     });
 }
 
@@ -663,13 +670,8 @@ export async function GET(request: Request) {
 
         // (Removed shadow metrics from SearchProvidersMeta)
 
-        // ── PHASE 7: Backward compatibility for caches ──────────────────────────
-        // The record store currently expects legacy FlightResult shape.
-        // We use fromUnifiedForScoring to create a backward-compatible mapping.
-        const rawFlightsForCache = allFlights.map(fromUnifiedForScoring);
-
         if (!shouldSkipPriceline) {
-            const freshPricelineFlights = rawFlightsForCache.filter(
+            const freshPricelineFlights = allFlights.filter(
                 (flight) => normalizeSource(flight.source) === 'priceline'
             );
             await persistPricelineRawCache(freshPricelineFlights, {
@@ -679,13 +681,13 @@ export async function GET(request: Request) {
             });
         }
 
-        await persistFlightSearchRecords(rawFlightsForCache, {
+        await persistFlightSearchRecords(allFlights, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
         });
 
-        await persistSearchAnalytics(rawFlightsForCache, {
+        await persistSearchAnalytics(allFlights, {
             origin: queryParams.origin,
             destination: queryParams.destination,
             departureDate: queryParams.date,
@@ -701,8 +703,7 @@ export async function GET(request: Request) {
             );
         }
 
-        // ── SCORING: Feature-flag gated pipeline ─────────────────────────────
-        const isUnifiedMode = providerMeta.pipelineMode === 'unified';
+        // ── SCORING: Canonical UnifiedFlight path ─────────────────────────────
         const scoringOptions = {
             origin: queryParams.origin,
             destination: queryParams.destination,
@@ -713,21 +714,15 @@ export async function GET(request: Request) {
             personalBiasProfile: personalBiasProfile || undefined,
         };
 
-        let scoredFlights: FlightResult[];
+        let scoredFlights: ScoredFlight[];
         let scoringMs = 0;
         const scoringStart = Date.now();
-        
-        if (isUnifiedMode) {
-            // UNIFIED PATH: Score via UnifiedFlight[] bridge
-            console.log(`✅ [UNIFIED PIPELINE] Scoring ${allFlights.length} flights via unified entry point`);
-            scoredFlights = await applyAdvancedFlightScoringUnified(
-                allFlights,
-                scoringOptions,
-            );
-        } else {
-            // LEGACY PATH (default): Score FlightResult[] directly
-            scoredFlights = await applyAdvancedFlightScoring(rawFlightsForCache, scoringOptions);
-        }
+
+        console.log(`✅ [UNIFIED PIPELINE] Scoring ${allFlights.length} flights via canonical unified entry point`);
+        scoredFlights = await applyAdvancedFlightScoringUnified(
+            allFlights,
+            scoringOptions,
+        );
         scoringMs = Date.now() - scoringStart;
 
         const routeInsight = await getRouteInsightForDate(
@@ -747,8 +742,8 @@ export async function GET(request: Request) {
             if (!routeInsight) return flight;
             return {
                 ...flight,
-                advancedScore: {
-                    ...(flight.advancedScore || {}),
+                score: {
+                    ...flight.score,
                     routeIntelligence: {
                         avgPriceRoute: routeInsight.avgPriceRoute,
                         volatility: routeInsight.volatility,
@@ -765,7 +760,7 @@ export async function GET(request: Request) {
 
         // Flight Intelligence Phase 1: BUY/WAIT, deal tier, regret stat
         const intelligentFlights = applyRouteIntelligenceFeatures(
-            enrichedFlights as import('@/types/hybridFlight').FlightResult[],
+            enrichedFlights,
             routeInsight ? {
                 avgPriceRoute: routeInsight.avgPriceRoute,
                 volatility: routeInsight.volatility,
@@ -809,7 +804,7 @@ export async function GET(request: Request) {
         const routeTotalMs = Date.now() - routeStartTime;
         
         if (includeDebugUnified || isDebugLoggingEnabled()) {
-            const finalUnified = toUnifiedFlights(intelligentFlights);
+            const finalUnified = intelligentFlights;
             const metrics = getPipelineMetrics();
             const obs = providerMeta._debugObservability;
             _debug = {
@@ -836,8 +831,7 @@ export async function GET(request: Request) {
             };
         }
 
-        // Phase 7: Return pure ScoredFlight array
-        const finalResults = intelligentFlights.map((flight) => toScoredFlight(flight));
+        const finalResults = intelligentFlights;
         
         if (finalResults.length > 0) {
             const scores = finalResults.map(f => f.score.composite).filter(s => typeof s === 'number');

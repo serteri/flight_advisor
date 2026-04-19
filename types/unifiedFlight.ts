@@ -167,9 +167,12 @@ export type FlightScore = {
         durationScore: number;
         stopScore: number;
         connectionScore: number;
+        selfTransferScore: number;
         airlineScore: number;
         baggageScore: number;
         reliabilityScore: number;
+        amenitiesScore: number;
+        airportIndexScore: number;
     };
     priceIntel?: {
         label: PriceIntelLabel;
@@ -207,6 +210,8 @@ export type FlightScore = {
         total: number;
     };
     alerts?: FlightAlert[];
+    riskFlags?: string[];
+    comfortNotes?: string[];
     /** UI tags derived from scoring: "Best Value", "Direct", etc. */
     tags?: string[];
     /** Variant grouping — set by variantGrouper */

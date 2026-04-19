@@ -1,9 +1,50 @@
-import { FlightResult, FlightSource } from '@/types/hybridFlight';
+import { toScoredFlight } from '@/lib/adapters/toUnifiedFlight';
 import { normalizeSource } from '@/lib/utils';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 import { hasIncludedMeal } from '@/lib/meal-utils';
-import type { UnifiedFlight } from '@/types/unifiedFlight';
-import { fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
+import type { UnifiedFlight, ScoredFlight } from '@/types/unifiedFlight';
+
+type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
+    departTime: string;
+    arriveTime: string;
+    soldBy?: Array<{
+        source: UnifiedFlight['source'];
+        airline: string;
+        price: number;
+        currency: string;
+    }>;
+    airlineCode?: string;
+    aircraft?: string;
+    aircraftAge?: number;
+    meal?: unknown;
+    amenities?: {
+        hasMeal?: boolean;
+        hasWifi?: boolean;
+        entertainment?: boolean;
+    };
+    wifi?: unknown;
+    entertainment?: unknown;
+    baggage?: string;
+    canonicalBaggage?: UnifiedFlight['baggage'];
+    policies?: {
+        baggageKg?: number;
+        cabinBagKg?: number;
+        refundable?: boolean;
+        changeAllowed?: boolean;
+        changeFee?: string;
+    };
+    canonicalPolicies?: UnifiedFlight['policies'];
+    tags?: string[];
+    score?: number;
+    advancedScore?: any;
+};
+type FlightResult = ScoringFlight;
+
+const asUnifiedFlightForMetrics = (flight: FlightResult): UnifiedFlight => ({
+    ...(flight as unknown as UnifiedFlight),
+    baggage: flight.canonicalBaggage,
+    policies: flight.canonicalPolicies,
+});
 
 // @ts-ignore
 import airports from 'airports';
@@ -189,7 +230,7 @@ const getExpectedRouteDurationMinutes = (origin?: string, destination?: string):
 };
 
 const resolveDurationMinutes = (flight: FlightResult): number => {
-    return resolveFlightDurationMinutes(flight);
+    return resolveFlightDurationMinutes(asUnifiedFlightForMetrics(flight));
 };
 
 // ── DEDUPLICATION ──────────────────────────────────────────────────────────
@@ -902,7 +943,7 @@ const scoreFlight = (
     }
     breakdown.aircraft = clamp(aircraftScore, 0, 5);
 
-    const mealIncluded = hasIncludedMeal(flight);
+    const mealIncluded = hasIncludedMeal(flight as any);
 
     let amenitiesScore = 0;
     if (flight.amenities?.hasWifi || flight.wifi) {
@@ -1448,12 +1489,12 @@ const computeDecisionRecommendation = (params: {
  * to already-scored flights. Call this AFTER attaching routeIntelligence.
  */
 export function applyRouteIntelligenceFeatures(
-    flights: FlightResult[],
+    flights: ScoredFlight[],
     routeInsight: RouteInsightInput | null,
     departureDate: string,
     trendSignal?: RouteTrendSignal | null,
     buyNowVariant: BuyNowVariantBucket = 'A',
-): FlightResult[] {
+): ScoredFlight[] {
     const validPrices = flights.map(f => Number(f.price)).filter(p => Number.isFinite(p) && p > 0);
     const batchMin = validPrices.length ? Math.min(...validPrices) : 0;
     const batchMax = validPrices.length ? Math.max(...validPrices) : 0;
@@ -1461,7 +1502,7 @@ export function applyRouteIntelligenceFeatures(
         ? validPrices.reduce((sum, value) => sum + value, 0) / validPrices.length
         : 0;
     const validDurations = flights
-        .map((flight) => resolveDurationMinutes(flight))
+        .map((flight) => resolveFlightDurationMinutes(flight))
         .filter((duration) => Number.isFinite(duration) && duration > 0);
     const averageDurationMinutes = validDurations.length
         ? Math.round(validDurations.reduce((sum, value) => sum + value, 0) / validDurations.length)
@@ -1486,7 +1527,7 @@ export function applyRouteIntelligenceFeatures(
         const price = Number(flight.price);
         if (!Number.isFinite(price) || price <= 0) return flight;
 
-        const resolvedDurationMinutes = resolveDurationMinutes(flight);
+        const resolvedDurationMinutes = resolveFlightDurationMinutes(flight);
         const buyWaitSignal = computeBuyWaitSignal(
             price,
             effectiveRouteInsight,
@@ -1503,7 +1544,7 @@ export function applyRouteIntelligenceFeatures(
         const avgForDelta = Number(effectiveRouteInsight.avgPriceRoute || batchAvg || price);
         const priceDeltaPct = avgForDelta > 0 ? (price - avgForDelta) / avgForDelta : 0;
         const pricePositionScore = computePricePositionScore(price, avgForDelta);
-        const confidenceScore = computeConfidenceScoreV2(flight, effectiveRouteInsight, trendSignal || null, priceDeltaPct, dealTier);
+        const confidenceScore = Number(flight.score?.confidence || 50);
         const regretInsight = buildRegretInsight(pricePositionScore, trendSignal || null, Number(effectiveRouteInsight.volatility || 0), priceDeltaPct);
         const decision = computeDecisionRecommendation({
             routeInsight: effectiveRouteInsight,
@@ -1519,21 +1560,25 @@ export function applyRouteIntelligenceFeatures(
 
         return {
             ...flight,
-            advancedScore: {
-                ...(flight.advancedScore || {}),
-                confidenceScore,
-                pricePositionScore: Number(pricePositionScore.toFixed(2)),
+            score: {
+                ...flight.score,
+                confidence: confidenceScore,
                 trendSignal: trendSignal?.trendSignal || 'STABLE',
                 buyWaitSignal,
-                dealTier,
-                regretStat,
-                regretInsight,
                 decisionRecommendation: decision.recommendation,
                 decisionConfidence: decision.confidence,
                 decisionReason: decision.reason,
-                explanation,
+                routeIntelligence: {
+                    avgPriceRoute: effectiveRouteInsight.avgPriceRoute,
+                    volatility: effectiveRouteInsight.volatility,
+                    searchCount: effectiveRouteInsight.searchCount,
+                    rollingAvgPrice: effectiveRouteInsight.rollingAvgPrice,
+                    recommendedBookingWindowDays: effectiveRouteInsight.recommendedBookingWindowDays,
+                    observedMinPrice: effectiveRouteInsight.observedMinPrice,
+                    observedMaxPrice: effectiveRouteInsight.observedMaxPrice,
+                },
             },
-        } as FlightResult;
+        };
     });
 }
 
@@ -1564,7 +1609,7 @@ export async function applyAdvancedFlightScoring(
 
     // Calculate duration range for relative scoring
     const validDurations = deduplicatedFlights
-        .map((flight) => resolveFlightDurationMinutes(flight))
+        .map((flight) => resolveFlightDurationMinutes(asUnifiedFlightForMetrics(flight)))
         .filter((duration) => duration > 0);
     const minDuration = validDurations.length ? Math.min(...validDurations) : 0;
     const maxDuration = validDurations.length ? Math.max(...validDurations) : 0;
@@ -1591,7 +1636,7 @@ export async function applyAdvancedFlightScoring(
 
     return deduplicatedFlights
         .map((flight) => {
-            const markInvalidData = isInvalidBneIstDuration(flight);
+            const markInvalidData = isInvalidBneIstDuration(asUnifiedFlightForMetrics(flight));
             const invalidReason = markInvalidData
                 ? 'Total duration under 14h for BNE-IST is not realistic.'
                 : undefined;
@@ -1638,11 +1683,8 @@ export function isUnifiedFlightArray(
 }
 
 /**
- * Score UnifiedFlight[] by converting them to FlightResult[] and delegating
- * to the existing applyAdvancedFlightScoring.
- *
- * Returns FlightResult[] (scored) — caller can convert back via toUnifiedFlight
- * if needed.
+ * Score UnifiedFlight[] with legacy-compatible internal scoring shape,
+ * then return canonical ScoredFlight[] output.
  */
 export async function applyAdvancedFlightScoringUnified(
     flights: UnifiedFlight[],
@@ -1655,8 +1697,23 @@ export async function applyAdvancedFlightScoringUnified(
         preferenceProfile?: PreferenceProfile;
         personalBiasProfile?: PersonalBiasProfile;
     }
-): Promise<FlightResult[]> {
-    // Bridge: UnifiedFlight[] → FlightResult[] → existing scoring → FlightResult[]
-    const asFlightResults = flights.map(fromUnifiedForScoring);
-    return applyAdvancedFlightScoring(asFlightResults, options);
+): Promise<ScoredFlight[]> {
+    const asScoringFlights: FlightResult[] = flights.map((unified) => ({
+        ...unified,
+        departTime: unified.departureTime,
+        arriveTime: unified.arrivalTime,
+        baggage: unified.baggage?.included ? 'checked' : '',
+        canonicalBaggage: unified.baggage,
+        policies: {
+            baggageKg: unified.baggage?.checked?.kg,
+            cabinBagKg: unified.baggage?.cabin?.kg,
+            refundable: unified.policies?.refundable,
+            changeAllowed: unified.policies?.changeAllowed,
+            changeFee: unified.policies?.changeFee,
+        },
+        canonicalPolicies: unified.policies,
+    }));
+
+    const scored = await applyAdvancedFlightScoring(asScoringFlights, options);
+    return scored.map((flight) => toScoredFlight(flight as any));
 }

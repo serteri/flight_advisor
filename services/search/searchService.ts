@@ -1,18 +1,14 @@
-import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
+import { HybridSearchParams } from "@/types/hybridFlight";
 import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
-import { toUnifiedFlights, fromUnifiedForScoring } from '@/lib/adapters/toUnifiedFlight';
+import { toUnifiedFlights } from '@/lib/adapters/toUnifiedFlight';
 import type { UnifiedFlight } from '@/types/unifiedFlight';
 import { logProviderHealth, logPipelineMetrics, safeLog, logPerformanceTiming } from '@/lib/observability/logger';
 import { validateUnifiedFlight } from '@/lib/intelligence/flightValidator';
 import {
-  useUnifiedPipeline,
   recordUnifiedSuccess,
-  recordLegacyFallback,
-  recordLegacyExplicit,
-  checkFallbackThreshold,
 } from '@/lib/featureFlags';
 // Kiwi excluded (requires auth). Travelpayouts removed from search — affiliate links only via lib/monetization/travelpayouts.ts.
 
@@ -34,7 +30,7 @@ export type SearchProvidersMeta = {
 
 type SearchProviderOptions = {
   skipPriceline?: boolean;
-  injectedFlights?: FlightResult[];
+  injectedFlights?: UnifiedFlight[];
 };
 
 export async function searchAllProvidersWithMeta(
@@ -69,7 +65,7 @@ async function searchAllProvidersInternal(
   console.log(`  Date: ${params.date}`);
 
   const startTime = Date.now();
-  const promises: Promise<FlightResult[]>[] = [];
+  const promises: Promise<any[]>[] = [];
   const providers: string[] = [];
   const warnings: string[] = [];
   let rateLimited = false;
@@ -96,10 +92,19 @@ async function searchAllProvidersInternal(
     const results = await Promise.allSettled(promises);
     const elapsed = Date.now() - startTime;
 
-    let allFlights: FlightResult[] = [...(options.injectedFlights || [])];
+    let allFlights: any[] = [];
     let duffelCount = 0;
     let pricelineCount = 0;
     const cachedCount = (options.injectedFlights || []).length;
+
+    if ((options.injectedFlights || []).length > 0) {
+      const cachedUnified = (options.injectedFlights || []).map((flight) => ({
+        ...flight,
+        departTime: flight.departureTime,
+        arriveTime: flight.arrivalTime,
+      }));
+      allFlights.push(...cachedUnified);
+    }
 
     const providerStats: Record<string, { count: number; error: boolean }> = {};
 
@@ -180,7 +185,7 @@ async function searchAllProvidersInternal(
           provider: normalizeSource(flight.source),
           fallback: true,
         },
-      } as FlightResult;
+      };
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
@@ -196,7 +201,7 @@ async function searchAllProvidersInternal(
     let initialUnifiedCount = 0;
     
     try {
-      const convertedFlights = toUnifiedFlights(sortedFlights);
+      const convertedFlights = toUnifiedFlights(sortedFlights as any[]);
       initialUnifiedCount = convertedFlights.length;
       
       // Step: Run runtime validation layer
