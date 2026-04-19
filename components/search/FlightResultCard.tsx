@@ -299,7 +299,11 @@ export default function FlightResultCard({
     const displayOriginalPrice = displayPrice ? Math.max(displayPrice, Math.round(displayPrice * 1.15)) : null;
     const estimatedTotalCost = flight.advancedScore?.estimatedTotalCost;
     const personalBias = flight.advancedScore?.personalBias;
-    const decisionRecommendation = String(flight.advancedScore?.decisionRecommendation || '').toUpperCase();
+    const decisionRecommendation = String(
+        flight.advancedScore?.decisionRecommendation ||
+        flight.score?.decisionRecommendation ||
+        ''
+    ).toUpperCase();
     const src = source;
     const sourceLabel = src === 'duffel' ? 'DUFFEL' : (src === 'priceline' || src === 'serpapi') ? 'PRICELINE' : 'KIWI';
     const sourceSubLabel = src === 'duffel' ? '🏛️ Duffel' : (src === 'priceline' || src === 'serpapi') ? '⚡ Priceline' : '🌐 Kiwi';
@@ -467,8 +471,41 @@ export default function FlightResultCard({
         setDecisionTracked(true);
     }, [decisionTracked, flight?.advancedScore?.decisionRecommendation]);
 
-    const decisionReason = String(flight?.advancedScore?.decisionReason || '');
-    const buyWaitLabel = String(flight?.advancedScore?.buyWaitSignal?.label || '');
+    const decisionReason = String(
+        flight?.advancedScore?.decisionReason ||
+        flight?.score?.decisionReason ||
+        ''
+    );
+    const buyWaitLabel = String(
+        flight?.advancedScore?.buyWaitSignal?.label ||
+        flight?.score?.buyWaitSignal?.label ||
+        ''
+    );
+
+    const baggageType = String(flight.baggage || '').toLowerCase();
+    const checkedBagKg = Number(flight.policies?.baggageKg || 0);
+    const cabinBagKg = Number(flight.policies?.cabinBagKg || 7);
+    const rawCheckedSummary = String(flight.baggageSummary?.checked || '').trim();
+    const normalizedSummary = rawCheckedSummary.toLowerCase();
+
+    const baggageInfo = (() => {
+        if (checkedBagKg > 0) {
+            return { label: `${checkedBagKg}kg Included`, tone: 'included' as const };
+        }
+        if (baggageType === 'checked') {
+            return { label: isTrLocale ? 'Check-in Dahil' : 'Checked Included', tone: 'included' as const };
+        }
+        if (baggageType === 'cabin') {
+            return { label: `${cabinBagKg}kg ${isTrLocale ? 'Kabin' : 'Cabin Only'}`, tone: 'limited' as const };
+        }
+        if (normalizedSummary.includes('check with airline') || normalizedSummary.includes('havayoluna')) {
+            return { label: isTrLocale ? 'Havayoluna sor' : 'Check with airline', tone: 'unknown' as const };
+        }
+        if (rawCheckedSummary) {
+            return { label: rawCheckedSummary, tone: 'excluded' as const };
+        }
+        return { label: isTrLocale ? 'Dahil Değil' : 'Not Included', tone: 'excluded' as const };
+    })();
 
     const decisionAction = decisionRecommendation === 'BUY_NOW'
         ? {
@@ -772,15 +809,19 @@ export default function FlightResultCard({
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <Luggage className={`w-3.5 h-3.5 ${flight.amenities?.baggage ? 'text-slate-700' : 'text-slate-300'}`} />
+                                <Luggage
+                                    className={`w-3.5 h-3.5 ${
+                                        baggageInfo.tone === 'included'
+                                            ? 'text-slate-700'
+                                            : baggageInfo.tone === 'limited'
+                                                ? 'text-amber-600'
+                                                : baggageInfo.tone === 'unknown'
+                                                    ? 'text-slate-500'
+                                                    : 'text-slate-300'
+                                    }`}
+                                />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {flight.policies?.baggageKg > 0
-                                        ? `${flight.policies.baggageKg}kg Included`
-                                        : String(flight.baggage || '').toLowerCase() === 'checked'
-                                            ? (isTrLocale ? 'Check-in Dahil' : 'Checked Included')
-                                            : String(flight.baggage || '').toLowerCase() === 'cabin'
-                                                ? `${flight.policies?.cabinBagKg || 7}kg ${isTrLocale ? 'Kabin' : 'Cabin Only'}`
-                                                : flight.baggageSummary?.checked || (isTrLocale ? 'Dahil Değil' : 'Not Included')}
+                                    {baggageInfo.label}
                                 </span>
                             </div>
                             
@@ -911,23 +952,23 @@ export default function FlightResultCard({
                                         </p>
                                     )}
 
-                                    {flight.advancedScore?.decisionRecommendation && (
+                                    {decisionRecommendation && (
                                         <div className={`rounded-2xl px-3 py-2.5 border text-xs font-semibold backdrop-blur-md shadow-[0_8px_24px_-12px_rgba(2,132,199,0.35)] ${
-                                            flight.advancedScore.decisionRecommendation === 'BUY_NOW'
+                                            decisionRecommendation === 'BUY_NOW'
                                                 ? 'bg-emerald-50/85 border-emerald-200 text-emerald-800'
-                                                : flight.advancedScore.decisionRecommendation === 'AVOID'
+                                                : decisionRecommendation === 'AVOID'
                                                     ? 'bg-rose-50/85 border-rose-200 text-rose-800'
                                                     : 'bg-amber-50/85 border-amber-200 text-amber-800'
                                         } ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             <div className="uppercase tracking-wide text-[10px] font-extrabold mb-0.5">{t('decisionRecommendation')}</div>
                                             <div>
-                                                {flight.advancedScore.decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : flight.advancedScore.decisionRecommendation}
-                                                {Number.isFinite(Number(flight.advancedScore?.decisionConfidence)) && (
-                                                    <span className="ml-1">({Math.round(Number(flight.advancedScore?.decisionConfidence || 0))}% confidence)</span>
+                                                {decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : decisionRecommendation}
+                                                {Number.isFinite(Number(flight.advancedScore?.decisionConfidence ?? flight.score?.decisionConfidence)) && (
+                                                    <span className="ml-1">({Math.round(Number((flight.advancedScore?.decisionConfidence ?? flight.score?.decisionConfidence) || 0))}% confidence)</span>
                                                 )}
                                             </div>
-                                            {flight.advancedScore?.decisionReason && (
-                                                <div className="font-medium mt-1">{flight.advancedScore.decisionReason}</div>
+                                            {decisionReason && (
+                                                <div className="font-medium mt-1">{decisionReason}</div>
                                             )}
                                         </div>
                                     )}
@@ -991,17 +1032,6 @@ export default function FlightResultCard({
                             {decisionAction ? decisionAction.cta : t('view_analysis')}
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
-                        <button
-                            onClick={handleDetailsClick}
-                            disabled={false}
-                            className={`mt-2 w-full font-semibold py-2 px-4 rounded-xl transition-all hover:scale-105 ${
-                                hasPremiumAccess
-                                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                                    : 'bg-slate-100 text-slate-400'
-                            }`}
-                        >
-                            View analysis
-                        </button>
                     </div>
 
                     {/* 🚨 HISTORICAL PUNCTUALITY RADAR (PRO+) */}
@@ -1062,14 +1092,14 @@ export default function FlightResultCard({
                 <div className="w-full md:w-52 border-l pl-6 flex flex-col justify-between relative">
 
                     {/* SKOR KUTUSU (PREMIUM KİLİDİ) */}
-                    <div className="h-32 relative flex items-center justify-center mb-2 rounded-2xl overflow-hidden bg-sky-50/70 border border-sky-100 px-3">
+                    <div className="min-h-[9rem] relative flex items-center justify-center mb-2 rounded-2xl overflow-hidden bg-sky-50/70 border border-sky-100 px-3 py-3">
                         {!hasPremiumAccess ? (
                             <div className="text-center opacity-90">
                                 <div className="text-5xl font-black text-slate-300 blur-sm">8.5</div>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Intelligence Vault</span>
                             </div>
                         ) : (
-                            <div className="text-center w-full">
+                            <div className="text-center w-full space-y-1">
                                 <div className={`text-4xl font-black leading-none ${hasInvalidData ? 'text-red-600' : 'text-blue-600'}`}>
                                     {Number.isFinite(displayScore) ? displayScore.toFixed(1) : '0.0'}
                                 </div>
@@ -1147,17 +1177,28 @@ export default function FlightResultCard({
 
                         {/* BUY / WAIT Signal */}
                         {(() => {
-                            const sig = flight.advancedScore?.buyWaitSignal;
-                            if (!sig) return null;
+                            const sig = flight.advancedScore?.buyWaitSignal || flight.score?.buyWaitSignal;
+                            const fallbackAction = decisionRecommendation === 'BUY_NOW'
+                                ? 'BUY'
+                                : decisionRecommendation === 'WAIT'
+                                    ? 'WAIT'
+                                    : decisionRecommendation === 'AVOID'
+                                        ? 'WAIT'
+                                        : 'MONITOR';
+                            const fallbackLabel = decisionRecommendation
+                                ? (decisionRecommendation === 'BUY_NOW' ? 'BUY NOW' : decisionRecommendation)
+                                : '';
+                            const signal = sig || (fallbackLabel ? { action: fallbackAction, label: fallbackLabel } : null);
+                            if (!signal) return null;
                             const cfg: Record<string, { icon: string; cls: string }> = {
                                 BUY:     { icon: '🟢', cls: 'bg-green-50 text-green-800 border-green-300' },
                                 MONITOR: { icon: '🟡', cls: 'bg-amber-50 text-amber-800 border-amber-300' },
                                 WAIT:    { icon: '🔴', cls: 'bg-rose-50 text-rose-800 border-rose-300' },
                             };
-                            const c = cfg[sig.action] ?? cfg.MONITOR;
+                            const c = cfg[signal.action] ?? cfg.MONITOR;
                             return (
                                 <div className={`mt-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-center ${c.cls}`}>
-                                    {c.icon} {sig.label}
+                                    {c.icon} {signal.label}
                                 </div>
                             );
                         })()}

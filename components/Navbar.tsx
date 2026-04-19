@@ -41,7 +41,7 @@ export default function Navbar() {
     const displayName = session?.user?.name || session?.user?.email || '';
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
+        <div className="fixed top-0 left-0 right-0 z-[120] px-4 pt-4">
             {/* Floating pill navbar */}
             <nav className="max-w-7xl mx-auto rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-slate-700/40 shadow-[0_8px_32px_-8px_rgba(15,23,42,0.14),inset_0_1px_0_rgba(255,255,255,0.6)]">
                 <div className="px-5 md:px-7">
