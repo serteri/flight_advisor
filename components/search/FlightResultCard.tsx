@@ -507,11 +507,15 @@ export default function FlightResultCard({
         return { label: isTrLocale ? 'Dahil Değil' : 'Not Included', tone: 'excluded' as const };
     })();
 
+    const mealAmenityText = `${t('meal')}: ${mealLabel}`;
+    const wifiAmenityText = `${t('wifi')}: ${wifiLabel}`;
+    const baggageAmenityText = `${t('baggage')}: ${baggageInfo.label}`;
+
     const decisionAction = decisionRecommendation === 'BUY_NOW'
         ? {
             message: buyWaitLabel || decisionReason || 'This fare is below the route average — book before prices rise.',
             context: 'Check fare within 24–48h to lock in this price before it increases.',
-            cta: 'Open booking options',
+            cta: 'View fare details',
             onClick: handleBookClick,
             className: 'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white border border-sky-300/40 shadow-lg shadow-sky-500/30 btn-glow',
         }
@@ -799,13 +803,13 @@ export default function FlightResultCard({
                             <div className="flex items-center gap-1.5">
                                 <Utensils className={`w-3.5 h-3.5 ${hasMeal ? 'text-slate-700' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {mealLabel}
+                                    {mealAmenityText}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Wifi className={`w-3.5 h-3.5 ${wifiStatus === 'available' ? 'text-blue-600' : wifiStatus === 'check_with_airline' ? 'text-amber-500' : 'text-slate-300'}`} />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {wifiLabel}
+                                    {wifiAmenityText}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -821,7 +825,7 @@ export default function FlightResultCard({
                                     }`}
                                 />
                                 <span className="text-[11px] font-medium text-slate-600">
-                                    {baggageInfo.label}
+                                    {baggageAmenityText}
                                 </span>
                             </div>
                             
@@ -970,17 +974,6 @@ export default function FlightResultCard({
                                             {decisionReason && (
                                                 <div className="font-medium mt-1">{decisionReason}</div>
                                             )}
-                                        </div>
-                                    )}
-
-                                    {decisionAction && hasPremiumAccess && (
-                                        <div className="rounded-2xl border border-sky-200/60 bg-white/75 backdrop-blur-md px-3 py-2.5 shadow-[0_8px_24px_-12px_rgba(14,165,233,0.35)]">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="text-[10px] uppercase tracking-wider font-black text-sky-700">{t('flightIntelligenceAlert')}</div>
-                                                <div className="text-[10px] font-semibold text-sky-600/90 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">Variant {buyNowVariant}</div>
-                                            </div>
-                                            <div className="text-xs font-bold text-slate-900 mt-1">{decisionAction.message}</div>
-                                            <div className="text-[11px] text-slate-600 mt-1">{decisionAction.context}</div>
                                         </div>
                                     )}
 

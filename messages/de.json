@@ -82,7 +82,7 @@
     },
     "Results": {
         "total_duration": "Gesamtdauer",
-        "agentScore": "Agent-Score",
+        "agentScore": "Flug-Intelligenz-Score",
         "view_analysis": "Analyse ansehen",
         "track": "Beobachten",
         "direct": "Direkt",

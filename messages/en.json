@@ -31,7 +31,7 @@
   },
   "Results": {
     "noFlights": "No flights found",
-    "agentScore": "Agent Score",
+    "agentScore": "Flight Intelligence Score",
     "bookButton": "View Deal",
     "direct": "Direct",
     "stops": "Stops",

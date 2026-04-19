@@ -135,7 +135,7 @@ export default function ResultsPage({ searchParams }: ResultsPageProps) {
                         <span className="text-slate-600">{date}</span>
                     </div>
                     <p className="text-slate-500 mt-2">
-                        Agent Score ve 9 farklı kriter analiz edilerek en mantıklı uçuşlar sıralandı.
+                        Flight Intelligence Score ve 9 farklı kriter analiz edilerek en mantikli ucuslar siralandi.
                     </p>
                     {/* Persona Selector */}
                     <div className="mt-4 flex items-center gap-3">
