@@ -75,8 +75,8 @@ const segmentDurationMinutes = (segment: any): number => {
     const direct = toMinutes(segment?.duration);
     if (direct > 0) return direct;
 
-    const depRaw = segment?.departing_at || segment?.departure;
-    const arrRaw = segment?.arriving_at || segment?.arrival;
+    const depRaw = segment?.departureTime || segment?.departing_at || segment?.departure;
+    const arrRaw = segment?.arrivalTime || segment?.arriving_at || segment?.arrival;
     const depMs = depRaw ? parseIsoDateToUtcMs(String(depRaw)) : NaN;
     const arrMs = arrRaw ? parseIsoDateToUtcMs(String(arrRaw)) : NaN;
 
@@ -320,9 +320,9 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                 <div className="space-y-3 text-sm">
                     <div className="bg-slate-50 p-3 rounded border">
                         <div className="grid grid-cols-3 gap-4">
-                            <div><div className="text-xs text-slate-500">{labels.departure}</div><div className="font-bold text-lg">{safeDate(flight.departTime)}</div><div className="text-xs text-slate-600">{flight.from || "XXX"}</div></div>
+                            <div><div className="text-xs text-slate-500">{labels.departure}</div><div className="font-bold text-lg">{safeDate(flight.departureTime || flight.departTime)}</div><div className="text-xs text-slate-600">{flight.from || "XXX"}</div></div>
                             <div className="text-center"><Clock className="w-5 h-5 mx-auto text-slate-400" /><div className="font-bold">{formatDuration(displayTotalDuration)}</div><div className="text-xs bg-blue-100 text-blue-700 w-fit mx-auto px-2 py-1 rounded my-1 font-bold">{flight.stops === 0 ? labels.direct : `${flight.stops} ${labels.stops}`}</div></div>
-                            <div className="text-right"><div className="text-xs text-slate-500">{labels.arrival}</div><div className="font-bold text-lg">{safeDate(flight.arriveTime)}</div><div className="text-xs text-slate-600">{flight.to || "XXX"}</div></div>
+                            <div className="text-right"><div className="text-xs text-slate-500">{labels.arrival}</div><div className="font-bold text-lg">{safeDate(flight.arrivalTime || flight.arriveTime)}</div><div className="text-xs text-slate-600">{flight.to || "XXX"}</div></div>
                         </div>
                     </div>
                     <div className="bg-white p-3 rounded border"><h3 className="font-bold mb-2 flex items-center gap-1"><Luggage className="w-4 h-4" /> {labels.baggage}</h3><div className="grid grid-cols-2 gap-2 text-xs"><div><div className="text-slate-500">{labels.cabin}</div><div className="font-bold">{cabinBagKg}kg</div></div><div><div className="text-slate-500">{labels.checked}</div><div className="font-bold">{checkedBagText}</div></div></div></div>
@@ -332,13 +332,32 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
                             <div className="space-y-2">
                                 {segs.map((s: any, i: number) => {
                                     const c = s.operating_carrier || s.operatingCarrier || {};
-                                    const operatingName = (c.name || s.operatingAirlineName || s.operatingAirline || s.operatingCarrier || flight.operatingAirline || flight.airline || (isTr ? "Havayolu" : "Airline")).toString();
-                                    const marketingName = (s.marketingAirlineName || s.marketingAirline || s.airline || operatingName).toString();
+                                    const operatingName = (
+                                        c.name ||
+                                        s.operatingAirlineName ||
+                                        s.operatingAirline ||
+                                        s.operatingCarrier ||
+                                        s.airline ||
+                                        s.carrier ||
+                                        s.operatingAirlineCode ||
+                                        flight.operatingAirline ||
+                                        flight.airline ||
+                                        (isTr ? "Havayolu" : "Airline")
+                                    ).toString();
+                                    const marketingName = (
+                                        s.marketingAirlineName ||
+                                        s.marketingAirline ||
+                                        s.marketingCarrier ||
+                                        s.marketingAirlineCode ||
+                                        s.airline ||
+                                        s.carrier ||
+                                        operatingName
+                                    ).toString();
                                     const carrierCode = (c.iata_code || s.operatingAirlineCode || s.carrier || s.carrierCode || "XX").toString();
                                     const segFrom = toCode(s.origin || s.from || s.departure_airport || s.departureAirport || s.origin_airport);
                                     const segTo = toCode(s.destination || s.to || s.arrival_airport || s.arrivalAirport || s.destination_airport);
-                                    const d = s.departing_at || s.departure;
-                                    const a = s.arriving_at || s.arrival;
+                                    const d = s.departureTime || s.departing_at || s.departure;
+                                    const a = s.arrivalTime || s.arriving_at || s.arrival;
                                     const segMinutes = segmentDurationMinutes(s);
                                     const lay = lays[i];
 

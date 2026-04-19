@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Database, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { normalizeSource } from '@/lib/utils';
 import type { ScoredFlight } from '@/types/unifiedFlight';
 
@@ -13,6 +14,7 @@ interface DataSourceStatus {
 }
 
 export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
+    const t = useTranslations('Results');
     const [sources, setSources] = useState<DataSourceStatus[]>([]);
 
     useEffect(() => {
@@ -51,10 +53,10 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <Database className="w-5 h-5 text-slate-600" />
-                    <h3 className="text-sm font-bold text-slate-900">Veri Kaynakları</h3>
+                    <h3 className="text-sm font-bold text-slate-900">{t('dataSources')}</h3>
                 </div>
                 <div className="text-xs font-medium text-slate-500">
-                    {activeCount}/{sources.length} Aktif
+                    {activeCount}/{sources.length} {t('active')}
                 </div>
             </div>
 
@@ -88,7 +90,7 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
                             {source.count}
                         </div>
                         <div className="text-xs text-slate-500 mt-0.5">
-                            {source.status === 'active' ? 'uçuş bulundu' : 'sonuç yok'}
+                            {source.status === 'active' ? t('flightsFoundLower') : t('noResultsLower')}
                         </div>
                     </div>
                 ))}
@@ -97,8 +99,8 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
             {totalFlights > 0 && (
                 <div className="mt-4 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-600">Toplam Sonuç</span>
-                        <span className="font-black text-slate-900">{totalFlights} Uçuş</span>
+                        <span className="font-medium text-slate-600">{t('totalResults')}</span>
+                        <span className="font-black text-slate-900">{t('totalFlightsLabel', { count: totalFlights })}</span>
                     </div>
                     <div className="mt-2 bg-slate-100 rounded-full h-2 overflow-hidden flex">
                         {sources.map((source) => {

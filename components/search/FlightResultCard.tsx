@@ -672,11 +672,29 @@ export default function FlightResultCard({
                                 {segments.map((seg: any, idx: number) => {
                                     const segFrom = toText(seg.origin || seg.from || seg.departure_airport?.id, 'XXX');
                                     const segTo = toText(seg.destination || seg.to || seg.arrival_airport?.id, 'XXX');
-                                    const segDep = seg.departure || seg.departing_at || seg.departure_time || seg.departure_at || seg.departure_airport?.time;
-                                    const segArr = seg.arrival || seg.arriving_at || seg.arrival_time || seg.arrival_at || seg.arrival_airport?.time;
+                                    const segDep = seg.departureTime || seg.departure || seg.departing_at || seg.departure_time || seg.departure_at || seg.departure_airport?.time;
+                                    const segArr = seg.arrivalTime || seg.arrival || seg.arriving_at || seg.arrival_time || seg.arrival_at || seg.arrival_airport?.time;
                                     const segDuration = getSegmentDurationMinutes(seg, 0);
-                                    const operatingCarrier = String(seg.operatingCarrier || seg.operatingAirlineName || seg.operatingAirline || seg.airline || 'Unknown Carrier').trim();
-                                    const marketingCarrier = String(seg.marketingCarrier || seg.marketingAirlineName || seg.marketingAirline || operatingCarrier).trim();
+                                    const operatingCarrier = String(
+                                        seg.operatingCarrier ||
+                                        seg.operatingAirlineName ||
+                                        seg.operatingAirline ||
+                                        seg.airline ||
+                                        seg.carrier ||
+                                        seg.operatingAirlineCode ||
+                                        seg.marketingCarrier ||
+                                        seg.marketingAirlineCode ||
+                                        'Unknown Carrier'
+                                    ).trim();
+                                    const marketingCarrier = String(
+                                        seg.marketingCarrier ||
+                                        seg.marketingAirlineName ||
+                                        seg.marketingAirline ||
+                                        seg.marketingAirlineCode ||
+                                        seg.operatingAirlineName ||
+                                        seg.carrier ||
+                                        operatingCarrier
+                                    ).trim();
                                     const layoverAfter = Array.isArray(flight.layovers) ? flight.layovers[idx] : null;
                                     const layoverMinutes = parseMinutes(layoverAfter?.duration);
                                     const layoverAirportCode = toText(layoverAfter?.airport, segTo).toUpperCase();
@@ -708,8 +726,8 @@ export default function FlightResultCard({
                                                 let layCity = layoverCity;
                                                 if (layMins === 0) {
                                                     const nextSeg = segments[idx + 1] as any;
-                                                    const curArr = seg.arriving_at || seg.arrival_time || seg.arrival;
-                                                    const nextDep = nextSeg?.departing_at || nextSeg?.departure_time || nextSeg?.departure;
+                                                    const curArr = seg.arrivalTime || seg.arriving_at || seg.arrival_time || seg.arrival;
+                                                    const nextDep = nextSeg?.departureTime || nextSeg?.departing_at || nextSeg?.departure_time || nextSeg?.departure;
                                                     if (curArr && nextDep) {
                                                         const a = new Date(curArr).getTime();
                                                         const d = new Date(nextDep).getTime();
@@ -970,7 +988,7 @@ export default function FlightResultCard({
                             }`}
                         >
                             <Eye className="w-4 h-4" />
-                            {decisionAction ? decisionAction.cta : t('viewAnalysis')}
+                            {decisionAction ? decisionAction.cta : t('view_analysis')}
                             {!hasPremiumAccess && <Lock className="w-3 h-3 ml-1 text-amber-600" />}
                         </button>
                         <button
