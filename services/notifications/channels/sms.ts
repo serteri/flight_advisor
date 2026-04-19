@@ -1,34 +1,18 @@
 // services/notifications/channels/sms.ts
 import { NotificationPayload } from '../types';
-
-// Initialize Twilio (optional - use mock if not available)
-let twilioClient: any = null;
-
-const getTwilioClient = () => {
-    if (twilioClient) return twilioClient;
-    
-    try {
-        const twilio = require('twilio');
-        const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const authToken = process.env.TWILIO_AUTH_TOKEN;
-        
-        if (accountSid && authToken) {
-            twilioClient = twilio(accountSid, authToken);
-            return twilioClient;
-        }
-    } catch (err) {
-        console.log("⚠️ Twilio SDK not available, using mock");
-    }
-    
-    return null;
-};
+import { TwilioProvider } from '../providers/twilio';
 
 export class SmsChannel {
     private static instance: SmsChannel;
-    private fromNumber: string;
+    private provider: TwilioProvider | null;
 
     private constructor() {
-        this.fromNumber = process.env.TWILIO_PHONE_NUMBER || '+15005550006'; // Twilio sandbox default
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+        this.provider = accountSid && authToken && fromNumber
+            ? new TwilioProvider(accountSid, authToken, fromNumber)
+            : null;
     }
 
     public static getInstance(): SmsChannel {
@@ -39,38 +23,18 @@ export class SmsChannel {
     }
 
     public async send(to: string, payload: NotificationPayload): Promise<{ success: boolean; id?: string }> {
-        console.log(`📱 [SMS SERVICE] Sending to: ${to}`);
-        console.log(`   Text: ${payload.message}`);
-        
-        const client = getTwilioClient();
-        
-        // Use real Twilio if available
-        if (client) {
-            try {
-                const message = await client.messages.create({
-                    body: payload.message.substring(0, 160), // SMS char limit
-                    from: this.fromNumber,
-                    to: to,
-                });
-                console.log(`✅ [SMS SENT] Twilio SID: ${message.sid}`);
-                return { success: true, id: message.sid };
-            } catch (err: any) {
-                console.error(`❌ [SMS ERROR] ${err.message}`);
-                // Fallback to mock on error
-                return this.mockSend(payload);
-            }
+        if (!this.provider) {
+            return { success: false };
         }
-        
-        // Fallback to mock
-        return this.mockSend(payload);
-    }
 
-    private mockSend(payload: NotificationPayload): Promise<{ success: boolean; id?: string }> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`✅ [SMS SENT] Delivered via Twilio (Priority: HIGH).`);
-                resolve({ success: true, id: `SM${Date.now()}` });
-            }, 500);
+        const result = await this.provider.sendSMS({
+            to,
+            text: payload.message.substring(0, 160),
         });
+
+        return {
+            success: result.success,
+            id: result.providerMessageId,
+        };
     }
 }

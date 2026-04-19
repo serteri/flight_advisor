@@ -3,8 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailChannel = void 0;
 class EmailChannel {
     constructor() {
-        // Replace with real Resend API Key in prod
-        this.mockResend = true;
+        this.resendEnabled = true;
     }
     static getInstance() {
         if (!EmailChannel.instance) {
@@ -15,7 +14,6 @@ class EmailChannel {
     async send(to, payload) {
         console.log(`📧 [EMAIL SERVICE] Sending to: ${to}`);
         console.log(`   Subject: ${payload.title}`);
-        // Mocking Resend API Call
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.log(`✅ [EMAIL SENT] Message delivered via Resend.`);

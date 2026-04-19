@@ -1,14 +1,12 @@
 // services/notifications/dispatcher.ts
 import { NotificationPayload, UserPreferences, NotificationPriority, NotificationChannel, UserTier } from './types';
-import { EmailChannel } from './channels/email';
-import { SmsChannel } from './channels/sms';
+import { NotificationProviderManager } from './providers';
 import { getTemplate } from './templates';
 
 export class NotificationDispatcher {
     private static instance: NotificationDispatcher;
     
-    private emailService = EmailChannel.getInstance();
-    private smsService = SmsChannel.getInstance();
+    private provider = NotificationProviderManager.getInstance();
 
     private constructor() {}
 
@@ -46,20 +44,46 @@ export class NotificationDispatcher {
         };
 
         // 3. SEND (Parallel Execution)
-        const tasks = [];
+        const tasks: Promise<void>[] = [];
 
         if (channels.includes('EMAIL') && user.contact.email) {
-            tasks.push(this.emailService.send(user.contact.email, finalPayload));
+            tasks.push((async () => {
+                const result = await this.provider.sendEmail({
+                    to: user.contact.email,
+                    subject: finalPayload.title,
+                    text: finalPayload.message,
+                });
+                if (!result.success) {
+                    throw new Error(result.error || 'Email dispatch failed');
+                }
+            })());
         }
 
         if (channels.includes('SMS') && user.contact.phone) {
             // Only send SMS if configured and critical (or Elite tier)
-            tasks.push(this.smsService.send(user.contact.phone, finalPayload));
+            tasks.push((async () => {
+                const result = await this.provider.sendSMS({
+                    to: user.contact.phone!,
+                    text: finalPayload.message,
+                });
+                if (!result.success) {
+                    throw new Error(result.error || 'SMS dispatch failed');
+                }
+            })());
         }
 
         if (channels.includes('PUSH')) {
-            // Push Notification Service (TODO: Implement OneSignal/FCM)
-            console.log(`📲 [PUSH] Sending to device: ${finalPayload.title}`);
+            tasks.push((async () => {
+                const result = await this.provider.sendPush({
+                    userId: payload.userId,
+                    title: finalPayload.title,
+                    body: finalPayload.message,
+                    data: finalPayload.data,
+                });
+                if (!result.success) {
+                    console.warn(`[DISPATCHER] Push skipped: ${result.error || 'Push dispatch failed'}`);
+                }
+            })());
         }
 
         await Promise.all(tasks);

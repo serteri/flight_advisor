@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 
 import { Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { ChannelResponse } from "@/services/notifications/types";
+import { NotificationProviderManager } from "@/services/notifications/providers";
 import { GuardianEvent } from "@/workers/guardianWorker";
 
 // Helper sleep mapping
@@ -61,17 +63,7 @@ async function reclaimStaleProcessingDelivery(
     return reclaimedRows[0] ?? null;
 }
 
-// ── CHANNEL ABSTRACTIONS (MOCK ADAPTERS) ──
-
-async function sendEmail(email: string, subject: string, content: string): Promise<void> {
-    console.log(`[MAILER] 📧 Dispatching to ${email}: "${subject}" -> ${content}`);
-    if (Math.random() < 0.2) throw new Error("Mock Email Delivery Timeout");
-}
-
-async function sendSMS(phone: string, content: string): Promise<void> {
-    console.log(`[SMS]    📱 Dispatching to ${phone}: ${content}`);
-    if (Math.random() < 0.2) throw new Error("Mock SMS Carrier Rejected");
-}
+const notificationProvider = NotificationProviderManager.getInstance();
 
 // ── ATOMIC LOCKING & RETRY STRATEGY ENVELOPE ──
 
@@ -234,7 +226,7 @@ async function persistSkippedDelivery(eventId: string, tripId: string, channel: 
 }
 
 async function attemptDispatch(
-    dispatchFn: () => Promise<void>,
+    dispatchFn: () => Promise<ChannelResponse>,
     channelKey: string,
     eventId: string,
     tripId: string,
@@ -252,7 +244,10 @@ async function attemptDispatch(
     // 2. DISPATCH & SYNC
     for (let currentAttempt = 0; currentAttempt < maxAttempts; currentAttempt++) {
         try {
-            await dispatchFn();
+            const result = await dispatchFn();
+            if (!result.success) {
+                throw new Error(result.error || `${channel} provider returned unsuccessful response`);
+            }
             await markDeliverySent(claim.deliveryId, claim.claimId);
             return;
         } catch (err: any) {
@@ -321,7 +316,12 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
     if (user.email) {
         const emailKey = `${eventId}:EMAIL`;
         notifications.push(attemptDispatch(
-            () => sendEmail(user.email!, subject, body),
+            () => notificationProvider.sendEmail({
+                to: user.email!,
+                subject,
+                text: body,
+                html: `<p>${body}</p>`,
+            }),
             emailKey,
             eventId,
             event.tripId,
@@ -336,7 +336,10 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
 
         if (user.phoneNumber) {
             notifications.push(attemptDispatch(
-                () => sendSMS(user.phoneNumber!, body),
+                () => notificationProvider.sendSMS({
+                    to: user.phoneNumber!,
+                    text: body,
+                }),
                 smsKey,
                 eventId,
                 event.tripId,

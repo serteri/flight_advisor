@@ -22,6 +22,31 @@ export interface ChannelResponse {
     channel: NotificationChannel;
 }
 
+export interface EmailRequest {
+    to: string;
+    subject: string;
+    html?: string;
+    text: string;
+}
+
+export interface SmsRequest {
+    to: string;
+    text: string;
+}
+
+export interface PushRequest {
+    userId: string;
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+}
+
+export interface NotificationProvider {
+    sendEmail(request: EmailRequest): Promise<ChannelResponse>;
+    sendSMS(request: SmsRequest): Promise<ChannelResponse>;
+    sendPush(request: PushRequest): Promise<ChannelResponse>;
+}
+
 export interface UserPreferences {
     tier: UserTier;
     tone: ToneOfVoice;

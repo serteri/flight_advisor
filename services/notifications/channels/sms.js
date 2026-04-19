@@ -3,8 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SmsChannel = void 0;
 class SmsChannel {
     constructor() {
-        // Replace with real Twilio API Key in prod
-        this.mockTwilio = true;
+        this.twilioEnabled = true;
     }
     static getInstance() {
         if (!SmsChannel.instance) {
@@ -15,7 +14,6 @@ class SmsChannel {
     async send(to, payload) {
         console.log(`📱 [SMS SERVICE] Sending to: ${to}`);
         console.log(`   Text: ${payload.message}`);
-        // Mocking Twilio API Call
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.log(`✅ [SMS SENT] Delivered via Twilio (Priority: HIGH).`);

@@ -1,34 +1,14 @@
 // services/notifications/channels/email.ts
 import { NotificationPayload } from '../types';
-
-// Initialize Resend (optional - use mock if not available)
-let resendClient: any = null;
-
-const getResendClient = () => {
-    if (resendClient) return resendClient;
-    
-    try {
-        const { Resend } = require('resend');
-        const apiKey = process.env.RESEND_API_KEY;
-        
-        if (apiKey) {
-            resendClient = new Resend(apiKey);
-            console.log("✅ Resend SDK initialized with API key");
-            return resendClient;
-        }
-    } catch (err) {
-        console.log("⚠️ Resend SDK not available, using mock");
-    }
-    
-    return null;
-};
+import { ResendProvider } from '../providers/resend';
 
 export class EmailChannel {
     private static instance: EmailChannel;
-    private fromEmail: string;
+    private provider: ResendProvider | null;
 
     private constructor() {
-        this.fromEmail = 'onboarding@resend.dev';
+        const apiKey = process.env.RESEND_API_KEY;
+        this.provider = apiKey ? new ResendProvider(apiKey) : null;
     }
 
     public static getInstance(): EmailChannel {
@@ -39,47 +19,21 @@ export class EmailChannel {
     }
 
     public async send(to: string, payload: NotificationPayload): Promise<{ success: boolean; id?: string }> {
-        console.log(`📧 [EMAIL SERVICE] Sending to: ${to}`);
-        console.log(`   Subject: ${payload.title}`);
-        
-        const client = getResendClient();
-        
-        // Use real Resend if available
-        if (client) {
-            try {
-                const response = await client.emails.send({
-                    from: this.fromEmail,
-                    to: to,
-                    subject: payload.title,
-                    html: this.generateHtml(payload),
-                    replyTo: 'support@flightguardian.io',
-                });
-                
-                if (response.error) {
-                    console.error(`❌ [EMAIL ERROR] ${response.error.message}`);
-                    return this.mockSend();
-                }
-                
-                console.log(`✅ [EMAIL SENT] Message ID: ${response.data?.id}`);
-                return { success: true, id: response.data?.id };
-            } catch (err: any) {
-                console.error(`❌ [EMAIL ERROR] ${err.message}`);
-                // Fallback to mock on error
-                return this.mockSend();
-            }
+        if (!this.provider) {
+            return { success: false };
         }
-        
-        // Fallback to mock
-        return this.mockSend();
-    }
 
-    private mockSend(): Promise<{ success: boolean; id?: string }> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`✅ [EMAIL SENT] Message delivered via Resend (Mock).`);
-                resolve({ success: true, id: `res_${Date.now()}` });
-            }, 500);
+        const result = await this.provider.sendEmail({
+            to,
+            subject: payload.title,
+            html: this.generateHtml(payload),
+            text: payload.message,
         });
+
+        return {
+            success: result.success,
+            id: result.providerMessageId,
+        };
     }
 
     // HTML Template Generator (Simplified)
