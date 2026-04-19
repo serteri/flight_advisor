@@ -37,7 +37,6 @@ type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
     score?: number;
     advancedScore?: any;
 };
-type FlightResult = ScoringFlight;
 
 const toScoringFlight = (unified: UnifiedFlight): ScoringFlight => ({
     ...unified,
@@ -55,7 +54,7 @@ const toScoringFlight = (unified: UnifiedFlight): ScoringFlight => ({
     canonicalPolicies: unified.policies,
 });
 
-const asUnifiedFlightForMetrics = (flight: FlightResult): UnifiedFlight => ({
+const asUnifiedFlightForMetrics = (flight: ScoringFlight): UnifiedFlight => ({
     ...(flight as unknown as UnifiedFlight),
     baggage: flight.canonicalBaggage,
     policies: flight.canonicalPolicies,
@@ -244,15 +243,15 @@ const getExpectedRouteDurationMinutes = (origin?: string, destination?: string):
     return Math.max(60, Math.round((distanceKm / CRUISE_SPEED_KMH) * 60));
 };
 
-const resolveDurationMinutes = (flight: FlightResult): number => {
+const resolveDurationMinutes = (flight: ScoringFlight): number => {
     return resolveFlightDurationMinutes(asUnifiedFlightForMetrics(flight));
 };
 
 // ── DEDUPLICATION ──────────────────────────────────────────────────────────
 // Merge flights with same departure time, arrival time, route, and operating_airline
 // Keep lowest price variant and track all marketing airlines in "Sold by" list
-const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
-    const groups = new Map<string, FlightResult[]>();
+const deduplicateFlights = (flights: ScoringFlight[]): ScoringFlight[] => {
+    const groups = new Map<string, ScoringFlight[]>();
     
     flights.forEach((flight) => {
         const departTime = String(flight.departTime || '').trim();
@@ -270,7 +269,7 @@ const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
     });
     
     // For each group, keep lowest price and track all sold-by airlines
-    const result: FlightResult[] = [];
+    const result: ScoringFlight[] = [];
     groups.forEach((flightGroup) => {
         // Sort by price to get lowest first
         flightGroup.sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
@@ -305,7 +304,7 @@ const deduplicateFlights = (flights: FlightResult[]): FlightResult[] => {
     return result;
 };
 
-const resolveLayovers = (flight: FlightResult) =>
+const resolveLayovers = (flight: ScoringFlight) =>
     (flight.layovers || []).map((layover) => ({
         airport: (layover.airport || '').toUpperCase(),
         duration: toMinutes(layover.duration),
@@ -320,7 +319,7 @@ type ResolvedLayover = {
     isSameAirline: boolean;
 };
 
-const resolveLayoversFromSegments = (flight: FlightResult): ResolvedLayover[] => {
+const resolveLayoversFromSegments = (flight: ScoringFlight): ResolvedLayover[] => {
     const segments = Array.isArray(flight.segments) ? flight.segments : [];
     const result: ResolvedLayover[] = [];
 
@@ -373,7 +372,7 @@ const resolveLayoversFromSegments = (flight: FlightResult): ResolvedLayover[] =>
     return result;
 };
 
-const hasSelfTransferRisk = (flight: FlightResult): boolean => {
+const hasSelfTransferRisk = (flight: ScoringFlight): boolean => {
     const segments = Array.isArray(flight.segments) ? flight.segments : [];
     if (segments.length < 2) return false;
 
@@ -426,7 +425,7 @@ const resolveReliability = (airlineName: string): { score: number; isTopAirline:
     return { score: fallback, isTopAirline };
 };
 
-const resolveAircraftCode = (flight: FlightResult): string => {
+const resolveAircraftCode = (flight: ScoringFlight): string => {
     const direct = (flight.aircraft || '').toUpperCase();
     if (direct) return direct;
 
@@ -527,7 +526,7 @@ const computePriceIntel = (
     };
 };
 
-const computeConfidenceScore = (flight: FlightResult): number => {
+const computeConfidenceScore = (flight: ScoringFlight): number => {
     let score = 0;
     if (Number.isFinite(flight.price) && flight.price > 0) score += 25;
     if (resolveAircraftCode(flight).length >= 3) score += 15;
@@ -563,7 +562,7 @@ const resolvePersona = (persona?: PersonaInput): PersonaKey => {
     return 'comfort';
 };
 
-const resolveDepartureHour = (flight: FlightResult): number | null => {
+const resolveDepartureHour = (flight: ScoringFlight): number | null => {
     const raw = String(flight.departTime || '').trim();
     if (!raw) return null;
     const parsed = new Date(raw);
@@ -572,7 +571,7 @@ const resolveDepartureHour = (flight: FlightResult): number | null => {
 };
 
 const computePreferenceBonusRaw = (
-    flight: FlightResult,
+    flight: ScoringFlight,
     profile?: PreferenceProfile
 ): number => {
     if (!profile || profile.sampleSize < 3) return 0;
@@ -620,7 +619,7 @@ const normalizeAirlineName = (value?: string): string =>
         .toUpperCase()
         .replace(/\s+/g, ' ');
 
-const estimateBaggageFee = (flight: FlightResult): number => {
+const estimateBaggageFee = (flight: ScoringFlight): number => {
     const checkedKg = Number(flight.policies?.baggageKg || 0);
     const baggageType = String(flight.baggage || '').toLowerCase();
     const hasCheckedBaggage = checkedKg > 0 || baggageType === 'checked';
@@ -641,7 +640,7 @@ const estimateBaggageFee = (flight: FlightResult): number => {
 };
 
 const estimateMealCost = (
-    flight: FlightResult,
+    flight: ScoringFlight,
     mealIncluded: boolean,
     durationMinutes: number
 ): number => {
@@ -657,7 +656,7 @@ const estimateMealCost = (
     return 12;
 };
 
-const estimateSeatSelectionCost = (flight: FlightResult): number => {
+const estimateSeatSelectionCost = (flight: ScoringFlight): number => {
     const cabinClass = String(flight.cabinClass || '').toLowerCase();
     if (cabinClass === 'business' || cabinClass === 'first') return 0;
 
@@ -667,7 +666,7 @@ const estimateSeatSelectionCost = (flight: FlightResult): number => {
     return 18;
 };
 
-const estimateAirportTransferCost = (flight: FlightResult, durationMinutes: number): number => {
+const estimateAirportTransferCost = (flight: ScoringFlight, durationMinutes: number): number => {
     const routeDistanceKm = getGreatCircleDistanceKm(flight.from, flight.to) || 0;
     const longHaul = routeDistanceKm > 3500 || durationMinutes >= 7 * 60;
     const destination = String(flight.to || '').toUpperCase();
@@ -678,7 +677,7 @@ const estimateAirportTransferCost = (flight: FlightResult, durationMinutes: numb
     return 24;
 };
 
-const estimateHiddenFeeBuffer = (flight: FlightResult, baseFare: number): number => {
+const estimateHiddenFeeBuffer = (flight: ScoringFlight, baseFare: number): number => {
     const normalizedAirline = normalizeAirlineName(flight.airline);
     const budgetMatch = Array.from(BUDGET_AIRLINES).some((name) => normalizedAirline.includes(name));
     const ratio = budgetMatch ? 0.07 : 0.035;
@@ -686,7 +685,7 @@ const estimateHiddenFeeBuffer = (flight: FlightResult, baseFare: number): number
 };
 
 const generateScoreExplanation = (
-    flight: FlightResult,
+    flight: ScoringFlight,
     breakdown: ScoreBreakdown,
     comfortNotes: string[],
     priceIntel: { label: string; deltaPercent: number },
@@ -717,7 +716,7 @@ const generateScoreExplanation = (
 // ── End Intelligence Layer v2 ─────────────────────────────────────────────
 
 const scoreFlight = (
-    flight: FlightResult,
+    flight: ScoringFlight,
     context: {
         avgPrice: number;
         medianPrice: number | null;
@@ -1126,7 +1125,7 @@ const scoreFlight = (
             explanation,
             tradeoff,
         },
-    } as FlightResult;
+    } as ScoringFlight;
 };
 
 // ── FLIGHT INTELLIGENCE PHASE 1 ──────────────────────────────────────────
@@ -1345,7 +1344,7 @@ const computePricePositionScore = (price: number, avgPrice: number): number => {
 };
 
 const computeConfidenceScoreV2 = (
-    flight: FlightResult,
+    flight: ScoringFlight,
     routeInsight: RouteInsightInput,
     trend: RouteTrendSignal | null,
     priceDeltaPct?: number,
@@ -1597,7 +1596,7 @@ export function applyRouteIntelligenceFeatures(
     });
 }
 
-const toCanonicalScoredFlight = (flight: FlightResult): ScoredFlight => {
+const toCanonicalScoredFlight = (flight: ScoringFlight): ScoredFlight => {
     const adv = (flight.advancedScore || {}) as any;
 
     const score: FlightScore = {
@@ -1725,3 +1724,4 @@ export async function applyAdvancedFlightScoring(
 
     return scoredFlights.map((flight) => toCanonicalScoredFlight(flight));
 }
+
