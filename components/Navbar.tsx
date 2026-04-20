@@ -33,7 +33,6 @@ export default function Navbar() {
 
     const navLinks = [
         { name: tNav('home'), href: "/" },
-        { name: tNav('search'), href: "/flight-search" },
         { name: tNav('pricing'), href: "/pricing" },
         { name: tNav('blog'), href: "/blog" },
     ];

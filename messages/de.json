@@ -104,13 +104,13 @@
     "HomePage": {
         "hero": {
             "title": "Ihr persönlicher",
-            "titleHighlight": "Flugpreis-Experte",
-            "subtitle": "Erleben Sie die Zukunft der Reiseplanung. Wir analysieren täglich Millionen von Flugpreisen, damit Sie zum perfekten Zeitpunkt buchen können.",
+            "titleHighlight": "Entscheidungs-Intelligenz",
+            "subtitle": "Wissen Sie, wann Sie kaufen, warten oder handeln sollen. FlightAgent bewertet Ihren Flug, verfolgt Störungen und schützt Ihre Reise — automatisch.",
             "ctaPrimary": "Jetzt Entdecken",
             "ctaSecondary": "Mehr Erfahren"
         },
         "badge": {
-            "engineActive": "v1.2 Hybrid Engine Aktiv",
+            "engineActive": "v2.0 Entscheidungsmotor Aktiv",
             "aiMode": "Flight Agent: KI-Modus"
         },
         "trust": {
@@ -124,8 +124,8 @@
             "subtitle": "Flight Agent ist nicht nur eine Preisliste. Es ist ein Schutz-Stack, der Ihre Reise bewertet, prognostiziert und verteidigt.",
             "cards": {
                 "hybrid": {
-                    "title": "Hybride Suchmaschine",
-                    "desc": "4 Datenquellen (RapidAPI, Amadeus, Travelpayouts, Duffel) kombiniert, um blinde Flecken zu schließen."
+                    "title": "Jeden Flug bewerten",
+                    "desc": "Geben Sie einen Flug ein, den Sie irgendwo gefunden haben. Unser 10-Kriterien-Motor bewertet ihn in Sekunden."
                 },
                 "scoring": {
                     "title": "Master-Flugbewertung",

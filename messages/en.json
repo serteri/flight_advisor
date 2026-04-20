@@ -99,13 +99,13 @@
   "HomePage": {
     "hero": {
       "title": "Your Personal Flight",
-      "titleHighlight": "Pricing Expert",
-      "subtitle": "Experience the future of travel planning. We analyze millions of flight prices daily to ensure you book at the perfect moment.",
+      "titleHighlight": "Decision Intelligence",
+      "subtitle": "Know when to buy, when to wait, and when to act. FlightAgent scores your flight, tracks disruptions, and protects your trip — automatically.",
       "ctaPrimary": "Start Exploring",
       "ctaSecondary": "Learn More"
     },
     "badge": {
-      "engineActive": "v1.2 Hybrid Engine Active",
+      "engineActive": "v2.0 Decision Engine Active",
       "aiMode": "Flight Agent: AI Mode"
     },
     "trust": {
@@ -119,8 +119,8 @@
       "subtitle": "Flight Agent is not just a price list. It is a protection stack that scores, predicts, and defends your trip.",
       "cards": {
         "hybrid": {
-          "title": "Hybrid Search Engine",
-          "desc": "4 data sources (RapidAPI, Amadeus, Travelpayouts, Duffel) combined to remove blind spots."
+          "title": "Score Any Flight",
+          "desc": "Paste a flight you found anywhere. Our 10-criteria engine scores it for value, risk, comfort, and reliability in seconds."
         },
         "scoring": {
           "title": "Master Flight Scoring",

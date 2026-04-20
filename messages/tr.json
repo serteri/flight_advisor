@@ -128,13 +128,13 @@
     "HomePage": {
         "hero": {
             "title": "Kişisel Uçuş Fiyat",
-            "titleHighlight": "Uzmanınız",
-            "subtitle": "Seyahat planlamanın geleceğini deneyimleyin. Her gün milyonlarca uçuş fiyatını analiz ediyor, tam zamanında rezervasyon yapmanızı sağlıyoruz.",
+            "titleHighlight": "Karar Zekası",
+            "subtitle": "Ne zaman alacağınızı, ne zaman bekleyeceğinizi ve ne zaman harekete geçeceğinizi bilin. FlightAgent uçuşunuzu puanlar, aksamaları takip eder ve seyahatinizi otomatik olarak korur.",
             "ctaPrimary": "Keşfetmeye Başla",
             "ctaSecondary": "Daha Fazla Bilgi"
         },
         "badge": {
-            "engineActive": "v1.2 Hibrit Motor Aktif",
+            "engineActive": "v2.0 Karar Motoru Aktif",
             "aiMode": "Flight Agent: AI Modu"
         },
         "trust": {
@@ -148,8 +148,8 @@
             "subtitle": "Flight Agent sadece bir fiyat listesi değil. Yolculuğunu skorlayan, öngören ve savunan bir koruma katmanıdır.",
             "cards": {
                 "hybrid": {
-                    "title": "Hibrit Arama Motoru",
-                    "desc": "4 veri kaynağı (RapidAPI, Amadeus, Travelpayouts, Duffel) birleşir ve kör noktalar kapanır."
+                    "title": "Herhangi Bir Uçuşu Puanla",
+                    "desc": "Herhangi bir yerden bulduğunuz uçuşu girin. 10 kriterli motorumuz saniyeler içinde değer, risk ve konfor puanı verir."
                 },
                 "scoring": {
                     "title": "Ana Uçuş Skorlaması",
