@@ -1,6 +1,7 @@
 import { HybridSearchParams } from "@/types/hybridFlight";
 import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';
+import { searchSabreProvider } from './providers/sabre';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
 import { toUnifiedFlights } from '@/lib/adapters/toUnifiedFlight';
@@ -76,6 +77,13 @@ async function searchAllProvidersInternal(
     providers.push('Duffel');
   }
 
+  // Sabre - secondary truth source
+  if (process.env.SABRE_CLIENT_ID && process.env.SABRE_CLIENT_SECRET) {
+    console.log(`✅ Adding Sabre provider`);
+    promises.push(searchSabreProvider(params));
+    providers.push('Sabre');
+  }
+
   // PRICELINE - RapidAPI
   if (!options.skipPriceline && process.env.RAPID_API_KEY && process.env.RAPID_API_HOST_PRICELINE) {
     console.log(`✅ Adding PRICELINE provider`);
@@ -93,6 +101,7 @@ async function searchAllProvidersInternal(
 
     let allFlights: any[] = [];
     let duffelCount = 0;
+    let sabreCount = 0;
     let pricelineCount = 0;
     const cachedCount = (options.injectedFlights || []).length;
 
@@ -117,6 +126,8 @@ async function searchAllProvidersInternal(
 
         if (providerName === 'Duffel') {
           duffelCount = flights.length;
+        } else if (providerName === 'Sabre') {
+          sabreCount = flights.length;
         } else if (providerName === 'Priceline') {
           pricelineCount = flights.length;
         }
@@ -188,7 +199,7 @@ async function searchAllProvidersInternal(
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
-    console.log(`   Duffel: ${duffelCount} | PRICELINE: ${pricelineCount} | DB Cache: ${cachedCount}`);
+    console.log(`   Duffel: ${duffelCount} | Sabre: ${sabreCount} | PRICELINE: ${pricelineCount} | DB Cache: ${cachedCount}`);
     console.log(`   Filtered: ${filteredFlights.length} (origin/destination match)\n`);
     
     // Sort by price
