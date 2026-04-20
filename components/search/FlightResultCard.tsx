@@ -518,10 +518,17 @@ export default function FlightResultCard({
             normalizedSummary.includes('excluded');
 
         if (checkedBagKg > 0) {
-            return { label: `${checkedBagKg}kg Included`, tone: 'included' as const };
+            return { label: `${checkedBagKg}kg included`, tone: 'included' as const };
         }
         if (baggageType === 'checked') {
-            return { label: isTrLocale ? 'Check-in Dahil' : 'Checked Included', tone: 'included' as const };
+            // Inclusion confirmed but no weight data — use piece count if available, otherwise explicit
+            const summaryIsUseful = rawCheckedSummary && !/^included$/i.test(rawCheckedSummary.trim());
+            return {
+                label: summaryIsUseful
+                    ? `${rawCheckedSummary} included`
+                    : (isTrLocale ? 'Check-in dahil (ağırlık bilinmiyor)' : 'Checked included (weight unavailable)'),
+                tone: 'included' as const,
+            };
         }
         if (baggageType === 'cabin' || explicitCabinOnlyBySummary) {
             return { label: `${cabinBagKg}kg ${isTrLocale ? 'Kabin' : 'Cabin Only'}`, tone: 'limited' as const };

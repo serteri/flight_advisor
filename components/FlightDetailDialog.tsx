@@ -169,6 +169,7 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         unlockPro: isTr ? "🔓 Risk Analizi & Fiyat İstihbaratı Kilidini Aç" : "🔓 Unlock Risk & Price Intelligence",
         yes: isTr ? "Var" : "Yes",
         no: isTr ? "Yok" : "No",
+        checkedWeightUnavailable: isTr ? "Check-in dahil (ağırlık bilinmiyor)" : "Checked (weight unavailable)",
     };
 
     const openPricingPage = (offer: 'pro' | 'report' = 'pro') => {
@@ -283,7 +284,12 @@ export function FlightDetailDialog({ flight, open, onClose, canTrack = false, ha
         checkedBagKg > 0
             ? `${checkedBagKg}kg`
             : baggageType === 'checked'
-                ? labels.yes
+                ? (() => {
+                    const summaryIsUseful = checkedSummary && !/^included$/i.test(checkedSummary.trim());
+                    return summaryIsUseful
+                        ? `${checkedSummary} included`
+                        : labels.checkedWeightUnavailable;
+                })()
                 : baggageType === 'cabin' || explicitCabinBySummary
                     ? `${cabinBagKg}kg ${labels.cabin}`
                     : checkedSummary.includes('check with airline') || checkedSummary.includes('havayoluna')
