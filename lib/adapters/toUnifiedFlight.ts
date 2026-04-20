@@ -40,6 +40,7 @@ import type {
 const VALID_SOURCES: Set<UnifiedFlightSource> = new Set([
     'duffel',
     'sabre',
+    'flightapi',
     'priceline',
     'kiwi',
     'rapidapi',

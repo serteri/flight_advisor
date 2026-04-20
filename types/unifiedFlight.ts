@@ -20,7 +20,7 @@
 
 // ── Source ────────────────────────────────────────────────────────────────────
 
-export type UnifiedFlightSource = "duffel" | "sabre" | "priceline" | "kiwi" | "rapidapi";
+export type UnifiedFlightSource = "duffel" | "sabre" | "flightapi" | "priceline" | "kiwi" | "rapidapi";
 
 // ── Supporting types ──────────────────────────────────────────────────────────
 

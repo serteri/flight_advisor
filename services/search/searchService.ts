@@ -2,6 +2,7 @@ import { HybridSearchParams } from "@/types/hybridFlight";
 import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';
 import { searchSabreProvider } from './providers/sabre';
+import { searchFlightAPIProvider } from './providers/flightapi';
 import { searchPricelineProvider } from './providers/priceline';
 import { PricelineEndpointNotFoundError, PricelineRateLimitError } from '@/lib/providers/priceline';
 import { toUnifiedFlights } from '@/lib/adapters/toUnifiedFlight';
@@ -84,6 +85,13 @@ async function searchAllProvidersInternal(
     providers.push('Sabre');
   }
 
+  // FlightAPI - supplemental price/search source
+  if (process.env.FLIGHTAPI_KEY) {
+    console.log(`✅ Adding FlightAPI provider`);
+    promises.push(searchFlightAPIProvider(params));
+    providers.push('FlightAPI');
+  }
+
   // PRICELINE - RapidAPI
   if (!options.skipPriceline && process.env.RAPID_API_KEY && process.env.RAPID_API_HOST_PRICELINE) {
     console.log(`✅ Adding PRICELINE provider`);
@@ -102,6 +110,7 @@ async function searchAllProvidersInternal(
     let allFlights: any[] = [];
     let duffelCount = 0;
     let sabreCount = 0;
+    let flightapiCount = 0;
     let pricelineCount = 0;
     const cachedCount = (options.injectedFlights || []).length;
 
@@ -128,6 +137,8 @@ async function searchAllProvidersInternal(
           duffelCount = flights.length;
         } else if (providerName === 'Sabre') {
           sabreCount = flights.length;
+        } else if (providerName === 'FlightAPI') {
+          flightapiCount = flights.length;
         } else if (providerName === 'Priceline') {
           pricelineCount = flights.length;
         }
@@ -199,7 +210,7 @@ async function searchAllProvidersInternal(
     });
 
     console.log(`\n📊 Total: ${allFlights.length} flights (${elapsed}ms)`);
-    console.log(`   Duffel: ${duffelCount} | Sabre: ${sabreCount} | PRICELINE: ${pricelineCount} | DB Cache: ${cachedCount}`);
+    console.log(`   Duffel: ${duffelCount} | Sabre: ${sabreCount} | FlightAPI: ${flightapiCount} | PRICELINE: ${pricelineCount} | DB Cache: ${cachedCount}`);
     console.log(`   Filtered: ${filteredFlights.length} (origin/destination match)\n`);
     
     // Sort by price

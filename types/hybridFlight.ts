@@ -1,6 +1,7 @@
 ﻿export type FlightSource =
     | "duffel"
     | "sabre"
+    | "flightapi"
     | "priceline"
     | "kiwi"
     | "rapidapi";
