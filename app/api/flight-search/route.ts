@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Public flight-search API is being retired as FlightAgent pivots to a
+ * decision, protection, and tracking layer for flights users already found.
+ */
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';

@@ -44,6 +44,7 @@ const VALID_SOURCES: Set<UnifiedFlightSource> = new Set([
     'priceline',
     'kiwi',
     'rapidapi',
+    'manual',
 ]);
 
 /**

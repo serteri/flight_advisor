@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
+import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring';
 import { scoreFlightV3 } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
+import { UnifiedFlight } from '@/types/unifiedFlight';
+
+const isUnifiedFlight = (value: unknown): value is UnifiedFlight => {
+    if (!value || typeof value !== 'object') return false;
+
+    const flight = value as Partial<UnifiedFlight>;
+    return typeof flight.id === 'string'
+        && typeof flight.source === 'string'
+        && typeof flight.from === 'string'
+        && typeof flight.to === 'string'
+        && typeof flight.departureTime === 'string'
+        && typeof flight.arrivalTime === 'string'
+        && Array.isArray(flight.segments)
+        && flight.segments.length > 0;
+};
 
 export async function POST(request: Request) {
     try {
@@ -11,7 +27,22 @@ export async function POST(request: Request) {
         // For now, we assume if they hit this endpoint, they are authorized 
         // (Frontend handles the "Lock" UI, and we will add real auth later)
 
-        const flight: FlightResult = await request.json();
+        const payload: UnifiedFlight | FlightResult = await request.json();
+
+        if (isUnifiedFlight(payload)) {
+            const [scoredFlight] = await applyAdvancedFlightScoring([payload], {
+                origin: payload.from,
+                destination: payload.to,
+            });
+
+            if (!scoredFlight) {
+                return NextResponse.json({ error: 'Failed to score unified flight' }, { status: 500 });
+            }
+
+            return NextResponse.json(scoredFlight);
+        }
+
+        const flight: FlightResult = payload;
 
         // 2. Re-Analyze (The Scoring Engine runs here, securely on the server)
         // We calculate Min Price based on the flight itself for now (simplification),

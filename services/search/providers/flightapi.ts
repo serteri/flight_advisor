@@ -1,3 +1,7 @@
+/**
+ * @deprecated
+ * Legacy flight-search provider adapter retained only for staged removal.
+ */
 import type { HybridSearchParams, FlightResult } from '@/types/hybridFlight';
 import { searchFlightAPI, FlightAPIError } from '@/lib/providers/flightapi';
 import { mapFlightAPIResponse } from '@/lib/parser/flightapiMapper';

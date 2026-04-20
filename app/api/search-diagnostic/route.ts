@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Search diagnostics are retained only to support staged retirement of the
+ * legacy provider-search stack.
+ */
 import { NextResponse } from 'next/server';
 import { searchAllProviders } from '@/services/search/searchService';
 import { HybridSearchParams } from '@/types/hybridFlight';

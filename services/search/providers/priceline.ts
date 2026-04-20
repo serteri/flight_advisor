@@ -1,3 +1,7 @@
+/**
+ * @deprecated
+ * Legacy flight-search provider adapter retained only for staged removal.
+ */
 import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { searchPriceline } from '@/lib/providers/priceline';
 

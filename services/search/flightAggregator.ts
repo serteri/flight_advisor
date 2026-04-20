@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy search aggregation path retained during the FlightAgent pivot away
+ * from flight search providers. Do not add new product dependencies here.
+ */
 import { FlightResult, HybridSearchParams } from "@/types/hybridFlight";
 import { searchDuffel } from "./providers/duffel";
 import { searchPricelineProvider } from "./providers/priceline";

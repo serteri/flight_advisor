@@ -18,7 +18,7 @@ export const validateUnifiedFlight = (flight: UnifiedFlight): boolean => {
         }
 
         // 2. Check source validity (must be one of the known providers)
-        const validSources = ['duffel', 'kiwi', 'rapidapi', 'priceline'];
+        const validSources = ['duffel', 'kiwi', 'rapidapi', 'priceline', 'sabre', 'flightapi', 'manual'];
         const normalizedSource = flight.source?.toLowerCase().trim();
         if (!validSources.includes(normalizedSource)) {
             safeLog('VALIDATION', `Invalid or missing source: ${flight.source} for flight ${flight.id}`);

@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy search endpoint retained only while search surfaces are being removed
+ * from the product. Do not build new flows on top of this route.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { searchFlights } from "@/lib/amadeus";
 import { prisma } from "@/lib/prisma";

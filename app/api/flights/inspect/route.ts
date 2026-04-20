@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getFlightStatus } from '@/services/flightStatusService';
-import { searchAllProviders } from '@/services/search/searchService';
 import { prisma } from '@/lib/prisma';
+
+type InspectOffer = {
+  id?: string;
+  price?: number;
+  currency?: string;
+  duration?: number;
+  baggage?: {
+    included?: boolean;
+  };
+  policies?: {
+    refundable?: boolean;
+    changeAllowed?: boolean;
+  };
+  stops?: number;
+  cabinClass?: string;
+  segments?: Array<{
+    flightNumber?: string;
+    airline?: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    duration?: number;
+    aircraft?: string;
+    cabinClass?: string;
+  }>;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +45,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { flightNumber, date, origin, destination } = await request.json();
+    const { flightNumber, date, origin, destination, offer } = (await request.json()) as {
+      flightNumber?: string;
+      date?: string;
+      origin?: string;
+      destination?: string;
+      offer?: InspectOffer | null;
+    };
 
     if (!flightNumber || !date) {
       return NextResponse.json(
@@ -103,53 +133,19 @@ export async function POST(request: NextRequest) {
                 ? 'Mediocre reliability'
                 : 'Poor reliability';
 
-        // STEP 2: Call Duffel search with extracted IATA codes
+        // STEP 2: Use caller-provided offer data when available.
+        // Search-provider dependency has been retired from Flight Inspector.
         if (lookupOrigin && lookupDestination) {
-          console.log(
-            `[Flight Inspector] Step 2: Searching Duffel for ${lookupOrigin} → ${lookupDestination} on ${date}...`
-          );
-
           try {
-            const duffelOffers = await searchAllProviders({
-              origin: lookupOrigin,
-              destination: lookupDestination,
-              date,
-              returnDate: undefined,
-              adults: 1,
-              cabin: 'economy',
-            });
+            const matchingOffer = offer || null;
 
-            console.log(
-              `[Flight Inspector] Duffel returned ${(duffelOffers || []).length} offers`
-            );
-
-            // STEP 3: Filter Duffel offers by matching flight number
-            let matchingOffer = null;
-            if (duffelOffers && duffelOffers.length > 0) {
-              // Look for offer that contains this flight number in any segment
-              for (const offer of duffelOffers) {
-                if (offer.segments && Array.isArray(offer.segments)) {
-                  const hasMatchingFlight = offer.segments.some(
-                    (segment: any) =>
-                      segment.flightNumber ===
-                      flightNumber
-                  );
-                  if (hasMatchingFlight) {
-                    matchingOffer = offer;
-                    console.log(
-                      `[Flight Inspector] Found matching offer: ${offer.price} ${offer.currency}`
-                    );
-                    break;
-                  }
-                }
-              }
-            }
-
-            // If no exact match, use first offer as reference (same route/date)
-            if (!matchingOffer && duffelOffers && duffelOffers.length > 0) {
-              matchingOffer = duffelOffers[0];
+            if (matchingOffer) {
               console.log(
-                `[Flight Inspector] No exact flight match, using first offer as reference`
+                `[Flight Inspector] Using caller-supplied offer for ${lookupOrigin} → ${lookupDestination}`
+              );
+            } else {
+              console.log(
+                `[Flight Inspector] No offer supplied for ${lookupOrigin} → ${lookupDestination}; returning status-only analysis.`
               );
             }
 
@@ -257,10 +253,10 @@ export async function POST(request: NextRequest) {
                 recommendation,
               },
             });
-          } catch (duffelError) {
+          } catch (inspectError) {
             console.error(
-              '[Flight Inspector] Duffel search error:',
-              duffelError
+              '[Flight Inspector] Offer analysis error:',
+              inspectError
             );
 
             // LAYER 2 FALLBACK: Return AeroDataBox data only without pricing

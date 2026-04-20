@@ -1,3 +1,7 @@
+/**
+ * @deprecated
+ * Legacy flight-search provider adapter retained only for staged removal.
+ */
 import type { HybridSearchParams, FlightResult } from '@/types/hybridFlight';
 import { searchSabreFlights, SabreAuthError, SabreSearchError } from '@/lib/providers/sabre';
 import { mapSabreToFlightResult } from '@/lib/parser/sabreMapper';

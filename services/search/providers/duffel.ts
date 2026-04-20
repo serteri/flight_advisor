@@ -1,3 +1,8 @@
+/**
+ * @deprecated
+ * Legacy flight-search provider adapter retained only for staged removal.
+ * Core FlightAgent product flows must not depend on provider search.
+ */
 import { FlightResult, HybridSearchParams } from '@/types/hybridFlight';
 import { getDuffel } from '@/lib/duffel';
 import { mapDuffelToPremiumAgent } from '@/lib/parser/duffelMapper';

@@ -1,3 +1,9 @@
+/**
+ * @deprecated
+ * Search provider fanout is no longer part of the core FlightAgent product.
+ * Retained temporarily during the product pivot so legacy search surfaces can
+ * be phased out without breaking scoring, guardian, notifications, or parsers.
+ */
 import { HybridSearchParams } from "@/types/hybridFlight";
 import { normalizeSource } from '@/lib/utils';
 import { searchDuffel } from './providers/duffel';

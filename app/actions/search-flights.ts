@@ -1,3 +1,7 @@
+/**
+ * @deprecated
+ * Search action retained only during the FlightAgent pivot away from search.
+ */
 "use server";
 
 import { searchFlights, type FlightOffer } from "@/lib/flightApi";
