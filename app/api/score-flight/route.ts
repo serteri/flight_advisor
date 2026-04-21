@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
-import { manualFlightInputSchema, manualFlightToUnifiedFlight, type ManualFlightInput, isUnrealisticLongHaulDuration } from '@/lib/manualFlightToUnifiedFlight';
+import {
+    itineraryScoreInputSchema,
+    itineraryInputToUnifiedFlight,
+    type ItineraryScoreInput,
+    type InputAssessment,
+} from '@/lib/manualFlightToUnifiedFlight';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
-import type { ScoredFlight } from '@/types/unifiedFlight';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 
@@ -15,102 +19,66 @@ const normalizeDecision = (action?: string): ManualDecision => {
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
-const evaluateManualInputQuality = (payload: ManualFlightInput, scoredFlight: ScoredFlight) => {
-    const penalties: string[] = [];
-    let dataPoints = 0;
-    let providedPoints = 0;
-
-    const check = (condition: boolean, penaltyMessage: string) => {
-        dataPoints += 1;
-        if (condition) {
-            providedPoints += 1;
-        } else {
-            penalties.push(penaltyMessage);
-        }
-    };
-
-    check(Boolean(payload.arrivalDateTime), 'Arrival time missing: duration confidence reduced.');
-    check(typeof payload.totalDurationMinutes === 'number', 'Total duration missing: route realism confidence reduced.');
-
-    const stops = payload.stops ?? scoredFlight.stops ?? 0;
-    if (stops > 0) {
-        check(typeof payload.layoverDurationMinutes === 'number', 'Layover duration missing for connecting itinerary.');
-        check(Boolean(payload.layoverAirport || payload.layoverAirports?.length), 'Layover airport missing for connecting itinerary.');
+const computeModeConfidence = (
+    mode: 'quick' | 'detailed',
+    baseConfidence: number,
+    assessment: InputAssessment,
+): number => {
+    if (mode === 'quick') {
+        const quickConfidence = 42 + Math.round(assessment.completenessScore * 14);
+        return clamp(Math.min(baseConfidence, quickConfidence), 40, 58);
     }
 
-    check(Boolean(payload.checkedBaggageKg ?? payload.baggageKg), 'Checked baggage weight missing.');
-    check(typeof payload.cabinBaggageKg === 'number', 'Cabin baggage weight missing.');
-    check(Boolean(payload.aircraftType || payload.aircraft), 'Aircraft type missing.');
-    check(Boolean(payload.fareFlexibility), 'Fare flexibility policy missing.');
+    const detailedConfidenceRaw =
+        52
+        + Math.round(assessment.completenessScore * 20)
+        + Math.round(assessment.realismScore * 16)
+        - (assessment.priceContextAvailable ? 0 : 4);
 
-    const hasUnrealisticLongHaulDuration = isUnrealisticLongHaulDuration(
-        payload.origin,
-        payload.destination,
-        payload.totalDurationMinutes,
-    );
-
-    if (hasUnrealisticLongHaulDuration) {
-        penalties.push('Declared duration is unrealistic for this long-haul route.');
-    }
-
-    const completenessRatio = dataPoints > 0 ? providedPoints / dataPoints : 0;
-    const priceContextAvailable = Boolean(scoredFlight.score.routeIntelligence?.searchCount && scoredFlight.score.routeIntelligence.searchCount > 0);
-    const baseConfidence = scoredFlight.score.decisionConfidence ?? scoredFlight.score.confidence ?? 60;
-
-    let adjustedConfidence = Math.round(baseConfidence);
-    adjustedConfidence = Math.min(adjustedConfidence, Math.round(40 + completenessRatio * 35));
-
-    if (!payload.totalDurationMinutes && !payload.arrivalDateTime) {
-        adjustedConfidence = Math.min(adjustedConfidence, 55);
-    }
-
-    if (hasUnrealisticLongHaulDuration) {
-        adjustedConfidence = Math.min(adjustedConfidence, 50);
-        adjustedConfidence -= 8;
-    }
-
-    if (payload.baggageIncluded && !(payload.checkedBaggageKg || payload.baggageKg)) {
-        penalties.push('Checked baggage was estimated from baseline allowance.');
-        adjustedConfidence -= 6;
-    }
-
-    if (!priceContextAvailable) {
-        penalties.push('No live route price context available for timing precision.');
-        adjustedConfidence = Math.min(adjustedConfidence, 65);
-        adjustedConfidence -= 5;
-    }
-
-    if (penalties.length >= 4) {
-        adjustedConfidence = Math.min(adjustedConfidence, 55);
-    }
-
-    if (penalties.length >= 6) {
-        adjustedConfidence = Math.min(adjustedConfidence, 48);
-    }
-
-    adjustedConfidence = clamp(Math.round(adjustedConfidence), 40, 95);
-
-    return {
-        adjustedConfidence,
-        completenessRatio,
-        priceContextAvailable,
-        penalties,
-    };
+    return clamp(Math.min(baseConfidence, detailedConfidenceRaw), 55, 88);
 };
 
-const buildSoftenedDecision = (
-    decision: ManualDecision,
+const buildModeDecision = (
+    mode: 'quick' | 'detailed',
+    initialDecision: ManualDecision,
     confidence: number,
-    priceContextAvailable: boolean,
 ): ManualDecision => {
-    if (!priceContextAvailable || confidence <= 55) return 'WATCH';
-    return decision;
+    if (mode === 'quick') return 'WATCH';
+    if (confidence < 62) return 'WATCH';
+    return initialDecision;
+};
+
+const buildModeExplanation = (
+    mode: 'quick' | 'detailed',
+    baseReason: string,
+    confidence: number,
+    assessment: InputAssessment,
+): string => {
+    const notes: string[] = [];
+
+    if (mode === 'quick') {
+        notes.push('QUICK SCORE: rough recommendation only.');
+        notes.push('Add detailed itinerary segments for stronger connection and transfer realism.');
+    }
+
+    if (mode === 'detailed' && confidence < 62) {
+        notes.push('Detailed itinerary still has realism gaps, so recommendation is softened.');
+    }
+
+    if (!assessment.priceContextAvailable) {
+        notes.push('No external route-price context is available; timing certainty is limited.');
+    }
+
+    return [baseReason, ...notes, ...assessment.riskFlags.slice(0, 2)]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
 };
 
 export async function POST(request: NextRequest) {
     try {
-        const payload = manualFlightInputSchema.parse((await request.json()) as ManualFlightInput);
-        const unifiedFlight = manualFlightToUnifiedFlight(payload);
+        const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
+        const { unifiedFlight, assessment } = itineraryInputToUnifiedFlight(payload);
 
         const [scoredFlight] = await applyAdvancedFlightScoring([unifiedFlight], {
             origin: unifiedFlight.from,
@@ -119,7 +87,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!scoredFlight) {
-            return NextResponse.json({ error: 'Unable to score manual flight input' }, { status: 500 });
+            return NextResponse.json({ error: 'Unable to score itinerary input' }, { status: 500 });
         }
 
         const [enrichedFlight] = applyRouteIntelligenceFeatures(
@@ -129,50 +97,47 @@ export async function POST(request: NextRequest) {
         );
 
         if (!enrichedFlight) {
-            return NextResponse.json({ error: 'Unable to enrich scored flight' }, { status: 500 });
+            return NextResponse.json({ error: 'Unable to enrich scored itinerary' }, { status: 500 });
         }
 
         const initialDecision = normalizeDecision(enrichedFlight.score.buyWaitSignal?.action);
-        const quality = evaluateManualInputQuality(payload, enrichedFlight);
-        const decision = buildSoftenedDecision(initialDecision, quality.adjustedConfidence, quality.priceContextAvailable);
-
-        const baseReason = enrichedFlight.score.decisionReason || enrichedFlight.score.explanation || '';
-        const lowConfidenceReason = quality.adjustedConfidence <= 55
-            ? 'LOW CONFIDENCE: route structure is incomplete or partially inferred.'
-            : '';
-        const noPriceContextReason = !quality.priceContextAvailable
-            ? 'INSUFFICIENT DATA: no route-level price context for high-confidence timing call.'
-            : '';
-        const qualityReason = [lowConfidenceReason, noPriceContextReason, ...quality.penalties.slice(0, 2)]
-            .filter(Boolean)
-            .join(' ')
-            .trim();
+        const baseConfidence = enrichedFlight.score.decisionConfidence ?? enrichedFlight.score.confidence ?? 60;
+        const adjustedConfidence = computeModeConfidence(payload.mode, baseConfidence, assessment);
+        const decision = buildModeDecision(payload.mode, initialDecision, adjustedConfidence);
 
         const mergedRiskFlags = [
             ...(enrichedFlight.score.riskFlags || []),
-            ...quality.penalties,
+            ...assessment.riskFlags,
         ].filter((value, index, array) => array.indexOf(value) === index);
 
-        const explanation = [baseReason, qualityReason]
-            .filter(Boolean)
-            .join(' ')
-            .trim();
+        const mergedComfortNotes = [
+            ...(enrichedFlight.score.comfortNotes || []),
+            ...assessment.comfortNotes,
+        ].filter((value, index, array) => array.indexOf(value) === index);
+
+        const explanation = buildModeExplanation(
+            payload.mode,
+            enrichedFlight.score.decisionReason || enrichedFlight.score.explanation || '',
+            adjustedConfidence,
+            assessment,
+        );
 
         return NextResponse.json({
             ...enrichedFlight,
             score: {
                 ...enrichedFlight.score,
-                confidence: quality.adjustedConfidence,
-                decisionConfidence: quality.adjustedConfidence,
+                confidence: adjustedConfidence,
+                decisionConfidence: adjustedConfidence,
                 decisionReason: explanation,
                 riskFlags: mergedRiskFlags,
+                comfortNotes: mergedComfortNotes,
                 buyWaitSignal: {
                     action: decision === 'BUY' ? 'BUY' : decision === 'WAIT' ? 'WAIT' : 'MONITOR',
-                    label: decision === 'BUY'
-                        ? 'Buy signal is available'
-                        : quality.adjustedConfidence <= 55
-                            ? 'Low-confidence structure — monitor and refine inputs'
-                            : 'Monitor price — timing confidence limited',
+                    label: payload.mode === 'quick'
+                        ? 'Rough signal only - add detailed itinerary for high-accuracy scoring'
+                        : decision === 'WATCH'
+                            ? 'Watch closely - itinerary context still limited'
+                            : enrichedFlight.score.buyWaitSignal?.label || 'Action signal available',
                     urgencyDays: enrichedFlight.score.buyWaitSignal?.urgencyDays,
                     variant: enrichedFlight.score.buyWaitSignal?.variant,
                 },
@@ -180,17 +145,21 @@ export async function POST(request: NextRequest) {
             decision,
             insights: {
                 decision,
-                confidence: quality.adjustedConfidence,
+                confidence: adjustedConfidence,
                 riskFlags: mergedRiskFlags,
-                comfortNotes: enrichedFlight.score.comfortNotes || [],
+                comfortNotes: mergedComfortNotes,
                 explanation,
             },
+            scoringMode: payload.mode,
+            accuracyHint: payload.mode === 'quick'
+                ? 'Switch to Detailed Itinerary Score to improve realism and confidence.'
+                : undefined,
         });
     } catch (error) {
         if (error instanceof ZodError) {
             return NextResponse.json(
                 {
-                    error: 'Invalid manual flight payload',
+                    error: 'Invalid itinerary scoring payload',
                     issues: error.issues.map((issue) => ({
                         path: issue.path.join('.'),
                         message: issue.message,
@@ -200,7 +169,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.error('[SCORE_FLIGHT] Failed to score manual flight:', error);
-        return NextResponse.json({ error: 'Failed to score manual flight' }, { status: 500 });
+        console.error('[SCORE_FLIGHT] Failed to score itinerary:', error);
+        return NextResponse.json({ error: 'Failed to score itinerary' }, { status: 500 });
     }
 }

@@ -51,16 +51,16 @@ export default function HomePage() {
                     {/* Primary Action Cards */}
                     <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
 
-                        {/* Card 1: Score a Flight */}
+                        {/* Card 1: Score an Itinerary */}
                         <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 group flex flex-col">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center mb-5 shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <BarChart3 className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Score a Flight</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Analyze a flight you found. Get a decision score, risk flags, and a BUY / WAIT / WATCH recommendation.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Score an Itinerary</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Use quick or detailed itinerary mode. Get route realism, transfer risk, and a BUY / WAIT / WATCH recommendation.</p>
                             <Link href="/score-flight">
                                 <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-semibold shadow-md shadow-blue-500/20">
-                                    Analyze Now <ArrowRight className="ml-2 w-4 h-4" />
+                                    Score Itinerary <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
