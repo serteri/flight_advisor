@@ -95,7 +95,7 @@ const buildModeExplanation = (
 export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
-        const { unifiedFlight, assessment, derived } = itineraryInputToUnifiedFlight(payload);
+        const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
 
         const [scoredFlight] = await applyAdvancedFlightScoring([unifiedFlight], {
             origin: unifiedFlight.from,
@@ -119,8 +119,9 @@ export async function POST(request: NextRequest) {
 
         const initialDecision = normalizeDecision(enrichedFlight.score.buyWaitSignal?.action);
         const baseConfidence = enrichedFlight.score.decisionConfidence ?? enrichedFlight.score.confidence ?? 60;
-        const adjustedConfidence = computeModeConfidence(payload.mode, baseConfidence, assessment, derived);
-        const decision = buildModeDecision(payload.mode, initialDecision, adjustedConfidence, derived);
+        const effectiveMode = payload.mode === 'paste' ? assessment.mode : payload.mode;
+        const adjustedConfidence = computeModeConfidence(effectiveMode, baseConfidence, assessment, derived);
+        const decision = buildModeDecision(effectiveMode, initialDecision, adjustedConfidence, derived);
 
         const mergedRiskFlags = [
             ...(enrichedFlight.score.riskFlags || []),
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
         ].filter((value, index, array) => array.indexOf(value) === index);
 
         const explanation = buildModeExplanation(
-            payload.mode,
+            effectiveMode,
             enrichedFlight.score.decisionReason || enrichedFlight.score.explanation || '',
             adjustedConfidence,
             assessment,
@@ -170,8 +171,14 @@ export async function POST(request: NextRequest) {
             },
             scoringMode: payload.mode,
             derivedMetrics: derived,
+            extractedSegments,
+            parseWarnings: assessment.parseWarnings || [],
+            parseConfidence: assessment.parseConfidence,
+            needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'
                 ? 'Switch to Detailed Itinerary Score to improve realism and confidence.'
+                : assessment.promptForDetails
+                    ? 'Parsing was incomplete. Review and edit extracted segments for better scoring accuracy.'
                 : undefined,
         });
     } catch (error) {

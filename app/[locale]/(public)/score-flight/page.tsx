@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
     BarChart3,
@@ -20,7 +20,6 @@ import {
 import { Link } from "@/i18n/routing";
 
 type Decision = "BUY" | "WAIT" | "WATCH";
-type ScoreMode = "quick" | "detailed";
 
 type SegmentInput = {
     from: string;
@@ -29,15 +28,28 @@ type SegmentInput = {
     arrivalDateTime: string;
     airline: string;
     flightNumber: string;
-    aircraft: string;
-    marketedAirline: string;
-    bookingClass: string;
+    aircraft?: string;
+    marketedAirline?: string;
+    bookingClass?: string;
 };
 
 interface ScoreResult {
     decision: Decision;
-    scoringMode?: ScoreMode;
+    scoringMode?: "quick" | "detailed" | "paste";
     accuracyHint?: string;
+    parseWarnings?: string[];
+    parseConfidence?: number;
+    needsReview?: boolean;
+    extractedSegments?: SegmentInput[];
+    derivedMetrics?: {
+        totalDurationMinutes: number;
+        totalLayoverMinutes: number;
+        connectionCount: number;
+        connectionFeasibility: string;
+        routeRealism: string;
+        airlineReliabilityMix: string;
+        baggageConfidenceScore: number;
+    };
     insights: {
         decision: Decision;
         confidence: number;
@@ -48,7 +60,6 @@ interface ScoreResult {
     score: {
         composite: number;
         buyWaitSignal?: { action: string; label?: string };
-        decisionReason?: string;
     };
 }
 
@@ -89,106 +100,54 @@ const emptySegment = (): SegmentInput => ({
 });
 
 export default function ScoreFlightPage() {
-    const [mode, setMode] = useState<ScoreMode>("quick");
-
-    const [quickForm, setQuickForm] = useState({
-        origin: "",
-        destination: "",
-        departureDate: "",
+    const [itineraryText, setItineraryText] = useState("");
+    const [overrides, setOverrides] = useState({
         price: "",
         currency: "USD",
-        stops: "0",
-        airline: "",
         cabin: "",
-    });
-
-    const [detailedForm, setDetailedForm] = useState({
-        totalPrice: "",
-        currency: "USD",
-        cabin: "economy",
         checkedBaggageKg: "",
-        cabinBaggageKg: "",
         refundable: false,
-        segments: [emptySegment()],
     });
-
+    const [segments, setSegments] = useState<SegmentInput[]>([]);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<ScoreResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const modeDescription = useMemo(() => {
-        if (mode === "quick") {
-            return "Quick Score gives a rough recommendation with intentionally lower confidence.";
-        }
-        return "Detailed Itinerary Score uses full segment structure for realistic scoring and better confidence.";
-    }, [mode]);
-
     const updateSegment = (index: number, patch: Partial<SegmentInput>) => {
-        setDetailedForm((prev) => ({
-            ...prev,
-            segments: prev.segments.map((segment, i) => (i === index ? { ...segment, ...patch } : segment)),
-        }));
+        setSegments((prev) => prev.map((segment, i) => (i === index ? { ...segment, ...patch } : segment)));
     };
 
-    const addSegment = () => {
-        setDetailedForm((prev) => ({
-            ...prev,
-            segments: [...prev.segments, emptySegment()],
-        }));
-    };
-
-    const removeSegment = (index: number) => {
-        setDetailedForm((prev) => ({
-            ...prev,
-            segments: prev.segments.filter((_, i) => i !== index),
-        }));
-    };
-
-    const buildPayload = () => {
-        if (mode === "quick") {
-            return {
-                mode: "quick" as const,
-                origin: quickForm.origin.toUpperCase().trim(),
-                destination: quickForm.destination.toUpperCase().trim(),
-                departureDate: quickForm.departureDate,
-                price: parseFloat(quickForm.price),
-                currency: quickForm.currency.toUpperCase().trim(),
-                stops: parseInt(quickForm.stops, 10),
-                ...(quickForm.airline && { airline: quickForm.airline.trim() }),
-                ...(quickForm.cabin && { cabin: quickForm.cabin }),
-            };
-        }
-
-        return {
-            mode: "detailed" as const,
-            totalPrice: parseFloat(detailedForm.totalPrice),
-            currency: detailedForm.currency.toUpperCase().trim(),
-            cabin: detailedForm.cabin,
-            ...(detailedForm.checkedBaggageKg && { checkedBaggageKg: parseFloat(detailedForm.checkedBaggageKg) }),
-            ...(detailedForm.cabinBaggageKg && { cabinBaggageKg: parseFloat(detailedForm.cabinBaggageKg) }),
-            refundable: detailedForm.refundable,
-            segments: detailedForm.segments.map((segment) => ({
-                from: segment.from.toUpperCase().trim(),
-                to: segment.to.toUpperCase().trim(),
-                departureDateTime: new Date(segment.departureDateTime).toISOString(),
-                arrivalDateTime: new Date(segment.arrivalDateTime).toISOString(),
-                airline: segment.airline.trim(),
-                flightNumber: segment.flightNumber.trim(),
-                ...(segment.aircraft && { aircraft: segment.aircraft.trim() }),
-                ...(segment.marketedAirline && { marketedAirline: segment.marketedAirline.trim() }),
-                ...(segment.bookingClass && { bookingClass: segment.bookingClass.trim().toUpperCase() }),
-            })),
-        };
-    };
+    const addSegment = () => setSegments((prev) => [...prev, emptySegment()]);
+    const removeSegment = (index: number) => setSegments((prev) => prev.filter((_, i) => i !== index));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-        setResult(null);
 
         try {
-            const payload = buildPayload();
+            const payload = {
+                mode: "paste",
+                itineraryText,
+                ...(overrides.price && { price: parseFloat(overrides.price) }),
+                ...(overrides.currency && { currency: overrides.currency.toUpperCase().trim() }),
+                ...(overrides.cabin && { cabin: overrides.cabin }),
+                ...(overrides.checkedBaggageKg && { checkedBaggageKg: parseFloat(overrides.checkedBaggageKg) }),
+                refundable: overrides.refundable,
+                ...(segments.length > 0 && {
+                    segments: segments.map((segment) => ({
+                        from: segment.from.toUpperCase().trim(),
+                        to: segment.to.toUpperCase().trim(),
+                        departureDateTime: new Date(segment.departureDateTime).toISOString(),
+                        arrivalDateTime: new Date(segment.arrivalDateTime).toISOString(),
+                        airline: segment.airline.trim(),
+                        flightNumber: segment.flightNumber.trim(),
+                        ...(segment.aircraft && { aircraft: segment.aircraft.trim() }),
+                        ...(segment.marketedAirline && { marketedAirline: segment.marketedAirline.trim() }),
+                        ...(segment.bookingClass && { bookingClass: segment.bookingClass.trim().toUpperCase() }),
+                    })),
+                }),
+            };
 
             const res = await fetch("/api/score-flight", {
                 method: "POST",
@@ -204,7 +163,11 @@ export default function ScoreFlightPage() {
                     : data?.error || "Failed to score itinerary";
                 setError(msg);
             } else {
-                setResult(data as ScoreResult);
+                const scored = data as ScoreResult;
+                setResult(scored);
+                if (scored.extractedSegments && scored.extractedSegments.length > 0) {
+                    setSegments(scored.extractedSegments);
+                }
             }
         } catch {
             setError("Network error - please try again.");
@@ -229,297 +192,113 @@ export default function ScoreFlightPage() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900">Score an Itinerary</h1>
-                            <p className="text-slate-500 text-sm">Choose quick estimate or full itinerary realism</p>
+                            <p className="text-slate-500 text-sm">Paste itinerary text, then review extracted segments only if needed</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 mb-5 flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setMode("quick")}
-                        className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-                            mode === "quick" ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                        }`}
-                    >
-                        Quick Score
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMode("detailed")}
-                        className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-                            mode === "detailed" ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                        }`}
-                    >
-                        Detailed Itinerary Score
-                    </button>
-                </div>
-
-                <p className="text-sm text-slate-500 mb-6">{modeDescription}</p>
-
                 <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
-                    {mode === "quick" && (
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Origin *</label>
-                                    <input
-                                        required
-                                        maxLength={3}
-                                        placeholder="BNE"
-                                        value={quickForm.origin}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, origin: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-bold uppercase"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Destination *</label>
-                                    <input
-                                        required
-                                        maxLength={3}
-                                        placeholder="IST"
-                                        value={quickForm.destination}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, destination: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-bold uppercase"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Departure Date *</label>
-                                    <input
-                                        required
-                                        type="date"
-                                        value={quickForm.departureDate}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, departureDate: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Price *</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        min="1"
-                                        step="0.01"
-                                        value={quickForm.price}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, price: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Stops *</label>
-                                    <select
-                                        value={quickForm.stops}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, stops: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"
-                                    >
-                                        <option value="0">Direct</option>
-                                        <option value="1">1 Stop</option>
-                                        <option value="2">2 Stops</option>
-                                        <option value="3">3 Stops</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Currency *</label>
-                                    <input
-                                        required
-                                        maxLength={3}
-                                        value={quickForm.currency}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, currency: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Airline</label>
-                                    <input
-                                        placeholder="Qatar Airways"
-                                        value={quickForm.airline}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, airline: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin</label>
-                                    <select
-                                        value={quickForm.cabin}
-                                        onChange={(e) => setQuickForm((f) => ({ ...f, cabin: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"
-                                    >
-                                        <option value="">Unspecified</option>
-                                        <option value="economy">Economy</option>
-                                        <option value="premium">Premium Economy</option>
-                                        <option value="business">Business</option>
-                                        <option value="first">First</option>
-                                    </select>
-                                </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                            Paste your itinerary *
+                        </label>
+                        <textarea
+                            required
+                            rows={8}
+                            value={itineraryText}
+                            onChange={(e) => setItineraryText(e.target.value)}
+                            placeholder="Paste Google Flights, OTA booking detail, airline confirmation, or email itinerary text here..."
+                            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+                        />
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Optional overrides</div>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            <input
+                                type="number"
+                                min="1"
+                                step="0.01"
+                                placeholder="Price"
+                                value={overrides.price}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, price: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                            />
+                            <input
+                                maxLength={3}
+                                placeholder="Currency"
+                                value={overrides.currency}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, currency: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase"
+                            />
+                            <select
+                                value={overrides.cabin}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, cabin: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white"
+                            >
+                                <option value="">Cabin (auto)</option>
+                                <option value="economy">Economy</option>
+                                <option value="premium">Premium Economy</option>
+                                <option value="business">Business</option>
+                                <option value="first">First</option>
+                            </select>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="Checked bag kg"
+                                value={overrides.checkedBaggageKg}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, checkedBaggageKg: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                            />
+                            <label className="inline-flex items-center gap-2 text-sm text-slate-700 px-2">
+                                <input
+                                    type="checkbox"
+                                    checked={overrides.refundable}
+                                    onChange={(e) => setOverrides((prev) => ({ ...prev, refundable: e.target.checked }))}
+                                />
+                                Refundable
+                            </label>
+                        </div>
+                    </div>
+
+                    {segments.length > 0 && (
+                        <div className="rounded-2xl border border-slate-200 p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Extracted segments (editable fallback)</h3>
+                                <Button type="button" variant="outline" size="sm" onClick={addSegment} className="rounded-lg">
+                                    <Plus className="w-4 h-4 mr-1" /> Add Segment
+                                </Button>
                             </div>
 
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                Quick mode intentionally keeps confidence low/moderate and softens recommendations.
-                            </div>
-                        </>
-                    )}
-
-                    {mode === "detailed" && (
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Total Price *</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        min="1"
-                                        step="0.01"
-                                        value={detailedForm.totalPrice}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, totalPrice: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Currency *</label>
-                                    <input
-                                        required
-                                        maxLength={3}
-                                        value={detailedForm.currency}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, currency: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin *</label>
-                                    <select
-                                        value={detailedForm.cabin}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, cabin: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"
-                                    >
-                                        <option value="economy">Economy</option>
-                                        <option value="premium">Premium Economy</option>
-                                        <option value="business">Business</option>
-                                        <option value="first">First</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Checked Baggage Kg</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={detailedForm.checkedBaggageKg}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, checkedBaggageKg: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin Baggage Kg</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={detailedForm.cabinBaggageKg}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, cabinBaggageKg: e.target.value }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
-                                    />
-                                </div>
-                                <div className="flex items-end">
-                                    <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                                        <input
-                                            type="checkbox"
-                                            checked={detailedForm.refundable}
-                                            onChange={(e) => setDetailedForm((f) => ({ ...f, refundable: e.target.checked }))}
-                                        />
-                                        Refundable fare
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-slate-200 p-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Segments</h3>
-                                    <Button type="button" variant="outline" size="sm" onClick={addSegment} className="rounded-lg">
-                                        <Plus className="w-4 h-4 mr-1" /> Add Segment
-                                    </Button>
-                                </div>
-
-                                {detailedForm.segments.map((segment, index) => (
-                                    <div key={index} className="rounded-xl border border-slate-200 p-4 space-y-3 bg-slate-50/60">
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Segment {index + 1}</div>
-                                            {detailedForm.segments.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeSegment(index)}
-                                                    className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" /> Remove
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            <input
-                                                required
-                                                maxLength={3}
-                                                placeholder="From (IATA)"
-                                                value={segment.from}
-                                                onChange={(e) => updateSegment(index, { from: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono font-bold uppercase"
-                                            />
-                                            <input
-                                                required
-                                                maxLength={3}
-                                                placeholder="To (IATA)"
-                                                value={segment.to}
-                                                onChange={(e) => updateSegment(index, { to: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono font-bold uppercase"
-                                            />
-                                            <input
-                                                required
-                                                placeholder="Airline"
-                                                value={segment.airline}
-                                                onChange={(e) => updateSegment(index, { airline: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
-                                            />
-                                            <input
-                                                required
-                                                placeholder="Flight Number"
-                                                value={segment.flightNumber}
-                                                onChange={(e) => updateSegment(index, { flightNumber: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono"
-                                            />
-                                            <input
-                                                required
-                                                type="datetime-local"
-                                                value={segment.departureDateTime}
-                                                onChange={(e) => updateSegment(index, { departureDateTime: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
-                                            />
-                                            <input
-                                                required
-                                                type="datetime-local"
-                                                value={segment.arrivalDateTime}
-                                                onChange={(e) => updateSegment(index, { arrivalDateTime: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
-                                            />
-                                            <input
-                                                placeholder="Aircraft (optional)"
-                                                value={segment.aircraft}
-                                                onChange={(e) => updateSegment(index, { aircraft: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
-                                            />
-                                            <input
-                                                placeholder="Marketed Airline (optional)"
-                                                value={segment.marketedAirline}
-                                                onChange={(e) => updateSegment(index, { marketedAirline: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
-                                            />
-                                            <input
-                                                placeholder="Booking Class (optional)"
-                                                value={segment.bookingClass}
-                                                onChange={(e) => updateSegment(index, { bookingClass: e.target.value })}
-                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase"
-                                            />
-                                        </div>
+                            {segments.map((segment, index) => (
+                                <div key={index} className="rounded-xl border border-slate-200 p-4 space-y-3 bg-slate-50/60">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Segment {index + 1}</div>
+                                        {segments.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSegment(index)}
+                                                className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" /> Remove
+                                            </button>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        </>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <input value={segment.from} onChange={(e) => updateSegment(index, { from: e.target.value })} placeholder="From" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase" />
+                                        <input value={segment.to} onChange={(e) => updateSegment(index, { to: e.target.value })} placeholder="To" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase" />
+                                        <input value={segment.airline} onChange={(e) => updateSegment(index, { airline: e.target.value })} placeholder="Airline" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                                        <input value={segment.flightNumber} onChange={(e) => updateSegment(index, { flightNumber: e.target.value })} placeholder="Flight Number" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono" />
+                                        <input type="datetime-local" value={segment.departureDateTime ? new Date(segment.departureDateTime).toISOString().slice(0, 16) : ""} onChange={(e) => updateSegment(index, { departureDateTime: e.target.value })} className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                                        <input type="datetime-local" value={segment.arrivalDateTime ? new Date(segment.arrivalDateTime).toISOString().slice(0, 16) : ""} onChange={(e) => updateSegment(index, { arrivalDateTime: e.target.value })} className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                                        <input value={segment.aircraft || ""} onChange={(e) => updateSegment(index, { aircraft: e.target.value })} placeholder="Aircraft" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                                        <input value={segment.marketedAirline || ""} onChange={(e) => updateSegment(index, { marketedAirline: e.target.value })} placeholder="Marketed Airline" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
+                                        <input value={segment.bookingClass || ""} onChange={(e) => updateSegment(index, { bookingClass: e.target.value })} placeholder="Booking Class" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
 
                     {error && (
@@ -535,9 +314,9 @@ export default function ScoreFlightPage() {
                         className="w-full h-12 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-bold text-base shadow-lg shadow-blue-500/20 disabled:opacity-60"
                     >
                         {loading ? (
-                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Scoring itinerary...</>
+                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Parsing and scoring itinerary...</>
                         ) : (
-                            <><Plane className="w-5 h-5 mr-2" /> Score Itinerary</>
+                            <><Plane className="w-5 h-5 mr-2" /> Parse and Score Itinerary</>
                         )}
                     </Button>
                 </form>
@@ -550,6 +329,17 @@ export default function ScoreFlightPage() {
                             </div>
                         )}
 
+                        {result.parseWarnings && result.parseWarnings.length > 0 && (
+                            <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+                                <div className="font-semibold mb-1">Parsing notes</div>
+                                <ul className="list-disc list-inside">
+                                    {result.parseWarnings.map((warning, index) => (
+                                        <li key={index}>{warning}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         <div className={`rounded-2xl border-2 p-6 flex items-center gap-5 ${decision.bg} ${decision.border}`}>
                             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${decision.bg} border-2 ${decision.border}`}>
                                 <decision.icon className={`w-8 h-8 ${decision.color}`} />
@@ -559,11 +349,6 @@ export default function ScoreFlightPage() {
                                     <span className={`text-3xl font-black tracking-tight ${decision.color}`}>{decision.label}</span>
                                     <span className="text-sm font-semibold text-slate-500">Score: {result.score.composite.toFixed(1)} / 10</span>
                                     <span className="text-xs text-slate-400">{result.insights.confidence}% confidence</span>
-                                    {result.scoringMode && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wide">
-                                            {result.scoringMode}
-                                        </span>
-                                    )}
                                 </div>
                                 <p className="text-sm text-slate-700 leading-relaxed">
                                     {result.score.buyWaitSignal?.label || result.insights.explanation}
@@ -571,12 +356,16 @@ export default function ScoreFlightPage() {
                             </div>
                         </div>
 
-                        {result.insights.explanation && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    <BarChart3 className="w-3.5 h-3.5" /> Decision Reason
-                                </div>
-                                <p className="text-sm text-slate-700 leading-relaxed">{result.insights.explanation}</p>
+                        {result.derivedMetrics && (
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div><span className="text-slate-400 block">Total duration</span>{result.derivedMetrics.totalDurationMinutes} min</div>
+                                <div><span className="text-slate-400 block">Total layover</span>{result.derivedMetrics.totalLayoverMinutes} min</div>
+                                <div><span className="text-slate-400 block">Connections</span>{result.derivedMetrics.connectionCount}</div>
+                                <div><span className="text-slate-400 block">Feasibility</span>{result.derivedMetrics.connectionFeasibility}</div>
+                                <div><span className="text-slate-400 block">Route realism</span>{result.derivedMetrics.routeRealism}</div>
+                                <div><span className="text-slate-400 block">Airline mix</span>{result.derivedMetrics.airlineReliabilityMix}</div>
+                                <div><span className="text-slate-400 block">Baggage confidence</span>{Math.round(result.derivedMetrics.baggageConfidenceScore * 100)}%</div>
+                                <div><span className="text-slate-400 block">Parse confidence</span>{result.parseConfidence ? Math.round(result.parseConfidence * 100) : 0}%</div>
                             </div>
                         )}
 

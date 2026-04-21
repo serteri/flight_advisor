@@ -10,6 +10,7 @@ import type {
     FlightSegment,
     UnifiedFlight,
 } from '@/types/unifiedFlight';
+import { parseItineraryText } from '@/lib/itineraryTextParser';
 
 const ISO_DATETIME_ERROR = 'Must be a valid ISO 8601 datetime';
 const IATA_ERROR = 'Must be a 3-letter IATA airport code';
@@ -62,14 +63,28 @@ const detailedScoreInputSchema = z.object({
     segments: z.array(itinerarySegmentSchema).min(1).max(8),
 });
 
+const pasteScoreInputSchema = z.object({
+    mode: z.literal('paste'),
+    itineraryText: z.string().trim().min(20, 'Paste a longer itinerary text'),
+    price: z.coerce.number().positive().optional(),
+    currency: z.string().trim().toUpperCase().length(3).optional(),
+    cabin: z.enum(['economy', 'premium', 'business', 'first']).optional(),
+    checkedBaggageKg: z.coerce.number().min(0).max(64).optional(),
+    cabinBaggageKg: z.coerce.number().min(0).max(20).optional(),
+    refundable: z.boolean().optional(),
+    segments: z.array(itinerarySegmentSchema).min(1).max(8).optional(),
+});
+
 export const itineraryScoreInputSchema = z.discriminatedUnion('mode', [
     quickScoreInputSchema,
     detailedScoreInputSchema,
+    pasteScoreInputSchema,
 ]);
 
 export type ItineraryScoreInput = z.infer<typeof itineraryScoreInputSchema>;
 export type QuickScoreInput = z.infer<typeof quickScoreInputSchema>;
 export type DetailedScoreInput = z.infer<typeof detailedScoreInputSchema>;
+export type PasteScoreInput = z.infer<typeof pasteScoreInputSchema>;
 
 export type DerivedStructureMetrics = {
     totalDurationMinutes: number;
@@ -92,6 +107,27 @@ export type InputAssessment = {
     selfTransferRisk: 'LOW' | 'MEDIUM' | 'HIGH';
     baggageConfidenceScore: number;
     airlineReliabilityMix: DerivedStructureMetrics['airlineReliabilityMix'];
+    parseWarnings?: string[];
+    parseConfidence?: number;
+};
+
+export type ParsedSegmentPreview = {
+    from: string;
+    to: string;
+    departureDateTime: string;
+    arrivalDateTime: string;
+    airline: string;
+    flightNumber: string;
+    aircraft?: string;
+    marketedAirline?: string;
+    bookingClass?: string;
+};
+
+export type ItineraryConversionResult = {
+    unifiedFlight: UnifiedFlight;
+    assessment: InputAssessment;
+    derived: DerivedStructureMetrics;
+    extractedSegments: ParsedSegmentPreview[];
 };
 
 const normalizeCabinClass = (value?: string): CabinClass => {
@@ -165,7 +201,7 @@ const assessAirlineMix = (airlines: string[]): DerivedStructureMetrics['airlineR
 
 const buildQuickUnifiedFlight = (
     input: QuickScoreInput,
-): { unifiedFlight: UnifiedFlight; assessment: InputAssessment; derived: DerivedStructureMetrics } => {
+): ItineraryConversionResult => {
     const departureTime = new Date(`${input.departureDate}T${DEFAULT_QUICK_DEPARTURE_TIME}`).toISOString();
     const duration = DEFAULT_QUICK_DURATION_MINUTES + (input.stops * DEFAULT_LAYOVER_DURATION_MINUTES);
     const arrivalTime = new Date(parseDateMs(departureTime) + duration * 60_000).toISOString();
@@ -246,12 +282,22 @@ const buildQuickUnifiedFlight = (
         },
         assessment,
         derived,
+        extractedSegments: [
+            {
+                from: segment.from,
+                to: segment.to,
+                departureDateTime: segment.departureTime,
+                arrivalDateTime: segment.arrivalTime,
+                airline: input.airline || 'Manual Entry',
+                flightNumber: segment.flightNumber,
+            },
+        ],
     };
 };
 
 const buildDetailedUnifiedFlight = (
     input: DetailedScoreInput,
-): { unifiedFlight: UnifiedFlight; assessment: InputAssessment; derived: DerivedStructureMetrics } => {
+): ItineraryConversionResult => {
     const sortedSegments = [...input.segments].sort(
         (a, b) => parseDateMs(a.departureDateTime) - parseDateMs(b.departureDateTime),
     );
@@ -409,16 +455,115 @@ const buildDetailedUnifiedFlight = (
         },
         assessment,
         derived,
+        extractedSegments: sortedSegments.map((segment) => ({
+            from: segment.from,
+            to: segment.to,
+            departureDateTime: segment.departureDateTime,
+            arrivalDateTime: segment.arrivalDateTime,
+            airline: segment.airline,
+            flightNumber: segment.flightNumber,
+            aircraft: segment.aircraft,
+            marketedAirline: segment.marketedAirline,
+            bookingClass: segment.bookingClass,
+        })),
+    };
+};
+
+const toIsoOrFallback = (value: string | undefined, fallbackMs: number): string => {
+    if (value) {
+        const parsed = Date.parse(value);
+        if (Number.isFinite(parsed)) {
+            return new Date(parsed).toISOString();
+        }
+    }
+    return new Date(fallbackMs).toISOString();
+};
+
+const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionResult => {
+    const parsed = parseItineraryText(input.itineraryText);
+    const sourceSegments = input.segments && input.segments.length > 0 ? input.segments : parsed.segments;
+
+    const baseMs = Date.now() + 24 * 60 * 60 * 1000;
+    const normalizedSegments = sourceSegments.map((segment, index) => {
+        const fallbackDeparture = baseMs + index * 4 * 60 * 60 * 1000;
+        const departureDateTime = toIsoOrFallback(segment.departureDateTime, fallbackDeparture);
+        const arrivalDateTime = toIsoOrFallback(segment.arrivalDateTime, fallbackDeparture + 2 * 60 * 60 * 1000);
+        const airline = segment.airline || 'Manual Entry';
+        const flightNumber = segment.flightNumber || `${airline.slice(0, 2).toUpperCase()}${200 + index}`;
+        return {
+            from: segment.from,
+            to: segment.to,
+            departureDateTime,
+            arrivalDateTime,
+            airline,
+            flightNumber,
+            aircraft: segment.aircraft,
+            marketedAirline: segment.marketedAirline,
+            bookingClass: segment.bookingClass,
+        };
+    });
+
+    if (!normalizedSegments.length) {
+        throw new Error('Unable to parse itinerary segments from pasted text.');
+    }
+
+    const inferredTotalPrice = input.price
+        ?? parsed.inferred.price
+        ?? 999;
+    const inferredCurrency = input.currency
+        ?? parsed.inferred.currency
+        ?? 'USD';
+    const inferredCabin = input.cabin
+        ?? parsed.inferred.cabin
+        ?? 'economy';
+    const inferredRefundable = typeof input.refundable === 'boolean'
+        ? input.refundable
+        : parsed.inferred.refundable;
+
+    const detailedInput: DetailedScoreInput = {
+        mode: 'detailed',
+        totalPrice: inferredTotalPrice,
+        currency: inferredCurrency,
+        cabin: inferredCabin,
+        checkedBaggageKg: input.checkedBaggageKg,
+        cabinBaggageKg: input.cabinBaggageKg,
+        refundable: inferredRefundable,
+        segments: normalizedSegments,
+    };
+
+    const base = buildDetailedUnifiedFlight(detailedInput);
+    const parseWarnings = [...parsed.warnings];
+    if (!input.price && !parsed.inferred.price) {
+        parseWarnings.push('Price missing in text; fallback price baseline applied.');
+    }
+
+    const parseConfidence = parsed.confidence;
+    const downgradedMode = parseConfidence < 0.6 ? 'quick' : 'detailed';
+
+    return {
+        ...base,
+        assessment: {
+            ...base.assessment,
+            mode: downgradedMode,
+            promptForDetails: parseWarnings.length > 0 || parseConfidence < 0.7,
+            parseWarnings,
+            parseConfidence,
+            completenessScore: Math.max(0.45, Math.min(base.assessment.completenessScore, parseConfidence + 0.2)),
+        },
     };
 };
 
 export function itineraryInputToUnifiedFlight(
     input: ItineraryScoreInput,
-): { unifiedFlight: UnifiedFlight; assessment: InputAssessment; derived: DerivedStructureMetrics } {
+): ItineraryConversionResult {
     const normalized = itineraryScoreInputSchema.parse(input);
 
     if (normalized.mode === 'quick') {
         return buildQuickUnifiedFlight(normalized);
+    }
+
+    if (normalized.mode === 'paste') {
+        return buildPasteUnifiedFlight(normalized);
     }
 
     return buildDetailedUnifiedFlight(normalized);
