@@ -88,8 +88,18 @@ model Route {
   destinationCode String
   startDate DateTime
   endDate   DateTime?
+  tripType  String   @default("ONE_WAY")
   cabin     CabinClass   @default(ECONOMY)
+  maxStops  Int?
+  targetPrice Float?
+  baggageRequired Boolean?
+  preferredAirlines String[] @default([])
   active    Boolean  @default(true)
+  trendStatus String? @default("UNKNOWN")
+  timingSignal String? @default("WATCH_CLOSELY")
+  timingReason String?
+  latestSnapshotAt DateTime?
+  lastSignalAt DateTime?
   
   // Anomaly Detection Cache
   currentPrice     Float?
