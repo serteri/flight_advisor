@@ -6,6 +6,7 @@ import {
     itineraryInputToUnifiedFlight,
     type ItineraryScoreInput,
     type InputAssessment,
+    type DerivedStructureMetrics,
 } from '@/lib/manualFlightToUnifiedFlight';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 
@@ -23,9 +24,10 @@ const computeModeConfidence = (
     mode: 'quick' | 'detailed',
     baseConfidence: number,
     assessment: InputAssessment,
+    derived: DerivedStructureMetrics,
 ): number => {
     if (mode === 'quick') {
-        const quickConfidence = 42 + Math.round(assessment.completenessScore * 14);
+        const quickConfidence = 40 + Math.round(assessment.completenessScore * 14);
         return clamp(Math.min(baseConfidence, quickConfidence), 40, 58);
     }
 
@@ -33,17 +35,23 @@ const computeModeConfidence = (
         52
         + Math.round(assessment.completenessScore * 20)
         + Math.round(assessment.realismScore * 16)
+        + Math.round(assessment.baggageConfidenceScore * 8)
         - (assessment.priceContextAvailable ? 0 : 4);
 
-    return clamp(Math.min(baseConfidence, detailedConfidenceRaw), 55, 88);
+    const realismPenalty = derived.routeRealism === 'QUESTIONABLE' ? 6 : 0;
+    const baggagePenalty = assessment.baggageConfidenceScore < 0.7 ? 6 : 0;
+
+    return clamp(Math.min(baseConfidence, detailedConfidenceRaw - realismPenalty - baggagePenalty), 52, 88);
 };
 
 const buildModeDecision = (
     mode: 'quick' | 'detailed',
     initialDecision: ManualDecision,
     confidence: number,
+    derived: DerivedStructureMetrics,
 ): ManualDecision => {
     if (mode === 'quick') return 'WATCH';
+    if (derived.routeRealism === 'QUESTIONABLE') return 'WATCH';
     if (confidence < 62) return 'WATCH';
     return initialDecision;
 };
@@ -53,6 +61,7 @@ const buildModeExplanation = (
     baseReason: string,
     confidence: number,
     assessment: InputAssessment,
+    derived: DerivedStructureMetrics,
 ): string => {
     const notes: string[] = [];
 
@@ -63,6 +72,14 @@ const buildModeExplanation = (
 
     if (mode === 'detailed' && confidence < 62) {
         notes.push('Detailed itinerary still has realism gaps, so recommendation is softened.');
+    }
+
+    if (derived.routeRealism === 'QUESTIONABLE') {
+        notes.push('Route realism check flagged this itinerary as questionable.');
+    }
+
+    if (assessment.baggageConfidenceScore < 0.7) {
+        notes.push('Baggage confidence is limited because exact allowance details are incomplete.');
     }
 
     if (!assessment.priceContextAvailable) {
@@ -78,7 +95,7 @@ const buildModeExplanation = (
 export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
-        const { unifiedFlight, assessment } = itineraryInputToUnifiedFlight(payload);
+        const { unifiedFlight, assessment, derived } = itineraryInputToUnifiedFlight(payload);
 
         const [scoredFlight] = await applyAdvancedFlightScoring([unifiedFlight], {
             origin: unifiedFlight.from,
@@ -102,8 +119,8 @@ export async function POST(request: NextRequest) {
 
         const initialDecision = normalizeDecision(enrichedFlight.score.buyWaitSignal?.action);
         const baseConfidence = enrichedFlight.score.decisionConfidence ?? enrichedFlight.score.confidence ?? 60;
-        const adjustedConfidence = computeModeConfidence(payload.mode, baseConfidence, assessment);
-        const decision = buildModeDecision(payload.mode, initialDecision, adjustedConfidence);
+        const adjustedConfidence = computeModeConfidence(payload.mode, baseConfidence, assessment, derived);
+        const decision = buildModeDecision(payload.mode, initialDecision, adjustedConfidence, derived);
 
         const mergedRiskFlags = [
             ...(enrichedFlight.score.riskFlags || []),
@@ -120,6 +137,7 @@ export async function POST(request: NextRequest) {
             enrichedFlight.score.decisionReason || enrichedFlight.score.explanation || '',
             adjustedConfidence,
             assessment,
+            derived,
         );
 
         return NextResponse.json({
@@ -151,6 +169,7 @@ export async function POST(request: NextRequest) {
                 explanation,
             },
             scoringMode: payload.mode,
+            derivedMetrics: derived,
             accuracyHint: payload.mode === 'quick'
                 ? 'Switch to Detailed Itinerary Score to improve realism and confidence.'
                 : undefined,

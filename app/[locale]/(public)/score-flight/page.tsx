@@ -29,6 +29,9 @@ type SegmentInput = {
     arrivalDateTime: string;
     airline: string;
     flightNumber: string;
+    aircraft: string;
+    marketedAirline: string;
+    bookingClass: string;
 };
 
 interface ScoreResult {
@@ -80,6 +83,9 @@ const emptySegment = (): SegmentInput => ({
     arrivalDateTime: "",
     airline: "",
     flightNumber: "",
+    aircraft: "",
+    marketedAirline: "",
+    bookingClass: "",
 });
 
 export default function ScoreFlightPage() {
@@ -90,16 +96,18 @@ export default function ScoreFlightPage() {
         destination: "",
         departureDate: "",
         price: "",
+        currency: "USD",
         stops: "0",
         airline: "",
+        cabin: "",
     });
 
     const [detailedForm, setDetailedForm] = useState({
         totalPrice: "",
         currency: "USD",
         cabin: "economy",
-        checkedBaggageIncluded: true,
         checkedBaggageKg: "",
+        cabinBaggageKg: "",
         refundable: false,
         segments: [emptySegment()],
     });
@@ -144,8 +152,10 @@ export default function ScoreFlightPage() {
                 destination: quickForm.destination.toUpperCase().trim(),
                 departureDate: quickForm.departureDate,
                 price: parseFloat(quickForm.price),
+                currency: quickForm.currency.toUpperCase().trim(),
                 stops: parseInt(quickForm.stops, 10),
                 ...(quickForm.airline && { airline: quickForm.airline.trim() }),
+                ...(quickForm.cabin && { cabin: quickForm.cabin }),
             };
         }
 
@@ -154,8 +164,8 @@ export default function ScoreFlightPage() {
             totalPrice: parseFloat(detailedForm.totalPrice),
             currency: detailedForm.currency.toUpperCase().trim(),
             cabin: detailedForm.cabin,
-            checkedBaggageIncluded: detailedForm.checkedBaggageIncluded,
             ...(detailedForm.checkedBaggageKg && { checkedBaggageKg: parseFloat(detailedForm.checkedBaggageKg) }),
+            ...(detailedForm.cabinBaggageKg && { cabinBaggageKg: parseFloat(detailedForm.cabinBaggageKg) }),
             refundable: detailedForm.refundable,
             segments: detailedForm.segments.map((segment) => ({
                 from: segment.from.toUpperCase().trim(),
@@ -164,6 +174,9 @@ export default function ScoreFlightPage() {
                 arrivalDateTime: new Date(segment.arrivalDateTime).toISOString(),
                 airline: segment.airline.trim(),
                 flightNumber: segment.flightNumber.trim(),
+                ...(segment.aircraft && { aircraft: segment.aircraft.trim() }),
+                ...(segment.marketedAirline && { marketedAirline: segment.marketedAirline.trim() }),
+                ...(segment.bookingClass && { bookingClass: segment.bookingClass.trim().toUpperCase() }),
             })),
         };
     };
@@ -247,7 +260,7 @@ export default function ScoreFlightPage() {
                 <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     {mode === "quick" && (
                         <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Origin *</label>
                                     <input
@@ -306,6 +319,16 @@ export default function ScoreFlightPage() {
                                     </select>
                                 </div>
                                 <div>
+                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Currency *</label>
+                                    <input
+                                        required
+                                        maxLength={3}
+                                        value={quickForm.currency}
+                                        onChange={(e) => setQuickForm((f) => ({ ...f, currency: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase"
+                                    />
+                                </div>
+                                <div>
                                     <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Airline</label>
                                     <input
                                         placeholder="Qatar Airways"
@@ -313,6 +336,20 @@ export default function ScoreFlightPage() {
                                         onChange={(e) => setQuickForm((f) => ({ ...f, airline: e.target.value }))}
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin</label>
+                                    <select
+                                        value={quickForm.cabin}
+                                        onChange={(e) => setQuickForm((f) => ({ ...f, cabin: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"
+                                    >
+                                        <option value="">Unspecified</option>
+                                        <option value="economy">Economy</option>
+                                        <option value="premium">Premium Economy</option>
+                                        <option value="business">Business</option>
+                                        <option value="first">First</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -361,23 +398,22 @@ export default function ScoreFlightPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Checked Baggage Included</label>
-                                    <select
-                                        value={detailedForm.checkedBaggageIncluded ? "yes" : "no"}
-                                        onChange={(e) => setDetailedForm((f) => ({ ...f, checkedBaggageIncluded: e.target.value === "yes" }))}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"
-                                    >
-                                        <option value="yes">Yes</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div>
                                     <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Checked Baggage Kg</label>
                                     <input
                                         type="number"
                                         min="0"
                                         value={detailedForm.checkedBaggageKg}
                                         onChange={(e) => setDetailedForm((f) => ({ ...f, checkedBaggageKg: e.target.value }))}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin Baggage Kg</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={detailedForm.cabinBaggageKg}
+                                        onChange={(e) => setDetailedForm((f) => ({ ...f, cabinBaggageKg: e.target.value }))}
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"
                                     />
                                 </div>
@@ -460,6 +496,24 @@ export default function ScoreFlightPage() {
                                                 value={segment.arrivalDateTime}
                                                 onChange={(e) => updateSegment(index, { arrivalDateTime: e.target.value })}
                                                 className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                                            />
+                                            <input
+                                                placeholder="Aircraft (optional)"
+                                                value={segment.aircraft}
+                                                onChange={(e) => updateSegment(index, { aircraft: e.target.value })}
+                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                                            />
+                                            <input
+                                                placeholder="Marketed Airline (optional)"
+                                                value={segment.marketedAirline}
+                                                onChange={(e) => updateSegment(index, { marketedAirline: e.target.value })}
+                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                                            />
+                                            <input
+                                                placeholder="Booking Class (optional)"
+                                                value={segment.bookingClass}
+                                                onChange={(e) => updateSegment(index, { bookingClass: e.target.value })}
+                                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase"
                                             />
                                         </div>
                                     </div>
