@@ -64,12 +64,20 @@ export default function ScoreFlightPage() {
         origin: "",
         destination: "",
         departureDateTime: "",
+        arrivalDateTime: "",
         price: "",
+        totalDurationMinutes: "",
+        layoverDurationMinutes: "",
+        layoverAirport: "",
         airline: "",
         flightNumber: "",
         stops: "0",
         cabinClass: "economy",
         baggageIncluded: true,
+        checkedBaggageKg: "",
+        cabinBaggageKg: "",
+        aircraftType: "",
+        fareFlexibility: "",
     });
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<ScoreResult | null>(null);
@@ -87,11 +95,19 @@ export default function ScoreFlightPage() {
                 destination: form.destination.toUpperCase().trim(),
                 departureDateTime: new Date(form.departureDateTime).toISOString(),
                 price: parseFloat(form.price),
+                ...(form.arrivalDateTime && { arrivalDateTime: new Date(form.arrivalDateTime).toISOString() }),
+                ...(form.totalDurationMinutes && { totalDurationMinutes: parseInt(form.totalDurationMinutes, 10) }),
+                ...(form.layoverDurationMinutes && { layoverDurationMinutes: parseInt(form.layoverDurationMinutes, 10) }),
+                ...(form.layoverAirport && { layoverAirport: form.layoverAirport.toUpperCase().trim() }),
                 ...(form.airline && { airline: form.airline.trim() }),
                 ...(form.flightNumber && { flightNumber: form.flightNumber.trim() }),
                 stops: parseInt(form.stops, 10),
                 cabinClass: form.cabinClass,
                 baggageIncluded: form.baggageIncluded,
+                ...(form.checkedBaggageKg && { checkedBaggageKg: parseFloat(form.checkedBaggageKg) }),
+                ...(form.cabinBaggageKg && { cabinBaggageKg: parseFloat(form.cabinBaggageKg) }),
+                ...(form.aircraftType && { aircraftType: form.aircraftType.trim() }),
+                ...(form.fareFlexibility && { fareFlexibility: form.fareFlexibility.trim() }),
             };
 
             const res = await fetch("/api/score-flight", {
@@ -174,7 +190,7 @@ export default function ScoreFlightPage() {
                         </div>
                     </div>
 
-                    {/* Date + Price */}
+                    {/* Departure + Arrival */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
@@ -190,6 +206,21 @@ export default function ScoreFlightPage() {
                         </div>
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                                Arrival
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={form.arrivalDateTime}
+                                onChange={(e) => setForm((f) => ({ ...f, arrivalDateTime: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Price + Duration */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                                 Price (USD) <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -200,6 +231,19 @@ export default function ScoreFlightPage() {
                                 placeholder="499"
                                 value={form.price}
                                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                                Total Duration (minutes)
+                            </label>
+                            <input
+                                type="number"
+                                min="30"
+                                placeholder="1080"
+                                value={form.totalDurationMinutes}
+                                onChange={(e) => setForm((f) => ({ ...f, totalDurationMinutes: e.target.value }))}
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
                             />
                         </div>
@@ -227,7 +271,7 @@ export default function ScoreFlightPage() {
                         </div>
                     </div>
 
-                    {/* Stops + Cabin + Baggage */}
+                    {/* Stops + Layover */}
                     <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Stops</label>
@@ -241,6 +285,31 @@ export default function ScoreFlightPage() {
                                 <option value="2">2 Stops</option>
                             </select>
                         </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Layover Duration (min)</label>
+                            <input
+                                type="number"
+                                min="15"
+                                placeholder="120"
+                                value={form.layoverDurationMinutes}
+                                onChange={(e) => setForm((f) => ({ ...f, layoverDurationMinutes: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Layover Airport</label>
+                            <input
+                                maxLength={3}
+                                placeholder="SIN"
+                                value={form.layoverAirport}
+                                onChange={(e) => setForm((f) => ({ ...f, layoverAirport: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-bold uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Cabin + Baggage */}
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin</label>
                             <select
@@ -264,6 +333,50 @@ export default function ScoreFlightPage() {
                                 <option value="yes">Included</option>
                                 <option value="no">Not included</option>
                             </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Checked Bag (kg)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="23"
+                                value={form.checkedBaggageKg}
+                                onChange={(e) => setForm((f) => ({ ...f, checkedBaggageKg: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Cabin Bag + Aircraft + Fare Flex */}
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cabin Bag (kg)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="8"
+                                value={form.cabinBaggageKg}
+                                onChange={(e) => setForm((f) => ({ ...f, cabinBaggageKg: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Aircraft Type</label>
+                            <input
+                                placeholder="A350-900"
+                                value={form.aircraftType}
+                                onChange={(e) => setForm((f) => ({ ...f, aircraftType: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Fare Flexibility</label>
+                            <input
+                                placeholder="Non-refundable / Changes with fee"
+                                value={form.fareFlexibility}
+                                onChange={(e) => setForm((f) => ({ ...f, fareFlexibility: e.target.value }))}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-400"
+                            />
                         </div>
                     </div>
 
