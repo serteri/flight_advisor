@@ -1,10 +1,12 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
     BarChart3,
     Plane,
+    Bell,
     AlertTriangle,
     CheckCircle2,
     Clock,
@@ -66,6 +68,34 @@ interface ScoreResult {
         negativeFactors: string[];
         missingFactors: string[];
     };
+    trackingPayload?: {
+        trackingType: "ITINERARY_CANDIDATE";
+        trip: {
+            origin: string;
+            destination: string;
+            departureDate: string;
+            price: number;
+            currency: string;
+            cabin: "economy" | "premium" | "business" | "first";
+            baggage: {
+                checkedBaggageKg: number | null;
+                cabinBaggageKg: number | null;
+                included: boolean | null;
+            };
+            refundable: boolean | null;
+            totalDurationMinutes: number;
+            stops: number;
+        };
+        segments: Array<{
+            from: string;
+            to: string;
+            departureDateTime: string;
+            arrivalDateTime: string;
+            airline: string;
+            flightNumber: string;
+            aircraft?: string;
+        }>;
+    };
     score: {
         composite: number;
         buyWaitSignal?: { action: string; label?: string };
@@ -109,6 +139,8 @@ const emptySegment = (): SegmentInput => ({
 });
 
 export default function ScoreFlightPage() {
+    const router = useRouter();
+    const pathname = usePathname();
     const [itineraryText, setItineraryText] = useState("");
     const [overrides, setOverrides] = useState({
         price: "",
@@ -119,6 +151,8 @@ export default function ScoreFlightPage() {
     });
     const [segments, setSegments] = useState<SegmentInput[]>([]);
     const [loading, setLoading] = useState(false);
+    const [tracking, setTracking] = useState(false);
+    const [tracked, setTracked] = useState(false);
     const [result, setResult] = useState<ScoreResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -129,9 +163,40 @@ export default function ScoreFlightPage() {
     const addSegment = () => setSegments((prev) => [...prev, emptySegment()]);
     const removeSegment = (index: number) => setSegments((prev) => prev.filter((_, i) => i !== index));
 
+    const handleTrackItinerary = async () => {
+        if (!result?.trackingPayload) return;
+        setTracking(true);
+        setError(null);
+
+        try {
+            const res = await fetch("/api/track-itinerary", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(result.trackingPayload),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data?.error || "Failed to track itinerary");
+                return;
+            }
+
+            setTracked(true);
+            const locale = pathname?.split("/")[1] || "en";
+            setTimeout(() => {
+                router.push(`/${locale}/dashboard/tracked-flights`);
+            }, 1200);
+        } catch {
+            setError("Failed to track itinerary. Please try again.");
+        } finally {
+            setTracking(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setTracked(false);
         setError(null);
 
         try {
@@ -492,14 +557,29 @@ export default function ScoreFlightPage() {
                                 <Shield className="w-6 h-6 text-sky-400 shrink-0" />
                                 <div>
                                     <p className="font-semibold text-white text-sm">Want full trip protection?</p>
-                                    <p className="text-slate-400 text-xs">Track this route and get live disruption alerts.</p>
+                                    <p className="text-slate-400 text-xs">Track this itinerary without re-entering any details.</p>
                                 </div>
                             </div>
-                            <Link href="/dashboard">
-                                <Button className="whitespace-nowrap rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold shadow-md shadow-blue-700/30">
-                                    <Clock className="w-4 h-4 mr-2" /> Start Monitoring
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Button
+                                    onClick={handleTrackItinerary}
+                                    disabled={tracking || tracked || !result.trackingPayload}
+                                    className="whitespace-nowrap rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold shadow-md shadow-blue-700/30"
+                                >
+                                    {tracking ? (
+                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving itinerary...</>
+                                    ) : tracked ? (
+                                        <><CheckCircle2 className="w-4 h-4 mr-2" /> Itinerary tracked</>
+                                    ) : (
+                                        <><Bell className="w-4 h-4 mr-2" /> Track this itinerary</>
+                                    )}
                                 </Button>
-                            </Link>
+                                <Link href="/dashboard">
+                                    <Button variant="outline" className="whitespace-nowrap rounded-xl border-slate-600 bg-transparent text-white hover:bg-slate-800">
+                                        <Clock className="w-4 h-4 mr-2" /> Dashboard
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 )}
