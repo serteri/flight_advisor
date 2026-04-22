@@ -3,13 +3,21 @@ import { z, ZodError } from 'zod';
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createRouteWatch } from '@/lib/routeTracking';
+import { createRouteWatch, getRouteWatchDetails } from '@/lib/routeTracking';
+
+const isoOrDateSchema = z.string().refine(
+    (value) => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return true;
+        return Number.isFinite(Date.parse(value));
+    },
+    { message: 'Must be a valid date (YYYY-MM-DD or ISO datetime)' },
+);
 
 const createRouteWatchSchema = z.object({
     origin: z.string().trim().regex(/^[A-Za-z]{3}$/),
     destination: z.string().trim().regex(/^[A-Za-z]{3}$/),
-    departureDate: z.string().datetime({ offset: true }),
-    returnDate: z.string().datetime({ offset: true }).optional(),
+    departureDate: isoOrDateSchema,
+    returnDate: isoOrDateSchema.optional(),
     maxStops: z.number().int().min(0).max(3).optional(),
     targetPrice: z.number().positive().optional(),
     cabin: z.enum(['economy', 'premium', 'business', 'first', 'ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']).optional(),
@@ -51,11 +59,14 @@ export async function POST(request: NextRequest) {
             tripType: payload.tripType,
         });
 
+        const details = await getRouteWatchDetails(route.id, user.id, false);
+
         return NextResponse.json(
             {
                 id: route.id,
                 status: 'ACTIVE',
                 message: 'Route watch created',
+                details,
             },
             { status: 201 },
         );
