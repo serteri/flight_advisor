@@ -5,6 +5,7 @@ import { analyzeRoute } from '@/lib/anomalyDetector';
 export type RouteTimingSignal = 'BUY' | 'WAIT' | 'WATCH';
 export type RouteTrendStatus = 'RISING' | 'FALLING' | 'STABLE' | 'INSUFFICIENT_DATA';
 export type RouteThresholdState = 'NO_TARGET' | 'AT_OR_BELOW_TARGET' | 'ABOVE_TARGET';
+export type RouteDataSourceType = 'INTERNAL_ESTIMATE' | 'HISTORICAL_BASELINE' | 'REAL_PROVIDER';
 
 export type RouteRecommendationExplanation = {
     primaryReason: string;
@@ -49,6 +50,7 @@ export type RouteWatchDetails = {
         changePercentVsPrevious: number | null;
         currency: string;
         provider: string;
+        dataSourceType: RouteDataSourceType;
         observedAt: string;
         trendDirection: RouteTrendStatus;
         thresholdState: RouteThresholdState;
@@ -63,8 +65,10 @@ export type RouteWatchDetails = {
     };
     timingSignal: {
         signal: RouteTimingSignal;
+        label: string;
         reason: string;
         confidence: number;
+        dataSourceType: RouteDataSourceType;
         explanation: RouteRecommendationExplanation;
     };
     alerts: Array<{
@@ -111,6 +115,29 @@ const deterministicAdjustmentPercent = (routeId: string, observedAt: Date): numb
 const computeThresholdState = (targetPrice: number | null, latestAmount: number | null): RouteThresholdState => {
     if (!targetPrice || !latestAmount) return 'NO_TARGET';
     return latestAmount <= targetPrice ? 'AT_OR_BELOW_TARGET' : 'ABOVE_TARGET';
+};
+
+const buildRouteTimingLabel = (signal: RouteTimingSignal, dataSourceType: RouteDataSourceType): string => {
+    if (dataSourceType === 'REAL_PROVIDER') return signal;
+    if (signal === 'BUY') return 'BUY (based on estimated price signals)';
+    if (signal === 'WAIT') return 'WAIT (trend estimated from internal data)';
+    return 'WATCH (insufficient real-time data)';
+};
+
+const confidenceCapByDataSource = (dataSourceType: RouteDataSourceType): number => {
+    if (dataSourceType === 'INTERNAL_ESTIMATE') return 65;
+    if (dataSourceType === 'HISTORICAL_BASELINE') return 75;
+    return 90;
+};
+
+const inferRouteDataSourceType = (candidateSources: string[]): RouteDataSourceType => {
+    if (candidateSources.some((source) => source.includes('REAL_PROVIDER'))) {
+        return 'REAL_PROVIDER';
+    }
+    if (candidateSources.some((source) => source.includes('PREVIOUS_SNAPSHOT'))) {
+        return 'INTERNAL_ESTIMATE';
+    }
+    return 'HISTORICAL_BASELINE';
 };
 
 async function collectRouteSnapshot(routeId: string) {
@@ -164,6 +191,7 @@ async function collectRouteSnapshot(routeId: string) {
     const adjustment = deterministicAdjustmentPercent(routeId, observedAt);
     const observedAmount = round(baseline * (1 + adjustment / 100));
     const currency = weightedCandidates[0].currency || 'TRY';
+    const dataSourceType = inferRouteDataSourceType(weightedCandidates.map((candidate) => candidate.source));
 
     const snapshot = await prisma.priceSnapshot.create({
         data: {
@@ -171,7 +199,7 @@ async function collectRouteSnapshot(routeId: string) {
             provider: `INTERNAL_${weightedCandidates[0].source}`,
             amount: observedAmount,
             currency,
-            explanation: `Internal route benchmark from ${weightedCandidates.map((c) => c.source).join(', ')}.`,
+            explanation: `${dataSourceType === 'HISTORICAL_BASELINE' ? 'Historical baseline' : 'Internal estimate'} from ${weightedCandidates.map((c) => c.source).join(', ')}.`,
             timestamp: observedAt,
         },
     });
@@ -184,12 +212,13 @@ async function collectRouteSnapshot(routeId: string) {
         },
     });
 
-    return snapshot;
+    return { snapshot, dataSourceType };
 }
 
 const buildRouteRecommendationExplanation = (
     signal: RouteTimingSignal,
     confidence: number,
+    dataSourceType: RouteDataSourceType,
     trendStatus: RouteTrendStatus,
     thresholdState: RouteThresholdState,
     changePercentVsPrevious: number | null,
@@ -227,29 +256,52 @@ const buildRouteRecommendationExplanation = (
     if (thresholdState === 'NO_TARGET') {
         missingFactors.push('Target price is not set, so threshold timing certainty is limited.');
     }
+    if (dataSourceType !== 'REAL_PROVIDER') {
+        missingFactors.push('Real-time pricing data not available');
+    }
 
     let primaryReason = '';
     let actionHint = '';
     if (signal === 'BUY') {
-        primaryReason = 'BUY is recommended because route-level timing signals favor booking now.';
-        actionHint = 'Consider booking now, then keep monitoring only for major downward moves.';
+        primaryReason = dataSourceType === 'REAL_PROVIDER'
+            ? 'BUY is recommended because route-level timing signals favor booking now.'
+            : 'BUY is recommended from estimated route-level timing signals, not live airline pricing.';
+        actionHint = dataSourceType === 'REAL_PROVIDER'
+            ? 'Consider booking now, then keep monitoring only for major downward moves.'
+            : 'Use this as an estimated timing signal and verify with a live booking source before paying.';
     } else if (signal === 'WAIT') {
-        primaryReason = 'WAIT is recommended because recent route movement suggests patience may improve value.';
-        actionHint = 'Wait for stabilization or a lower snapshot, then re-check this route watch.';
+        primaryReason = dataSourceType === 'REAL_PROVIDER'
+            ? 'WAIT is recommended because recent route movement suggests patience may improve value.'
+            : 'WAIT is recommended from internally estimated trend movement, so patience may improve value.';
+        actionHint = dataSourceType === 'REAL_PROVIDER'
+            ? 'Wait for stabilization or a lower snapshot, then re-check this route watch.'
+            : 'Treat this as an estimated trend and confirm against real-time prices before acting.';
     } else {
-        primaryReason = 'WATCH is recommended because current route evidence is not strong enough for a firm timing call.';
-        actionHint = 'Collect more snapshots or set a target price to improve route-level timing confidence.';
+        primaryReason = dataSourceType === 'REAL_PROVIDER'
+            ? 'WATCH is recommended because current route evidence is not strong enough for a firm timing call.'
+            : 'WATCH is recommended because there is not enough real-time data for a firm timing call.';
+        actionHint = dataSourceType === 'REAL_PROVIDER'
+            ? 'Collect more snapshots or set a target price to improve route-level timing confidence.'
+            : 'Collect more route snapshots and verify against live pricing before making a booking decision.';
     }
 
     const supportingReasons = [
         confidence < 65
             ? `Confidence is ${confidence}%, so recommendation is intentionally cautious.`
             : `Confidence is ${confidence}%, supported by observed route movement.`,
+        ...(dataSourceType !== 'REAL_PROVIDER'
+            ? ['This estimate is based on internal price benchmarks, not live airline pricing.']
+            : []),
         ...(positiveFactors.slice(0, 2)),
         ...(negativeFactors.slice(0, 2)),
     ];
 
-    const missingDataWarnings = [...missingFactors].filter((value, index, array) => array.indexOf(value) === index);
+    const missingDataWarnings = [
+        ...(dataSourceType !== 'REAL_PROVIDER'
+            ? ['This estimate is based on internal price benchmarks, not live airline pricing.']
+            : []),
+        ...missingFactors,
+    ].filter((value, index, array) => array.indexOf(value) === index);
 
     return {
         primaryReason,
@@ -277,8 +329,10 @@ async function createRouteAlert(routeId: string, message: string, oldPrice?: num
 export async function evaluateRouteTiming(routeId: string): Promise<{
     trendStatus: RouteTrendStatus;
     timingSignal: RouteTimingSignal;
+    timingLabel: string;
     reason: string;
     confidence: number;
+    dataSourceType: RouteDataSourceType;
     thresholdState: RouteThresholdState;
     recommendationState: RouteTimingSignal;
     changePercentVsPrevious: number | null;
@@ -299,8 +353,10 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
         return {
             trendStatus: 'INSUFFICIENT_DATA',
             timingSignal: 'WATCH',
+            timingLabel: 'WATCH (insufficient real-time data)',
             reason: 'No snapshot yet. Start collecting route prices.',
             confidence: 28,
+            dataSourceType: 'HISTORICAL_BASELINE',
             thresholdState: 'NO_TARGET',
             recommendationState: 'WATCH',
             changePercentVsPrevious: null,
@@ -309,11 +365,14 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
             explanation: {
                 primaryReason: 'WATCH is recommended because no route snapshots are available yet.',
                 supportingReasons: ['Route tracking needs observed prices before strong timing guidance is possible.'],
-                missingDataWarnings: ['No route snapshots available yet.'],
+                missingDataWarnings: [
+                    'No route snapshots available yet.',
+                    'This estimate is based on internal price benchmarks, not live airline pricing.',
+                ],
                 actionHint: 'Keep this route active so snapshots can accumulate.',
                 positiveFactors: [],
                 negativeFactors: [],
-                missingFactors: ['No route snapshots available yet.'],
+                missingFactors: ['No route snapshots available yet.', 'Real-time pricing data not available'],
             },
         };
     }
@@ -330,6 +389,11 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
     const dtd = daysUntil(route.startDate);
     const thresholdState = computeThresholdState(route.targetPrice, latest.amount);
     const hasEnoughSnapshots = snapshots.length >= 4;
+    const dataSourceType: RouteDataSourceType = latest.provider.startsWith('INTERNAL_')
+        ? latest.provider.includes('PREVIOUS_SNAPSHOT')
+            ? 'INTERNAL_ESTIMATE'
+            : 'HISTORICAL_BASELINE'
+        : 'REAL_PROVIDER';
 
     let timingSignal: RouteTimingSignal = 'WATCH';
     let reason = 'Track this route for a clearer booking signal.';
@@ -359,11 +423,12 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
     if (volatility > 16) {
         confidence = Math.max(45, confidence - 8);
     }
-    confidence = round(Math.max(35, Math.min(90, confidence)));
+    confidence = round(Math.max(35, Math.min(confidenceCapByDataSource(dataSourceType), confidence)));
 
     const explanation = buildRouteRecommendationExplanation(
         timingSignal,
         confidence,
+        dataSourceType,
         trendStatus,
         thresholdState,
         changePercent,
@@ -385,8 +450,10 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
     return {
         trendStatus,
         timingSignal,
+        timingLabel: buildRouteTimingLabel(timingSignal, dataSourceType),
         reason,
         confidence,
+        dataSourceType,
         thresholdState,
         recommendationState: timingSignal,
         changePercentVsPrevious: changePercent === null ? null : round(changePercent),
@@ -402,8 +469,9 @@ export async function collectSnapshotAndEvaluateAlerts(routeId: string) {
         orderBy: { timestamp: 'desc' },
     });
 
-    const snapshot = await collectRouteSnapshot(routeId);
-    if (!snapshot) return null;
+    const collected = await collectRouteSnapshot(routeId);
+    if (!collected) return null;
+    const { snapshot } = collected;
 
     const route = await prisma.route.findUnique({ where: { id: routeId } });
     if (!route) return snapshot;
@@ -515,6 +583,7 @@ export async function getRouteWatchDetails(routeId: string, userId: string, refr
                     : null,
                 currency: latestSnapshot.currency,
                 provider: latestSnapshot.provider,
+                dataSourceType: timing.dataSourceType,
                 observedAt: latestSnapshot.timestamp.toISOString(),
                 trendDirection: timing.trendStatus,
                 thresholdState: timing.thresholdState,
@@ -536,8 +605,10 @@ export async function getRouteWatchDetails(routeId: string, userId: string, refr
         },
         timingSignal: {
             signal: timing.timingSignal,
+            label: timing.timingLabel,
             reason: timing.reason,
             confidence: timing.confidence,
+            dataSourceType: timing.dataSourceType,
             explanation: timing.explanation,
         },
         alerts: alerts.map((a) => {
