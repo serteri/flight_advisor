@@ -25,6 +25,7 @@ import { normalizeBuyNowVariant } from '@/lib/experiment/buyNowVariant';
 import type { UnifiedFlight, ScoredFlight } from '@/types/unifiedFlight';
 import { useUnifiedPipeline, useUnifiedDebug, getPipelineMetrics } from '@/lib/featureFlags';
 import { logScoreVisibility, logPerformanceTiming, isDebugLoggingEnabled } from '@/lib/observability/logger';
+import { runSelfCheckLayer } from '@/lib/audit/selfCheckLayer';
 
 // @ts-ignore
 import airports from 'airports';
@@ -780,7 +781,13 @@ export async function GET(request: Request) {
             buyNowVariant,
         );
 
-        const fallbackMinPrice = intelligentFlights
+        const selfCheckedFlights = intelligentFlights.map((flight) => runSelfCheckLayer(flight));
+        const finalResults = selfCheckedFlights.map((result) => ({
+            ...result.flight,
+            selfCheckWarnings: result.userWarnings,
+        }));
+
+        const fallbackMinPrice = finalResults
             .map((flight) => Number(flight.price || 0))
             .filter((value) => Number.isFinite(value) && value > 0)
             .sort((a, b) => a - b)[0] || 0;
@@ -796,7 +803,7 @@ export async function GET(request: Request) {
         if (!usePersonalizedScoring) {
             flightSearchResponseCache.set(cacheKey, {
                 expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
-                results: intelligentFlights,
+                results: finalResults,
             });
         }
 
@@ -809,13 +816,25 @@ export async function GET(request: Request) {
         const routeTotalMs = Date.now() - routeStartTime;
         
         if (includeDebugUnified || isDebugLoggingEnabled()) {
-            const finalUnified = intelligentFlights;
+            const finalUnified = finalResults;
             const metrics = getPipelineMetrics();
             const obs = providerMeta._debugObservability;
+            const adjustedBySelfCheck = selfCheckedFlights.filter((result) =>
+                result.debug.scoreAudit.confidencePenalty > 0
+                || Boolean(result.debug.scoreAudit.recommendationOverride)
+                || !result.debug.parseAudit.passed
+                || !result.debug.honestyAudit.passed,
+            ).length;
+            const userWarningCount = selfCheckedFlights.reduce((sum, result) => sum + result.userWarnings.length, 0);
             _debug = {
                 pipelineMode: providerMeta.pipelineMode,
                 unifiedCount: finalUnified.length,
                 sampleFlight: finalUnified[0] || null,
+                selfCheck: {
+                    adjustedBySelfCheck,
+                    userWarningCount,
+                    sampleAudit: selfCheckedFlights[0]?.debug || null,
+                },
                 pipelineMetrics: {
                     totalRequests: metrics.totalRequests,
                     unifiedSuccess: metrics.unifiedSuccess,
@@ -835,8 +854,6 @@ export async function GET(request: Request) {
                 }
             };
         }
-
-        const finalResults = intelligentFlights;
         
         if (finalResults.length > 0) {
             const scores = finalResults.map(f => f.score.composite).filter(s => typeof s === 'number');

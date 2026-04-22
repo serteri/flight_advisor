@@ -9,6 +9,7 @@ import {
     type DerivedStructureMetrics,
 } from '@/lib/manualFlightToUnifiedFlight';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
+import { buildParseAudit, runSelfCheckLayer, type ParseAudit } from '@/lib/audit/selfCheckLayer';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 
@@ -372,7 +373,13 @@ export async function POST(request: NextRequest) {
             warningSignals,
         );
 
-        return NextResponse.json({
+        const buyWaitAction: 'BUY' | 'WAIT' | 'MONITOR' = decision === 'BUY'
+            ? 'BUY'
+            : decision === 'WAIT'
+                ? 'WAIT'
+                : 'MONITOR';
+
+        const provisionalFlight = {
             ...enrichedFlight,
             score: {
                 ...enrichedFlight.score,
@@ -382,7 +389,7 @@ export async function POST(request: NextRequest) {
                 riskFlags: mergedRiskFlags,
                 comfortNotes: mergedComfortNotes,
                 buyWaitSignal: {
-                    action: decision === 'BUY' ? 'BUY' : decision === 'WAIT' ? 'WAIT' : 'MONITOR',
+                    action: buyWaitAction,
                     label: payload.mode === 'quick'
                         ? 'Rough signal only - add detailed itinerary for high-accuracy scoring'
                         : decision === 'WATCH'
@@ -392,13 +399,36 @@ export async function POST(request: NextRequest) {
                     variant: enrichedFlight.score.buyWaitSignal?.variant,
                 },
             },
-            decision,
+        };
+
+        const parseAuditBase = buildParseAudit(unifiedFlight);
+        const parseAuditFromParser: ParseAudit = {
+            ...parseAuditBase,
+            warnings: [
+                ...parseAuditBase.warnings,
+                ...(assessment.parseWarnings || []),
+            ].filter((value, index, array) => array.indexOf(value) === index),
+            hardErrors: parseAuditBase.hardErrors,
+            completenessScore: Math.round(Math.min(parseAuditBase.completenessScore, Math.max(0, assessment.completenessScore * 100))),
+        };
+
+        const selfChecked = runSelfCheckLayer(provisionalFlight, parseAuditFromParser);
+        const finalDecision: ManualDecision = selfChecked.flight.score.decisionRecommendation === 'BUY_NOW'
+            ? 'BUY'
+            : selfChecked.flight.score.decisionRecommendation === 'WAIT'
+                ? 'WAIT'
+                : 'WATCH';
+
+        return NextResponse.json({
+            ...selfChecked.flight,
+            selfCheckWarnings: selfChecked.userWarnings,
+            decision: finalDecision,
             insights: {
-                decision,
-                confidence: adjustedConfidence,
-                riskFlags: mergedRiskFlags,
-                comfortNotes: mergedComfortNotes,
-                explanation,
+                decision: finalDecision,
+                confidence: selfChecked.flight.score.confidence,
+                riskFlags: selfChecked.flight.score.riskFlags,
+                comfortNotes: selfChecked.flight.score.comfortNotes,
+                explanation: selfChecked.flight.score.decisionReason || explanation,
             },
             recommendationExplanation,
             trackingPayload: {
@@ -445,6 +475,7 @@ export async function POST(request: NextRequest) {
             extractedSegments,
             parseWarnings: assessment.parseWarnings || [],
             parseConfidence: assessment.parseConfidence,
+            _selfCheck: selfChecked.debug,
             confidenceInputs: {
                 baseConfidence,
                 mode: effectiveMode,

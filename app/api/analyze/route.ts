@@ -3,6 +3,7 @@ import { applyAdvancedFlightScoring } from '@/lib/scoring/advancedFlightScoring'
 import { scoreFlightV3 } from '@/lib/scoring/flightScoreEngine';
 import { FlightResult } from '@/types/hybridFlight';
 import { UnifiedFlight } from '@/types/unifiedFlight';
+import { runSelfCheckLayer } from '@/lib/audit/selfCheckLayer';
 
 const isUnifiedFlight = (value: unknown): value is UnifiedFlight => {
     if (!value || typeof value !== 'object') return false;
@@ -39,7 +40,13 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Failed to score unified flight' }, { status: 500 });
             }
 
-            return NextResponse.json(scoredFlight);
+            const selfChecked = runSelfCheckLayer(scoredFlight);
+
+            return NextResponse.json({
+                ...selfChecked.flight,
+                selfCheckWarnings: selfChecked.userWarnings,
+                _selfCheck: selfChecked.debug,
+            });
         }
 
         const flight: FlightResult = payload;
