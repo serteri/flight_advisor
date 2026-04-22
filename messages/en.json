@@ -1,6 +1,6 @@
 {
   "common": {
-    "motto": "Precision in every mile, passion in every flight.",
+    "motto": "Know before you book. Protect after you do.",
     "purpose_title": "OUR MISSION",
     "departure": "Departure",
     "return": "Return",
@@ -8,7 +8,7 @@
     "to": "To",
     "passengers": "Passengers",
     "cabin_class": "Cabin Class",
-    "search_flights": "Search Flights",
+    "search_flights": "Analyze Flight",
     "add_date": "Add Date",
     "travel_purpose": "Travel Purpose",
     "purpose_budget": "Budget",
@@ -18,7 +18,7 @@
   },
   "Navbar": {
     "home": "Home",
-    "search": "Search Flights",
+    "search": "Track Route",
     "pricing": "Pricing",
     "features": "Features",
     "blog": "Travel Tips",
@@ -83,7 +83,7 @@
     "date_label": "Departure",
     "return_label": "Return",
     "passengers_label": "Passengers",
-    "search_button": "Search Flights",
+    "search_button": "Score This Flight",
     "one_way": "One Way",
     "round_trip": "Round Trip",
     "purpose_label": "Purpose",
@@ -101,8 +101,8 @@
       "title": "Your Personal Flight",
       "titleHighlight": "Decision Intelligence",
       "subtitle": "Know when to buy, when to wait, and when to act. FlightAgent scores your flight, tracks disruptions, and protects your trip — automatically.",
-      "ctaPrimary": "Start Exploring",
-      "ctaSecondary": "Learn More"
+      "ctaPrimary": "Score a Flight",
+      "ctaSecondary": "See How It Works"
     },
     "badge": {
       "engineActive": "v2.0 Decision Engine Active",
@@ -217,7 +217,7 @@
     },
     "strategic": {
       "label": "Strategic Reality",
-      "title": "Skyscanner sorts prices. We defend outcomes.",
+      "title": "Other platforms sort prices. We help you decide.",
       "subtitle": "Price alone is not a decision. We model risk, simulate scenarios, and protect you during crises.",
       "typical": {
         "title": "Typical Platforms",
@@ -240,7 +240,7 @@
     },
     "features": {
       "title": "Why Choose FlightAdvisor?",
-      "subtitle": "Everything you need to find the best flight deals",
+      "subtitle": "Make smarter flight decisions with confidence",
       "smartAlerts": {
         "title": "Smart Price Alerts",
         "desc": "Set your target price and let our AI notify you the moment it drops."
@@ -304,13 +304,13 @@
   },
   "BlogPage": {
     "title": "Travel Guides & Tips",
-    "subtitle": "Expert advice on finding the best flight deals, hidden gems, and travel hacks from the FlightAdvisor team.",
+    "subtitle": "Expert guides on flight decisions, travel planning, and booking strategies from the Flight Agent team.",
     "backToHome": "Back to Home",
     "backToGuides": "Back to Guides",
     "tag": "Travel Tips",
     "ctaTitle": "Ready to explore?",
-    "ctaDesc": "Start your search on FlightAdvisor and find the best deals for your next adventure.",
-    "ctaButton": "Search Flights Now"
+    "ctaDesc": "Score your flight on Flight Agent and make confident booking decisions.",
+    "ctaButton": "Get Started"
   },
   "AboutPage": {
     "title": "About FlightAdvisor",
@@ -440,10 +440,10 @@
   },
   "FlightSearch": {
     "showMore": "Show More ({count} flights remaining)",
-    "title": "Search & Track Flights",
-    "subtitle": "Enter your flight details. We'll track the prices and alert you when it's time to buy.",
-    "heroTitle": "Where are we flying?",
-    "heroSubtitle": "Discover the best flight deals",
+    "title": "Score & Track Your Flights",
+    "subtitle": "Paste a flight link or enter details. We'll score it, predict risks, and alert you if things change.",
+    "heroTitle": "What flight are you deciding on?",
+    "heroSubtitle": "Know before you book",
     "mottoLabel": "FlightAgent Motto",
     "oneWay": "One Way",
     "roundTrip": "Round Trip",
@@ -474,7 +474,7 @@
     "passengerLimit": "A maximum of 9 passengers is supported per search",
     "invalidAirports": "Please select valid airports (3-letter IATA codes)",
     "searching": "Searching Flights...",
-    "searchingDesc": "We are scanning hundreds of airlines to find the best deals",
+    "searchingDesc": "Analyzing your flight across 10 criteria...",
     "popularDestinations": "Popular destinations",
     "topFlightsToBookNow": "Top Flights to Watch Now",
     "topFlightsSummary": "{count, plural, one {# flight is currently flagged as a strong fare opportunity.} other {# flights are currently flagged as strong fare opportunities.}}",
@@ -486,7 +486,7 @@
     "oneTimeReportTitle": "One-time Flight Report ($4.99)",
     "oneTimeReportDesc": "Deep risk and pricing analysis only for this route.",
     "oneTimeReportButton": "One-time Report ($4.99)",
-    "searchButton": "Find Flights",
+    "searchButton": "Score This Flight",
     "success": "Flight Found!",
     "error": "Search Failed",
     "resultsFound": "Flights Found",
@@ -504,14 +504,38 @@
     "airlines": "Airlines",
     "direct": "Direct",
     "stop": "stop",
-    "layover": "layover",
+    "layover": {
+      "risk": {
+        "critical": "CRITICAL - Risky Transfer!",
+        "high": "Risky - Be Fast",
+        "medium": "Medium - Relaxed but careful",
+        "low": "Relaxed - Enjoy your time"
+      },
+      "advice": {
+        "default_short": "Short layover. Rush to the gate immediately.",
+        "default_medium": "Reasonable time. Grab a coffee but locate your gate first.",
+        "default_long": "Plenty of time. Enjoy the lounge or restaurants.",
+        "DXB_short": "Dubai is massive. Run to your gate immediately!",
+        "DXB_medium": "Terminal 3 train might be needed. You have time but don't linger.",
+        "DXB_long": "Plenty of time in Dubai. Try Sleep Pods or Marhaba Lounge.",
+        "DOH_short": "Doha is compact but <60m is risky. Run to gate.",
+        "DOH_medium": "Time for a quick coffee at the Orchard, but check your gate distance.",
+        "DOH_long": "World's best airport. Check out 'Orchard' garden and lounges.",
+        "IST_short": "Istanbul Airport is huge. 20min walking distance possible. Hurry!",
+        "IST_medium": "Distances are long. Locate your gate first, then relax.",
+        "IST_long": "Turkish Airlines Business Lounge is legendary. Worth paying for entry.",
+        "SIN_short": "Changi is compact but security is tight. Skip Jewel.",
+        "SIN_medium": "Jewel is tempting but Security is at the gate. Don't risk it.",
+        "SIN_long": "Changi is world famous. Must see the Jewel waterfall and butterfly garden."
+      }
+    },
     "transferAt": "Transfer at",
     "cheapest": "Cheapest",
     "fastest": "Fastest",
     "bestScore": "Best Score",
     "price": "Price",
-    "trackFlight": "Track this Flight",
-    "trackingThisFlight": "You are tracking this flight",
+    "trackFlight": "Track & Protect This Flight",
+    "trackingThisFlight": "This flight is protected",
     "flightDetails": "Flight Details",
     "hideDetails": "Hide details",
     "excellentDeal": "Excellent Deal",
@@ -551,31 +575,6 @@
       "returnDateRequired": "Return date is required for round trips",
       "returnDateBeforeDeparture": "Return date must be after departure date",
       "generic": "An error occurred. Please try again."
-    },
-    "layover": {
-      "risk": {
-        "critical": "CRITICAL - Risky Transfer!",
-        "high": "Risky - Be Fast",
-        "medium": "Medium - Relaxed but careful",
-        "low": "Relaxed - Enjoy your time"
-      },
-      "advice": {
-        "default_short": "Short layover. Rush to the gate immediately.",
-        "default_medium": "Reasonable time. Grab a coffee but locate your gate first.",
-        "default_long": "Plenty of time. Enjoy the lounge or restaurants.",
-        "DXB_short": "Dubai is massive. Run to your gate immediately!",
-        "DXB_medium": "Terminal 3 train might be needed. You have time but don't linger.",
-        "DXB_long": "Plenty of time in Dubai. Try Sleep Pods or Marhaba Lounge.",
-        "DOH_short": "Doha is compact but <60m is risky. Run to gate.",
-        "DOH_medium": "Time for a quick coffee at the Orchard, but check your gate distance.",
-        "DOH_long": "World's best airport. Check out 'Orchard' garden and lounges.",
-        "IST_short": "Istanbul Airport is huge. 20min walking distance possible. Hurry!",
-        "IST_medium": "Distances are long. Locate your gate first, then relax.",
-        "IST_long": "Turkish Airlines Business Lounge is legendary. Worth paying for entry.",
-        "SIN_short": "Changi is compact but security is tight. Skip Jewel.",
-        "SIN_medium": "Jewel is tempting but Security is at the gate. Don't risk it.",
-        "SIN_long": "Changi is world famous. Must see the Jewel waterfall and butterfly garden."
-      }
     }
   },
   "priceOracle": {
