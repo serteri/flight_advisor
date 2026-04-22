@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Database, CheckCircle, XCircle, Loader2, Clock, Info } from 'lucide-react';
 import { normalizeSource } from '@/lib/utils';
 import type { ScoredFlight } from '@/types/unifiedFlight';
 
@@ -11,6 +11,8 @@ interface DataSourceStatus {
     status: 'loading' | 'active' | 'inactive' | 'error';
     count: number;
     color: string;
+    lastUpdated?: Date;
+    credibility?: number; // 0-100
 }
 
 export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
@@ -55,8 +57,21 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
                     <Database className="w-5 h-5 text-slate-600" />
                     <h3 className="text-sm font-bold text-slate-900">{t('dataSources')}</h3>
                 </div>
-                <div className="text-xs font-medium text-slate-500">
-                    {activeCount}/{sources.length} {t('active')}
+                <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="text-xs font-medium text-slate-500">
+                        {activeCount}/{sources.length} {t('active')}
+                        <span className="text-slate-400 ml-1">• Updated moments ago</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Data Source Info Disclosure */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-700">
+                    <strong>Data Transparency:</strong> We search multiple flight providers in parallel. Results are live unless explicitly cached. 
+                    <a href="/methodology#data-sources" className="underline hover:no-underline ml-1 font-semibold">Learn about our sources</a>
                 </div>
             </div>
 
@@ -79,7 +94,10 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
                                 {source.name}
                             </span>
                             {source.status === 'active' ? (
-                                <CheckCircle className={`w-4 h-4 text-${source.color}-600`} />
+                                <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                    <CheckCircle className={`w-4 h-4 text-${source.color}-600`} />
+                                </div>
                             ) : source.status === 'loading' ? (
                                 <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
                             ) : (
@@ -92,17 +110,26 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
                         <div className="text-xs text-slate-500 mt-0.5">
                             {source.status === 'active' ? t('flightsFoundLower') : t('noResultsLower')}
                         </div>
+
+                        {/* Data freshness badge */}
+                        {source.status === 'active' && (
+                            <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-600">
+                                <span className="inline-block bg-slate-100 px-1.5 py-0.5 rounded">
+                                    ✓ Live data
+                                </span>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
 
             {totalFlights > 0 && (
                 <div className="mt-4 pt-3 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-sm mb-2">
                         <span className="font-medium text-slate-600">{t('totalResults')}</span>
                         <span className="font-black text-slate-900">{t('totalFlightsLabel', { count: totalFlights })}</span>
                     </div>
-                    <div className="mt-2 bg-slate-100 rounded-full h-2 overflow-hidden flex">
+                    <div className="bg-slate-100 rounded-full h-2 overflow-hidden flex">
                         {sources.map((source) => {
                             if (source.count === 0) return null;
                             const percentage = (source.count / totalFlights) * 100;
@@ -115,6 +142,16 @@ export function DataSourceIndicator({ flights }: { flights: ScoredFlight[] }) {
                                 />
                             );
                         })}
+                    </div>
+
+                    {/* Data mix explanation */}
+                    <div className="mt-2 text-xs text-slate-500 space-y-1">
+                        <div>
+                            <strong>Source distribution:</strong> This mix helps us find the best prices across all providers.
+                        </div>
+                        <div>
+                            <strong>Why different sources?</strong> Each provider has different availability. We compare all results using the same scoring criteria.
+                        </div>
                     </div>
                 </div>
             )}

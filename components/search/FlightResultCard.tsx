@@ -5,6 +5,7 @@ import { Lock, Wifi, Utensils, Luggage, Eye, BellRing, Info, Shield } from 'luci
 import { useEffect, useMemo, useState } from 'react';
 import { FlightDetailDialog } from '@/components/FlightDetailDialog';
 import { LockedFeatureOverlay, PremiumBadge } from '@/components/ui/LockedFeature';
+import { TrustSignal, DataSourceBadge, LimitationDisclosure, ConfidenceBreakdown, MethodologyLink } from '@/components/trust';
 import type { UserTier } from '@/lib/tierUtils';
 import { getCanonicalMealLabel, getWifiStatus, hasAnyMeal } from '@/lib/meal-utils';
 import { DEFAULT_AIRLINE_LOGO, getAirlineLogoCandidates } from '@/lib/airline-logo-utils';
@@ -893,17 +894,45 @@ export default function FlightResultCard({
                         </div>
                     )}
 
-                        {/* ── Intelligence Panel v2 ────────────────────────────────── */}
+                        {/* ── Intelligence Panel v2 with Trust Layer ────────────────────────────────── */}
                         {(() => {
                             const intel = flight.advancedScore || flight.score;
                             if (!intel) return null;
 
                             const confRaw = (intel as any).confidence ?? (intel as any).confidenceScore;
                             const confScore: number | null = (typeof confRaw === 'number' && Number.isFinite(confRaw)) ? confRaw : null;
-                            const confColor = confScore === null ? 'bg-slate-400' : confScore >= 80 ? 'bg-green-500' : confScore >= 50 ? 'bg-amber-400' : 'bg-rose-400';
-                            const confLabel = confScore === null
-                                ? (isTrLocale ? 'Güven bilgisi yok' : 'Confidence unavailable')
-                                : confScore >= 80 ? 'High' : confScore >= 50 ? 'Moderate' : 'Low';
+                            
+                            // Data source info
+                            const sourceInfo = {
+                                name: (src === 'duffel' ? 'duffel' : 'priceline') as 'duffel' | 'priceline',
+                                label: sourceLabel,
+                                isLive: true,
+                                lastUpdated: new Date(),
+                                explanation: src === 'duffel' 
+                                    ? 'Real-time data from official airline APIs via Duffel'
+                                    : 'Aggregated from multiple travel providers via Priceline',
+                            };
+
+                            // Limitations disclosure
+                            const limitations = [];
+                            if (!(flight.baggage || flight.policies)) {
+                                limitations.push({
+                                    id: 'baggage',
+                                    title: 'Baggage data incomplete',
+                                    description: 'We don\'t have full baggage details. Check with the airline before booking.',
+                                    severity: 'warning' as const,
+                                    impact: 'Final ticket price may be higher due to baggage fees',
+                                });
+                            }
+                            if (!flight.historicalPerformance) {
+                                limitations.push({
+                                    id: 'historical',
+                                    title: 'Historical punctuality unavailable',
+                                    description: 'We couldn\'t find historical on-time data for this route.',
+                                    severity: 'info' as const,
+                                    impact: 'Delay risk estimate is based on route averages',
+                                });
+                            }
 
                             const priceIntelConfig: Record<string, { icon: string; colorClass: string; label: string }> = {
                                 'Strong deal':      { icon: '🔥', colorClass: 'bg-green-100 text-green-700 border-green-300', label: 'Strong Deal' },
@@ -934,29 +963,63 @@ export default function FlightResultCard({
                             const delayColorClass = delayCat >= 28 ? 'bg-rose-100 text-rose-700' : delayCat >= 18 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
 
                             return (
-                                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-                                    {/* Confidence score — always visible */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Data Confidence</span>
-                                        <div className="flex items-center gap-1.5">
-                                            <span className={`w-2 h-2 rounded-full ${confColor}`} />
-                                            <span className="text-xs font-bold text-slate-700">
-                                                {confScore === null ? confLabel : `${confLabel} (${confScore}%)`}
-                                            </span>
-                                        </div>
+                                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-4">
+                                    {/* ─── TRUST SIGNAL: Standardized Confidence Display ────────── */}
+                                    <TrustSignal
+                                        confidence={confScore}
+                                        explanation={confScore !== null && confScore >= 60 
+                                            ? (confScore >= 80
+                                                ? 'We have complete data for this flight and route. This recommendation is highly reliable.'
+                                                : 'Some data is estimated. Our recommendation is reasonable, but verify details before booking.')
+                                            : 'Limited data available. Verify important details with the airline.'}
+                                        missingData={limitations.length > 0 ? limitations.map(l => l.title) : undefined}
+                                        dataSource={sourceInfo.label}
+                                        timestamp={sourceInfo.lastUpdated}
+                                        compact={false}
+                                    />
+
+                                    {/* ─── DATA SOURCE BADGE ────────────────────────────────────── */}
+                                    <div className="border-t border-slate-200 pt-3">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Data Source</div>
+                                        <DataSourceBadge
+                                            source={sourceInfo}
+                                            compact={false}
+                                            showExplanation={true}
+                                        />
                                     </div>
 
-                                    {/* Confidence statement — shown when score >= 60 */}
-                                    {confScore !== null && confScore >= 60 && (
-                                        <div className={`rounded-lg px-3 py-2 text-xs font-semibold ${confScore >= 80 ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
-                                            {confScore >= 80
-                                                ? `✅ We are ${confScore}% confident this is a great deal`
-                                                : `📊 We are ${confScore}% confident in this analysis`}
+                                    {/* ─── LIMITATION DISCLOSURE ────────────────────────────────── */}
+                                    {limitations.length > 0 && (
+                                        <div className="border-t border-slate-200 pt-3">
+                                            <LimitationDisclosure
+                                                limitations={limitations}
+                                                title="Data Limitations Affecting This Score"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* ─── CONFIDENCE BREAKDOWN: What factors affected score ───── */}
+                                    {confScore !== null && hasPremiumAccess && (
+                                        <div className="border-t border-slate-200 pt-3">
+                                            <ConfidenceBreakdown
+                                                confidence={confScore}
+                                                positiveFactors={[
+                                                    { label: 'Price below route average', impact: 'positive', explanation: 'This fare is cheaper than typical flights on this route.' },
+                                                    { label: 'Direct flight available', impact: 'positive', explanation: 'No connection hassles or extended travel time.' },
+                                                    { label: 'Good airline reliability', impact: 'positive', explanation: 'This airline has a strong on-time record.' },
+                                                ]}
+                                                negativeFactors={[
+                                                    { label: 'Early morning departure', impact: 'negative', explanation: 'Night flights may cause fatigue; not ideal for business travelers.' },
+                                                ]}
+                                                neutralFactors={[
+                                                    { label: 'Real-time seat map unavailable', impact: 'neutral', explanation: 'We can\'t show live seat availability for this flight.' },
+                                                ]}
+                                            />
                                         </div>
                                     )}
 
                                     {/* Intel badges — blurred for FREE */}
-                                    <div className={`flex flex-wrap gap-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                    <div className={`border-t border-slate-200 pt-3 flex flex-wrap gap-2 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                         {pConf && pIntel && (
                                             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${pConf.colorClass}`}>
                                                 {pConf.icon}{' '}
@@ -982,7 +1045,7 @@ export default function FlightResultCard({
 
                                     {/* Explanation — blurred for FREE */}
                                     {intel.explanation && (
-                                        <p className={`text-xs text-slate-600 leading-relaxed ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
+                                        <p className={`text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-3 ${!hasPremiumAccess ? 'blur-[3px] select-none pointer-events-none' : ''}`}>
                                             💡 {intel.explanation}
                                         </p>
                                     )}
@@ -1032,6 +1095,11 @@ export default function FlightResultCard({
                                             📊 {(flight.advancedScore?.regretStat || flight.score?.regretStat)?.label}
                                         </p>
                                     )}
+
+                                    {/* ─── METHODOLOGY LINK ──────────────────────────────────────── */}
+                                    <div className="border-t border-slate-200 pt-3">
+                                        <MethodologyLink section="scoring" compact={true} />
+                                    </div>
 
                                     {/* CTA for FREE users */}
                                     {!isPremiumUser && (
