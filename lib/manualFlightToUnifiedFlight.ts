@@ -481,15 +481,36 @@ const toIsoOrFallback = (value: string | undefined, fallbackMs: number): string 
 
 const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionResult => {
     const parsed = parseItineraryText(input.itineraryText);
-    const sourceSegments = input.segments && input.segments.length > 0 ? input.segments : parsed.segments;
+    const sourceSegments = input.segments && input.segments.length > 0
+        ? input.segments
+        : parsed.segments.map((segment) => ({
+            from: segment.from,
+            to: segment.to,
+            departureDateTime: segment.departure,
+            arrivalDateTime: segment.arrival,
+            airline: segment.airline,
+            flightNumber: segment.flightNumber,
+        }));
 
     const baseMs = Date.now() + 24 * 60 * 60 * 1000;
+    const normalizationWarnings: string[] = [];
     const normalizedSegments = sourceSegments.map((segment, index) => {
         const fallbackDeparture = baseMs + index * 4 * 60 * 60 * 1000;
         const departureDateTime = toIsoOrFallback(segment.departureDateTime, fallbackDeparture);
         const arrivalDateTime = toIsoOrFallback(segment.arrivalDateTime, fallbackDeparture + 2 * 60 * 60 * 1000);
-        const airline = segment.airline || 'Manual Entry';
-        const flightNumber = segment.flightNumber || `${airline.slice(0, 2).toUpperCase()}${200 + index}`;
+        const airline = segment.airline || 'UNKN';
+        const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
+
+        if (!segment.departureDateTime || !segment.arrivalDateTime) {
+            normalizationWarnings.push(`Segment ${index + 1} had missing times; deterministic fallback times applied for scoring.`);
+        }
+        if (!segment.flightNumber) {
+            normalizationWarnings.push(`Segment ${index + 1} missing flight number; placeholder assigned.`);
+        }
+        if (!segment.airline) {
+            normalizationWarnings.push(`Segment ${index + 1} missing airline; placeholder assigned.`);
+        }
+
         return {
             from: segment.from,
             to: segment.to,
@@ -497,9 +518,6 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             arrivalDateTime,
             airline,
             flightNumber,
-            aircraft: segment.aircraft,
-            marketedAirline: segment.marketedAirline,
-            bookingClass: segment.bookingClass,
         };
     });
 
@@ -508,32 +526,36 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
     }
 
     const inferredTotalPrice = input.price
-        ?? parsed.inferred.price
+        ?? parsed.trip.price
         ?? 999;
     const inferredCurrency = input.currency
-        ?? parsed.inferred.currency
+        ?? parsed.trip.currency
         ?? 'USD';
     const inferredCabin = input.cabin
-        ?? parsed.inferred.cabin
+        ?? parsed.trip.cabin
         ?? 'economy';
     const inferredRefundable = typeof input.refundable === 'boolean'
         ? input.refundable
-        : parsed.inferred.refundable;
+        : parsed.meta.refundable;
 
     const detailedInput: DetailedScoreInput = {
         mode: 'detailed',
         totalPrice: inferredTotalPrice,
         currency: inferredCurrency,
         cabin: inferredCabin,
-        checkedBaggageKg: input.checkedBaggageKg,
-        cabinBaggageKg: input.cabinBaggageKg,
+        checkedBaggageKg: typeof input.checkedBaggageKg === 'number'
+            ? input.checkedBaggageKg
+            : parsed.trip.checkedBaggageKg ?? undefined,
+        cabinBaggageKg: typeof input.cabinBaggageKg === 'number'
+            ? input.cabinBaggageKg
+            : parsed.trip.cabinBaggageKg ?? undefined,
         refundable: inferredRefundable,
         segments: normalizedSegments,
     };
 
     const base = buildDetailedUnifiedFlight(detailedInput);
-    const parseWarnings = [...parsed.warnings];
-    if (!input.price && !parsed.inferred.price) {
+    const parseWarnings = [...parsed.warnings, ...normalizationWarnings];
+    if (!input.price && !parsed.trip.price) {
         parseWarnings.push('Price missing in text; fallback price baseline applied.');
     }
 
