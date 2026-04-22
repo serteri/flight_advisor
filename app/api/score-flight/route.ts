@@ -12,6 +12,18 @@ import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/li
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 
+type WarningSignals = {
+    totalWarnings: number;
+    missingBaggage: number;
+    missingPrice: number;
+    missingSegmentTimes: number;
+    routeMismatch: number;
+    unrealisticLayover: number;
+    chronologyIssues: number;
+    partialExtraction: number;
+    severityPenalty: number;
+};
+
 const normalizeDecision = (action?: string): ManualDecision => {
     if (action === 'BUY') return 'BUY';
     if (action === 'WAIT') return 'WAIT';
@@ -20,28 +32,111 @@ const normalizeDecision = (action?: string): ManualDecision => {
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
+const parseWarningSignals = (assessment: InputAssessment): WarningSignals => {
+    const warnings = assessment.parseWarnings || [];
+    const hasMatch = (warning: string, regex: RegExp): boolean => regex.test(warning);
+
+    const missingBaggage = warnings.filter((warning) => hasMatch(warning, /missing baggage|baggage/i)).length;
+    const missingPrice = warnings.filter((warning) => hasMatch(warning, /price missing|price not detected/i)).length;
+    const missingSegmentTimes = warnings.filter((warning) => hasMatch(warning, /missing segment times|missing times/i)).length;
+    const routeMismatch = warnings.filter((warning) => hasMatch(warning, /route mismatch/i)).length;
+    const unrealisticLayover = warnings.filter((warning) => hasMatch(warning, /unrealistic layover|negative layover|chronology/i)).length;
+    const chronologyIssues = warnings.filter((warning) => hasMatch(warning, /chronology|negative layover/i)).length;
+    const partialExtraction = warnings.filter((warning) => hasMatch(warning, /could not parse any route segment|inferred|fallback|placeholder/i)).length;
+
+    const severityPenalty =
+        (missingBaggage * 1.2)
+        + (missingPrice * 2)
+        + (missingSegmentTimes * 4)
+        + (routeMismatch * 5)
+        + (unrealisticLayover * 4)
+        + (chronologyIssues * 5)
+        + (partialExtraction * 2);
+
+    return {
+        totalWarnings: warnings.length,
+        missingBaggage,
+        missingPrice,
+        missingSegmentTimes,
+        routeMismatch,
+        unrealisticLayover,
+        chronologyIssues,
+        partialExtraction,
+        severityPenalty,
+    };
+};
+
+const computeConfidenceCap = (
+    mode: 'quick' | 'detailed',
+    signals: WarningSignals,
+    derived: DerivedStructureMetrics,
+): number => {
+    let cap = mode === 'quick' ? 60 : 90;
+
+    if (signals.chronologyIssues > 0 || signals.routeMismatch > 0) {
+        cap = Math.min(cap, 66);
+    }
+    if (signals.missingSegmentTimes > 0) {
+        cap = Math.min(cap, 68);
+    }
+    if (signals.partialExtraction > 0) {
+        cap = Math.min(cap, 70);
+    }
+    if (signals.missingPrice > 0 && signals.missingBaggage > 0) {
+        cap = Math.min(cap, 69);
+    }
+    if (derived.routeRealism === 'QUESTIONABLE') {
+        cap = Math.min(cap, 72);
+    }
+    if (derived.connectionFeasibility === 'RISKY') {
+        cap = Math.min(cap, 74);
+    }
+
+    return cap;
+};
+
 const computeModeConfidence = (
     mode: 'quick' | 'detailed',
     baseConfidence: number,
     assessment: InputAssessment,
     derived: DerivedStructureMetrics,
+    signals: WarningSignals,
 ): number => {
+    const parseConfidence = assessment.parseConfidence ?? (mode === 'quick' ? 0.5 : 0.65);
+    const warningPenalty = signals.severityPenalty + (signals.totalWarnings * 0.8);
+    const confidenceCap = computeConfidenceCap(mode, signals, derived);
+
     if (mode === 'quick') {
-        const quickConfidence = 40 + Math.round(assessment.completenessScore * 14);
-        return clamp(Math.min(baseConfidence, quickConfidence), 40, 58);
+        const quickRaw =
+            40
+            + (assessment.completenessScore * 14)
+            + (assessment.realismScore * 6)
+            + (parseConfidence * 10)
+            - warningPenalty;
+        const blended = (quickRaw * 0.7) + (baseConfidence * 0.3);
+        return Number(clamp(Math.min(blended, confidenceCap), 35, 62).toFixed(1));
     }
 
     const detailedConfidenceRaw =
-        52
-        + Math.round(assessment.completenessScore * 20)
-        + Math.round(assessment.realismScore * 16)
-        + Math.round(assessment.baggageConfidenceScore * 8)
+        48
+        + (assessment.completenessScore * 20)
+        + (assessment.realismScore * 17)
+        + (assessment.baggageConfidenceScore * 9)
+        + (parseConfidence * 12)
         - (assessment.priceContextAvailable ? 0 : 4);
 
     const realismPenalty = derived.routeRealism === 'QUESTIONABLE' ? 6 : 0;
-    const baggagePenalty = assessment.baggageConfidenceScore < 0.7 ? 6 : 0;
+    const baggagePenalty = assessment.baggageConfidenceScore < 0.7 ? 5 : 0;
+    const feasibilityPenalty = derived.connectionFeasibility === 'RISKY'
+        ? 6
+        : derived.connectionFeasibility === 'TIGHT'
+            ? 2
+            : 0;
 
-    return clamp(Math.min(baseConfidence, detailedConfidenceRaw - realismPenalty - baggagePenalty), 52, 88);
+    const blended = ((detailedConfidenceRaw - realismPenalty - baggagePenalty - feasibilityPenalty - warningPenalty) * 0.65)
+        + (baseConfidence * 0.35);
+
+    return Number(clamp(Math.min(blended, confidenceCap), 44, 90).toFixed(1));
 };
 
 const buildModeDecision = (
@@ -49,10 +144,30 @@ const buildModeDecision = (
     initialDecision: ManualDecision,
     confidence: number,
     derived: DerivedStructureMetrics,
+    signals: WarningSignals,
 ): ManualDecision => {
     if (mode === 'quick') return 'WATCH';
-    if (derived.routeRealism === 'QUESTIONABLE') return 'WATCH';
-    if (confidence < 62) return 'WATCH';
+
+    if (signals.chronologyIssues > 0 || signals.routeMismatch > 0 || signals.missingSegmentTimes > 0) {
+        return 'WATCH';
+    }
+
+    if (derived.routeRealism === 'QUESTIONABLE' && confidence < 70) {
+        return 'WATCH';
+    }
+
+    if (confidence < 60) return 'WATCH';
+
+    if (initialDecision === 'BUY') {
+        if (confidence < 72) return 'WAIT';
+        if (signals.totalWarnings >= 3 || signals.missingPrice > 0 || signals.partialExtraction > 0) return 'WAIT';
+        if (derived.connectionFeasibility === 'RISKY') return 'WAIT';
+    }
+
+    if (initialDecision === 'WAIT' && confidence < 64) {
+        return 'WATCH';
+    }
+
     return initialDecision;
 };
 
@@ -84,6 +199,10 @@ const buildModeExplanation = (
 
     if (!assessment.priceContextAvailable) {
         notes.push('No external route-price context is available; timing certainty is limited.');
+    }
+
+    if ((assessment.parseWarnings?.length || 0) > 0) {
+        notes.push(`Parser raised ${assessment.parseWarnings?.length || 0} warning(s), reducing certainty.`);
     }
 
     return [baseReason, ...notes, ...assessment.riskFlags.slice(0, 2)]
@@ -120,8 +239,9 @@ export async function POST(request: NextRequest) {
         const initialDecision = normalizeDecision(enrichedFlight.score.buyWaitSignal?.action);
         const baseConfidence = enrichedFlight.score.decisionConfidence ?? enrichedFlight.score.confidence ?? 60;
         const effectiveMode = payload.mode === 'paste' ? assessment.mode : payload.mode;
-        const adjustedConfidence = computeModeConfidence(effectiveMode, baseConfidence, assessment, derived);
-        const decision = buildModeDecision(effectiveMode, initialDecision, adjustedConfidence, derived);
+        const warningSignals = parseWarningSignals(assessment);
+        const adjustedConfidence = computeModeConfidence(effectiveMode, baseConfidence, assessment, derived, warningSignals);
+        const decision = buildModeDecision(effectiveMode, initialDecision, adjustedConfidence, derived, warningSignals);
 
         const mergedRiskFlags = [
             ...(enrichedFlight.score.riskFlags || []),
@@ -174,6 +294,18 @@ export async function POST(request: NextRequest) {
             extractedSegments,
             parseWarnings: assessment.parseWarnings || [],
             parseConfidence: assessment.parseConfidence,
+            confidenceInputs: {
+                baseConfidence,
+                mode: effectiveMode,
+                completenessScore: assessment.completenessScore,
+                realismScore: assessment.realismScore,
+                baggageConfidenceScore: assessment.baggageConfidenceScore,
+                parseConfidence: assessment.parseConfidence,
+                priceContextAvailable: assessment.priceContextAvailable,
+                connectionFeasibility: derived.connectionFeasibility,
+                routeRealism: derived.routeRealism,
+                warningSignals,
+            },
             needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'
                 ? 'Switch to Detailed Itinerary Score to improve realism and confidence.'
