@@ -57,6 +57,15 @@ interface ScoreResult {
         comfortNotes: string[];
         explanation: string;
     };
+    recommendationExplanation?: {
+        primaryReason: string;
+        supportingReasons: string[];
+        missingDataWarnings: string[];
+        actionHint: string;
+        positiveFactors: string[];
+        negativeFactors: string[];
+        missingFactors: string[];
+    };
     score: {
         composite: number;
         buyWaitSignal?: { action: string; label?: string };
@@ -368,6 +377,70 @@ export default function ScoreFlightPage() {
                                 </p>
                             </div>
                         </div>
+
+                        {result.recommendationExplanation && (
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+                                <div>
+                                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Why this recommendation</div>
+                                    <p className="text-sm text-slate-800 font-medium">{result.recommendationExplanation.primaryReason}</p>
+                                    {result.recommendationExplanation.supportingReasons.length > 0 && (
+                                        <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                                            {result.recommendationExplanation.supportingReasons.map((reason, index) => (
+                                                <li key={index} className="flex gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-2 shrink-0" />
+                                                    {reason}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2">Positive factors</div>
+                                        <ul className="space-y-1 text-sm text-emerald-800">
+                                            {result.recommendationExplanation.positiveFactors.length > 0 ? result.recommendationExplanation.positiveFactors.map((item, index) => (
+                                                <li key={index}>• {item}</li>
+                                            )) : <li>• No strong positives detected yet.</li>}
+                                        </ul>
+                                    </div>
+
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-red-700 mb-2">Negative factors</div>
+                                        <ul className="space-y-1 text-sm text-red-800">
+                                            {result.recommendationExplanation.negativeFactors.length > 0 ? result.recommendationExplanation.negativeFactors.map((item, index) => (
+                                                <li key={index}>• {item}</li>
+                                            )) : <li>• No major negatives detected.</li>}
+                                        </ul>
+                                    </div>
+
+                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">Missing factors</div>
+                                        <ul className="space-y-1 text-sm text-amber-800">
+                                            {result.recommendationExplanation.missingFactors.length > 0 ? result.recommendationExplanation.missingFactors.map((item, index) => (
+                                                <li key={index}>• {item}</li>
+                                            )) : <li>• Required data coverage looks complete.</li>}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {result.recommendationExplanation.missingDataWarnings.length > 0 && (
+                                    <div className="rounded-xl border border-orange-200 bg-orange-50 p-3">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-orange-700 mb-2">Missing data warnings</div>
+                                        <ul className="space-y-1 text-sm text-orange-800">
+                                            {result.recommendationExplanation.missingDataWarnings.map((warning, index) => (
+                                                <li key={index}>• {warning}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+                                    <div className="text-xs font-bold uppercase tracking-wider text-sky-700 mb-1">What to do next</div>
+                                    <p className="text-sm text-sky-900">{result.recommendationExplanation.actionHint}</p>
+                                </div>
+                            </div>
+                        )}
 
                         {result.derivedMetrics && (
                             <div className="bg-white rounded-2xl border border-slate-200 p-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

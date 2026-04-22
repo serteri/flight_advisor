@@ -24,6 +24,16 @@ type WarningSignals = {
     severityPenalty: number;
 };
 
+type RecommendationExplanation = {
+    primaryReason: string;
+    supportingReasons: string[];
+    missingDataWarnings: string[];
+    actionHint: string;
+    positiveFactors: string[];
+    negativeFactors: string[];
+    missingFactors: string[];
+};
+
 const normalizeDecision = (action?: string): ManualDecision => {
     if (action === 'BUY') return 'BUY';
     if (action === 'WAIT') return 'WAIT';
@@ -211,6 +221,100 @@ const buildModeExplanation = (
         .trim();
 };
 
+const buildRecommendationExplanation = (
+    decision: ManualDecision,
+    confidence: number,
+    assessment: InputAssessment,
+    derived: DerivedStructureMetrics,
+    signals: WarningSignals,
+): RecommendationExplanation => {
+    const positiveFactors: string[] = [];
+    const negativeFactors: string[] = [];
+    const missingFactors: string[] = [];
+
+    if (derived.routeRealism === 'REALISTIC') {
+        positiveFactors.push('Route structure appears realistic.');
+    } else {
+        negativeFactors.push('Route realism is questionable.');
+    }
+
+    if (derived.connectionFeasibility === 'GOOD') {
+        positiveFactors.push('Connection timing looks safe.');
+    }
+    if (derived.connectionFeasibility === 'TIGHT') {
+        negativeFactors.push('At least one connection is tight.');
+    }
+    if (derived.connectionFeasibility === 'RISKY') {
+        negativeFactors.push('Connection structure is risky.');
+    }
+
+    if (assessment.baggageConfidenceScore >= 0.8) {
+        positiveFactors.push('Baggage details are mostly complete.');
+    } else {
+        missingFactors.push('Baggage details are incomplete.');
+    }
+
+    if ((assessment.parseConfidence ?? 0.5) >= 0.7) {
+        positiveFactors.push('Parser confidence is high for extracted itinerary details.');
+    } else {
+        negativeFactors.push('Parser confidence is limited for this itinerary text.');
+    }
+
+    if (signals.missingPrice > 0) {
+        missingFactors.push('Price is missing or inferred from fallback defaults.');
+    }
+    if (signals.missingSegmentTimes > 0) {
+        missingFactors.push('Some segment departure/arrival times are missing.');
+    }
+    if (signals.routeMismatch > 0) {
+        negativeFactors.push('Segment sequence has route mismatch issues.');
+    }
+    if (signals.unrealisticLayover > 0 || signals.chronologyIssues > 0) {
+        negativeFactors.push('Chronology or layover consistency has warning flags.');
+    }
+    if (signals.partialExtraction > 0) {
+        missingFactors.push('Only partial segment extraction was possible from pasted text.');
+    }
+
+    const parserWarnings = (assessment.parseWarnings || []).slice(0, 4);
+    const missingDataWarnings = [
+        ...missingFactors,
+        ...parserWarnings,
+    ].filter((value, index, array) => array.indexOf(value) === index);
+
+    let primaryReason = '';
+    let actionHint = '';
+
+    if (decision === 'BUY') {
+        primaryReason = 'BUY is recommended because current itinerary signals are favorable and data quality is strong enough.';
+        actionHint = confidence >= 78
+            ? 'Booking now is reasonable. Keep monitoring only for major fare drops.'
+            : 'Buy is acceptable, but verify any remaining missing details before final payment.';
+    } else if (decision === 'WAIT') {
+        primaryReason = 'WAIT is recommended because there are mixed signals and buying now is not clearly safer yet.';
+        actionHint = 'Wait for better price/context clarity, then rescore with complete itinerary details.';
+    } else {
+        primaryReason = 'WATCH is recommended because uncertainty is still too high for a strong action.';
+        actionHint = 'Add full segment times, baggage allowance, and confirmed price to improve confidence.';
+    }
+
+    const supportingReasons = [
+        confidence < 65 ? `Confidence is ${confidence}%, which is not strong enough for an aggressive recommendation.` : `Confidence is ${confidence}%, supported by itinerary structure quality.`,
+        ...positiveFactors.slice(0, 2),
+        ...negativeFactors.slice(0, 2),
+    ].filter(Boolean);
+
+    return {
+        primaryReason,
+        supportingReasons,
+        missingDataWarnings,
+        actionHint,
+        positiveFactors,
+        negativeFactors,
+        missingFactors,
+    };
+};
+
 export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
@@ -260,6 +364,13 @@ export async function POST(request: NextRequest) {
             assessment,
             derived,
         );
+        const recommendationExplanation = buildRecommendationExplanation(
+            decision,
+            adjustedConfidence,
+            assessment,
+            derived,
+            warningSignals,
+        );
 
         return NextResponse.json({
             ...enrichedFlight,
@@ -289,6 +400,7 @@ export async function POST(request: NextRequest) {
                 comfortNotes: mergedComfortNotes,
                 explanation,
             },
+            recommendationExplanation,
             scoringMode: payload.mode,
             derivedMetrics: derived,
             extractedSegments,
