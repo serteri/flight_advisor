@@ -61,6 +61,7 @@ type TripDetailsClientProps = {
         } | null;
         deliveries: Array<{
             id: string;
+            eventId: string;
             channel: string;
             status: string;
             sentAt: Date | string | null;
@@ -108,6 +109,12 @@ const toRiskLevel = (delayMinutes: number, cancellationRisk: number) => {
     if (score >= 3) return 'HIGH';
     if (score >= 2) return 'MEDIUM';
     return 'LOW';
+};
+
+const parseNotificationType = (eventId?: string | null): string => {
+    if (!eventId) return 'UNKNOWN';
+    const parts = eventId.split(':');
+    return (parts[1] || 'UNKNOWN').toUpperCase();
 };
 
 export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
@@ -207,6 +214,10 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const latestNotification = trip.deliveries
         .filter((item) => item.sentAt)
         .sort((a, b) => new Date(b.sentAt as Date | string).getTime() - new Date(a.sentAt as Date | string).getTime())[0] || null;
+    const latestNotificationType = parseNotificationType(latestNotification?.eventId);
+    const latestAlertSummary = trip.alerts[0]
+        ? `${trip.alerts[0].title}: ${trip.alerts[0].message}`
+        : 'No alert summary is available yet for the latest notification.';
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -378,6 +389,11 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             </div>
                             <div className="text-sm text-slate-600">
                                 Last notification sent: {latestNotification ? formatDateTime(latestNotification.sentAt) : 'Unknown'}
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Latest notification detail</div>
+                                <div className="text-sm text-slate-800 mt-1">Type: {latestNotification ? latestNotificationType : 'UNKNOWN'}</div>
+                                <div className="text-sm text-slate-800 mt-1">Summary: {latestNotification ? latestAlertSummary : 'Unknown'}</div>
                             </div>
                         </div>
 

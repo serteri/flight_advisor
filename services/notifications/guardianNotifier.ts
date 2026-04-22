@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import type { ChannelResponse } from "@/services/notifications/types";
 import { EmailChannel } from "@/services/notifications/channels/email";
 import { SmsChannel } from "@/services/notifications/channels/sms";
+import { NotificationProviderManager } from "@/services/notifications/providers";
 import { GuardianEvent } from "@/workers/guardianWorker";
 
 // Helper sleep mapping
@@ -14,7 +15,8 @@ const DELIVERY_LEASE_MS = 5 * 60 * 1000;
 const STALE_PROCESSING_MS = 5 * 60 * 1000;
 const MAX_STALE_RECLAIM_ATTEMPTS = 2;
 
-type DeliveryChannel = 'EMAIL' | 'SMS';
+type DeliveryChannel = 'EMAIL' | 'SMS' | 'PUSH';
+type NotificationSeverityLabel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 type DeliveryClaim =
     | { kind: 'claimed'; deliveryId: string; claimId: string; mode: 'new' | 'failed' | 'stale-reclaimed' }
@@ -66,6 +68,8 @@ async function reclaimStaleProcessingDelivery(
 
 const emailChannel = EmailChannel.getInstance();
 const smsChannel = SmsChannel.getInstance();
+const providerManager = NotificationProviderManager.getInstance();
+const LOW_SEVERITY_THROTTLE_MS = 6 * 60 * 60 * 1000;
 
 type Eu261Assessment = {
     eligible: true | false | 'unknown';
@@ -133,6 +137,26 @@ async function sendGuardianSMS(to: string, body: string, tripId: string, eu261As
         providerMessageId: result.id,
         channel: 'SMS',
         error: result.success ? undefined : 'SMS channel unavailable or provider rejected request',
+    };
+}
+
+async function sendGuardianPush(userId: string, title: string, body: string, tripId: string, eventId: string): Promise<ChannelResponse> {
+    const result = await providerManager.sendPush({
+        userId,
+        title,
+        body,
+        data: {
+            tripId,
+            eventId,
+            source: 'guardian',
+        },
+    });
+
+    return {
+        success: result.success,
+        providerMessageId: result.providerMessageId,
+        channel: 'PUSH',
+        error: result.error,
     };
 }
 
@@ -337,41 +361,238 @@ async function attemptDispatch(
 // ── EVENT CONTENT MAPPING ──
 
 interface FormattedMessage {
-    subject: string;
-    body: string;
+    severityLabel: NotificationSeverityLabel;
+    title: string;
+    shortSummary: string;
+    reason: string;
+    actionHint: string;
+    confidenceTone?: string;
+    emailSubject: string;
+    emailBody: string;
+    smsBody: string;
+    pushBody: string;
 }
 
-const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
-    const eu261Hint = formatEu261Hint(getEu261Assessment(event));
-
-    switch (event.type) {
-        case 'DELAY':
-            return {
-                subject: 'Flight Delay Notice',
-                body: `Your flight has been updated. We recommend keeping a close eye on the terminal boards.${eu261Hint}`
-            };
-        case 'CANCELLED':
-            return {
-                subject: 'URGENT: Flight Cancelled',
-                body: `URGENT: Your monitored flight has been CANCELLED. Please contact your airline immediately.${eu261Hint}`
-            };
-        case 'DATA_ISSUE':
-            return {
-                subject: 'Live Tracking Warning',
-                body: `Our automated tracking stream is experiencing data latency. Please verify flight details directly with your airline.`
-            };
-        case 'GATE_CHANGE':
-            return {
-                subject: 'Gate Change Detected',
-                body: `Your departure gate has been updated. Please check the terminal displays upon arrival.`
-            };
-        default:
-            return {
-                subject: 'Trip Protection Update',
-                body: 'There has been a change detected on your monitored trip.'
-            };
-    }
+const getFlightContext = (event: GuardianEvent): { routeText: string; flightText: string } => {
+    const current = (event.current || {}) as Record<string, unknown>;
+    const origin = String(current.origin || '').trim().toUpperCase();
+    const destination = String(current.destination || '').trim().toUpperCase();
+    const airlineCode = String(current.airlineCode || '').trim().toUpperCase();
+    const flightNumber = String(current.flightNumber || '').trim().toUpperCase();
+    const routeText = origin && destination ? `${origin} to ${destination}` : 'your monitored route';
+    const flightText = airlineCode && flightNumber ? `${airlineCode}${flightNumber}` : 'your monitored flight';
+    return { routeText, flightText };
 };
+
+const deriveSeverityLabel = (event: GuardianEvent, eu261Assessment: Eu261Assessment | null): NotificationSeverityLabel => {
+    const subType = String(event.subType || '').toLowerCase();
+
+    if (
+        event.type === 'CANCELLED' ||
+        event.type === 'GATE_CHANGE' ||
+        event.type === 'DELAY' ||
+        eu261Assessment?.eligible === true
+    ) {
+        return 'HIGH';
+    }
+
+    if (
+        event.type === 'DATA_ISSUE' ||
+        subType.includes('risk') ||
+        subType.includes('schedule') ||
+        subType.includes('connection')
+    ) {
+        return 'MEDIUM';
+    }
+
+    return 'LOW';
+};
+
+const shouldUseLowConfidenceTone = (event: GuardianEvent, eu261Assessment: Eu261Assessment | null): boolean => {
+    if (event.type === 'DATA_ISSUE') return true;
+    return eu261Assessment?.confidence === 'low' || eu261Assessment?.eligible === 'unknown';
+};
+
+const buildEmailBody = (message: Omit<FormattedMessage, 'emailBody' | 'smsBody' | 'pushBody' | 'emailSubject'>): string => {
+    const toneSuffix = message.confidenceTone ? `\n\nConfidence note: ${message.confidenceTone}` : '';
+    return [
+        `Severity: ${message.severityLabel}`,
+        `Summary: ${message.shortSummary}`,
+        `Reason: ${message.reason}`,
+        `Action: ${message.actionHint}`,
+        toneSuffix ? toneSuffix.trim() : '',
+    ].filter(Boolean).join('\n');
+};
+
+const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
+    const eu261Assessment = getEu261Assessment(event);
+    const eu261Hint = formatEu261Hint(eu261Assessment);
+    const severityLabel = deriveSeverityLabel(event, eu261Assessment);
+    const lowConfidenceTone = shouldUseLowConfidenceTone(event, eu261Assessment)
+        ? 'This signal is preliminary and may change after the next verification cycle.'
+        : undefined;
+    const { routeText, flightText } = getFlightContext(event);
+
+    if (event.type === 'DELAY') {
+        const delayMinutes = Number((event.current as any)?.delayMinutes || 0);
+        const title = `Flight delayed by ${delayMinutes || 'unknown'} minutes`;
+        const shortSummary = delayMinutes > 0
+            ? `${flightText} is now delayed by ${delayMinutes} minutes.`
+            : `${flightText} delay signal detected.`;
+        const reason = `You are receiving this alert because ${flightText} on ${routeText} changed to delayed status.${eu261Hint}`;
+        const actionHint = 'Check rebooking options now and monitor further Guardian updates.';
+        const emailSubject = `[${severityLabel}] ${title}`;
+        const emailBody = buildEmailBody({
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+        });
+        return {
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+            emailSubject,
+            emailBody,
+            smsBody: `${title}. ${actionHint}`,
+            pushBody: `${title}. ${actionHint}`,
+        };
+    }
+
+    if (event.type === 'CANCELLED') {
+        const title = 'Flight cancellation detected';
+        const shortSummary = `${flightText} is now marked as cancelled.`;
+        const reason = `You are receiving this alert because Guardian detected a cancellation for ${flightText} on ${routeText}.${eu261Hint}`;
+        const actionHint = 'Contact the airline immediately for rebooking and keep this notification for claim support.';
+        const emailSubject = `[${severityLabel}] ${title}`;
+        const emailBody = buildEmailBody({
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+        });
+        return {
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+            emailSubject,
+            emailBody,
+            smsBody: `${title}. ${actionHint}`,
+            pushBody: `${title}. ${actionHint}`,
+        };
+    }
+
+    if (event.type === 'GATE_CHANGE') {
+        const departureGate = (event.current as any)?.departureGate || 'unknown';
+        const title = `Gate change detected${departureGate !== 'unknown' ? `: ${departureGate}` : ''}`;
+        const shortSummary = `${flightText} has a gate update.`;
+        const reason = `You are receiving this alert because gate information changed for ${flightText} on ${routeText}.`;
+        const actionHint = 'Head to airport displays and confirm your terminal/gate before boarding.';
+        const emailSubject = `[${severityLabel}] ${title}`;
+        const emailBody = buildEmailBody({
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+        });
+        return {
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+            emailSubject,
+            emailBody,
+            smsBody: `${title}. ${actionHint}`,
+            pushBody: `${title}. ${actionHint}`,
+        };
+    }
+
+    if (event.type === 'DATA_ISSUE') {
+        const title = 'Monitoring confidence reduced';
+        const shortSummary = 'Guardian detected low-confidence live status data.';
+        const reason = `You are receiving this alert because live tracking quality for ${flightText} is currently lower than expected.`;
+        const actionHint = 'Monitor updates and verify critical changes directly with the airline.';
+        const emailSubject = `[${severityLabel}] ${title}`;
+        const emailBody = buildEmailBody({
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+        });
+        return {
+            severityLabel,
+            title,
+            shortSummary,
+            reason,
+            actionHint,
+            confidenceTone: lowConfidenceTone,
+            emailSubject,
+            emailBody,
+            smsBody: `${title}. ${actionHint}`,
+            pushBody: `${title}. ${actionHint}`,
+        };
+    }
+
+    const title = 'Trip monitoring update';
+    const shortSummary = 'Guardian detected a minor update.';
+    const reason = 'You are receiving this update because your booked trip is actively monitored.';
+    const actionHint = 'No immediate action required. Keep monitoring for major changes.';
+    const emailSubject = `[${severityLabel}] ${title}`;
+    const emailBody = buildEmailBody({
+        severityLabel,
+        title,
+        shortSummary,
+        reason,
+        actionHint,
+        confidenceTone: lowConfidenceTone,
+    });
+    return {
+        severityLabel,
+        title,
+        shortSummary,
+        reason,
+        actionHint,
+        confidenceTone: lowConfidenceTone,
+        emailSubject,
+        emailBody,
+        smsBody: `${title}. ${actionHint}`,
+        pushBody: `${title}. ${actionHint}`,
+    };
+};
+
+async function shouldThrottleLowSeverity(tripId: string, channel: DeliveryChannel, now: Date): Promise<boolean> {
+    const cutoff = new Date(now.getTime() - LOW_SEVERITY_THROTTLE_MS);
+    const recent = await prisma.notificationDelivery.findFirst({
+        where: {
+            tripId,
+            channel,
+            status: 'sent',
+            sentAt: {
+                gte: cutoff,
+            },
+        },
+        select: { id: true },
+        orderBy: { sentAt: 'desc' },
+    });
+
+    return Boolean(recent);
+}
 
 // ── CORE NOTIFICATION DISPATCHER ──
 
@@ -383,41 +604,64 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
 
     const eventId = event.eventId || `${event.tripId}:${event.type}`;
     const eu261Assessment = getEu261Assessment(event);
-    const { subject, body } = mapEventToMessage(event);
+    const formatted = mapEventToMessage(event);
     const notifications: Promise<void>[] = [];
+    const now = new Date();
 
     // 1. Queue Email Dispatch safely via Dedup Envelope
     if (user.email) {
         const emailKey = `${eventId}:EMAIL`;
-        notifications.push(attemptDispatch(
-            () => sendGuardianEmail(user.email!, subject, body, event.tripId, eu261Assessment),
-            emailKey,
-            eventId,
-            event.tripId,
-            'EMAIL'
-        ));
+        const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'EMAIL', now);
+        if (throttleLow) {
+            await persistSkippedDelivery(eventId, event.tripId, 'EMAIL');
+        } else {
+            notifications.push(attemptDispatch(
+                () => sendGuardianEmail(user.email!, formatted.emailSubject, formatted.emailBody, event.tripId, eu261Assessment),
+                emailKey,
+                eventId,
+                event.tripId,
+                'EMAIL'
+            ));
+        }
     }
 
-    // 2. Queue SMS Dispatch securely mapping severities
-    const requiresSMS = event.severity === 'high' || event.severity === 'medium';
+    // 2. SMS stays short + urgent only
+    const requiresSMS = formatted.severityLabel === 'HIGH';
     if (requiresSMS) {
         const smsKey = `${eventId}:SMS`;
 
         if (user.phoneNumber) {
             notifications.push(attemptDispatch(
-                () => sendGuardianSMS(user.phoneNumber!, body, event.tripId, eu261Assessment),
+                () => sendGuardianSMS(user.phoneNumber!, formatted.smsBody, event.tripId, eu261Assessment),
                 smsKey,
                 eventId,
                 event.tripId,
                 'SMS'
             ));
-        } else if (event.severity === 'high') {
+        } else {
             console.warn(`[NOTIFIER] Mandatory SMS degraded safely: User lacks a configured phoneNumber!`);
             await persistSkippedDelivery(eventId, event.tripId, 'SMS');
         }
     }
 
-    // 3. Executing Delivery Matrix Non-Blocking
+    // 3. Optional push channel: short + actionable when user has push token
+    if (user.pushToken) {
+        const pushKey = `${eventId}:PUSH`;
+        const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'PUSH', now);
+        if (throttleLow) {
+            await persistSkippedDelivery(eventId, event.tripId, 'PUSH');
+        } else {
+            notifications.push(attemptDispatch(
+                () => sendGuardianPush(user.id, formatted.title, formatted.pushBody, event.tripId, eventId),
+                pushKey,
+                eventId,
+                event.tripId,
+                'PUSH'
+            ));
+        }
+    }
+
+    // 4. Executing Delivery Matrix Non-Blocking
     const results = await Promise.allSettled(notifications);
 
     const failures = results.filter(r => r.status === 'rejected');

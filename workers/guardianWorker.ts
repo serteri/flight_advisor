@@ -254,6 +254,12 @@ export async function processFlightMonitoring() {
                 };
 
                 const transitionMarker = buildTransitionMarker(previousState);
+                const flightContext = {
+                    origin: String(segment?.origin || ''),
+                    destination: String(segment?.destination || ''),
+                    airlineCode: String(segment?.airlineCode || ''),
+                    flightNumber: String(segment?.flightNumber || ''),
+                };
 
                 if (!segment) {
                     const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);
@@ -343,7 +349,10 @@ export async function processFlightMonitoring() {
                             subType: 'status_unknown',
                             severity: 'medium',
                             previous: previousState.status,
-                            current: 'UNKNOWN'
+                            current: {
+                                status: 'UNKNOWN',
+                                ...flightContext,
+                            }
                         }, {
                             issueKind: 'status_unreliable',
                             transition: transitionMarker,
@@ -380,6 +389,7 @@ export async function processFlightMonitoring() {
                             status: 'CANCELLED',
                             eligibleEU261,
                             eu261Assessment,
+                            ...flightContext,
                         }
                     }, {
                         cancellationMarker: 'status_cancelled',
@@ -431,6 +441,7 @@ export async function processFlightMonitoring() {
                                 bucket: currBucket,
                                 eligibleEU261,
                                 eu261Assessment,
+                                ...flightContext,
                             }
                         }, {
                             transition: transitionMarker,
@@ -468,14 +479,15 @@ export async function processFlightMonitoring() {
                         queueDispatch({
                             type: 'GATE_CHANGE',
                             subType: gateSubType,
-                            severity: 'low',
+                            severity: 'high',
                             previous: {
                                 departureGate: previousState.departureGate,
                                 arrivalGate: previousState.arrivalGate
                             },
                             current: {
                                 departureGate: newDepGate,
-                                arrivalGate: newArrGate
+                                arrivalGate: newArrGate,
+                                ...flightContext,
                             }
                         }, {
                             transition: transitionMarker,
