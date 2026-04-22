@@ -32,6 +32,17 @@ const payloadSchema = z.object({
         totalDurationMinutes: z.number().int().min(0),
         stops: z.number().int().min(0),
     }),
+    scoreSnapshot: z.object({
+        recommendation: z.enum(['BUY', 'WAIT', 'WATCH']),
+        confidence: z.number().min(0).max(100),
+        primaryReason: z.string().trim().min(1),
+        positiveFactor: z.string().trim().min(1).nullable(),
+        negativeFactor: z.string().trim().min(1).nullable(),
+        missingFactor: z.string().trim().min(1).nullable(),
+        actionHint: z.string().trim().min(1),
+        dataSourceType: z.literal('USER_PASTED_ITINERARY'),
+        realTimeDataAvailable: z.boolean(),
+    }),
     segments: z.array(segmentSchema).min(1).max(8),
 });
 
@@ -90,6 +101,14 @@ export async function POST(request: NextRequest) {
                     price: payload.trip.price,
                     source: 'score_handoff',
                     trackingType: payload.trackingType,
+                    scoreSnapshot: payload.scoreSnapshot,
+                    trackingState: {
+                        status: 'ACTIVE',
+                        waitingForNextSnapshot: true,
+                        limitedData: true,
+                        realTimeDataUnavailable: !payload.scoreSnapshot.realTimeDataAvailable,
+                        importantChanged: false,
+                    },
                 }],
                 status: 'ACTIVE',
                 lastChecked: new Date(),

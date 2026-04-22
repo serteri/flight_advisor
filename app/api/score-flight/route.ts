@@ -419,6 +419,17 @@ export async function POST(request: NextRequest) {
                     totalDurationMinutes: unifiedFlight.duration,
                     stops: unifiedFlight.stops,
                 },
+                scoreSnapshot: {
+                    recommendation: decision,
+                    confidence: adjustedConfidence,
+                    primaryReason: recommendationExplanation.primaryReason,
+                    positiveFactor: recommendationExplanation.positiveFactors[0] ?? null,
+                    negativeFactor: recommendationExplanation.negativeFactors[0] ?? null,
+                    missingFactor: recommendationExplanation.missingFactors[0] ?? null,
+                    actionHint: recommendationExplanation.actionHint,
+                    dataSourceType: 'USER_PASTED_ITINERARY',
+                    realTimeDataAvailable: false,
+                },
                 segments: unifiedFlight.segments.map((segment) => ({
                     from: segment.from,
                     to: segment.to,

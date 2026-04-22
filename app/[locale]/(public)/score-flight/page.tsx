@@ -86,6 +86,17 @@ interface ScoreResult {
             totalDurationMinutes: number;
             stops: number;
         };
+        scoreSnapshot: {
+            recommendation: Decision;
+            confidence: number;
+            primaryReason: string;
+            positiveFactor: string | null;
+            negativeFactor: string | null;
+            missingFactor: string | null;
+            actionHint: string;
+            dataSourceType: "USER_PASTED_ITINERARY";
+            realTimeDataAvailable: boolean;
+        };
         segments: Array<{
             from: string;
             to: string;
