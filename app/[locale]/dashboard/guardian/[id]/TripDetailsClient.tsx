@@ -1,237 +1,395 @@
 'use client';
-import { useState } from 'react';
-import { Plane, ArrowRight, MapPin, Calendar, Clock, Armchair, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { SeatMapVisualizer } from '@/components/SeatMapVisualizer';
-import { DisruptionCard } from '@/components/guardian/DisruptionCard';
-import { SeatAssignmentModal } from '@/components/dashboard/SeatAssignmentModal';
-import { useTranslations } from 'next-intl';
-import { getMockAircraftLayout } from '@/utils/mockSeatMap';
-import { getLatestSeatMap } from '@/app/actions/flight';
-import { getAircraftInfo, getAircraftBadge } from '@/lib/aircraftData';
-import { Loader2, RefreshCw } from 'lucide-react';
 
-export function TripDetailsClient({ trip }: { trip: any }) {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [showSeatModal, setShowSeatModal] = useState(false);
+import { Link } from '@/i18n/routing';
+import {
+    AlertTriangle,
+    ArrowLeft,
+    ArrowRight,
+    Bell,
+    CheckCircle2,
+    Clock,
+    Euro,
+    Plane,
+    ShieldCheck,
+} from 'lucide-react';
 
-    // LIVE DATA STATE
-    const [loadingMap, setLoadingMap] = useState(false);
-    const [liveLayout, setLiveLayout] = useState<any>(null);
-    const [liveAircraftInfo, setLiveAircraftInfo] = useState<any>(null);
-
-    const t = useTranslations('Guardian');
-    const tModules = useTranslations('Modules');
-
-    const activeSegment = trip.segments[activeIndex];
-
-    // Reset live data when tab changes
-    // useEffect(() => { setLiveLayout(null); }, [activeIndex]);
-    // Disable auto-reset if we want to keep cache? Better reset to avoid confusion.
-
-    const handleCheckLive = async () => {
-        setLoadingMap(true);
-        const res = await getLatestSeatMap(activeSegment.id, activeSegment);
-        setLoadingMap(false);
-
-        if (res.success) {
-            setLiveLayout(res.layout);
-            setLiveAircraftInfo(res.aircraftInfo);
-        } else {
-            alert("Canlı harita şu an alınamıyor. Mock veri gösteriliyor.");
-        }
+type TripDetailsClientProps = {
+    locale: string;
+    trip: {
+        id: string;
+        pnr: string;
+        routeLabel: string;
+        status: string;
+        lastCheckedAt: Date | string | null;
+        nextCheckAt: Date | string;
+        checkFrequency: number;
+        watchDelay: boolean;
+        watchSchedule: boolean;
+        watchPrice: boolean;
+        watchSeat: boolean;
+        watchUpgrade: boolean;
+        segments: Array<{
+            id: string;
+            segmentOrder: number;
+            airlineCode: string;
+            flightNumber: string;
+            origin: string;
+            destination: string;
+            departureDate: Date | string;
+            arrivalDate: Date | string;
+            cabinClass: string | null;
+        }>;
+        alerts: Array<{
+            id: string;
+            type: string;
+            title: string;
+            message: string;
+            severity: string;
+            isRead: boolean;
+            createdAt: Date | string;
+        }>;
+        snapshot: {
+            delayMinutes: number;
+            status: string;
+            dataQuality: string;
+            departureGate: string | null;
+            arrivalGate: string | null;
+            statusDetail: string | null;
+            gateDetail: string | null;
+            eu261Eligible: boolean;
+            snapshotAt: Date | string;
+        } | null;
+        deliveries: Array<{
+            id: string;
+            channel: string;
+            status: string;
+            sentAt: Date | string | null;
+            updatedAt: Date | string;
+        }>;
     };
+};
 
-    // Determine which layout to show
-    // 1. Live Layout (Priority)
-    // 2. Mock Layout (Fallback)
-    const mockLayout = getMockAircraftLayout(activeSegment.aircraftType || '738', activeSegment.userSeat);
-    const displayLayout = liveLayout || mockLayout;
+const formatDateTime = (value?: Date | string | null) => {
+    if (!value) return 'Unknown';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Unknown';
+    return parsed.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+};
 
-    // Aircraft Info Display
-    const aircraftCode = activeSegment.aircraftType || '738';
-    const staticInfo = getAircraftInfo(aircraftCode);
-    const displayInfo = liveAircraftInfo || staticInfo;
+const formatDate = (value?: Date | string | null) => {
+    if (!value) return 'Unknown';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Unknown';
+    return parsed.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
+};
 
-    const formatDate = (date: string) => new Date(date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
+    const normalized = (snapshotStatus || '').toLowerCase();
+    if (normalized.includes('cancel')) return 'Cancelled';
+    if (delayMinutes && delayMinutes > 0) return `Delayed (${delayMinutes}m)`;
+    if (!snapshotStatus) return 'Unknown';
+    if (normalized.includes('scheduled')) return 'On time';
+    return snapshotStatus;
+};
 
-    // Filter alerts for the active segment
-    const activeAlerts = trip.alerts?.filter((a: any) => a.segmentId === activeSegment.id) || [];
+const toRiskLevel = (delayMinutes: number, cancellationRisk: number) => {
+    const delayRisk = delayMinutes >= 120 ? 3 : delayMinutes >= 45 ? 2 : delayMinutes > 0 ? 1 : 0;
+    const score = Math.max(delayRisk, cancellationRisk);
+    if (score >= 3) return 'HIGH';
+    if (score >= 2) return 'MEDIUM';
+    return 'LOW';
+};
+
+export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
+    const firstSegment = trip.segments[0] || null;
+    const airlines = Array.from(new Set(trip.segments.map((segment) => segment.airlineCode))).filter(Boolean);
+
+    const snapshot = trip.snapshot;
+    const delayMinutes = snapshot?.delayMinutes ?? 0;
+    const currentFlightStatus = toStatusLabel(snapshot?.status, delayMinutes);
+
+    const cancellationFlag =
+        (snapshot?.status || '').toLowerCase().includes('cancel') ||
+        trip.alerts.some((alert) => /cancel/i.test(alert.type) || /cancel/i.test(alert.title));
+
+    const delayFlag = delayMinutes > 0 || trip.alerts.some((alert) => /delay/i.test(alert.type) || /delay/i.test(alert.title));
+    const scheduleFlag = trip.alerts.some((alert) => /schedule|gate/i.test(alert.type) || /schedule|gate/i.test(alert.title));
+
+    const cancellationRisk = cancellationFlag ? 3 : scheduleFlag ? 2 : 1;
+    const delayRisk = delayMinutes >= 120 ? 'HIGH' : delayMinutes >= 45 ? 'MEDIUM' : delayMinutes > 0 ? 'LOW' : 'LOW';
+    const overallRisk = toRiskLevel(delayMinutes, cancellationRisk);
+
+    const eu261State = snapshot
+        ? snapshot.eu261Eligible
+            ? 'ELIGIBLE'
+            : 'NOT_ELIGIBLE'
+        : 'UNKNOWN';
+
+    const compensationRange = eu261State === 'ELIGIBLE'
+        ? delayMinutes >= 180 || cancellationFlag
+            ? 'EUR 250 - 600 (estimate)'
+            : 'EUR 250 (possible minimum, estimate)'
+        : eu261State === 'NOT_ELIGIBLE'
+            ? 'No current payout signal'
+            : 'Unknown (needs more disruption data)';
+
+    const eu261Explanation = eu261State === 'ELIGIBLE'
+        ? 'Guardian detected a disruption pattern that may satisfy EU261 criteria.'
+        : eu261State === 'NOT_ELIGIBLE'
+            ? 'No qualifying cancellation or long-delay pattern is currently confirmed.'
+            : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
+
+    const recentChanges = [
+        ...trip.alerts.slice(0, 5).map((alert) => ({
+            id: alert.id,
+            when: formatDateTime(alert.createdAt),
+            type: alert.type,
+            text: `${alert.title}: ${alert.message}`,
+            severity: alert.severity,
+        })),
+        ...(snapshot?.gateDetail
+            ? [{
+                id: 'gate-detail',
+                when: formatDateTime(snapshot.snapshotAt),
+                type: 'GATE_UPDATE',
+                text: snapshot.gateDetail,
+                severity: 'INFO',
+            }]
+            : []),
+        ...(snapshot?.statusDetail
+            ? [{
+                id: 'status-detail',
+                when: formatDateTime(snapshot.snapshotAt),
+                type: 'STATUS_UPDATE',
+                text: snapshot.statusDetail,
+                severity: 'INFO',
+            }]
+            : []),
+    ].slice(0, 6);
+
+    const checks = [
+        { label: 'Disruption Hunter', enabled: trip.watchDelay },
+        { label: 'Schedule Guardian', enabled: trip.watchSchedule },
+        { label: 'Price Protection', enabled: trip.watchPrice },
+        { label: 'Seat Watch', enabled: trip.watchSeat },
+        { label: 'Upgrade Watch', enabled: trip.watchUpgrade },
+    ];
+
+    const alertsTriggered = trip.alerts.length;
+    const unreadAlerts = trip.alerts.filter((alert) => !alert.isRead).length;
+    const latestRunAt = trip.lastCheckedAt || snapshot?.snapshotAt || null;
+
+    const channelState = Array.from(
+        trip.deliveries.reduce((map, delivery) => {
+            const key = delivery.channel.toUpperCase();
+            if (!map.has(key)) {
+                map.set(key, delivery);
+            }
+            return map;
+        }, new Map<string, TripDetailsClientProps['trip']['deliveries'][number]>()),
+    ).map(([channel, delivery]) => ({
+        channel,
+        status: delivery.status,
+        lastSent: delivery.sentAt,
+        updatedAt: delivery.updatedAt,
+    }));
+
+    const latestNotification = trip.deliveries
+        .filter((item) => item.sentAt)
+        .sort((a, b) => new Date(b.sentAt as Date | string).getTime() - new Date(a.sentAt as Date | string).getTime())[0] || null;
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 space-y-6">
+                <Link href={`/${locale}/dashboard/guardian`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors">
+                    <ArrowLeft className="w-4 h-4" /> Back to booked trip monitoring
+                </Link>
 
-            {/* 1. HEADER (PNR & ROUTE) */}
-            <div className="flex justify-between items-end mb-8 border-b border-slate-200 pb-4">
-                <div>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">PNR: {trip.pnr}</div>
-                    <h1 className="text-3xl font-black text-slate-900">{trip.routeLabel}</h1>
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-5">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                        <div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Booked trip monitoring</div>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900">{trip.routeLabel}</h1>
+                            <div className="flex flex-wrap gap-3 text-sm text-slate-500 mt-2">
+                                <span>PNR: {trip.pnr || 'Unknown (unconfirmed)'}</span>
+                                <span className="text-slate-300">•</span>
+                                <span>Departure: {formatDate(firstSegment?.departureDate)}</span>
+                                <span className="text-slate-300">•</span>
+                                <span>Airline: {airlines.length > 0 ? airlines.join(', ') : 'Unknown'}</span>
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 min-w-full lg:min-w-[280px]">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Current flight status</div>
+                            <div className="text-2xl font-black text-slate-900">{currentFlightStatus}</div>
+                            <div className="text-sm text-slate-500 mt-1">Last checked: {formatDateTime(latestRunAt)}</div>
+                            <div className="text-sm text-slate-500">Next check: {formatDateTime(trip.nextCheckAt)}</div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <div className="font-semibold mb-1">Data honesty</div>
+                        <p>Guardian can only show verified values from latest monitoring runs. Unknown fields are shown as unknown and are not inferred as confirmed facts.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div className="rounded-2xl border border-slate-200 p-4">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Delay risk</div>
+                            <div className="text-lg font-black text-slate-900">{delayRisk}</div>
+                            <div className="text-sm text-slate-500 mt-1">Current delay: {snapshot ? `${delayMinutes} min` : 'Unknown'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Cancellation risk</div>
+                            <div className="text-lg font-black text-slate-900">{cancellationFlag ? 'HIGH' : 'LOW'}</div>
+                            <div className="text-sm text-slate-500 mt-1">Signal: {cancellationFlag ? 'Cancellation indicators found' : 'No cancellation indicator yet'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Disruption flags</div>
+                            <div className="text-lg font-black text-slate-900">{overallRisk}</div>
+                            <div className="text-sm text-slate-500 mt-1">{delayFlag ? 'Delay flag' : 'No delay flag'} • {scheduleFlag ? 'Schedule/gate change flag' : 'No schedule flag'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Guardian loop</div>
+                            <div className="text-lg font-black text-slate-900">Every {trip.checkFrequency} min</div>
+                            <div className="text-sm text-slate-500 mt-1">Alerts triggered: {alertsTriggered}</div>
+                        </div>
+                    </div>
                 </div>
-                <div className="text-right hidden md:block">
-                    <div className="text-sm font-medium text-slate-500">Durum</div>
-                    <div className="text-lg font-bold text-slate-800">{trip.status}</div>
-                </div>
-            </div>
 
-            {/* 2. TAB MENU (FLIGHT SELECTOR) */}
-            <div className="flex gap-4 overflow-x-auto pb-4 mb-8 scrollbar-hide">
-                {trip.segments.map((seg: any, index: number) => {
-                    const isActive = index === activeIndex;
-                    return (
-                        <button
-                            key={seg.id}
-                            onClick={() => { setActiveIndex(index); setLiveLayout(null); }}
-                            className={`
-                relative min-w-[220px] p-4 rounded-2xl border-2 text-left transition-all
-                ${isActive
-                                    ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-100 shadow-lg scale-105 z-10'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 opacity-70 hover:opacity-100'}
-              `}
-                        >
-                            <div className="flex justify-between items-center mb-2">
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
-                                    {index + 1}. UÇUŞ
-                                </span>
-                                <Plane className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Plane className="w-5 h-5 text-sky-600" />
+                                <h2 className="text-lg font-bold text-slate-900">Trip summary</h2>
                             </div>
-
-                            <div className="text-lg font-black text-slate-900 flex items-center gap-2">
-                                {seg.origin} <ArrowRight className="w-4 h-4 text-slate-300" /> {seg.destination}
-                            </div>
-
-                            <div className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {formatDate(seg.departureDate)}
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* 3. ACTIVE CONTENT AREA */}
-            <div key={activeSegment.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                    {/* LEFT: SEAT MAP (8 COL) */}
-                    <div className="lg:col-span-8 space-y-6">
-
-                        {/* SEAT INFO CARD */}
-                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-bold text-slate-900">
-                                        {displayInfo ? displayInfo.name : `${activeSegment.airlineCode}${activeSegment.flightNumber}`}
-                                    </h3>
-                                    {displayInfo && (
-                                        <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
-                                            {displayInfo.badge}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {displayInfo ? (
-                                    <div className="flex gap-3 text-xs text-slate-500">
-                                        <span>📏 {displayInfo.pitch}</span>
-                                        <span>{displayInfo.wifi ? '📶 WiFi Var' : '📶 WiFi Yok'}</span>
-                                        <span>{displayInfo.power ? '🔌 USB' : ''}</span>
+                            <div className="space-y-3">
+                                {trip.segments.length > 0 ? trip.segments.map((segment) => (
+                                    <div key={segment.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                            <div>
+                                                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                    {segment.origin} <ArrowRight className="w-4 h-4 text-slate-400" /> {segment.destination}
+                                                </div>
+                                                <div className="text-sm text-slate-500 mt-1">
+                                                    {segment.airlineCode}{segment.flightNumber} • Cabin: {segment.cabinClass || 'Unknown'}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-slate-600">
+                                                <div>Dep: {formatDateTime(segment.departureDate)}</div>
+                                                <div>Arr: {formatDateTime(segment.arrivalDate)}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-slate-500">Uçak tipi: {activeSegment.aircraftType || 'Bilinmiyor'}</p>
+                                )) : (
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No segment data available.</div>
                                 )}
                             </div>
+                        </div>
 
-                            <div className="flex items-center gap-4">
-                                {/* Live Check Button */}
-                                <button
-                                    onClick={handleCheckLive}
-                                    disabled={loadingMap}
-                                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-colors"
-                                >
-                                    {loadingMap ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                                    {liveLayout ? 'Canlı Veri' : 'Canlı Kontrol Et'}
-                                </button>
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Euro className="w-5 h-5 text-emerald-600" />
+                                <h2 className="text-lg font-bold text-slate-900">EU261 status</h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Eligibility</div>
+                                    <div className="text-lg font-black text-slate-900">{eu261State}</div>
+                                </div>
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Estimated compensation</div>
+                                    <div className="text-lg font-black text-slate-900">{compensationRange}</div>
+                                </div>
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Data quality</div>
+                                    <div className="text-lg font-black text-slate-900">{snapshot?.dataQuality || 'UNKNOWN'}</div>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-700">{eu261Explanation}</p>
+                        </div>
 
-                                {activeSegment.userSeat ? (
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase">Sizin Yeriniz</div>
-                                        <div className="text-2xl font-black text-purple-600">{activeSegment.userSeat}</div>
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
+                            </div>
+                            {recentChanges.length > 0 ? (
+                                <div className="space-y-3">
+                                    {recentChanges.map((item) => (
+                                        <div key={item.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{item.type} • {item.when}</div>
+                                            <p className="text-sm text-slate-800 mt-1">{item.text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No recent disruption/change event has been detected yet.</div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                                <h2 className="text-lg font-bold text-slate-900">Guardian activity</h2>
+                            </div>
+                            <ul className="space-y-3 text-sm text-slate-700">
+                                <li className="flex items-start gap-2">
+                                    <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
+                                    <span>Last monitoring run: {formatDateTime(latestRunAt)}</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="w-4 h-4 mt-0.5 text-slate-400" />
+                                    <span>What was checked: {checks.filter((item) => item.enabled).map((item) => item.label).join(', ') || 'No active checks configured'}</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
+                                    <span>{alertsTriggered > 0 ? `${alertsTriggered} alerts triggered (${unreadAlerts} unread).` : 'No alerts triggered yet.'}</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Bell className="w-5 h-5 text-sky-600" />
+                                <h2 className="text-lg font-bold text-slate-900">Notification status</h2>
+                            </div>
+                            <div className="space-y-3">
+                                {channelState.length > 0 ? channelState.map((channel) => (
+                                    <div key={channel.channel} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{channel.channel}</div>
+                                        <div className="text-sm text-slate-800 mt-1">State: {channel.status || 'Unknown'}</div>
+                                        <div className="text-xs text-slate-500 mt-1">Last sent: {formatDateTime(channel.lastSent)}</div>
                                     </div>
-                                ) : null}
-
-                                <button onClick={() => setShowSeatModal(true)} className="text-xs underline text-slate-500 hover:text-blue-600">
-                                    {activeSegment.userSeat ? 'Değiştir' : 'Koltuk Seç'}
-                                </button>
+                                )) : (
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No notification delivery records yet.</div>
+                                )}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                                Last notification sent: {latestNotification ? formatDateTime(latestNotification.sentAt) : 'Unknown'}
                             </div>
                         </div>
 
-                        {/* SEAT VISUALIZER */}
-                        <SeatMapVisualizer
-                            layout={displayLayout}
-                            userSeat={activeSegment.userSeat}
-                        />
-                        {liveLayout && <div className="text-center text-xs text-emerald-600 font-bold mt-2">✅ Amadeus verisiyle doğrulandı</div>}
-
-                    </div>
-
-                    {/* RIGHT: SHIELDS & MODULES (4 COL) */}
-                    <div className="lg:col-span-4 space-y-4">
-                        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-wider">Aktif Korumalar</h3>
-
-                        {/* DISRUPTION CARD */}
-                        <DisruptionCard
-                            segment={activeSegment}
-                            alerts={activeAlerts || []}
-                        />
-
-                        {/* UPGRADE SNIPER CARD (Static for Demo) */}
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-xl">
-                            <div className="flex justify-between items-start mb-4">
-                                <h4 className="font-bold">Upgrade Sniper</h4>
-                                <span className="bg-white/20 text-xs px-2 py-1 rounded">Active</span>
-                            </div>
-                            <p className="text-sm text-slate-300 mb-4">
-                                Business class fiyatlarını izliyoruz. Düşüş olduğunda haber vereceğiz.
+                        <div className="bg-slate-900 rounded-3xl p-6 text-white">
+                            <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">What happens next</div>
+                            <p className="text-sm text-slate-200 leading-relaxed">
+                                Guardian will run the next monitoring cycle at {formatDateTime(trip.nextCheckAt)}. If disruption risk increases or eligibility changes, an alert and notification record will be created.
                             </p>
                         </div>
-
-                        {/* MODULE STATUS */}
-                        <div className="grid grid-cols-1 gap-2 mt-4">
-                            <ModuleStatusLine title="Disruption Hunter" status="ACTIVE" color="emerald" />
-                            <ModuleStatusLine title="Seat Spy" status={activeSegment.userSeat ? "ACTIVE" : "WAITING"} color={activeSegment.userSeat ? "emerald" : "amber"} />
-                            <ModuleStatusLine title="Uçak Tipi" status={displayInfo ? "VERIFIED" : "ESTIMATED"} color={displayInfo ? "purple" : "slate"} />
-                        </div>
-
                     </div>
-
                 </div>
             </div>
-
-            {/* SEAT MODAL */}
-            {showSeatModal && (
-                <SeatAssignmentModal
-                    tripId={trip.id}
-                    segmentId={activeSegment.id}
-                    flightCode={`${activeSegment.airlineCode}${activeSegment.flightNumber}`}
-                    onClose={() => setShowSeatModal(false)}
-                />
-            )}
-
         </div>
     );
-}
-
-function ModuleStatusLine({ title, status, color }: { title: string, status: string, color: string }) {
-    const colors: any = {
-        emerald: "text-emerald-600 bg-emerald-50",
-        amber: "text-amber-600 bg-amber-50",
-        purple: "text-purple-600 bg-purple-50",
-        slate: "text-slate-600 bg-slate-50"
-    };
-
-    return (
-        <div className={`flex justify-between items-center p-3 rounded-lg border border-slate-100 ${colors[color] || 'bg-slate-50'}`}>
-            <span className="text-sm font-bold text-slate-700">{title}</span>
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded ${colors[color]}`}>{status}</span>
-        </div>
-    )
 }
