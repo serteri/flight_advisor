@@ -41,6 +41,24 @@ type PriceHistoryEntry = {
     };
 };
 
+type ChangeType =
+    | 'PRICE_DROP'
+    | 'PRICE_RISE'
+    | 'RECOMMENDATION_CHANGED'
+    | 'CONFIDENCE_DROP'
+    | 'RISK_INCREASED'
+    | 'DATA_QUALITY_DROP'
+    | 'NO_SIGNIFICANT_CHANGE';
+
+type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+type ChangeSummaryRow = {
+    label: string;
+    type: ChangeType;
+    message: string;
+    significant: boolean;
+};
+
 type Segment = {
     from: string;
     to: string;
@@ -82,6 +100,50 @@ const formatDuration = (minutes?: number | null): string => {
     return `${hours}h ${mins}m`;
 };
 
+const toRiskScore = (
+    snapshot?: PriceHistoryEntry['scoreSnapshot'] | null,
+    state?: PriceHistoryEntry['trackingState'] | null,
+): number => {
+    if (!snapshot) return 2;
+
+    let score = 0;
+
+    if (snapshot.recommendation === 'WAIT') score += 2;
+    else if (snapshot.recommendation === 'WATCH') score += 1;
+
+    if (typeof snapshot.confidence === 'number') {
+        if (snapshot.confidence < 55) score += 2;
+        else if (snapshot.confidence < 70) score += 1;
+    }
+
+    if (snapshot.missingFactor) score += 1;
+    if (state?.limitedData) score += 1;
+    if (snapshot.realTimeDataAvailable === false || state?.realTimeDataUnavailable) score += 1;
+
+    return score;
+};
+
+const toRiskLevel = (
+    snapshot?: PriceHistoryEntry['scoreSnapshot'] | null,
+    state?: PriceHistoryEntry['trackingState'] | null,
+): RiskLevel => {
+    const score = toRiskScore(snapshot, state);
+    if (score >= 4) return 'HIGH';
+    if (score >= 2) return 'MEDIUM';
+    return 'LOW';
+};
+
+const riskRank: Record<RiskLevel, number> = {
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+};
+
+const isBaggageRelated = (value?: string | null): boolean => {
+    if (!value) return false;
+    return /(baggage|bag|checked|cabin)/i.test(value);
+};
+
 export default async function TrackedItineraryDetailPage({
     params,
 }: {
@@ -117,8 +179,11 @@ export default async function TrackedItineraryDetailPage({
     const history = Array.isArray(watchedFlight.priceHistory)
         ? watchedFlight.priceHistory as unknown as PriceHistoryEntry[]
         : [];
+    const firstHistory = history[0] || null;
     const latestHistory = history[history.length - 1] || null;
+    const initialSnapshot = firstHistory?.scoreSnapshot || null;
     const scoreSnapshot = latestHistory?.scoreSnapshot;
+    const initialTrackingState = firstHistory?.trackingState || null;
     const trackingState = latestHistory?.trackingState;
     const segments = Array.isArray(watchedFlight.segments)
         ? watchedFlight.segments as unknown as Segment[]
@@ -132,6 +197,126 @@ export default async function TrackedItineraryDetailPage({
     const hasImportantChange = Boolean(trackingState?.importantChanged) || Math.abs(changePercent) >= 5;
     const latestUpdateAt = watchedFlight.lastChecked || watchedFlight.updatedAt || watchedFlight.createdAt;
     const realTimeUnavailable = scoreSnapshot?.realTimeDataAvailable === false || trackingState?.realTimeDataUnavailable;
+
+    const initialRecommendation = initialSnapshot?.recommendation || scoreSnapshot?.recommendation || 'WATCH';
+    const currentRecommendation = scoreSnapshot?.recommendation || initialRecommendation;
+    const recommendationChanged = initialRecommendation !== currentRecommendation;
+
+    const initialConfidence = typeof initialSnapshot?.confidence === 'number'
+        ? initialSnapshot.confidence
+        : null;
+    const currentConfidence = typeof scoreSnapshot?.confidence === 'number'
+        ? scoreSnapshot.confidence
+        : null;
+    const confidenceDelta = initialConfidence !== null && currentConfidence !== null
+        ? currentConfidence - initialConfidence
+        : null;
+
+    const initialRiskLevel = toRiskLevel(initialSnapshot, initialTrackingState);
+    const currentRiskLevel = toRiskLevel(scoreSnapshot, trackingState);
+    const riskIncreased = riskRank[currentRiskLevel] > riskRank[initialRiskLevel];
+
+    const initialMissingFactor = initialSnapshot?.missingFactor || null;
+    const currentMissingFactor = scoreSnapshot?.missingFactor || null;
+    const newMissingIssue = Boolean(currentMissingFactor && currentMissingFactor !== initialMissingFactor);
+    const limitedDataWorsened = !initialTrackingState?.limitedData && Boolean(trackingState?.limitedData);
+    const realtimeWorsened = initialSnapshot?.realTimeDataAvailable !== false && scoreSnapshot?.realTimeDataAvailable === false;
+    const dataQualityDropped = newMissingIssue || limitedDataWorsened || realtimeWorsened;
+
+    const confidenceDropReason = confidenceDelta !== null && confidenceDelta < -0.5 && isBaggageRelated(currentMissingFactor) && !isBaggageRelated(initialMissingFactor)
+        ? ' Confidence fell because baggage data is no longer available.'
+        : '';
+
+    const changeSummaryRows: ChangeSummaryRow[] = [
+        changeAmount < 0
+            ? {
+                label: 'Price',
+                type: 'PRICE_DROP',
+                message: `Price dropped by ${formatMoney(Math.abs(changeAmount), watchedFlight.currency)} since you started tracking.`,
+                significant: true,
+            }
+            : changeAmount > 0
+                ? {
+                    label: 'Price',
+                    type: 'PRICE_RISE',
+                    message: `Price increased by ${formatMoney(changeAmount, watchedFlight.currency)} since you started tracking.`,
+                    significant: true,
+                }
+                : {
+                    label: 'Price',
+                    type: 'NO_SIGNIFICANT_CHANGE',
+                    message: 'Price is unchanged since you started tracking.',
+                    significant: false,
+                },
+        recommendationChanged
+            ? {
+                label: 'Recommendation',
+                type: 'RECOMMENDATION_CHANGED',
+                message: `Recommendation changed from ${initialRecommendation} to ${currentRecommendation}.`,
+                significant: true,
+            }
+            : {
+                label: 'Recommendation',
+                type: 'NO_SIGNIFICANT_CHANGE',
+                message: `Recommendation is unchanged at ${currentRecommendation}.`,
+                significant: false,
+            },
+        confidenceDelta !== null && confidenceDelta < -0.5
+            ? {
+                label: 'Confidence',
+                type: 'CONFIDENCE_DROP',
+                message: `Confidence fell by ${Math.abs(confidenceDelta).toFixed(1)} points since tracking started.${confidenceDropReason}`,
+                significant: true,
+            }
+            : confidenceDelta !== null && confidenceDelta > 0.5
+                ? {
+                    label: 'Confidence',
+                    type: 'NO_SIGNIFICANT_CHANGE',
+                    message: `Confidence increased by ${confidenceDelta.toFixed(1)} points since tracking started.`,
+                    significant: false,
+                }
+                : {
+                    label: 'Confidence',
+                    type: 'NO_SIGNIFICANT_CHANGE',
+                    message: 'Confidence is effectively unchanged since tracking started.',
+                    significant: false,
+                },
+        riskIncreased
+            ? {
+                label: 'Risk level',
+                type: 'RISK_INCREASED',
+                message: `Risk level increased from ${initialRiskLevel} to ${currentRiskLevel}.`,
+                significant: true,
+            }
+            : {
+                label: 'Risk level',
+                type: 'NO_SIGNIFICANT_CHANGE',
+                message: `Risk level is ${currentRiskLevel}${currentRiskLevel !== initialRiskLevel ? ` (was ${initialRiskLevel})` : ''}.`,
+                significant: false,
+            },
+        dataQualityDropped
+            ? {
+                label: 'Data quality',
+                type: 'DATA_QUALITY_DROP',
+                message: newMissingIssue
+                    ? `New missing-data issue detected: ${currentMissingFactor}.`
+                    : realtimeWorsened
+                        ? 'Data quality dropped because live/real-time availability was reduced.'
+                        : 'Data quality dropped due to limited follow-up tracking data.',
+                significant: true,
+            }
+            : {
+                label: 'Data quality',
+                type: 'NO_SIGNIFICANT_CHANGE',
+                message: 'No new missing-data or quality issue detected.',
+                significant: false,
+            },
+    ];
+
+    const significantChangeCount = changeSummaryRows.filter((row) => row.significant).length;
+    const summaryHeadline = significantChangeCount > 0
+        ? `${significantChangeCount} meaningful change${significantChangeCount > 1 ? 's' : ''} detected since tracking started.`
+        : 'No major change since your last snapshot.';
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -219,6 +404,34 @@ export default async function TrackedItineraryDetailPage({
                             <div className="text-lg font-bold text-slate-900">{formatDateTime(latestUpdateAt)}</div>
                             <div className="text-sm text-slate-500 mt-1">{hasImportantChange ? 'Important change detected' : 'No major change yet'}</div>
                         </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Change summary</div>
+                            <h2 className="text-xl font-black text-slate-900">What changed since tracking started</h2>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${significantChangeCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {significantChangeCount > 0 ? 'Changes detected' : 'Stable'}
+                        </span>
+                    </div>
+                    <p className="text-sm text-slate-600">{summaryHeadline}</p>
+                    <div className="space-y-3">
+                        {changeSummaryRows.map((row) => (
+                            <div key={row.label} className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-start gap-3">
+                                {row.type === 'PRICE_DROP' && <TrendingDown className="w-4 h-4 mt-0.5 text-emerald-600" />}
+                                {row.type === 'PRICE_RISE' && <TrendingUp className="w-4 h-4 mt-0.5 text-red-600" />}
+                                {(row.type === 'CONFIDENCE_DROP' || row.type === 'DATA_QUALITY_DROP' || row.type === 'RISK_INCREASED') && <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />}
+                                {row.type === 'RECOMMENDATION_CHANGED' && <Bell className="w-4 h-4 mt-0.5 text-sky-600" />}
+                                {row.type === 'NO_SIGNIFICANT_CHANGE' && <Minus className="w-4 h-4 mt-0.5 text-slate-400" />}
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{row.label} • {row.type}</div>
+                                    <p className="text-sm text-slate-800 mt-1">{row.message}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
