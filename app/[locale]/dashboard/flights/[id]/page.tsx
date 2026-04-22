@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Link } from '@/i18n/routing';
+import { PromoteTrackedItineraryButton } from '@/components/guardian/PromoteTrackedItineraryButton';
 import { notFound } from 'next/navigation';
 import {
     ArrowLeft,
@@ -38,6 +39,10 @@ type PriceHistoryEntry = {
         limitedData?: boolean;
         realTimeDataUnavailable?: boolean;
         importantChanged?: boolean;
+        promotedTripId?: string;
+        promotedAt?: string;
+        bookingDataEstimated?: boolean;
+        missingBookingFields?: string[];
     };
 };
 
@@ -181,6 +186,7 @@ export default async function TrackedItineraryDetailPage({
         : [];
     const firstHistory = history[0] || null;
     const latestHistory = history[history.length - 1] || null;
+    const promotionHistory = [...history].reverse().find((entry) => Boolean(entry?.trackingState?.promotedTripId)) || null;
     const initialSnapshot = firstHistory?.scoreSnapshot || null;
     const scoreSnapshot = latestHistory?.scoreSnapshot;
     const initialTrackingState = firstHistory?.trackingState || null;
@@ -197,6 +203,9 @@ export default async function TrackedItineraryDetailPage({
     const hasImportantChange = Boolean(trackingState?.importantChanged) || Math.abs(changePercent) >= 5;
     const latestUpdateAt = watchedFlight.lastChecked || watchedFlight.updatedAt || watchedFlight.createdAt;
     const realTimeUnavailable = scoreSnapshot?.realTimeDataAvailable === false || trackingState?.realTimeDataUnavailable;
+    const promotedTripId = promotionHistory?.trackingState?.promotedTripId || null;
+    const promotedAt = promotionHistory?.trackingState?.promotedAt || null;
+    const isPromotedToBooked = watchedFlight.status === 'BOUGHT' || Boolean(promotedTripId);
 
     const initialRecommendation = initialSnapshot?.recommendation || scoreSnapshot?.recommendation || 'WATCH';
     const currentRecommendation = scoreSnapshot?.recommendation || initialRecommendation;
@@ -347,6 +356,12 @@ export default async function TrackedItineraryDetailPage({
                                 <span>{watchedFlight.flightNumber}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>{watchedFlight.cabin || 'Unknown cabin'}</span>
+                                {isPromotedToBooked && (
+                                    <>
+                                        <span className="text-slate-300">•</span>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Booked / promoted</span>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -393,6 +408,7 @@ export default async function TrackedItineraryDetailPage({
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Tracking state</div>
                             <div className="flex flex-wrap gap-2 mt-2">
                                 <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{trackingState?.status || watchedFlight.status}</span>
+                                {isPromotedToBooked && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Promoted to Guardian</span>}
                                 {trackingState?.waitingForNextSnapshot && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Waiting for next snapshot</span>}
                                 {trackingState?.limitedData && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Limited data</span>}
                                 {realTimeUnavailable && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">Using itinerary snapshot</span>}
@@ -505,7 +521,7 @@ export default async function TrackedItineraryDetailPage({
                             <ul className="space-y-3 text-sm text-slate-700">
                                 <li className="flex items-start gap-2">
                                     <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{trackingState?.waitingForNextSnapshot ? 'Tracking is active and waiting for the next comparison snapshot.' : 'Tracking is active.'}</span>
+                                    <span>{isPromotedToBooked ? 'This itinerary is promoted to booked-trip monitoring.' : trackingState?.waitingForNextSnapshot ? 'Tracking is active and waiting for the next comparison snapshot.' : 'Tracking is active.'}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <AlertTriangle className="w-4 h-4 mt-0.5 text-slate-400" />
@@ -515,21 +531,52 @@ export default async function TrackedItineraryDetailPage({
                                     <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
                                     <span>{hasImportantChange ? 'Something important changed since tracking started.' : 'Nothing materially changed since tracking started.'}</span>
                                 </li>
+                                {isPromotedToBooked && (
+                                    <li className="flex items-start gap-2 text-blue-800">
+                                        <ShieldAlert className="w-4 h-4 mt-0.5 text-blue-600" />
+                                        <span>{promotedAt ? `Promoted to booked-trip monitoring on ${formatDateTime(promotedAt)}.` : 'Promoted to booked-trip monitoring.'}</span>
+                                    </li>
+                                )}
                                 {realTimeUnavailable && (
                                     <li className="flex items-start gap-2 text-amber-800">
                                         <ShieldAlert className="w-4 h-4 mt-0.5 text-amber-600" />
                                         <span>Real-time pricing data is unavailable; current status is based on the tracked itinerary snapshot.</span>
                                     </li>
                                 )}
+                                {isPromotedToBooked && (
+                                    <li className="flex items-start gap-2 text-slate-600">
+                                        <AlertTriangle className="w-4 h-4 mt-0.5 text-slate-500" />
+                                        <span>Booking confirmation fields (PNR confirmation, ticket number) are still estimated placeholders unless you add official booking data later.</span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 
-                        <div className="bg-slate-900 rounded-3xl p-6 text-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">Next step</div>
-                            <p className="text-sm text-slate-200 leading-relaxed">
-                                {scoreSnapshot?.actionHint || 'Keep tracking this itinerary and compare it against newer price observations before booking.'}
-                            </p>
-                        </div>
+                        {promotedTripId ? (
+                            <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-3">
+                                <div className="text-xs uppercase tracking-wider font-bold text-sky-300">Booked trip monitoring</div>
+                                <p className="text-sm text-slate-200 leading-relaxed">
+                                    This itinerary is now connected to Guardian post-booking protection.
+                                </p>
+                                <Link
+                                    href={`/${locale}/dashboard/guardian/${promotedTripId}`}
+                                    className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors"
+                                >
+                                    Open booked trip monitoring
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-4">
+                                <div className="text-xs uppercase tracking-wider font-bold text-sky-300">Next step</div>
+                                <p className="text-sm text-slate-200 leading-relaxed">
+                                    {scoreSnapshot?.actionHint || 'Keep tracking this itinerary and compare it against newer price observations before booking.'}
+                                </p>
+                                <PromoteTrackedItineraryButton locale={locale} trackedItineraryId={watchedFlight.id} />
+                                <p className="text-xs text-slate-300">
+                                    Promotion starts Guardian monitoring without re-entering this itinerary. Booking confirmation fields are marked as estimated until official booking data is provided.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
