@@ -202,14 +202,27 @@ export default function ScoreFlightPage() {
                         <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                             Paste your itinerary *
                         </label>
+                        <p className="text-xs text-slate-500 mb-2">
+                            You don't need to fill forms - just paste your flight details.
+                        </p>
                         <textarea
                             required
                             rows={8}
                             value={itineraryText}
                             onChange={(e) => setItineraryText(e.target.value)}
-                            placeholder="Paste Google Flights, OTA booking detail, airline confirmation, or email itinerary text here..."
+                            placeholder={"Example:\nTurkish Airlines TK79\nIstanbul (IST) -> San Francisco (SFO)\nDeparture: 10 Jun 2026 08:15 | Arrival: 10 Jun 2026 12:05\nPrice: USD 742\nBaggage: 1 checked bag (23 kg) + 8 kg cabin"}
                             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
                         />
+                    </div>
+
+                    <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-4">
+                        <h3 className="text-sm font-semibold text-sky-900 mb-2">What can I paste here?</h3>
+                        <ul className="list-disc list-inside text-sm text-sky-900/90 space-y-1">
+                            <li>Google Flights results</li>
+                            <li>Airline booking page details</li>
+                            <li>Booking confirmation email text</li>
+                            <li>OTA itinerary (Expedia, Booking, etc.)</li>
+                        </ul>
                     </div>
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
