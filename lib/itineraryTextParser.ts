@@ -56,6 +56,13 @@ const ALT_ROUTE_REGEX = /from\s+([A-Z]{3})\s+to\s+([A-Z]{3})/gi;
 const FLIGHT_NUMBER_REGEX = /\b([A-Z]{2,3})\s?-?(\d{1,4})(?!:)\b/g;
 const FLIGHT_LINE_REGEX = /^\s*\|\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/i;
 const AIRPORT_WITH_IATA_REGEX = /([A-Za-z][A-Za-z0-9'.,\-\/\s]*?)\(([A-Z]{3})\)/;
+const AIRPORT_NAME_TO_IATA: Record<string, string> = {
+    'BRISBANE ARPT': 'BNE',
+    'BRISBANE AIRPORT': 'BNE',
+    'CHANGI INTL ARPT': 'SIN',
+    'CHANGI INTL AIRPORT': 'SIN',
+    'ISTANBUL AIRPORT': 'IST',
+};
 
 const ISO_DATE_TIME_REGEX = /\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+\-]\d{2}:?\d{2})?\b/gi;
 const DATE_WITH_MONTH_REGEX = /\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?\d{1,2}\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}\b/gi;
@@ -497,11 +504,81 @@ const findNearestAirportAfter = (lines: string[], fromIndex: number) => {
     return null;
 };
 
+const inferAirportCodeFromText = (value?: string): string | undefined => {
+    if (!value) return undefined;
+    const iataMatch = value.match(/\(([A-Z]{3})\)/);
+    if (iataMatch?.[1]) return iataMatch[1].toUpperCase();
+
+    const normalized = value.toUpperCase();
+    for (const [name, code] of Object.entries(AIRPORT_NAME_TO_IATA)) {
+        if (normalized.includes(name)) return code;
+    }
+    return undefined;
+};
+
+const extractLeadingConfirmationSegment = (lines: string[], firstFlightIndex: number, fallbackDate?: Date): ParsedSegment | undefined => {
+    if (firstFlightIndex <= 0) return undefined;
+    const prefaceLines = lines.slice(0, firstFlightIndex);
+    const prefaceText = prefaceLines.join(' ');
+    if (!/Depart:/i.test(prefaceText) || !/Arrive:/i.test(prefaceText)) {
+        return undefined;
+    }
+
+    const sectionDate = extractFirstDateContext(prefaceText) || fallbackDate;
+    const departure = extractLabeledDateTime(prefaceLines, 0, prefaceLines.length - 1, 'Depart:', sectionDate);
+    let arrival = extractLabeledDateTime(prefaceLines, 0, prefaceLines.length - 1, 'Arrive:', sectionDate);
+    const departureAirportText = extractLabeledText(prefaceLines, 0, prefaceLines.length - 1, 'Depart:');
+    const arrivalAirportText = extractLabeledText(prefaceLines, 0, prefaceLines.length - 1, 'Arrive:');
+    const from = inferAirportCodeFromText(departureAirportText);
+    const to = inferAirportCodeFromText(arrivalAirportText);
+    const aircraft = extractLabeledText(prefaceLines, 0, prefaceLines.length - 1, 'Aircraft:');
+    const airline = normalizeAirline(prefaceText);
+
+    if (!from || !to) return undefined;
+
+    if (departure && arrival && Date.parse(arrival) <= Date.parse(departure)) {
+        arrival = new Date(Date.parse(arrival) + 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    return {
+        from,
+        to,
+        departure,
+        arrival,
+        airline,
+        flightNumber: undefined,
+        aircraft: aircraft || undefined,
+        tripDirection: 'OUTBOUND',
+    };
+};
+
 const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): ParsedSegment[] => {
     const segments: ParsedSegment[] = [];
     const seen = new Set<string>();
     let currentDirection: 'OUTBOUND' | 'INBOUND' | undefined;
     let currentSectionDate: Date | undefined = fallbackDate;
+    let firstFlightLineIndex = -1;
+
+    for (let cursor = 0; cursor < lines.length; cursor += 1) {
+        if (FLIGHT_LINE_REGEX.test(lines[cursor])) {
+            firstFlightLineIndex = cursor;
+            break;
+        }
+    }
+
+    const leadingSegment = extractLeadingConfirmationSegment(lines, firstFlightLineIndex, fallbackDate);
+    if (leadingSegment) {
+        const leadingKey = [
+            leadingSegment.from,
+            leadingSegment.to,
+            leadingSegment.departure || '',
+            leadingSegment.arrival || '',
+            leadingSegment.flightNumber || '',
+            leadingSegment.tripDirection || '',
+        ].join('|');
+        seen.add(leadingKey);
+        segments.push(leadingSegment);
+    }
 
     for (let i = 0; i < lines.length; i += 1) {
         const line = lines[i];
@@ -674,6 +751,15 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
     return deduped;
 };
 
+const normalizeFlattenedConfirmationText = (text: string): string => {
+    return text
+        .replace(/\s+(Outbound Flight:|Inbound Flight:|Depart:|Arrive:|Status:|Cabin Class:|Aircraft:|Baggage:|Stopover of|Terminal:)/gi, '\n$1')
+        .replace(/\s+\|\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/gi, '\n| $1$2')
+        .replace(/\|\s*([A-Z]{2,3}\d{1,4})\s+(Depart:|Arrive:|Status:|Cabin Class:|Aircraft:|Baggage:|Inbound Flight:|Outbound Flight:)/gi, '| $1\n$2')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+};
+
 const computeLayovers = (segments: ParsedSegment[], warnings: string[]): number[] => {
     const layovers: number[] = [];
     for (let i = 0; i < segments.length - 1; i += 1) {
@@ -735,9 +821,11 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
         .replace(/\t/g, ' ')
         .trim();
 
+    const normalizedForSegmentation = normalizeFlattenedConfirmationText(text);
+
     const warnings: string[] = [];
     const baseDate = extractFirstDateContext(text);
-    const segments = extractSegments(text, baseDate);
+    const segments = extractSegments(normalizedForSegmentation, baseDate);
 
     if (!segments.length) {
         warnings.push('Could not parse any route segment. Paste text with explicit route (e.g., SYD -> SIN).');
