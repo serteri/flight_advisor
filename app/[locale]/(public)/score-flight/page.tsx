@@ -33,6 +33,7 @@ type SegmentInput = {
     aircraft?: string;
     marketedAirline?: string;
     bookingClass?: string;
+    tripDirection?: "OUTBOUND" | "INBOUND";
 };
 
 interface ScoreResult {
@@ -44,9 +45,15 @@ interface ScoreResult {
     needsReview?: boolean;
     extractedSegments?: SegmentInput[];
     derivedMetrics?: {
+        tripType: "ONE_WAY" | "ROUND_TRIP";
+        totalSegments: number;
         totalDurationMinutes: number;
         totalLayoverMinutes: number;
         connectionCount: number;
+        outboundConnectionCount: number;
+        inboundConnectionCount: number;
+        outboundLayoverMinutes: number;
+        inboundLayoverMinutes: number;
         connectionFeasibility: string;
         routeRealism: string;
         airlineReliabilityMix: string;
@@ -436,6 +443,11 @@ export default function ScoreFlightPage() {
                                         <input value={segment.marketedAirline || ""} onChange={(e) => updateSegment(index, { marketedAirline: e.target.value })} placeholder="Marketed Airline" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm" />
                                         <input value={segment.bookingClass || ""} onChange={(e) => updateSegment(index, { bookingClass: e.target.value })} placeholder="Booking Class" className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase" />
                                     </div>
+                                    {segment.tripDirection && (
+                                        <div className="text-xs text-slate-500 font-semibold">
+                                            Direction: {segment.tripDirection === "OUTBOUND" ? "Outbound" : "Inbound"}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -578,9 +590,18 @@ export default function ScoreFlightPage() {
 
                         {result.derivedMetrics && (
                             <div className="bg-white rounded-2xl border border-slate-200 p-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div><span className="text-slate-400 block">Trip type</span>{result.derivedMetrics.tripType === "ROUND_TRIP" ? "Round-trip" : "One-way"}</div>
+                                <div><span className="text-slate-400 block">Total segments</span>{result.derivedMetrics.totalSegments}</div>
                                 <div><span className="text-slate-400 block">Total duration</span>{result.derivedMetrics.totalDurationMinutes} min</div>
                                 <div><span className="text-slate-400 block">Total layover</span>{result.derivedMetrics.totalLayoverMinutes} min</div>
-                                <div><span className="text-slate-400 block">Connections</span>{result.derivedMetrics.connectionCount}</div>
+                                {result.derivedMetrics.tripType === "ROUND_TRIP" ? (
+                                    <>
+                                        <div><span className="text-slate-400 block">Outbound connections</span>{result.derivedMetrics.outboundConnectionCount}</div>
+                                        <div><span className="text-slate-400 block">Inbound connections</span>{result.derivedMetrics.inboundConnectionCount}</div>
+                                    </>
+                                ) : (
+                                    <div><span className="text-slate-400 block">Connections</span>{result.derivedMetrics.connectionCount}</div>
+                                )}
                                 <div><span className="text-slate-400 block">Feasibility</span>{result.derivedMetrics.connectionFeasibility}</div>
                                 <div><span className="text-slate-400 block">Route realism</span>{result.derivedMetrics.routeRealism}</div>
                                 <div><span className="text-slate-400 block">Airline mix</span>{result.derivedMetrics.airlineReliabilityMix}</div>

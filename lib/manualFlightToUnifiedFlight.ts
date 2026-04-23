@@ -97,9 +97,15 @@ export type DetailedScoreInput = z.infer<typeof detailedScoreInputSchema>;
 export type PasteScoreInput = z.infer<typeof pasteScoreInputSchema>;
 
 export type DerivedStructureMetrics = {
+    tripType: 'ONE_WAY' | 'ROUND_TRIP';
+    totalSegments: number;
     totalDurationMinutes: number;
     totalLayoverMinutes: number;
     connectionCount: number;
+    outboundConnectionCount: number;
+    inboundConnectionCount: number;
+    outboundLayoverMinutes: number;
+    inboundLayoverMinutes: number;
     connectionFeasibility: 'GOOD' | 'TIGHT' | 'RISKY';
     routeRealism: 'REALISTIC' | 'QUESTIONABLE';
     airlineReliabilityMix: 'SINGLE_CARRIER' | 'MIXED' | 'HIGHLY_FRAGMENTED';
@@ -140,6 +146,7 @@ export type ParsedSegmentPreview = {
     aircraft?: string;
     marketedAirline?: string;
     bookingClass?: string;
+    tripDirection?: 'OUTBOUND' | 'INBOUND';
 };
 
 export type ItineraryConversionResult = {
@@ -243,6 +250,26 @@ const assessAirlineMix = (airlines: string[]): DerivedStructureMetrics['airlineR
     return 'HIGHLY_FRAGMENTED';
 };
 
+const deriveTripStructure = (segments: Array<{ tripDirection?: 'OUTBOUND' | 'INBOUND' }>): {
+    tripType: 'ONE_WAY' | 'ROUND_TRIP';
+    outboundConnectionCount: number;
+    inboundConnectionCount: number;
+    connectionCount: number;
+} => {
+    const inboundSegments = segments.filter((segment) => segment.tripDirection === 'INBOUND');
+    const outboundSegments = segments.filter((segment) => segment.tripDirection !== 'INBOUND');
+    const tripType: 'ONE_WAY' | 'ROUND_TRIP' = inboundSegments.length > 0 ? 'ROUND_TRIP' : 'ONE_WAY';
+    const outboundConnectionCount = Math.max(0, outboundSegments.length - 1);
+    const inboundConnectionCount = tripType === 'ROUND_TRIP' ? Math.max(0, inboundSegments.length - 1) : 0;
+
+    return {
+        tripType,
+        outboundConnectionCount,
+        inboundConnectionCount,
+        connectionCount: outboundConnectionCount + inboundConnectionCount,
+    };
+};
+
 const buildQuickUnifiedFlight = (
     input: QuickScoreInput,
 ): ItineraryConversionResult => {
@@ -296,9 +323,15 @@ const buildQuickUnifiedFlight = (
     };
 
     const derived: DerivedStructureMetrics = {
+        tripType: 'ONE_WAY',
+        totalSegments: 1,
         totalDurationMinutes: duration,
         totalLayoverMinutes: input.stops * DEFAULT_LAYOVER_DURATION_MINUTES,
         connectionCount: input.stops,
+        outboundConnectionCount: input.stops,
+        inboundConnectionCount: 0,
+        outboundLayoverMinutes: input.stops * DEFAULT_LAYOVER_DURATION_MINUTES,
+        inboundLayoverMinutes: 0,
         connectionFeasibility: input.stops <= 1 ? 'TIGHT' : 'RISKY',
         routeRealism: 'QUESTIONABLE',
         airlineReliabilityMix: airlineMix,
@@ -368,6 +401,8 @@ const buildDetailedUnifiedFlight = (
     const riskFlags: string[] = [];
     const comfortNotes: string[] = [];
     let totalLayoverMinutes = 0;
+    let outboundLayoverMinutes = 0;
+    let inboundLayoverMinutes = 0;
     let tightConnectionCount = 0;
 
     for (let i = 0; i < sortedSegments.length - 1; i += 1) {
@@ -382,6 +417,11 @@ const buildDetailedUnifiedFlight = (
 
         const layoverDuration = durationBetween(current.arrivalDateTime, next.departureDateTime);
         totalLayoverMinutes += layoverDuration;
+        if (current.tripDirection === 'INBOUND') {
+            inboundLayoverMinutes += layoverDuration;
+        } else {
+            outboundLayoverMinutes += layoverDuration;
+        }
         layovers.push({ airport: current.to, duration: layoverDuration });
 
         if (current.to !== next.from) {
@@ -464,6 +504,7 @@ const buildDetailedUnifiedFlight = (
             : 'RISKY';
 
     const routeRealism: DerivedStructureMetrics['routeRealism'] = realismScore >= 0.65 ? 'REALISTIC' : 'QUESTIONABLE';
+    const tripStructure = deriveTripStructure(sortedSegments);
 
     const unifiedSegments = sortedSegments.map((segment, index): FlightSegment => ({
         from: segment.from,
@@ -492,9 +533,15 @@ const buildDetailedUnifiedFlight = (
     };
 
     const derived: DerivedStructureMetrics = {
+        tripType: tripStructure.tripType,
+        totalSegments: sortedSegments.length,
         totalDurationMinutes: totalDuration,
         totalLayoverMinutes,
-        connectionCount: stops,
+        connectionCount: tripStructure.connectionCount,
+        outboundConnectionCount: tripStructure.outboundConnectionCount,
+        inboundConnectionCount: tripStructure.inboundConnectionCount,
+        outboundLayoverMinutes,
+        inboundLayoverMinutes,
         connectionFeasibility,
         routeRealism,
         airlineReliabilityMix: airlineMix,
@@ -536,6 +583,7 @@ const buildDetailedUnifiedFlight = (
             aircraft: segment.aircraft,
             marketedAirline: segment.marketedAirline,
             bookingClass: segment.bookingClass,
+            tripDirection: segment.tripDirection,
         })),
     };
 };
@@ -633,8 +681,14 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
 
     const base = buildDetailedUnifiedFlight(detailedInput);
     const parseWarnings = [...parsed.warnings, ...normalizationWarnings];
+    const adjustedWarnings = (input.price && !parsed.trip.price)
+        ? parseWarnings.map((warning) => warning === 'Price not detected from pasted text.'
+            ? 'Price not detected in pasted text; manual price override used.'
+            : warning)
+        : parseWarnings;
+
     if (!input.price && !parsed.trip.price) {
-        parseWarnings.push('Price missing in text; fallback price baseline applied.');
+        adjustedWarnings.push('Price missing in text; fallback price baseline applied.');
     }
 
     const parseConfidence = parsed.confidence;
@@ -642,11 +696,18 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
 
     return {
         ...base,
+        extractedSegments: base.extractedSegments.map((segment) => ({
+            ...segment,
+            airline: /^UNKN$/i.test(segment.airline) ? '' : segment.airline,
+            flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
+            marketedAirline: segment.marketedAirline || undefined,
+            bookingClass: segment.bookingClass || undefined,
+        })),
         assessment: {
             ...base.assessment,
             mode: downgradedMode,
-            promptForDetails: parseWarnings.length > 0 || parseConfidence < 0.7,
-            parseWarnings,
+            promptForDetails: adjustedWarnings.length > 0 || parseConfidence < 0.7,
+            parseWarnings: adjustedWarnings,
             parseConfidence,
             completenessScore: Math.max(0.45, Math.min(base.assessment.completenessScore, parseConfidence + 0.2)),
         },
