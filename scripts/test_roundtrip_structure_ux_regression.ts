@@ -7,6 +7,49 @@ const result = itineraryInputToUnifiedFlight({
   itineraryText: sample,
   price: 3400,
   currency: 'AUD',
+  segments: [
+    {
+      from: 'BNE',
+      to: 'SIN',
+      departureDateTime: '2026-06-11T18:10:00.000Z',
+      arrivalDateTime: '2026-06-12T00:10:00.000Z',
+      airline: 'UNKN',
+      flightNumber: 'UNKNOWN1',
+      aircraft: '359',
+      tripDirection: 'OUTBOUND',
+    },
+    {
+      from: 'SIN',
+      to: 'IST',
+      departureDateTime: '2026-06-12T02:15:00.000Z',
+      arrivalDateTime: '2026-06-12T08:30:00.000Z',
+      airline: 'SQ',
+      flightNumber: 'SQ392',
+      aircraft: '359',
+      bookingClass: 'K',
+      tripDirection: 'OUTBOUND',
+    },
+    {
+      from: 'IST',
+      to: 'SIN',
+      departureDateTime: '2026-07-15T13:10:00.000Z',
+      arrivalDateTime: '2026-07-16T04:55:00.000Z',
+      airline: 'SQ',
+      flightNumber: 'SQ391',
+      aircraft: '359',
+      tripDirection: 'INBOUND',
+    },
+    {
+      from: 'SIN',
+      to: 'BNE',
+      departureDateTime: '2026-07-16T07:20:00.000Z',
+      arrivalDateTime: '2026-07-16T16:55:00.000Z',
+      airline: 'SQ',
+      flightNumber: 'SQ265',
+      aircraft: '359',
+      tripDirection: 'INBOUND',
+    },
+  ],
 });
 
 console.log(JSON.stringify({
@@ -34,6 +77,23 @@ if (!firstSegment) {
 
 if (firstSegment.airline === 'UNKN' || /^UNKNOWN\d+$/i.test(firstSegment.flightNumber)) {
   throw new Error(`Expected user-facing extracted segment to hide placeholders, received ${JSON.stringify(firstSegment)}`);
+}
+
+if (firstSegment.flightNumber !== '') {
+  throw new Error(`Expected missing flight number to remain clean blank in extracted surface, received ${JSON.stringify(firstSegment)}`);
+}
+
+if (firstSegment.airline !== 'SQ') {
+  throw new Error(`Expected airline inference from neighboring SQ leg, received ${JSON.stringify(firstSegment)}`);
+}
+
+const secondSegment = result.extractedSegments[1];
+if (!secondSegment || secondSegment.marketedAirline !== 'SQ') {
+  throw new Error(`Expected marketedAirline to default from SQ, received ${JSON.stringify(secondSegment)}`);
+}
+
+if (secondSegment.bookingClass !== 'K') {
+  throw new Error(`Expected bookingClass K to be preserved, received ${JSON.stringify(secondSegment)}`);
 }
 
 const warnings = result.assessment.parseWarnings || [];

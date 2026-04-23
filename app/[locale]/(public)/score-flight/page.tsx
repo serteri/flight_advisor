@@ -508,6 +508,24 @@ export default function ScoreFlightPage() {
                             </div>
                         )}
 
+                        {result.derivedMetrics && (
+                            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                                <div className="font-semibold mb-1">Trip structure</div>
+                                {result.derivedMetrics.tripType === "ROUND_TRIP" ? (
+                                    <p>
+                                        Round-trip detected. Outbound connections: {result.derivedMetrics.outboundConnectionCount},
+                                        Inbound connections: {result.derivedMetrics.inboundConnectionCount},
+                                        Total segments: {result.derivedMetrics.totalSegments}.
+                                    </p>
+                                ) : (
+                                    <p>
+                                        One-way detected. Connections: {result.derivedMetrics.connectionCount},
+                                        Total segments: {result.derivedMetrics.totalSegments}.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         <div className={`rounded-2xl border-2 p-6 flex items-center gap-5 ${decision.bg} ${decision.border}`}>
                             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${decision.bg} border-2 ${decision.border}`}>
                                 <decision.icon className={`w-8 h-8 ${decision.color}`} />

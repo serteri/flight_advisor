@@ -270,6 +270,16 @@ const deriveTripStructure = (segments: Array<{ tripDirection?: 'OUTBOUND' | 'INB
     };
 };
 
+const isUnknownAirline = (value?: string): boolean => !value || /^UNKN$/i.test(value.trim());
+
+const isUnknownFlightNumber = (value?: string): boolean => !value || /^UNKNOWN\d+$/i.test(value.trim());
+
+const deriveAirlineFromFlightNumber = (flightNumber?: string): string | undefined => {
+    if (!flightNumber || isUnknownFlightNumber(flightNumber)) return undefined;
+    const match = flightNumber.toUpperCase().match(/^([A-Z]{2,3})\d{1,4}$/);
+    return match?.[1];
+};
+
 const buildQuickUnifiedFlight = (
     input: QuickScoreInput,
 ): ItineraryConversionResult => {
@@ -581,7 +591,7 @@ const buildDetailedUnifiedFlight = (
             airline: segment.airline,
             flightNumber: segment.flightNumber,
             aircraft: segment.aircraft,
-            marketedAirline: segment.marketedAirline,
+            marketedAirline: segment.marketedAirline || (!isUnknownAirline(segment.airline) ? segment.airline : undefined),
             bookingClass: segment.bookingClass,
             tripDirection: segment.tripDirection,
         })),
@@ -610,6 +620,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             airline: segment.airline,
             flightNumber: segment.flightNumber,
             aircraft: segment.aircraft,
+            marketedAirline: undefined,
+            bookingClass: undefined,
             tripDirection: segment.tripDirection,
         }));
 
@@ -619,18 +631,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         const fallbackDeparture = baseMs + index * 4 * 60 * 60 * 1000;
         const departureDateTime = toIsoOrFallback(segment.departureDateTime, fallbackDeparture);
         const arrivalDateTime = toIsoOrFallback(segment.arrivalDateTime, fallbackDeparture + 2 * 60 * 60 * 1000);
-        const airline = segment.airline || 'UNKN';
+        const airline = segment.airline || deriveAirlineFromFlightNumber(segment.flightNumber) || 'UNKN';
         const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
-
-        if (!segment.departureDateTime || !segment.arrivalDateTime) {
-            normalizationWarnings.push(`Segment ${index + 1} had missing times; deterministic fallback times applied for scoring.`);
-        }
-        if (!segment.flightNumber) {
-            normalizationWarnings.push(`Segment ${index + 1} missing flight number; placeholder assigned.`);
-        }
-        if (!segment.airline) {
-            normalizationWarnings.push(`Segment ${index + 1} missing airline; placeholder assigned.`);
-        }
 
         return {
             from: segment.from,
@@ -640,8 +642,38 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             airline,
             flightNumber,
             aircraft: segment.aircraft,
+            marketedAirline: segment.marketedAirline,
+            bookingClass: segment.bookingClass,
             tripDirection: segment.tripDirection,
         };
+    });
+
+    for (let i = 0; i < normalizedSegments.length - 1; i += 1) {
+        const current = normalizedSegments[i];
+        const next = normalizedSegments[i + 1];
+        const sameDirection = current.tripDirection === next.tripDirection || !current.tripDirection || !next.tripDirection;
+        if (!sameDirection) continue;
+
+        if (isUnknownAirline(current.airline) && !isUnknownAirline(next.airline) && current.to === next.from) {
+            current.airline = next.airline;
+        }
+    }
+
+    normalizedSegments.forEach((segment, index) => {
+        const source = sourceSegments[index];
+        if (!source?.departureDateTime || !source?.arrivalDateTime) {
+            normalizationWarnings.push(`Segment ${index + 1} had missing times; deterministic fallback times applied for scoring.`);
+        }
+        if (!source?.flightNumber) {
+            normalizationWarnings.push(`Segment ${index + 1} missing flight number; placeholder assigned.`);
+        }
+        if (isUnknownAirline(segment.airline)) {
+            normalizationWarnings.push(`Segment ${index + 1} missing airline; placeholder assigned.`);
+        }
+
+        if (!segment.marketedAirline && !isUnknownAirline(segment.airline)) {
+            segment.marketedAirline = segment.airline;
+        }
     });
 
     if (!normalizedSegments.length) {
@@ -700,7 +732,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             ...segment,
             airline: /^UNKN$/i.test(segment.airline) ? '' : segment.airline,
             flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
-            marketedAirline: segment.marketedAirline || undefined,
+            marketedAirline: segment.marketedAirline || (!isUnknownAirline(segment.airline) ? segment.airline : undefined),
             bookingClass: segment.bookingClass || undefined,
         })),
         assessment: {
