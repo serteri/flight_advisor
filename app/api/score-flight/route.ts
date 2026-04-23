@@ -10,6 +10,8 @@ import {
 } from '@/lib/manualFlightToUnifiedFlight';
 import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/lib/scoring/advancedFlightScoring';
 import { buildParseAudit, runSelfCheckLayer, type ParseAudit } from '@/lib/audit/selfCheckLayer';
+import { recordParserMetric } from '@/services/healthMetrics';
+import type { ParserMetricEvent } from '@/types/operatorHealth';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 
@@ -320,6 +322,22 @@ export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
         const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
+
+        // Record parser metrics
+        try {
+            recordParserMetric({
+                mode: payload.mode,
+                success: !assessment.parseWarnings || assessment.parseWarnings.length === 0,
+                completenessScore: assessment.completenessScore,
+                realismScore: assessment.realismScore,
+                baggageConfidence: assessment.baggageConfidenceScore,
+                warnings: assessment.parseWarnings,
+                errorMessage: undefined,
+                timestamp: new Date(),
+            });
+        } catch (err) {
+            console.debug('[ParserMetrics] Error recording metric:', err);
+        }
 
         const [scoredFlight] = await applyAdvancedFlightScoring([unifiedFlight], {
             origin: unifiedFlight.from,

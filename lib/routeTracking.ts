@@ -1,6 +1,8 @@
 import type { CabinClass } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { analyzeRoute } from '@/lib/anomalyDetector';
+import { recordRouteMetric } from '@/services/healthMetrics';
+import type { RouteMetricEvent } from '@/types/operatorHealth';
 
 export type RouteTimingSignal = 'BUY' | 'WAIT' | 'WATCH';
 export type RouteTrendStatus = 'RISING' | 'FALLING' | 'STABLE' | 'INSUFFICIENT_DATA';
@@ -446,6 +448,21 @@ export async function evaluateRouteTiming(routeId: string): Promise<{
             lastSignalAt: new Date(),
         },
     });
+
+    // Record route metrics for health diagnostics
+    try {
+        const snapshotAgeMinutes = Math.floor((Date.now() - latest.timestamp.getTime()) / 60000);
+        recordRouteMetric({
+            routeId,
+            snapshotType: dataSourceType,
+            volatility: Math.round(volatility),
+            hasRealtimeData: dataSourceType === 'REAL_PROVIDER',
+            snapshotAgeMinutes,
+            timestamp: new Date(),
+        });
+    } catch (err) {
+        console.debug('[RouteMetrics] Error recording metric:', err);
+    }
 
     return {
         trendStatus,

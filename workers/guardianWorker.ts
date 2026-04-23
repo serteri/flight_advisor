@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getFlightStatus } from "@/services/flightStatusService";
 import { assessEu261ForDisruption, isEu261Carrier, isEu261Country } from "@/services/guardian/eu261Rules";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
+import { recordGuardianMetric } from "@/services/healthMetrics";
+import type { GuardianMetricEvent } from "@/types/operatorHealth";
 import airports from 'airports';
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE';
@@ -227,6 +229,17 @@ export async function processFlightMonitoring() {
 
         for (const trip of activeTrips) {
             try {
+                // Record Guardian check metric
+                try {
+                    recordGuardianMetric({
+                        tripId: trip.id,
+                        notificationAttempted: false,
+                        timestamp: new Date(),
+                    });
+                } catch (err) {
+                    console.debug('[GuardianMetrics] Error recording check metric:', err);
+                }
+
                 const segment = trip.segments[0];
                 const previousState = (trip.snapshot as any) ?? {
                     delayMinutes: 0,
@@ -298,7 +311,40 @@ export async function processFlightMonitoring() {
                     newSnapshot.lastEventId = key;
                     
                     if (trip.user) {
-                        notificationPromises.push(notifyGuardianEvent(eventPayload, trip.user));
+                        notificationPromises.push(
+                            notifyGuardianEvent(eventPayload, trip.user)
+                                .then(() => {
+                                    // Record successful notification metric
+                                    try {
+                                        recordGuardianMetric({
+                                            tripId: trip.id,
+                                            eventType: event.type,
+                                            eventSeverity: event.severity,
+                                            notificationAttempted: true,
+                                            notificationSucceeded: true,
+                                            timestamp: new Date(),
+                                        });
+                                    } catch (err) {
+                                        console.debug('[GuardianMetrics] Error recording notification success:', err);
+                                    }
+                                })
+                                .catch((err) => {
+                                    // Record failed notification metric
+                                    try {
+                                        recordGuardianMetric({
+                                            tripId: trip.id,
+                                            eventType: event.type,
+                                            eventSeverity: event.severity,
+                                            notificationAttempted: true,
+                                            notificationSucceeded: false,
+                                            timestamp: new Date(),
+                                        });
+                                    } catch (metricsErr) {
+                                        console.debug('[GuardianMetrics] Error recording notification failure:', metricsErr);
+                                    }
+                                    throw err;
+                                })
+                        );
                     }
                 };
 

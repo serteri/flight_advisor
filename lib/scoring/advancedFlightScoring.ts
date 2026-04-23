@@ -1,7 +1,9 @@
 import { normalizeSource } from '@/lib/utils';
 import { getMedianPriceForRouteDate, isInvalidBneIstDuration, resolveFlightDurationMinutes, toMinutes } from '@/lib/search/flightSearchRecordStore';
 import { hasIncludedMeal } from '@/lib/meal-utils';
+import { recordScoringMetric } from '@/services/healthMetrics';
 import type { UnifiedFlight, ScoredFlight, FlightScore } from '@/types/unifiedFlight';
+import type { ScoringMetricEvent } from '@/types/operatorHealth';
 
 type ScoringFlight = Omit<UnifiedFlight, 'baggage' | 'policies'> & {
     departTime: string;
@@ -1108,6 +1110,24 @@ const scoreFlight = (
         canonicalPolicies,
         ...rest
     } = flight;
+
+    // Record scoring metrics for health diagnostics
+    try {
+        const finalConfidence = score.confidence || 0;
+        recordScoringMetric({
+            totalScored: 1,
+            penaltyApplied: false, // This is set by self-check layer, not here
+            penaltyAmount: 0,
+            overrideApplied: false,
+            finalConfidence,
+            recommendation: 'MONITOR', // Will be updated by route intelligence
+            dataSource: flight.source || 'unknown',
+            timestamp: new Date(),
+        });
+    } catch (err) {
+        // Silently fail metrics recording; don't interrupt scoring
+        console.debug('[ScoringMetrics] Error recording metric:', err);
+    }
 
     return {
         ...(rest as UnifiedFlight),
