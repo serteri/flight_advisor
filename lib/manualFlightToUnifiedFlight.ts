@@ -28,6 +28,25 @@ const LONG_HAUL_DURATION_MINUTES: Record<string, number> = {
     'MEL-CDG': 1160,
 };
 
+const AIRLINE_CODE_TO_NAME: Record<string, string> = {
+    SQ: 'SINGAPORE AIRLINES',
+    TK: 'TURKISH AIRLINES',
+    QR: 'QATAR AIRWAYS',
+    BA: 'BRITISH AIRWAYS',
+    LH: 'LUFTHANSA',
+    EK: 'EMIRATES',
+    UA: 'UNITED AIRLINES',
+    DL: 'DELTA AIR LINES',
+    AA: 'AMERICAN AIRLINES',
+    AF: 'AIR FRANCE',
+    KL: 'KLM',
+};
+
+const AIRLINE_NAME_TO_CODE: Record<string, string> = Object.entries(AIRLINE_CODE_TO_NAME).reduce((acc, [code, name]) => {
+    acc[name] = code;
+    return acc;
+}, {} as Record<string, string>);
+
 const quickScoreInputSchema = z.object({
     mode: z.literal('quick'),
     origin: iataSchema,
@@ -280,6 +299,39 @@ const deriveAirlineFromFlightNumber = (flightNumber?: string): string | undefine
     return match?.[1];
 };
 
+const normalizeAirlineName = (value?: string, flightNumber?: string): string => {
+    const raw = (value || '').trim();
+    if (!raw) {
+        const derived = deriveAirlineFromFlightNumber(flightNumber);
+        return derived ? (AIRLINE_CODE_TO_NAME[derived] || derived) : 'UNKN';
+    }
+
+    const upper = raw.toUpperCase();
+    if (AIRLINE_CODE_TO_NAME[upper]) {
+        return AIRLINE_CODE_TO_NAME[upper];
+    }
+
+    return raw;
+};
+
+const deriveCarrierCode = (params: { flightNumber?: string; airline?: string; marketedAirline?: string }): string => {
+    const fromFlight = deriveAirlineFromFlightNumber(params.flightNumber);
+    if (fromFlight) return fromFlight;
+
+    const candidates = [params.marketedAirline, params.airline].filter(Boolean) as string[];
+    for (const candidate of candidates) {
+        const upper = candidate.trim().toUpperCase();
+        if (/^[A-Z]{2,3}$/.test(upper)) {
+            return upper;
+        }
+        if (AIRLINE_NAME_TO_CODE[upper]) {
+            return AIRLINE_NAME_TO_CODE[upper];
+        }
+    }
+
+    return 'UNK';
+};
+
 const buildQuickUnifiedFlight = (
     input: QuickScoreInput,
 ): ItineraryConversionResult => {
@@ -522,8 +574,16 @@ const buildDetailedUnifiedFlight = (
         departureTime: segment.departureDateTime,
         arrivalTime: segment.arrivalDateTime,
         duration: segmentDurations[index] || 0,
-        carrier: segment.airline.slice(0, 3).toUpperCase(),
-        marketingCarrier: (segment.marketedAirline || segment.airline).slice(0, 3).toUpperCase(),
+        carrier: deriveCarrierCode({
+            flightNumber: segment.flightNumber,
+            airline: segment.airline,
+            marketedAirline: segment.marketedAirline,
+        }),
+        marketingCarrier: deriveCarrierCode({
+            flightNumber: segment.flightNumber,
+            airline: segment.marketedAirline || segment.airline,
+            marketedAirline: segment.marketedAirline,
+        }),
         flightNumber: segment.flightNumber,
         aircraft: segment.aircraft,
     }));
@@ -567,8 +627,8 @@ const buildDetailedUnifiedFlight = (
             departureTime: firstSegment.departureDateTime,
             arrivalTime: lastSegment.arrivalDateTime,
             duration: totalDuration,
-            airline: firstSegment.airline,
-            operatingAirline: firstSegment.airline,
+            airline: normalizeAirlineName(firstSegment.airline, firstSegment.flightNumber),
+            operatingAirline: normalizeAirlineName(firstSegment.airline, firstSegment.flightNumber),
             flightNumber: firstSegment.flightNumber,
             stops,
             cabinClass: normalizeCabinClass(input.cabin),
@@ -591,7 +651,9 @@ const buildDetailedUnifiedFlight = (
             airline: segment.airline,
             flightNumber: segment.flightNumber,
             aircraft: segment.aircraft,
-            marketedAirline: segment.marketedAirline || (!isUnknownAirline(segment.airline) ? segment.airline : undefined),
+            marketedAirline: segment.marketedAirline
+                ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
+                : (!isUnknownAirline(segment.airline) ? normalizeAirlineName(segment.airline, segment.flightNumber) : undefined),
             bookingClass: segment.bookingClass,
             tripDirection: segment.tripDirection,
         })),
@@ -631,7 +693,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         const fallbackDeparture = baseMs + index * 4 * 60 * 60 * 1000;
         const departureDateTime = toIsoOrFallback(segment.departureDateTime, fallbackDeparture);
         const arrivalDateTime = toIsoOrFallback(segment.arrivalDateTime, fallbackDeparture + 2 * 60 * 60 * 1000);
-        const airline = segment.airline || deriveAirlineFromFlightNumber(segment.flightNumber) || 'UNKN';
+        const airline = normalizeAirlineName(segment.airline || deriveAirlineFromFlightNumber(segment.flightNumber), segment.flightNumber);
         const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
 
         return {
@@ -672,7 +734,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         }
 
         if (!segment.marketedAirline && !isUnknownAirline(segment.airline)) {
-            segment.marketedAirline = segment.airline;
+            segment.marketedAirline = normalizeAirlineName(segment.airline, segment.flightNumber);
         }
     });
 
@@ -730,9 +792,11 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         ...base,
         extractedSegments: base.extractedSegments.map((segment) => ({
             ...segment,
-            airline: /^UNKN$/i.test(segment.airline) ? '' : segment.airline,
+            airline: /^UNKN$/i.test(segment.airline) ? '' : normalizeAirlineName(segment.airline, segment.flightNumber),
             flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
-            marketedAirline: segment.marketedAirline || (!isUnknownAirline(segment.airline) ? segment.airline : undefined),
+            marketedAirline: segment.marketedAirline
+                ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
+                : (!isUnknownAirline(segment.airline) ? normalizeAirlineName(segment.airline, segment.flightNumber) : undefined),
             bookingClass: segment.bookingClass || undefined,
         })),
         assessment: {

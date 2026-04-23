@@ -83,12 +83,12 @@ if (firstSegment.flightNumber !== '') {
   throw new Error(`Expected missing flight number to remain clean blank in extracted surface, received ${JSON.stringify(firstSegment)}`);
 }
 
-if (firstSegment.airline !== 'SQ') {
-  throw new Error(`Expected airline inference from neighboring SQ leg, received ${JSON.stringify(firstSegment)}`);
+if (firstSegment.airline !== 'SINGAPORE AIRLINES') {
+  throw new Error(`Expected airline inference and normalization to Singapore Airlines, received ${JSON.stringify(firstSegment)}`);
 }
 
 const secondSegment = result.extractedSegments[1];
-if (!secondSegment || secondSegment.marketedAirline !== 'SQ') {
+if (!secondSegment || secondSegment.marketedAirline !== 'SINGAPORE AIRLINES') {
   throw new Error(`Expected marketedAirline to default from SQ, received ${JSON.stringify(secondSegment)}`);
 }
 

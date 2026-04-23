@@ -52,7 +52,13 @@ const parseWarningSignals = (assessment: InputAssessment): WarningSignals => {
     const hasMatch = (warning: string, regex: RegExp): boolean => regex.test(warning);
 
     const missingBaggage = warnings.filter((warning) => hasMatch(warning, /missing baggage|baggage/i)).length;
-    const missingPrice = warnings.filter((warning) => hasMatch(warning, /price missing|price not detected/i)).length;
+    const missingPrice = warnings.filter((warning) => {
+        const normalized = warning.toLowerCase();
+        if (/manual price override used/i.test(normalized)) {
+            return false;
+        }
+        return /price missing|price not detected/i.test(normalized);
+    }).length;
     const missingSegmentTimes = warnings.filter((warning) => hasMatch(warning, /missing segment times|missing times/i)).length;
     const routeMismatch = warnings.filter((warning) => hasMatch(warning, /route mismatch/i)).length;
     const unrealisticLayover = warnings.filter((warning) => hasMatch(warning, /unrealistic layover|negative layover|chronology/i)).length;

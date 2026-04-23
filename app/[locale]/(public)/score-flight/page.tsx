@@ -252,6 +252,7 @@ export default function ScoreFlightPage() {
                         ...(segment.aircraft && { aircraft: segment.aircraft.trim() }),
                         ...(segment.marketedAirline && { marketedAirline: segment.marketedAirline.trim() }),
                         ...(segment.bookingClass && { bookingClass: segment.bookingClass.trim().toUpperCase() }),
+                        ...(segment.tripDirection && { tripDirection: segment.tripDirection }),
                     })),
                 }),
             };
