@@ -394,16 +394,60 @@ const extractLabeledDateTime = (lines: string[], start: number, end: number, lab
         if (!upper.startsWith(normalizedLabel)) continue;
 
         const raw = extractLabeledText(lines, i, Math.min(end, i + 2), label);
-        if (!raw) return undefined;
+        const contextLines: string[] = [];
+        for (let j = i + 1; j <= Math.min(end, i + 6); j += 1) {
+            const candidate = lines[j]?.trim();
+            if (!candidate) continue;
+            contextLines.push(candidate);
+        }
 
-        const parsedExplicit = parseDateTimesFromContext(raw);
+        const richContext = [raw || '', ...contextLines].join(' ').trim();
+        if (!richContext) return undefined;
+
+        const parsedExplicit = parseDateTimesFromContext(richContext);
         if (parsedExplicit.departure) {
             return parsedExplicit.departure;
         }
 
         const nearestDate = findNearestExplicitDate(lines, i, fallbackDate);
-        const parsed = parseDateTimesFromContext(raw, nearestDate || fallbackDate);
+        const parsed = parseDateTimesFromContext(richContext, nearestDate || fallbackDate);
         return parsed.departure;
+    }
+
+    return undefined;
+};
+
+const extractRouteCodesFromLine = (line: string): { from: string; to: string } | undefined => {
+    const routeCodes = Array.from(line.matchAll(/\(([A-Z]{3})\)/g)).map((match) => match[1].toUpperCase());
+    if (routeCodes.length >= 2) {
+        return {
+            from: routeCodes[0],
+            to: routeCodes[1],
+        };
+    }
+
+    const directRoute = line.match(/\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/i);
+    if (directRoute) {
+        return {
+            from: directRoute[1].toUpperCase(),
+            to: directRoute[2].toUpperCase(),
+        };
+    }
+
+    return undefined;
+};
+
+const findRouteNearFlightLine = (lines: string[], flightLineIndex: number): { from: string; to: string; index: number } | undefined => {
+    for (let distance = 1; distance <= 3; distance += 1) {
+        const candidateIndex = flightLineIndex - distance;
+        if (candidateIndex < 0) break;
+        const route = extractRouteCodesFromLine(lines[candidateIndex]);
+        if (route) {
+            return {
+                ...route,
+                index: candidateIndex,
+            };
+        }
     }
 
     return undefined;
@@ -476,13 +520,37 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
         const flightMatch = line.match(FLIGHT_LINE_REGEX);
         if (!flightMatch) continue;
 
+        let nextFlightIndex = -1;
+        for (let cursor = i + 1; cursor < lines.length; cursor += 1) {
+            if (FLIGHT_LINE_REGEX.test(lines[cursor])) {
+                nextFlightIndex = cursor;
+                break;
+            }
+        }
+
+        const routeNearFlight = findRouteNearFlightLine(lines, i);
+        const blockEnd = nextFlightIndex >= 0 ? nextFlightIndex - 1 : lines.length - 1;
+
+        let fromCode: string | undefined;
+        let toCode: string | undefined;
+        let blockStart = routeNearFlight?.index ?? i;
+
         const previousAirport = findNearestAirportBefore(lines, i - 1);
         const nextAirport = findNearestAirportAfter(lines, i + 1);
-        if (!previousAirport || !nextAirport) continue;
+        if (routeNearFlight) {
+            fromCode = routeNearFlight.from;
+            toCode = routeNearFlight.to;
+        } else if (previousAirport && nextAirport) {
+            fromCode = previousAirport.code;
+            toCode = nextAirport.code;
+            blockStart = previousAirport.index;
+        } else {
+            continue;
+        }
 
         const direction = currentDirection;
 
-        const blockLines = lines.slice(previousAirport.index, nextAirport.index + 1);
+        const blockLines = lines.slice(blockStart, blockEnd + 1);
         const blockText = blockLines.join(' ');
         const blockDate = findNearestExplicitDate(lines, i, extractFirstDateContext(blockText) || currentSectionDate || fallbackDate);
         const departure = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Depart:', blockDate);
@@ -497,8 +565,8 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
         const airline = normalizeAirline(blockText, flightCode) || flightCode;
 
         const dedupeKey = [
-            previousAirport.code,
-            nextAirport.code,
+            fromCode,
+            toCode,
             departure || '',
             arrival || '',
             flightNumber,
@@ -509,8 +577,8 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
         seen.add(dedupeKey);
 
         segments.push({
-            from: previousAirport.code,
-            to: nextAirport.code,
+            from: fromCode,
+            to: toCode,
             departure,
             arrival,
             airline,
