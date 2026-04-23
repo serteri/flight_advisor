@@ -5,6 +5,8 @@ type ParsedSegment = {
     arrival?: string;
     airline?: string;
     flightNumber?: string;
+    aircraft?: string;
+    tripDirection?: 'OUTBOUND' | 'INBOUND';
 };
 
 type ParsedTrip = {
@@ -47,6 +49,8 @@ const AIRLINE_NAME_TO_CODE: Record<string, string> = {
 const ROUTE_REGEX = /\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/gi;
 const ALT_ROUTE_REGEX = /from\s+([A-Z]{3})\s+to\s+([A-Z]{3})/gi;
 const FLIGHT_NUMBER_REGEX = /\b([A-Z]{2,3})\s?-?(\d{1,4})(?!:)\b/g;
+const FLIGHT_LINE_REGEX = /^\|?\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/i;
+const AIRPORT_WITH_IATA_REGEX = /([A-Za-z][A-Za-z0-9'.,\-\/\s]*?)\(([A-Z]{3})\)/;
 
 const ISO_DATE_TIME_REGEX = /\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+\-]\d{2}:?\d{2})?\b/gi;
 const DATE_WITH_MONTH_REGEX = /\b\d{1,2}\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}\b/gi;
@@ -233,8 +237,13 @@ const extractBaggage = (text: string): {
         || text.match(/(\d{1,2})\s?kg[^\n\r]{0,20}?(?:checked|check-in)/i);
     const cabinMatch = text.match(/(?:cabin|carry[-\s]?on|hand\s*baggage)[^\n\r]{0,30}?(\d{1,2})\s?kg/i)
         || text.match(/(\d{1,2})\s?kg[^\n\r]{0,25}?(?:cabin|carry[-\s]?on|hand\s*baggage)/i);
+    const repeatedBaggageMatches = Array.from(text.matchAll(/Baggage:\s*(\d{1,2})\s*K\b/gi))
+        .map((match) => Number(match[1]))
+        .filter((value) => Number.isFinite(value) && value > 0);
 
-    const checkedBaggageKg = checkedMatch ? Number(checkedMatch[1]) : null;
+    const checkedBaggageKg = checkedMatch
+        ? Number(checkedMatch[1])
+        : (repeatedBaggageMatches.length ? Math.max(...repeatedBaggageMatches) : null);
     const cabinBaggageKg = cabinMatch ? Number(cabinMatch[1]) : null;
 
     const checkedIncluded = /(?:checked|check-in)[^\n\r]{0,20}included|included[^\n\r]{0,20}(?:checked|check-in)/i.test(text)
@@ -256,6 +265,123 @@ const normalizeAirline = (context: string, flightCode?: string): string | undefi
     }
     if (flightCode && /^[A-Z]{2,3}$/.test(flightCode)) return flightCode;
     return undefined;
+};
+
+const normalizeDirection = (line: string): 'OUTBOUND' | 'INBOUND' | undefined => {
+    const normalized = line.trim().toUpperCase();
+    if (normalized.includes('OUTBOUND FLIGHT')) return 'OUTBOUND';
+    if (normalized.includes('INBOUND FLIGHT')) return 'INBOUND';
+    return undefined;
+};
+
+const extractLabeledText = (lines: string[], start: number, end: number, label: string): string | undefined => {
+    const normalizedLabel = label.toUpperCase();
+
+    for (let i = start; i <= end; i += 1) {
+        const line = lines[i];
+        const upper = line.toUpperCase();
+        if (!upper.startsWith(normalizedLabel)) continue;
+
+        const inline = line.slice(label.length).trim();
+        if (inline) {
+            return inline.replace(/^[:\-]\s*/, '').trim();
+        }
+
+        for (let j = i + 1; j <= Math.min(end, i + 2); j += 1) {
+            const candidate = lines[j]?.trim();
+            if (!candidate) continue;
+            if (/^[A-Za-z ]+:$/.test(candidate)) break;
+            return candidate;
+        }
+    }
+
+    return undefined;
+};
+
+const extractLabeledDateTime = (lines: string[], start: number, end: number, label: string, fallbackDate?: Date): string | undefined => {
+    const raw = extractLabeledText(lines, start, end, label);
+    if (!raw) return undefined;
+    const parsed = parseDateTimesFromContext(raw, fallbackDate);
+    return parsed.departure;
+};
+
+const findNearestAirportBefore = (lines: string[], fromIndex: number) => {
+    for (let i = fromIndex; i >= 0; i -= 1) {
+        const match = lines[i].match(AIRPORT_WITH_IATA_REGEX);
+        if (match) {
+            return { index: i, code: match[2].toUpperCase(), name: match[1].trim() };
+        }
+    }
+    return null;
+};
+
+const findNearestAirportAfter = (lines: string[], fromIndex: number) => {
+    for (let i = fromIndex; i < lines.length; i += 1) {
+        const match = lines[i].match(AIRPORT_WITH_IATA_REGEX);
+        if (match) {
+            return { index: i, code: match[2].toUpperCase(), name: match[1].trim() };
+        }
+    }
+    return null;
+};
+
+const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): ParsedSegment[] => {
+    const segments: ParsedSegment[] = [];
+    const seen = new Set<string>();
+    let currentDirection: 'OUTBOUND' | 'INBOUND' | undefined;
+
+    for (let i = 0; i < lines.length; i += 1) {
+        const line = lines[i];
+        const detectedDirection = normalizeDirection(line);
+        if (detectedDirection) {
+            currentDirection = detectedDirection;
+            continue;
+        }
+
+        const flightMatch = line.match(FLIGHT_LINE_REGEX);
+        if (!flightMatch) continue;
+
+        const previousAirport = findNearestAirportBefore(lines, i - 1);
+        const nextAirport = findNearestAirportAfter(lines, i + 1);
+        if (!previousAirport || !nextAirport) continue;
+
+        const direction = currentDirection;
+
+        const blockLines = lines.slice(previousAirport.index, nextAirport.index + 1);
+        const blockText = blockLines.join(' ');
+        const blockDate = extractFirstDateContext(blockText) || fallbackDate;
+        const departure = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Depart:', blockDate);
+        const arrival = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Arrive:', blockDate);
+        const aircraft = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Aircraft:');
+        const flightCode = flightMatch[1].toUpperCase();
+        const flightNumber = `${flightCode}${flightMatch[2]}`;
+        const airline = normalizeAirline(blockText, flightCode) || flightCode;
+
+        const dedupeKey = [
+            previousAirport.code,
+            nextAirport.code,
+            departure || '',
+            arrival || '',
+            flightNumber,
+            direction || '',
+        ].join('|');
+
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        segments.push({
+            from: previousAirport.code,
+            to: nextAirport.code,
+            departure,
+            arrival,
+            airline,
+            flightNumber,
+            aircraft: aircraft || undefined,
+            tripDirection: direction,
+        });
+    }
+
+    return segments;
 };
 
 const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => {
@@ -316,6 +442,10 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
         parseLine(lines[i], i, ALT_ROUTE_REGEX);
     }
 
+    for (const segment of extractConfirmationSegments(lines, fallbackDate)) {
+        segments.push(segment);
+    }
+
     const deduped: ParsedSegment[] = [];
     const dedupeSet = new Set<string>();
     for (const segment of segments) {
@@ -325,6 +455,7 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
             segment.departure || '',
             segment.arrival || '',
             segment.flightNumber || '',
+            segment.tripDirection || '',
         ].join('|');
         if (!dedupeSet.has(dedupeKey)) {
             dedupeSet.add(dedupeKey);
@@ -340,6 +471,9 @@ const computeLayovers = (segments: ParsedSegment[], warnings: string[]): number[
     for (let i = 0; i < segments.length - 1; i += 1) {
         const current = segments[i];
         const next = segments[i + 1];
+        if (current.tripDirection && next.tripDirection && current.tripDirection !== next.tripDirection) {
+            continue;
+        }
         if (!current.arrival || !next.departure) continue;
         const diff = Math.round((Date.parse(next.departure) - Date.parse(current.arrival)) / 60_000);
         layovers.push(diff);
@@ -374,6 +508,9 @@ const validateSegments = (segments: ParsedSegment[], warnings: string[]): { inco
 
         if (i < segments.length - 1) {
             const next = segments[i + 1];
+            if (segment.tripDirection && next.tripDirection && segment.tripDirection !== next.tripDirection) {
+                continue;
+            }
             if (segment.to !== next.from) {
                 warnings.push(`Route mismatch between segment ${i + 1} and ${i + 2}: ${segment.to} != ${next.from}.`);
             }

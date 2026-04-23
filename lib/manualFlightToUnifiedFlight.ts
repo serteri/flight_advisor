@@ -50,6 +50,7 @@ const itinerarySegmentSchema = z.object({
     aircraft: z.string().trim().min(1).optional(),
     marketedAirline: z.string().trim().min(1).optional(),
     bookingClass: z.string().trim().min(1).max(4).optional(),
+    tripDirection: z.enum(['OUTBOUND', 'INBOUND']).optional(),
 });
 
 const detailedScoreInputSchema = z.object({
@@ -309,7 +310,6 @@ const buildDetailedUnifiedFlight = (
     const firstSegment = sortedSegments[0];
     const lastSegment = sortedSegments[sortedSegments.length - 1];
 
-    const totalDuration = durationBetween(firstSegment.departureDateTime, lastSegment.arrivalDateTime);
     const stops = Math.max(0, sortedSegments.length - 1);
 
     const layovers: FlightLayover[] = [];
@@ -323,6 +323,12 @@ const buildDetailedUnifiedFlight = (
     for (let i = 0; i < sortedSegments.length - 1; i += 1) {
         const current = sortedSegments[i];
         const next = sortedSegments[i + 1];
+        const isDirectionBoundary = current.tripDirection && next.tripDirection && current.tripDirection !== next.tripDirection;
+
+        if (isDirectionBoundary) {
+            comfortNotes.push(`Detected ${next.tripDirection?.toLowerCase()} leg boundary; skipping connection-risk checks across trip directions.`);
+            continue;
+        }
 
         const layoverDuration = durationBetween(current.arrivalDateTime, next.departureDateTime);
         totalLayoverMinutes += layoverDuration;
@@ -349,6 +355,8 @@ const buildDetailedUnifiedFlight = (
             riskFlags.push(`Airline change ${current.airline} -> ${next.airline} may imply self-transfer risk.`);
         }
     }
+
+    const totalDuration = totalLayoverMinutes + segmentDurations.reduce((sum, value) => sum + value, 0);
 
     if (isUnrealisticLongHaulDuration(firstSegment.from, lastSegment.to, totalDuration)) {
         riskFlags.push('Total itinerary duration appears unrealistically short for this long-haul route.');
@@ -490,6 +498,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             arrivalDateTime: segment.arrival,
             airline: segment.airline,
             flightNumber: segment.flightNumber,
+            aircraft: segment.aircraft,
+            tripDirection: segment.tripDirection,
         }));
 
     const baseMs = Date.now() + 24 * 60 * 60 * 1000;
@@ -518,6 +528,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             arrivalDateTime,
             airline,
             flightNumber,
+            aircraft: segment.aircraft,
+            tripDirection: segment.tripDirection,
         };
     });
 
