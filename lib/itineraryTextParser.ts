@@ -46,16 +46,34 @@ const AIRLINE_NAME_TO_CODE: Record<string, string> = {
     KLM: 'KL',
 };
 
+const WEEKDAY_TOKENS = new Set(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']);
+
 const ROUTE_REGEX = /\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/gi;
 const ALT_ROUTE_REGEX = /from\s+([A-Z]{3})\s+to\s+([A-Z]{3})/gi;
 const FLIGHT_NUMBER_REGEX = /\b([A-Z]{2,3})\s?-?(\d{1,4})(?!:)\b/g;
-const FLIGHT_LINE_REGEX = /^\|?\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/i;
+const FLIGHT_LINE_REGEX = /^\s*\|\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/i;
 const AIRPORT_WITH_IATA_REGEX = /([A-Za-z][A-Za-z0-9'.,\-\/\s]*?)\(([A-Z]{3})\)/;
 
 const ISO_DATE_TIME_REGEX = /\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+\-]\d{2}:?\d{2})?\b/gi;
-const DATE_WITH_MONTH_REGEX = /\b\d{1,2}\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}\b/gi;
+const DATE_WITH_MONTH_REGEX = /\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?\d{1,2}\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}\b/gi;
 const DATE_SLASH_REGEX = /\b\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\b/g;
-const TIME_REGEX = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g;
+const TIME_REGEX = /\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s?(?:am|pm))?\b/gi;
+const TEXTUAL_DATETIME_REGEX = /\b(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(\d{1,2})\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\d{4})\s(\d{1,2}):(\d{2})(?:\s?(am|pm))\b/gi;
+
+const MONTH_INDEX: Record<string, number> = {
+    JAN: 0,
+    FEB: 1,
+    MAR: 2,
+    APR: 3,
+    MAY: 4,
+    JUN: 5,
+    JUL: 6,
+    AUG: 7,
+    SEP: 8,
+    OCT: 9,
+    NOV: 10,
+    DEC: 11,
+};
 
 const CURRENCY_SYMBOL_MAP: Record<string, string> = {
     '$': 'USD',
@@ -70,6 +88,8 @@ const dedupeWarnings = (warnings: string[]): string[] => {
 };
 
 const toIso = (date: Date): string => new Date(date.getTime()).toISOString();
+
+const isWeekdayToken = (value?: string): boolean => WEEKDAY_TOKENS.has((value || '').trim().toUpperCase());
 
 const parseNumber = (raw: string): number | undefined => {
     const cleaned = raw.replace(/\s/g, '');
@@ -103,13 +123,15 @@ const normalizeCabin = (text: string): ParsedTrip['cabin'] | undefined => {
 };
 
 const parseDateOnly = (token: string): Date | undefined => {
-    const fromMonth = Date.parse(token);
+    const sanitizedToken = token.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i, '').trim();
+
+    const fromMonth = Date.parse(sanitizedToken);
     if (Number.isFinite(fromMonth)) {
         const d = new Date(fromMonth);
         return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
     }
 
-    const slash = token.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+    const slash = sanitizedToken.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
     if (!slash) return undefined;
     const first = Number(slash[1]);
     const second = Number(slash[2]);
@@ -144,12 +166,36 @@ const extractFirstDateContext = (text: string): Date | undefined => {
 };
 
 const parseTimeToIso = (date: Date, hhmm: string): string | undefined => {
-    const match = hhmm.match(/^(\d{1,2}):(\d{2})$/);
+    const match = hhmm.trim().match(/^(\d{1,2}):(\d{2})(?:\s?(am|pm))?$/i);
     if (!match) return undefined;
-    const hour = Number(match[1]);
+    let hour = Number(match[1]);
     const minute = Number(match[2]);
+    const meridiem = match[3]?.toLowerCase();
+    if (meridiem === 'pm' && hour < 12) hour += 12;
+    if (meridiem === 'am' && hour === 12) hour = 0;
     if (hour > 23 || minute > 59) return undefined;
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), hour, minute, 0)).toISOString();
+};
+
+const parseTextualDateTime = (value: string): string | undefined => {
+    const match = value.trim().match(/^(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(\d{1,2})\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\d{4})\s(\d{1,2}):(\d{2})(?:\s?(am|pm))$/i);
+    if (!match) return undefined;
+
+    const day = Number(match[2]);
+    const month = MONTH_INDEX[match[3].toUpperCase()];
+    const year = Number(match[4]);
+    let hour = Number(match[5]);
+    const minute = Number(match[6]);
+    const meridiem = match[7]?.toLowerCase();
+
+    if (!Number.isFinite(day) || month === undefined || !Number.isFinite(year) || !Number.isFinite(hour) || !Number.isFinite(minute)) {
+        return undefined;
+    }
+
+    if (meridiem === 'pm' && hour < 12) hour += 12;
+    if (meridiem === 'am' && hour === 12) hour = 0;
+
+    return new Date(Date.UTC(year, month, day, hour, minute, 0)).toISOString();
 };
 
 const parseDateTimesFromContext = (context: string, fallbackDate?: Date): { departure?: string; arrival?: string } => {
@@ -168,6 +214,22 @@ const parseDateTimesFromContext = (context: string, fallbackDate?: Date): { depa
     }
     if (explicitDateTimes.length >= 2) {
         return { departure: explicitDateTimes[0], arrival: explicitDateTimes[1] };
+    }
+
+    const textualMatches = Array.from(context.matchAll(TEXTUAL_DATETIME_REGEX));
+    for (const match of textualMatches) {
+        const token = match[0];
+        const iso = parseTextualDateTime(token);
+        if (iso && !seen.has(iso)) {
+            explicitDateTimes.push(iso);
+            seen.add(iso);
+        }
+    }
+    if (explicitDateTimes.length >= 2) {
+        return { departure: explicitDateTimes[0], arrival: explicitDateTimes[1] };
+    }
+    if (explicitDateTimes.length === 1) {
+        return { departure: explicitDateTimes[0] };
     }
 
     const localDate = extractFirstDateContext(context) || fallbackDate;
@@ -263,7 +325,7 @@ const normalizeAirline = (context: string, flightCode?: string): string | undefi
     for (const [name, code] of Object.entries(AIRLINE_NAME_TO_CODE)) {
         if (normalized.includes(name)) return code;
     }
-    if (flightCode && /^[A-Z]{2,3}$/.test(flightCode)) return flightCode;
+    if (flightCode && /^[A-Z]{2,3}$/.test(flightCode) && !isWeekdayToken(flightCode)) return flightCode;
     return undefined;
 };
 
@@ -414,8 +476,9 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
             const flight = flightFromLine || flightFromContext;
 
             const flightCode = flight?.[1]?.toUpperCase();
-            const flightNumber = flight ? `${flightCode}${flight[2]}` : undefined;
-            const airline = normalizeAirline(context, flightCode);
+            const validFlightCode = flightCode && !isWeekdayToken(flightCode) ? flightCode : undefined;
+            const flightNumber = flight && validFlightCode ? `${validFlightCode}${flight[2]}` : undefined;
+            const airline = normalizeAirline(context, validFlightCode);
             const lineDate = extractFirstDateContext(line) || fallbackDate;
             const dateTimesFromLine = parseDateTimesFromContext(line, lineDate);
             const dateTimesFromContext = (!dateTimesFromLine.departure || !dateTimesFromLine.arrival)
