@@ -37,6 +37,8 @@ type RecommendationExplanation = {
     missingFactors: string[];
 };
 
+type PassengerPricingContext = NonNullable<InputAssessment['passengerPricingContext']>;
+
 const normalizeDecision = (action?: string): ManualDecision => {
     if (action === 'BUY') return 'BUY';
     if (action === 'WAIT') return 'WAIT';
@@ -118,6 +120,10 @@ const computeModeConfidence = (
     const parseConfidence = assessment.parseConfidence ?? (mode === 'quick' ? 0.5 : 0.65);
     const warningPenalty = signals.severityPenalty + (signals.totalWarnings * 0.8);
     const confidenceCap = computeConfidenceCap(mode, signals, derived);
+    const passengerContext = assessment.passengerPricingContext;
+    const passengerPenalty = passengerContext?.mixedTravelerTypes
+        ? 8
+        : (passengerContext && passengerContext.totalTravelers > 1 ? 4 : 0);
 
     if (mode === 'quick') {
         const quickRaw =
@@ -125,7 +131,8 @@ const computeModeConfidence = (
             + (assessment.completenessScore * 14)
             + (assessment.realismScore * 6)
             + (parseConfidence * 10)
-            - warningPenalty;
+            - warningPenalty
+            - passengerPenalty;
         const blended = (quickRaw * 0.7) + (baseConfidence * 0.3);
         return Number(clamp(Math.min(blended, confidenceCap), 35, 62).toFixed(1));
     }
@@ -146,7 +153,7 @@ const computeModeConfidence = (
             ? 2
             : 0;
 
-    const blended = ((detailedConfidenceRaw - realismPenalty - baggagePenalty - feasibilityPenalty - warningPenalty) * 0.65)
+    const blended = ((detailedConfidenceRaw - realismPenalty - baggagePenalty - feasibilityPenalty - warningPenalty - passengerPenalty) * 0.65)
         + (baseConfidence * 0.35);
 
     return Number(clamp(Math.min(blended, confidenceCap), 44, 90).toFixed(1));
@@ -208,6 +215,16 @@ const buildModeExplanation = (
 
     if (assessment.baggageConfidenceScore < 0.7) {
         notes.push('Baggage confidence is limited because exact allowance details are incomplete.');
+    }
+
+    if (assessment.passengerPricingContext) {
+        const passengerContext = assessment.passengerPricingContext;
+        if (passengerContext.totalTravelers > 1) {
+            notes.push(`Price reflects ${passengerContext.totalTravelers} travelers; benchmark comparison uses an estimated per-traveler amount.`);
+        }
+        if (passengerContext.mixedTravelerTypes) {
+            notes.push('Child/infant pricing reduces direct comparability to standard adult fare benchmarks.');
+        }
     }
 
     if (!assessment.priceContextAvailable) {
@@ -278,6 +295,12 @@ const buildRecommendationExplanation = (
     if (signals.partialExtraction > 0) {
         missingFactors.push('Only partial segment extraction was possible from pasted text.');
     }
+    if (assessment.passengerPricingContext?.totalTravelers && assessment.passengerPricingContext.totalTravelers > 1) {
+        missingFactors.push('Price reflects multiple travelers.');
+    }
+    if (assessment.passengerPricingContext?.mixedTravelerTypes) {
+        negativeFactors.push('Child/infant pricing reduces direct comparability to standard adult fare benchmarks.');
+    }
 
     const parserWarnings = (assessment.parseWarnings || []).slice(0, 4);
     const missingDataWarnings = [
@@ -322,6 +345,16 @@ export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
         const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
+        const passengerPricingContext = assessment.passengerPricingContext;
+        const scoringComparablePrice = passengerPricingContext && passengerPricingContext.totalTravelers > 1
+            ? passengerPricingContext.comparablePerTravelerPrice
+            : unifiedFlight.price;
+        const scoringFlight = scoringComparablePrice !== unifiedFlight.price
+            ? {
+                ...unifiedFlight,
+                price: scoringComparablePrice,
+            }
+            : unifiedFlight;
 
         // Record parser metrics
         try {
@@ -339,11 +372,18 @@ export async function POST(request: NextRequest) {
             console.debug('[ParserMetrics] Error recording metric:', err);
         }
 
-        const [scoredFlight] = await applyAdvancedFlightScoring([unifiedFlight], {
-            origin: unifiedFlight.from,
-            destination: unifiedFlight.to,
-            departureDate: unifiedFlight.departureTime,
+        const [scoredComparableFlight] = await applyAdvancedFlightScoring([scoringFlight], {
+            origin: scoringFlight.from,
+            destination: scoringFlight.to,
+            departureDate: scoringFlight.departureTime,
         });
+
+        const scoredFlight = scoredComparableFlight
+            ? {
+                ...unifiedFlight,
+                score: scoredComparableFlight.score,
+            }
+            : null;
 
         if (!scoredFlight) {
             return NextResponse.json({ error: 'Unable to score itinerary input' }, { status: 500 });
@@ -493,6 +533,7 @@ export async function POST(request: NextRequest) {
             extractedSegments,
             parseWarnings: assessment.parseWarnings || [],
             parseConfidence: assessment.parseConfidence,
+            passengerPricingContext,
             _selfCheck: selfChecked.debug,
             confidenceInputs: {
                 baseConfidence,
@@ -505,6 +546,7 @@ export async function POST(request: NextRequest) {
                 connectionFeasibility: derived.connectionFeasibility,
                 routeRealism: derived.routeRealism,
                 warningSignals,
+                passengerPricingContext,
             },
             needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'

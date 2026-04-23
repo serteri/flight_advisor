@@ -15,6 +15,9 @@ type ParsedTrip = {
     cabin?: 'economy' | 'premium' | 'business' | 'first';
     checkedBaggageKg: number | null;
     cabinBaggageKg: number | null;
+    adults: number;
+    children: number;
+    infants: number;
 };
 
 type ParsedMeta = {
@@ -124,6 +127,16 @@ const normalizeCabin = (text: string): ParsedTrip['cabin'] | undefined => {
 
 const parseDateOnly = (token: string): Date | undefined => {
     const sanitizedToken = token.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+/i, '').trim();
+
+    const textualMatch = sanitizedToken.match(/^(\d{1,2})\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\d{4})$/i);
+    if (textualMatch) {
+        const day = Number(textualMatch[1]);
+        const month = MONTH_INDEX[textualMatch[2].toUpperCase()];
+        const year = Number(textualMatch[3]);
+        if (month !== undefined && day >= 1 && day <= 31) {
+            return new Date(Date.UTC(year, month, day));
+        }
+    }
 
     const fromMonth = Date.parse(sanitizedToken);
     if (Number.isFinite(fromMonth)) {
@@ -320,6 +333,19 @@ const extractBaggage = (text: string): {
     };
 };
 
+const extractPassengerCounts = (text: string): { adults: number; children: number; infants: number } => {
+    const countFrom = (pattern: RegExp): number => {
+        const match = text.match(pattern);
+        return match ? Number(match[1]) : 0;
+    };
+
+    const adults = countFrom(/\b(\d+)\s*(?:adult|adults|adt)\b/i) || 1;
+    const children = countFrom(/\b(\d+)\s*(?:child|children|chd)\b/i);
+    const infants = countFrom(/\b(\d+)\s*(?:infant|infants|inf)\b/i);
+
+    return { adults, children, infants };
+};
+
 const normalizeAirline = (context: string, flightCode?: string): string | undefined => {
     const normalized = context.toUpperCase();
     for (const [name, code] of Object.entries(AIRLINE_NAME_TO_CODE)) {
@@ -361,10 +387,50 @@ const extractLabeledText = (lines: string[], start: number, end: number, label: 
 };
 
 const extractLabeledDateTime = (lines: string[], start: number, end: number, label: string, fallbackDate?: Date): string | undefined => {
-    const raw = extractLabeledText(lines, start, end, label);
-    if (!raw) return undefined;
-    const parsed = parseDateTimesFromContext(raw, fallbackDate);
-    return parsed.departure;
+    const normalizedLabel = label.toUpperCase();
+
+    for (let i = start; i <= end; i += 1) {
+        const upper = lines[i].toUpperCase();
+        if (!upper.startsWith(normalizedLabel)) continue;
+
+        const raw = extractLabeledText(lines, i, Math.min(end, i + 2), label);
+        if (!raw) return undefined;
+
+        const parsedExplicit = parseDateTimesFromContext(raw);
+        if (parsedExplicit.departure) {
+            return parsedExplicit.departure;
+        }
+
+        const nearestDate = findNearestExplicitDate(lines, i, fallbackDate);
+        const parsed = parseDateTimesFromContext(raw, nearestDate || fallbackDate);
+        return parsed.departure;
+    }
+
+    return undefined;
+};
+
+const findNearestExplicitDate = (lines: string[], centerIndex: number, fallbackDate?: Date): Date | undefined => {
+    for (let distance = 0; distance <= 6; distance += 1) {
+        const beforeIndex = centerIndex - distance;
+        if (beforeIndex >= 0) {
+            const parsedBefore = extractFirstDateContext(lines[beforeIndex]);
+            if (parsedBefore) return parsedBefore;
+        }
+    }
+
+    if (fallbackDate) {
+        return fallbackDate;
+    }
+
+    for (let distance = 1; distance <= 6; distance += 1) {
+        const afterIndex = centerIndex + distance;
+        if (afterIndex < lines.length) {
+            const parsedAfter = extractFirstDateContext(lines[afterIndex]);
+            if (parsedAfter) return parsedAfter;
+        }
+    }
+
+    return fallbackDate;
 };
 
 const findNearestAirportBefore = (lines: string[], fromIndex: number) => {
@@ -391,12 +457,19 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
     const segments: ParsedSegment[] = [];
     const seen = new Set<string>();
     let currentDirection: 'OUTBOUND' | 'INBOUND' | undefined;
+    let currentSectionDate: Date | undefined = fallbackDate;
 
     for (let i = 0; i < lines.length; i += 1) {
         const line = lines[i];
+        const explicitLineDate = extractFirstDateContext(line);
+        if (explicitLineDate) {
+            currentSectionDate = explicitLineDate;
+        }
+
         const detectedDirection = normalizeDirection(line);
         if (detectedDirection) {
             currentDirection = detectedDirection;
+            currentSectionDate = extractFirstDateContext(line) || currentSectionDate;
             continue;
         }
 
@@ -411,10 +484,14 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
 
         const blockLines = lines.slice(previousAirport.index, nextAirport.index + 1);
         const blockText = blockLines.join(' ');
-        const blockDate = extractFirstDateContext(blockText) || fallbackDate;
+        const blockDate = findNearestExplicitDate(lines, i, extractFirstDateContext(blockText) || currentSectionDate || fallbackDate);
         const departure = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Depart:', blockDate);
-        const arrival = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Arrive:', blockDate);
+        let arrival = extractLabeledDateTime(blockLines, 0, blockLines.length - 1, 'Arrive:', blockDate);
         const aircraft = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Aircraft:');
+
+        if (departure && arrival && Date.parse(arrival) <= Date.parse(departure)) {
+            arrival = new Date(Date.parse(arrival) + 24 * 60 * 60 * 1000).toISOString();
+        }
         const flightCode = flightMatch[1].toUpperCase();
         const flightNumber = `${flightCode}${flightMatch[2]}`;
         const airline = normalizeAirline(blockText, flightCode) || flightCode;
@@ -603,6 +680,7 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
 
     const priceData = extractPrice(text);
     const baggage = extractBaggage(text);
+    const passengers = extractPassengerCounts(text);
     const cabin = normalizeCabin(text);
     const refundable = /\bnon[-\s]?refundable\b/i.test(text)
         ? false
@@ -634,6 +712,9 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
             cabin,
             checkedBaggageKg: baggage.checkedBaggageKg,
             cabinBaggageKg: baggage.cabinBaggageKg,
+            adults: passengers.adults,
+            children: passengers.children,
+            infants: passengers.infants,
         },
         meta: {
             refundable,

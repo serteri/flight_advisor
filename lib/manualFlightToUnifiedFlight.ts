@@ -36,6 +36,9 @@ const quickScoreInputSchema = z.object({
     price: z.coerce.number().positive('Price must be greater than 0'),
     currency: z.string().trim().toUpperCase().length(3).default('USD'),
     stops: z.coerce.number().int().min(0).max(4),
+    adults: z.coerce.number().int().min(1).max(9).default(1),
+    children: z.coerce.number().int().min(0).max(8).default(0),
+    infants: z.coerce.number().int().min(0).max(8).default(0),
     airline: z.string().trim().min(1).optional(),
     cabin: z.enum(['economy', 'premium', 'business', 'first']).optional(),
 });
@@ -58,6 +61,9 @@ const detailedScoreInputSchema = z.object({
     totalPrice: z.coerce.number().positive('Total price must be greater than 0'),
     currency: z.string().trim().toUpperCase().length(3).default('USD'),
     cabin: z.enum(['economy', 'premium', 'business', 'first']).default('economy'),
+    adults: z.coerce.number().int().min(1).max(9).default(1),
+    children: z.coerce.number().int().min(0).max(8).default(0),
+    infants: z.coerce.number().int().min(0).max(8).default(0),
     checkedBaggageKg: z.coerce.number().min(0).max(64).optional(),
     cabinBaggageKg: z.coerce.number().min(0).max(20).optional(),
     refundable: z.boolean().optional(),
@@ -70,6 +76,9 @@ const pasteScoreInputSchema = z.object({
     price: z.coerce.number().positive().optional(),
     currency: z.string().trim().toUpperCase().length(3).optional(),
     cabin: z.enum(['economy', 'premium', 'business', 'first']).optional(),
+    adults: z.coerce.number().int().min(1).max(9).default(1),
+    children: z.coerce.number().int().min(0).max(8).default(0),
+    infants: z.coerce.number().int().min(0).max(8).default(0),
     checkedBaggageKg: z.coerce.number().min(0).max(64).optional(),
     cabinBaggageKg: z.coerce.number().min(0).max(20).optional(),
     refundable: z.boolean().optional(),
@@ -82,7 +91,7 @@ export const itineraryScoreInputSchema = z.discriminatedUnion('mode', [
     pasteScoreInputSchema,
 ]);
 
-export type ItineraryScoreInput = z.infer<typeof itineraryScoreInputSchema>;
+export type ItineraryScoreInput = z.input<typeof itineraryScoreInputSchema>;
 export type QuickScoreInput = z.infer<typeof quickScoreInputSchema>;
 export type DetailedScoreInput = z.infer<typeof detailedScoreInputSchema>;
 export type PasteScoreInput = z.infer<typeof pasteScoreInputSchema>;
@@ -110,6 +119,15 @@ export type InputAssessment = {
     airlineReliabilityMix: DerivedStructureMetrics['airlineReliabilityMix'];
     parseWarnings?: string[];
     parseConfidence?: number;
+    passengerPricingContext?: {
+        adults: number;
+        children: number;
+        infants: number;
+        totalTravelers: number;
+        totalPrice: number;
+        comparablePerTravelerPrice: number;
+        mixedTravelerTypes: boolean;
+    };
 };
 
 export type ParsedSegmentPreview = {
@@ -129,6 +147,31 @@ export type ItineraryConversionResult = {
     assessment: InputAssessment;
     derived: DerivedStructureMetrics;
     extractedSegments: ParsedSegmentPreview[];
+};
+
+const summarizePassengerPricingContext = (params: {
+    totalPrice: number;
+    adults: number;
+    children?: number;
+    infants?: number;
+}) => {
+    const adults = Math.max(1, params.adults || 1);
+    const children = Math.max(0, params.children || 0);
+    const infants = Math.max(0, params.infants || 0);
+    const totalTravelers = adults + children + infants;
+    const comparablePerTravelerPrice = totalTravelers > 0
+        ? Number((params.totalPrice / totalTravelers).toFixed(2))
+        : params.totalPrice;
+
+    return {
+        adults,
+        children,
+        infants,
+        totalTravelers,
+        totalPrice: params.totalPrice,
+        comparablePerTravelerPrice,
+        mixedTravelerTypes: children > 0 || infants > 0,
+    };
 };
 
 const normalizeCabinClass = (value?: string): CabinClass => {
@@ -231,6 +274,12 @@ const buildQuickUnifiedFlight = (
     }
 
     const baggageConfidenceScore = 0.45;
+    const passengerPricingContext = summarizePassengerPricingContext({
+        totalPrice: input.price,
+        adults: input.adults,
+        children: input.children,
+        infants: input.infants,
+    });
 
     const assessment: InputAssessment = {
         mode: 'quick',
@@ -243,6 +292,7 @@ const buildQuickUnifiedFlight = (
         selfTransferRisk: 'MEDIUM',
         baggageConfidenceScore,
         airlineReliabilityMix: airlineMix,
+        passengerPricingContext,
     };
 
     const derived: DerivedStructureMetrics = {
@@ -366,9 +416,21 @@ const buildDetailedUnifiedFlight = (
     const baggageConfidenceScore = typeof input.checkedBaggageKg === 'number'
         ? (typeof input.cabinBaggageKg === 'number' ? 0.95 : 0.8)
         : (typeof input.cabinBaggageKg === 'number' ? 0.6 : 0.45);
+    const passengerPricingContext = summarizePassengerPricingContext({
+        totalPrice: input.totalPrice,
+        adults: input.adults,
+        children: input.children,
+        infants: input.infants,
+    });
 
     if (typeof input.checkedBaggageKg !== 'number') {
         riskFlags.push('Checked baggage kg missing; baggage confidence reduced.');
+    }
+    if (passengerPricingContext.totalTravelers > 1) {
+        comfortNotes.push(`Fare reflects ${passengerPricingContext.totalTravelers} travelers; benchmark comparison uses an estimated per-traveler view.`);
+    }
+    if (passengerPricingContext.mixedTravelerTypes) {
+        riskFlags.push('Mixed traveler types reduce direct comparability to standard adult fare benchmarks.');
     }
 
     const completenessScore = Math.max(
@@ -426,6 +488,7 @@ const buildDetailedUnifiedFlight = (
         selfTransferRisk,
         baggageConfidenceScore,
         airlineReliabilityMix: airlineMix,
+        passengerPricingContext,
     };
 
     const derived: DerivedStructureMetrics = {
@@ -555,6 +618,9 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         totalPrice: inferredTotalPrice,
         currency: inferredCurrency,
         cabin: inferredCabin,
+        adults: input.adults ?? parsed.trip.adults ?? 1,
+        children: input.children ?? parsed.trip.children ?? 0,
+        infants: input.infants ?? parsed.trip.infants ?? 0,
         checkedBaggageKg: typeof input.checkedBaggageKg === 'number'
             ? input.checkedBaggageKg
             : parsed.trip.checkedBaggageKg ?? undefined,
