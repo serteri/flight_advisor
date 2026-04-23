@@ -52,6 +52,15 @@ interface ScoreResult {
         airlineReliabilityMix: string;
         baggageConfidenceScore: number;
     };
+    passengerPricingContext?: {
+        adults: number;
+        children: number;
+        infants: number;
+        totalTravelers: number;
+        totalPrice: number;
+        comparablePerTravelerPrice: number;
+        mixedTravelerTypes: boolean;
+    };
     insights: {
         decision: Decision;
         confidence: number;
@@ -157,6 +166,9 @@ export default function ScoreFlightPage() {
         price: "",
         currency: "USD",
         cabin: "",
+        adults: "",
+        children: "",
+        infants: "",
         checkedBaggageKg: "",
         refundable: false,
     });
@@ -217,6 +229,9 @@ export default function ScoreFlightPage() {
                 ...(overrides.price && { price: parseFloat(overrides.price) }),
                 ...(overrides.currency && { currency: overrides.currency.toUpperCase().trim() }),
                 ...(overrides.cabin && { cabin: overrides.cabin }),
+                ...(overrides.adults.trim() !== "" && { adults: parseInt(overrides.adults, 10) }),
+                ...(overrides.children.trim() !== "" && { children: parseInt(overrides.children, 10) }),
+                ...(overrides.infants.trim() !== "" && { infants: parseInt(overrides.infants, 10) }),
                 ...(overrides.checkedBaggageKg && { checkedBaggageKg: parseFloat(overrides.checkedBaggageKg) }),
                 refundable: overrides.refundable,
                 ...(segments.length > 0 && {
@@ -312,7 +327,7 @@ export default function ScoreFlightPage() {
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Optional overrides</div>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <input
                                 type="number"
                                 min="1"
@@ -340,6 +355,33 @@ export default function ScoreFlightPage() {
                                 <option value="business">Business</option>
                                 <option value="first">First</option>
                             </select>
+                            <input
+                                type="number"
+                                min="1"
+                                max="9"
+                                placeholder="Adults (auto)"
+                                value={overrides.adults}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, adults: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                            />
+                            <input
+                                type="number"
+                                min="0"
+                                max="8"
+                                placeholder="Children (auto)"
+                                value={overrides.children}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, children: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                            />
+                            <input
+                                type="number"
+                                min="0"
+                                max="8"
+                                placeholder="Infants (auto)"
+                                value={overrides.infants}
+                                onChange={(e) => setOverrides((prev) => ({ ...prev, infants: e.target.value }))}
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
+                            />
                             <input
                                 type="number"
                                 min="0"
@@ -435,6 +477,22 @@ export default function ScoreFlightPage() {
                                         <li key={index}>{warning}</li>
                                     ))}
                                 </ul>
+                            </div>
+                        )}
+
+                        {result.passengerPricingContext && (
+                            <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                                <div className="font-semibold mb-1">Passenger-aware price context</div>
+                                <p>
+                                    {result.passengerPricingContext.adults} adult, {result.passengerPricingContext.children} child, {result.passengerPricingContext.infants} infant
+                                    {" "}({result.passengerPricingContext.totalTravelers} traveler total). Entered total fare: {result.passengerPricingContext.totalPrice}.
+                                </p>
+                                {result.passengerPricingContext.totalTravelers > 1 && (
+                                    <p className="mt-1">
+                                        Comparable benchmark price per traveler: {result.passengerPricingContext.comparablePerTravelerPrice}
+                                        {result.passengerPricingContext.mixedTravelerTypes ? " (estimated due to mixed traveler types)." : "."}
+                                    </p>
+                                )}
                             </div>
                         )}
 
