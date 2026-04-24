@@ -398,10 +398,38 @@ export async function POST(request: NextRequest) {
             console.debug('[ParserMetrics] Error recording metric:', err);
         }
 
-        const [scoredComparableFlight] = await applyAdvancedFlightScoring([scoringFlight], {
-            origin: scoringFlight.from,
-            destination: scoringFlight.to,
+        // For round trips, unifiedFlight.to === unifiedFlight.from (same origin),
+        // which collapses great-circle distance to 0 and breaks duration scoring.
+        // Use the last outbound segment's destination as the scoring reference point.
+        const scoringOrigin = unifiedFlight.from;
+        const scoringDestination: string = (() => {
+            if (derived.tripType !== 'ROUND_TRIP') return unifiedFlight.to;
+            const outbound = extractedSegments.filter((s) => s.tripDirection !== 'INBOUND');
+            return outbound.length > 0 ? outbound[outbound.length - 1].to : unifiedFlight.to;
+        })();
+
+        // For round trips score only the outbound leg duration so the expected-route
+        // comparison is apples-to-apples (one-way expected vs one-way actual).
+        const scoringDuration = derived.tripType === 'ROUND_TRIP'
+            ? derived.outboundDurationMinutes
+            : unifiedFlight.duration;
+
+        const scoringFlightForEngine = {
+            ...scoringFlight,
+            duration: scoringDuration,
+        };
+
+        console.debug(
+            `[SCORING_INPUT] origin=${scoringOrigin} dest=${scoringDestination} ` +
+            `price=${scoringFlight.price} ${unifiedFlight.currency} cabin=${unifiedFlight.cabinClass} ` +
+            `duration=${scoringDuration}min tripType=${derived.tripType}`
+        );
+
+        const [scoredComparableFlight] = await applyAdvancedFlightScoring([scoringFlightForEngine], {
+            origin: scoringOrigin,
+            destination: scoringDestination,
             departureDate: scoringFlight.departureTime,
+            useHistoricalMedian: true,
         });
 
         const scoredFlight = scoredComparableFlight

@@ -716,6 +716,37 @@ const generateScoreExplanation = (
 };
 // ── End Intelligence Layer v2 ─────────────────────────────────────────────
 
+// ── SINGLE-FLIGHT FAIR MARKET PRICE ESTIMATOR ────────────────────────────
+// When there is no batch comparison pool (single itinerary input), price
+// scoring would collapse to a neutral 10/20 for every input. We anchor
+// against an economy-class per-hour rate by currency so that price changes
+// actually move the composite score.
+const ECONOMY_RATE_PER_HOUR: Record<string, number> = {
+    USD: 100, AUD: 150, EUR: 92, GBP: 78, CAD: 130,
+    SGD: 135, NZD: 165, MYR: 460, INR: 8000, JPY: 14000,
+    CNY: 690, HKD: 780, THB: 3500, ZAR: 1800, BRL: 540,
+};
+
+const CABIN_PRICE_MULTIPLIER: Record<string, number> = {
+    economy: 1.0,
+    premium: 2.2,
+    business: 5.0,
+    first: 9.0,
+};
+
+const estimateSingleFlightFairPrice = (
+    expectedRouteDurationMinutes: number,
+    cabinClass: string,
+    currency: string,
+): number => {
+    if (expectedRouteDurationMinutes < 60) return 0;
+    const hours = expectedRouteDurationMinutes / 60;
+    const cabin = String(cabinClass || 'economy').toLowerCase();
+    const cabinMult = CABIN_PRICE_MULTIPLIER[cabin] ?? 1.0;
+    const ratePerHour = ECONOMY_RATE_PER_HOUR[currency.toUpperCase()] ?? ECONOMY_RATE_PER_HOUR.USD;
+    return Math.round(hours * ratePerHour * cabinMult);
+};
+
 const scoreFlight = (
     flight: ScoringFlight,
     context: {
@@ -764,20 +795,32 @@ const scoreFlight = (
     const durationMinutes = resolveDurationMinutes(flight);
     const expectedRouteDuration = Math.max(1, context.expectedRouteDuration || durationMinutes || 1);
 
-    // ── RELATIVE PRICE SCORING ────────────────────────────────────────────────
-    // Score based on min/max of current results: (max - price) / (max - min) * 20
-    let priceScoreValue = 10; // default
+    // ── PRICE SCORING ──────────────────────────────────────────────────────────
+    // Multi-flight batch: relative range. Single flight: cabin+duration benchmark.
+    const singleFlightFairPrice = estimateSingleFlightFairPrice(
+        context.expectedRouteDuration,
+        String(flight.cabinClass || 'economy'),
+        String(flight.currency || 'USD'),
+    );
+
+    let priceScoreValue = 10; // neutral default
     if (context.maxPrice > context.minPrice) {
+        // Relative range scoring (search results batch)
         const relativePriceRatio = (context.maxPrice - validPrice) / (context.maxPrice - context.minPrice);
         priceScoreValue = clamp(relativePriceRatio * 20, 0, 20);
-    } else if (context.minPrice > 0) {
-        // All prices are the same
-        priceScoreValue = 10;
+    } else if (singleFlightFairPrice > 0) {
+        // Single-flight: score against cabin/route-duration fair market estimate.
+        // priceRatio 0.5 (half of fair) → ~13, 1.0 (at fair) → 10, 2.0 (2× fair) → 6.7
+        const priceRatio = validPrice / singleFlightFairPrice;
+        priceScoreValue = clamp(20 / (priceRatio + 1), 0, 20);
+        console.debug(
+            `[SCORING_SENSITIVITY] price=${validPrice} ${String(flight.currency || '?')} fairPrice=${singleFlightFairPrice} ratio=${priceRatio.toFixed(2)} priceScore=${priceScoreValue.toFixed(1)}`
+        );
     }
     const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 20);
     breakdown.priceValue = Math.round(personalizedPriceScore);
 
-    // Set comfort notes based on relative price score
+    // Set comfort notes based on price score
     if (priceScoreValue >= 16) {
         comfortNotes.push('Price is significantly below the route average');
     } else if (priceScoreValue >= 12) {
@@ -786,17 +829,23 @@ const scoreFlight = (
         riskFlags.push('Price is above the route average');
     }
 
-    // ── RELATIVE DURATION SCORING ─────────────────────────────────────────────
-    // Score based on min/max of current results
+    // ── DURATION SCORING ──────────────────────────────────────────────────────
+    // Multi-flight batch: relative range. Single flight: ratio to expected route duration.
     let durationScoreValue = 15; // default max
     if (context.maxDuration > context.minDuration) {
-        // Invert: shorter is better, so (max - duration) / (max - min) * 15
+        // Relative range scoring (search results batch)
         const relativeDurationRatio = (context.maxDuration - durationMinutes) / (context.maxDuration - context.minDuration);
         durationScoreValue = clamp(relativeDurationRatio * 15, 0, 15);
-    } else if (durationMinutes > 0) {
-        // All durations are the same
-        durationScoreValue = 15;
+    } else if (context.expectedRouteDuration > 60 && durationMinutes > 0) {
+        // Single-flight: score based on actual vs expected direct-route duration.
+        // At 1× expected → 15, at 1.5× → 10, at 2× → 7.5, at 3× → 5.
+        const ratio = durationMinutes / context.expectedRouteDuration;
+        durationScoreValue = clamp(15 / Math.max(1.0, ratio), 0, 15);
+        console.debug(
+            `[SCORING_SENSITIVITY] duration=${durationMinutes}min expected=${context.expectedRouteDuration}min ratio=${ratio.toFixed(2)} durationScore=${durationScoreValue.toFixed(1)}`
+        );
     }
+    // else: no expected duration reference — leave at 15 (neutral)
     breakdown.duration = Math.round(durationScoreValue);
 
     if (durationScoreValue >= 13) {
@@ -992,7 +1041,10 @@ const scoreFlight = (
     const isNightFlight = departureHour !== null && (departureHour >= 22 || departureHour < 6);
     const nightPenaltyRaw = isNightFlight ? clamp(avoidNightWeight * 2.2, 0, 4) : 0;
 
-    const referenceForPenalty = referencePrice > 0 ? referencePrice : context.avgPrice;
+    // Use historical median → fair-price estimate → batch avg, in priority order
+    const referenceForPenalty = referencePrice > 0
+        ? referencePrice
+        : (singleFlightFairPrice > 0 ? singleFlightFairPrice : context.avgPrice);
     const priceDeviationPct = referenceForPenalty > 0 ? (validPrice - referenceForPenalty) / referenceForPenalty : 0;
     const priceDeviationPenalty = clamp(Math.max(0, priceDeviationPct) * 15, 0, 8);
 
@@ -1003,6 +1055,14 @@ const scoreFlight = (
 
     const personalBiasBonusRaw = clamp(Number((priceBiasBonusRaw + directBiasBonusRaw + loyaltyBoostRaw).toFixed(2)), 0, 10);
     const strongPenalty = priceDeviationPenalty + durationPenalty + multiStopPenalty + nightPenaltyRaw;
+
+    console.debug(
+        `[SCORING_SENSITIVITY] airline="${flight.airline}" stops=${flight.stops} ` +
+        `breakdown: price=${breakdown.priceValue} dur=${breakdown.duration} stops=${breakdown.stops} ` +
+        `conn=${breakdown.connection} rel=${breakdown.reliability} bag=${breakdown.baggage} ` +
+        `penalties: priceDev=${priceDeviationPenalty.toFixed(1)} dur=${durationPenalty.toFixed(1)} multiStop=${multiStopPenalty.toFixed(1)}`
+    );
+
     const rawScore = clamp(Number((baseTotalScore + preferenceBonusRaw + personalBiasBonusRaw - strongPenalty).toFixed(2)), 0, 100);
     const normalizedRaw = clamp(rawScore / 100, 0, 1);
     // Power curve expands score separation and avoids clustered 9.x scores.
