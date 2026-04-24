@@ -180,6 +180,8 @@ export default function ScoreFlightPage() {
         refundable: false,
     });
     const [segments, setSegments] = useState<SegmentInput[]>([]);
+    const [segmentsManuallyEdited, setSegmentsManuallyEdited] = useState(false);
+    const [lastScoringSource, setLastScoringSource] = useState<"parsed_text" | "manual_override" | null>(null);
     const [loading, setLoading] = useState(false);
     const [tracking, setTracking] = useState(false);
     const [tracked, setTracked] = useState(false);
@@ -187,11 +189,18 @@ export default function ScoreFlightPage() {
     const [error, setError] = useState<string | null>(null);
 
     const updateSegment = (index: number, patch: Partial<SegmentInput>) => {
+        setSegmentsManuallyEdited(true);
         setSegments((prev) => prev.map((segment, i) => (i === index ? { ...segment, ...patch } : segment)));
     };
 
-    const addSegment = () => setSegments((prev) => [...prev, emptySegment()]);
-    const removeSegment = (index: number) => setSegments((prev) => prev.filter((_, i) => i !== index));
+    const addSegment = () => {
+        setSegmentsManuallyEdited(true);
+        setSegments((prev) => [...prev, emptySegment()]);
+    };
+    const removeSegment = (index: number) => {
+        setSegmentsManuallyEdited(true);
+        setSegments((prev) => prev.filter((_, i) => i !== index));
+    };
 
     const handleTrackItinerary = async () => {
         if (!result?.trackingPayload) return;
@@ -230,6 +239,7 @@ export default function ScoreFlightPage() {
         setError(null);
 
         try {
+            const useManualOverride = segmentsManuallyEdited && segments.length > 0;
             const payload = {
                 mode: "paste",
                 itineraryText,
@@ -241,7 +251,8 @@ export default function ScoreFlightPage() {
                 ...(overrides.infants.trim() !== "" && { infants: parseInt(overrides.infants, 10) }),
                 ...(overrides.checkedBaggageKg && { checkedBaggageKg: parseFloat(overrides.checkedBaggageKg) }),
                 refundable: overrides.refundable,
-                ...(segments.length > 0 && {
+                ...(useManualOverride && {
+                    source: "manual_override" as const,
                     segments: segments.map((segment) => ({
                         from: segment.from.toUpperCase().trim(),
                         to: segment.to.toUpperCase().trim(),
@@ -273,8 +284,10 @@ export default function ScoreFlightPage() {
             } else {
                 const scored = data as ScoreResult;
                 setResult(scored);
+                setLastScoringSource(useManualOverride ? "manual_override" : "parsed_text");
                 if (scored.extractedSegments && scored.extractedSegments.length > 0) {
                     setSegments(scored.extractedSegments);
+                    setSegmentsManuallyEdited(false);
                 }
             }
         } catch {
@@ -476,6 +489,12 @@ export default function ScoreFlightPage() {
 
                 {result && decision && (
                     <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {lastScoringSource === "manual_override" && (
+                            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                                Using manually edited segments
+                            </div>
+                        )}
+
                         {result.accuracyHint && (
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                                 {result.accuracyHint}

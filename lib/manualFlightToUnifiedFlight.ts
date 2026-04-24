@@ -92,6 +92,7 @@ const detailedScoreInputSchema = z.object({
 const pasteScoreInputSchema = z.object({
     mode: z.literal('paste'),
     itineraryText: z.string().trim().min(20, 'Paste a longer itinerary text'),
+    source: z.enum(['parsed_text', 'manual_override']).optional(),
     price: z.coerce.number().positive().optional(),
     currency: z.string().trim().toUpperCase().length(3).optional(),
     cabin: z.enum(['economy', 'premium', 'business', 'first']).optional(),
@@ -671,6 +672,65 @@ const toIsoOrFallback = (value: string | undefined, fallbackMs: number): string 
 };
 
 const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionResult => {
+    if (input.source === 'manual_override' && input.segments && input.segments.length > 0) {
+        const normalizedSegments = input.segments.map((segment, index) => {
+            const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
+            return {
+                from: segment.from,
+                to: segment.to,
+                departureDateTime: segment.departureDateTime,
+                arrivalDateTime: segment.arrivalDateTime,
+                airline: normalizeAirlineName(segment.airline || deriveAirlineFromFlightNumber(flightNumber), flightNumber),
+                flightNumber,
+                aircraft: segment.aircraft,
+                marketedAirline: segment.marketedAirline,
+                bookingClass: segment.bookingClass,
+                tripDirection: segment.tripDirection,
+            };
+        });
+
+        const detailedInput: DetailedScoreInput = {
+            mode: 'detailed',
+            totalPrice: input.price ?? 999,
+            currency: input.currency ?? 'USD',
+            cabin: input.cabin ?? 'economy',
+            adults: input.adults,
+            children: input.children,
+            infants: input.infants,
+            checkedBaggageKg: input.checkedBaggageKg,
+            cabinBaggageKg: input.cabinBaggageKg,
+            refundable: input.refundable,
+            segments: normalizedSegments,
+        };
+
+        const base = buildDetailedUnifiedFlight(detailedInput);
+        const parseWarnings = ['Using manually edited segments from UI.'];
+
+        if (!input.price) {
+            parseWarnings.push('Price missing in manual override; fallback price baseline applied.');
+        }
+
+        return {
+            ...base,
+            extractedSegments: base.extractedSegments.map((segment) => ({
+                ...segment,
+                airline: /^UNKN$/i.test(segment.airline) ? '' : normalizeAirlineName(segment.airline, segment.flightNumber),
+                flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
+                marketedAirline: segment.marketedAirline
+                    ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
+                    : (!isUnknownAirline(segment.airline) ? normalizeAirlineName(segment.airline, segment.flightNumber) : undefined),
+                bookingClass: segment.bookingClass || undefined,
+            })),
+            assessment: {
+                ...base.assessment,
+                mode: 'detailed',
+                promptForDetails: parseWarnings.length > 0,
+                parseWarnings,
+                parseConfidence: 1,
+            },
+        };
+    }
+
     const parsed = parseItineraryText(input.itineraryText);
     const sourceSegments = input.segments && input.segments.length > 0
         ? input.segments
