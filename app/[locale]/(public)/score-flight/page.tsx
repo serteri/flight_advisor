@@ -44,11 +44,14 @@ interface ScoreResult {
     parseConfidence?: number;
     needsReview?: boolean;
     extractedSegments?: SegmentInput[];
+    inputSource?: "MANUAL_SEGMENTS" | "PARSED_TEXT";
     derivedMetrics?: {
         tripType: "ONE_WAY" | "ROUND_TRIP";
         totalSegments: number;
         totalDurationMinutes: number;
         totalLayoverMinutes: number;
+        outboundDurationMinutes: number;
+        inboundDurationMinutes: number;
         connectionCount: number;
         outboundConnectionCount: number;
         inboundConnectionCount: number;
@@ -287,7 +290,12 @@ export default function ScoreFlightPage() {
                 setLastScoringSource(useManualOverride ? "manual_override" : "parsed_text");
                 if (scored.extractedSegments && scored.extractedSegments.length > 0) {
                     setSegments(scored.extractedSegments);
-                    setSegmentsManuallyEdited(false);
+                    // Only reset the flag when scoring from parsed text.
+                    // If we just scored from manual segments, keep the flag true so
+                    // re-submitting continues to use the edited segments as source of truth.
+                    if (!useManualOverride) {
+                        setSegmentsManuallyEdited(false);
+                    }
                 }
             }
         } catch {
@@ -630,15 +638,21 @@ export default function ScoreFlightPage() {
                             <div className="bg-white rounded-2xl border border-slate-200 p-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                 <div><span className="text-slate-400 block">Trip type</span>{result.derivedMetrics.tripType === "ROUND_TRIP" ? "Round-trip" : "One-way"}</div>
                                 <div><span className="text-slate-400 block">Total segments</span>{result.derivedMetrics.totalSegments}</div>
-                                <div><span className="text-slate-400 block">Total duration</span>{result.derivedMetrics.totalDurationMinutes} min</div>
-                                <div><span className="text-slate-400 block">Total layover</span>{result.derivedMetrics.totalLayoverMinutes} min</div>
                                 {result.derivedMetrics.tripType === "ROUND_TRIP" ? (
                                     <>
+                                        <div><span className="text-slate-400 block">Outbound duration</span>{result.derivedMetrics.outboundDurationMinutes} min</div>
+                                        <div><span className="text-slate-400 block">Inbound duration</span>{result.derivedMetrics.inboundDurationMinutes} min</div>
+                                        <div><span className="text-slate-400 block">Outbound layover</span>{result.derivedMetrics.outboundLayoverMinutes} min</div>
+                                        <div><span className="text-slate-400 block">Inbound layover</span>{result.derivedMetrics.inboundLayoverMinutes} min</div>
                                         <div><span className="text-slate-400 block">Outbound connections</span>{result.derivedMetrics.outboundConnectionCount}</div>
                                         <div><span className="text-slate-400 block">Inbound connections</span>{result.derivedMetrics.inboundConnectionCount}</div>
                                     </>
                                 ) : (
-                                    <div><span className="text-slate-400 block">Connections</span>{result.derivedMetrics.connectionCount}</div>
+                                    <>
+                                        <div><span className="text-slate-400 block">Total duration</span>{result.derivedMetrics.totalDurationMinutes} min</div>
+                                        <div><span className="text-slate-400 block">Total layover</span>{result.derivedMetrics.totalLayoverMinutes} min</div>
+                                        <div><span className="text-slate-400 block">Connections</span>{result.derivedMetrics.connectionCount}</div>
+                                    </>
                                 )}
                                 <div><span className="text-slate-400 block">Feasibility</span>{result.derivedMetrics.connectionFeasibility}</div>
                                 <div><span className="text-slate-400 block">Route realism</span>{result.derivedMetrics.routeRealism}</div>

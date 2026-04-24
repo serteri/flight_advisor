@@ -197,6 +197,26 @@ const buildModeDecision = (
     return initialDecision;
 };
 
+const buildWatchLabel = (
+    confidence: number,
+    signals: WarningSignals,
+    assessment: InputAssessment,
+): string => {
+    if (confidence >= 75) {
+        if (signals.missingPrice > 0) {
+            return 'Watch closely — no live price benchmark available; confirm fare before booking';
+        }
+        if (!assessment.priceContextAvailable) {
+            return 'Watch closely — price context unavailable; verify fare and availability first';
+        }
+        if (assessment.passengerPricingContext?.mixedTravelerTypes) {
+            return 'Watch closely — mixed traveler pricing reduces direct fare comparability';
+        }
+        return 'Watch closely — verify fare and availability before committing';
+    }
+    return 'Watch closely — itinerary context still limited';
+};
+
 const buildModeExplanation = (
     mode: 'quick' | 'detailed',
     baseReason: string,
@@ -457,7 +477,7 @@ export async function POST(request: NextRequest) {
                     label: payload.mode === 'quick'
                         ? 'Rough signal only - add detailed itinerary for high-accuracy scoring'
                         : decision === 'WATCH'
-                            ? 'Watch closely - itinerary context still limited'
+                            ? buildWatchLabel(adjustedConfidence, warningSignals, assessment)
                             : enrichedFlight.score.buyWaitSignal?.label || 'Action signal available',
                     urgencyDays: enrichedFlight.score.buyWaitSignal?.urgencyDays,
                     variant: enrichedFlight.score.buyWaitSignal?.variant,
@@ -483,8 +503,13 @@ export async function POST(request: NextRequest) {
                 ? 'WAIT'
                 : 'WATCH';
 
+        const inputSource = payload.mode === 'paste' && payload.source === 'manual_override'
+            ? 'MANUAL_SEGMENTS'
+            : 'PARSED_TEXT';
+
         return NextResponse.json({
             ...selfChecked.flight,
+            inputSource,
             selfCheckWarnings: selfChecked.userWarnings,
             decision: finalDecision,
             insights: {

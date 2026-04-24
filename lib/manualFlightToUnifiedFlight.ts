@@ -121,6 +121,8 @@ export type DerivedStructureMetrics = {
     totalSegments: number;
     totalDurationMinutes: number;
     totalLayoverMinutes: number;
+    outboundDurationMinutes: number;
+    inboundDurationMinutes: number;
     connectionCount: number;
     outboundConnectionCount: number;
     inboundConnectionCount: number;
@@ -302,14 +304,25 @@ const deriveAirlineFromFlightNumber = (flightNumber?: string): string | undefine
 
 const normalizeAirlineName = (value?: string, flightNumber?: string): string => {
     const raw = (value || '').trim();
+
+    // Flight number prefix is the strongest airline signal — derive it first
+    const derivedCode = deriveAirlineFromFlightNumber(flightNumber);
+    const derivedName = derivedCode ? (AIRLINE_CODE_TO_NAME[derivedCode] || null) : null;
+
     if (!raw) {
-        const derived = deriveAirlineFromFlightNumber(flightNumber);
-        return derived ? (AIRLINE_CODE_TO_NAME[derived] || derived) : 'UNKN';
+        return derivedName || derivedCode || 'UNKN';
     }
 
     const upper = raw.toUpperCase();
+    // If raw is a known IATA code, expand it to the full name
     if (AIRLINE_CODE_TO_NAME[upper]) {
         return AIRLINE_CODE_TO_NAME[upper];
+    }
+
+    // When flight number maps to a known airline, it overrides free-form text.
+    // This prevents "TURKISH AIRLINES" from sticking to an SQ-prefixed flight number.
+    if (derivedName) {
+        return derivedName;
     }
 
     return raw;
@@ -390,6 +403,8 @@ const buildQuickUnifiedFlight = (
         totalSegments: 1,
         totalDurationMinutes: duration,
         totalLayoverMinutes: input.stops * DEFAULT_LAYOVER_DURATION_MINUTES,
+        outboundDurationMinutes: duration,
+        inboundDurationMinutes: 0,
         connectionCount: input.stops,
         outboundConnectionCount: input.stops,
         inboundConnectionCount: 0,
@@ -569,6 +584,19 @@ const buildDetailedUnifiedFlight = (
     const routeRealism: DerivedStructureMetrics['routeRealism'] = realismScore >= 0.65 ? 'REALISTIC' : 'QUESTIONABLE';
     const tripStructure = deriveTripStructure(sortedSegments);
 
+    // Per-direction flight time (excludes cross-direction layovers)
+    let outboundFlightMinutes = 0;
+    let inboundFlightMinutes = 0;
+    sortedSegments.forEach((segment, index) => {
+        if (segment.tripDirection === 'INBOUND') {
+            inboundFlightMinutes += segmentDurations[index] || 0;
+        } else {
+            outboundFlightMinutes += segmentDurations[index] || 0;
+        }
+    });
+    const outboundDurationMinutes = outboundFlightMinutes + outboundLayoverMinutes;
+    const inboundDurationMinutes = inboundFlightMinutes + inboundLayoverMinutes;
+
     const unifiedSegments = sortedSegments.map((segment, index): FlightSegment => ({
         from: segment.from,
         to: segment.to,
@@ -608,6 +636,8 @@ const buildDetailedUnifiedFlight = (
         totalSegments: sortedSegments.length,
         totalDurationMinutes: totalDuration,
         totalLayoverMinutes,
+        outboundDurationMinutes,
+        inboundDurationMinutes,
         connectionCount: tripStructure.connectionCount,
         outboundConnectionCount: tripStructure.outboundConnectionCount,
         inboundConnectionCount: tripStructure.inboundConnectionCount,
