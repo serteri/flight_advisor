@@ -188,8 +188,9 @@ const summarizePassengerPricingContext = (params: {
     const children = Math.max(0, params.children || 0);
     const infants = Math.max(0, params.infants || 0);
     const totalTravelers = adults + children + infants;
-    const comparablePerTravelerPrice = totalTravelers > 0
-        ? Number((params.totalPrice / totalTravelers).toFixed(2))
+    const equivalentAdults = adults * 1.0 + children * 0.75 + infants * 0.25;
+    const comparablePerTravelerPrice = equivalentAdults > 0
+        ? Number((params.totalPrice / equivalentAdults).toFixed(2))
         : params.totalPrice;
 
     return {

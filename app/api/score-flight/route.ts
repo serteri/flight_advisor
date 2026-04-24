@@ -67,12 +67,12 @@ const parseWarningSignals = (assessment: InputAssessment): WarningSignals => {
 
     const severityPenalty =
         (missingBaggage * 1.2)
-        + (missingPrice * 2)
+        + (missingPrice * 5)
         + (missingSegmentTimes * 4)
         + (routeMismatch * 5)
         + (unrealisticLayover * 4)
         + (chronologyIssues * 5)
-        + (partialExtraction * 2);
+        + (partialExtraction * 10);
 
     return {
         totalWarnings: warnings.length,
@@ -103,8 +103,8 @@ const computeConfidenceCap = (
     if (signals.partialExtraction > 0) {
         cap = Math.min(cap, 70);
     }
-    if (signals.missingPrice > 0 && signals.missingBaggage > 0) {
-        cap = Math.min(cap, 69);
+    if (signals.missingPrice > 0) {
+        cap = Math.min(cap, 65);
     }
     if (derived.routeRealism === 'QUESTIONABLE') {
         cap = Math.min(cap, 72);

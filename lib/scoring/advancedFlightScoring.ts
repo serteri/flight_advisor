@@ -199,8 +199,8 @@ const PERSONA_WEIGHTS: Record<PersonaKey, ScoreBreakdown> = {
 };
 
 const BREAKDOWN_MAXES: ScoreBreakdown = {
-    priceValue: 20, duration: 15, stops: 10, connection: 10, selfTransfer: 10,
-    baggage: 10, reliability: 10, aircraft: 5, amenities: 5, airportIndex: 5,
+    priceValue: 25, duration: 20, stops: 15, connection: 10, selfTransfer: 5,
+    baggage: 10, reliability: 15, aircraft: 3, amenities: 5, airportIndex: 2,
 };
 const CRUISE_SPEED_KMH = 850;
 
@@ -403,27 +403,26 @@ const hasSelfTransferRisk = (flight: ScoringFlight): boolean => {
     return false;
 };
 
-const resolveReliability = (airlineName: string): { score: number; isTopAirline: boolean } => {
+const resolveReliability = (airlineName: string): { score: number; tier: 'top' | 'mid' | 'low' } => {
     const upper = airlineName.toUpperCase();
-    const isTopAirline = Array.from(TOP_AIRLINES).some((name) => upper.includes(name));
+    const isBudget = Array.from(BUDGET_AIRLINES).some((name) => upper.includes(name));
+    const isTop = Array.from(TOP_AIRLINES).some((name) => upper.includes(name));
+    const tier: 'top' | 'mid' | 'low' = isBudget ? 'low' : isTop ? 'top' : 'mid';
 
     const direct = RELIABILITY_BY_AIRLINE[upper];
     if (direct) {
-        const boosted = isTopAirline ? 10 : Math.max(0, Math.round(direct) - 2);
-        return { score: boosted, isTopAirline };
+        const scaled = Math.round((direct / 9.3) * 14);
+        return { score: clamp(scaled, 0, 15), tier };
     }
 
-    const matchedKey = Object.keys(RELIABILITY_BY_AIRLINE).find((name) =>
-        upper.includes(name)
-    );
+    const matchedKey = Object.keys(RELIABILITY_BY_AIRLINE).find((name) => upper.includes(name));
     if (matchedKey) {
-        const base = RELIABILITY_BY_AIRLINE[matchedKey];
-        const boosted = isTopAirline ? 10 : Math.max(0, Math.round(base) - 2);
-        return { score: boosted, isTopAirline };
+        const scaled = Math.round((RELIABILITY_BY_AIRLINE[matchedKey] / 9.3) * 14);
+        return { score: clamp(scaled, 0, 15), tier };
     }
 
-    const fallback = isTopAirline ? 10 : 5;
-    return { score: fallback, isTopAirline };
+    const fallback = tier === 'top' ? 11 : tier === 'low' ? 4 : 8;
+    return { score: fallback, tier };
 };
 
 const resolveAircraftCode = (flight: ScoringFlight): string => {
@@ -705,7 +704,7 @@ const generateScoreExplanation = (
     const bagNote = comfortNotes.find(n => n.toLowerCase().includes('baggage'));
     if (bagNote) parts.push(bagNote.toLowerCase());
     if (comfortNotes.some(n => n.toLowerCase().includes('meal'))) parts.push('meal included');
-    if (breakdown.duration >= 13) parts.push('efficient travel time');
+    if (breakdown.duration >= 16) parts.push('efficient travel time');
     if (connectionRisk === 'critical' && minConnectionMinutes > 0)
         parts.push(`${minConnectionMinutes}min critical connection risk`);
     else if (connectionRisk === 'high' && minConnectionMinutes > 0)
@@ -807,40 +806,40 @@ const scoreFlight = (
     if (context.maxPrice > context.minPrice) {
         // Relative range scoring (search results batch)
         const relativePriceRatio = (context.maxPrice - validPrice) / (context.maxPrice - context.minPrice);
-        priceScoreValue = clamp(relativePriceRatio * 20, 0, 20);
+        priceScoreValue = clamp(relativePriceRatio * 25, 0, 25);
     } else if (singleFlightFairPrice > 0) {
         // Single-flight: score against cabin/route-duration fair market estimate.
         // priceRatio 0.5 (half of fair) → ~13, 1.0 (at fair) → 10, 2.0 (2× fair) → 6.7
         const priceRatio = validPrice / singleFlightFairPrice;
-        priceScoreValue = clamp(20 / (priceRatio + 1), 0, 20);
+        priceScoreValue = clamp(25 / (priceRatio + 1), 0, 25);
         console.debug(
             `[SCORING_SENSITIVITY] price=${validPrice} ${String(flight.currency || '?')} fairPrice=${singleFlightFairPrice} ratio=${priceRatio.toFixed(2)} priceScore=${priceScoreValue.toFixed(1)}`
         );
     }
-    const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 20);
+    const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 25);
     breakdown.priceValue = Math.round(personalizedPriceScore);
 
     // Set comfort notes based on price score
-    if (priceScoreValue >= 16) {
+    if (priceScoreValue >= 20) {
         comfortNotes.push('Price is significantly below the route average');
-    } else if (priceScoreValue >= 12) {
+    } else if (priceScoreValue >= 15) {
         comfortNotes.push('Price is below the route average');
-    } else if (priceScoreValue < 6) {
+    } else if (priceScoreValue < 8) {
         riskFlags.push('Price is above the route average');
     }
 
     // ── DURATION SCORING ──────────────────────────────────────────────────────
     // Multi-flight batch: relative range. Single flight: ratio to expected route duration.
-    let durationScoreValue = 15; // default max
+    let durationScoreValue = 20; // default max
     if (context.maxDuration > context.minDuration) {
         // Relative range scoring (search results batch)
         const relativeDurationRatio = (context.maxDuration - durationMinutes) / (context.maxDuration - context.minDuration);
-        durationScoreValue = clamp(relativeDurationRatio * 15, 0, 15);
+        durationScoreValue = clamp(relativeDurationRatio * 20, 0, 20);
     } else if (context.expectedRouteDuration > 60 && durationMinutes > 0) {
         // Single-flight: score based on actual vs expected direct-route duration.
-        // At 1× expected → 15, at 1.5× → 10, at 2× → 7.5, at 3× → 5.
+        // At 1× expected → 20, at 1.5× → 13, at 2× → 10, at 3× → 6.7.
         const ratio = durationMinutes / context.expectedRouteDuration;
-        durationScoreValue = clamp(15 / Math.max(1.0, ratio), 0, 15);
+        durationScoreValue = clamp(20 / Math.max(1.0, ratio), 0, 20);
         console.debug(
             `[SCORING_SENSITIVITY] duration=${durationMinutes}min expected=${context.expectedRouteDuration}min ratio=${ratio.toFixed(2)} durationScore=${durationScoreValue.toFixed(1)}`
         );
@@ -848,9 +847,9 @@ const scoreFlight = (
     // else: no expected duration reference — leave at 15 (neutral)
     breakdown.duration = Math.round(durationScoreValue);
 
-    if (durationScoreValue >= 13) {
+    if (durationScoreValue >= 16) {
         comfortNotes.push('Short travel time');
-    } else if (durationScoreValue < 6) {
+    } else if (durationScoreValue < 8) {
         riskFlags.push('Long total travel time');
     }
 
@@ -868,7 +867,7 @@ const scoreFlight = (
     // 0 stops: 1.0 multiplier -> 10
     // 1 stop: 0.7 multiplier -> 7
     // 2+ stops: 0.4 multiplier -> 4
-    const baseStopsScore = 10;
+    const baseStopsScore = 15;
     const stopsMultiplier = flight.stops <= 0 ? 1.0 : flight.stops === 1 ? 0.7 : 0.4;
     let stopsScore = Math.round(baseStopsScore * stopsMultiplier);
     if (flight.stops > 0 && directPenaltyBoost > 0) {
@@ -879,7 +878,7 @@ const scoreFlight = (
         stopsScore -= Math.round(avoidMultiStopWeight * (flight.stops - 1));
         riskFlags.push('Multi-stop flights frequently avoided in your history');
     }
-    breakdown.stops = clamp(stopsScore, 0, 10);
+    breakdown.stops = clamp(stopsScore, 0, 15);
 
     if (flight.stops >= 2) {
         riskFlags.push('Multiple connections');
@@ -944,7 +943,7 @@ const scoreFlight = (
     const layovers = resolvedLayovers;
 
     const selfTransfer = hasSelfTransferRisk(flight);
-    breakdown.selfTransfer = selfTransfer ? 0 : 10;
+    breakdown.selfTransfer = selfTransfer ? 0 : 5;
     if (selfTransfer) {
         riskFlags.push('Self-transfer required');
     }
@@ -975,15 +974,15 @@ const scoreFlight = (
     }
 
     const reliability = resolveReliability(flight.airline);
-    breakdown.reliability = clamp(reliability.score, 0, 10);
-    if (reliability.isTopAirline) {
+    breakdown.reliability = clamp(reliability.score, 0, 15);
+    if (reliability.tier === 'top') {
         comfortNotes.push('Top-tier airline reputation');
-    } else {
+    } else if (reliability.tier === 'low') {
         riskFlags.push('Outside top-30 airlines');
     }
-    if (breakdown.reliability >= 8) {
+    if (breakdown.reliability >= 12) {
         comfortNotes.push('Strong on-time departure record');
-    } else if (breakdown.reliability <= 6) {
+    } else if (breakdown.reliability <= 9) {
         riskFlags.push('Below-average on-time reliability');
     }
 
@@ -996,16 +995,16 @@ const scoreFlight = (
 
     const aircraftCode = resolveAircraftCode(flight);
     const aircraftAge = flight.aircraftAge || AIRCRAFT_AGE[aircraftCode] || 12;
-    let aircraftScore = 2;
+    let aircraftScore = 1;
     if (aircraftCode.includes('A35') || aircraftCode.includes('B78')) {
-        aircraftScore += 3;
+        aircraftScore += 2;
         comfortNotes.push('Next-gen aircraft (A350/787 family)');
     }
     if (aircraftAge >= 20) {
-        aircraftScore -= 2;
+        aircraftScore -= 1;
         riskFlags.push('Older aircraft');
     }
-    breakdown.aircraft = clamp(aircraftScore, 0, 5);
+    breakdown.aircraft = clamp(aircraftScore, 0, 3);
 
     const mealIncluded = hasIncludedMeal(flight as any);
 
@@ -1024,13 +1023,13 @@ const scoreFlight = (
     }
     breakdown.amenities = clamp(Math.round(amenitiesScore), 0, 5);
 
-    let airportIndex = 5;
+    let airportIndex = 2;
     resolvedLayovers.forEach((lay) => {
         if (!lay.airport) return;
         if (EASY_AIRPORTS.has(lay.airport)) airportIndex += 1;
-        if (HARD_AIRPORTS.has(lay.airport))  airportIndex -= 2;
+        if (HARD_AIRPORTS.has(lay.airport)) airportIndex -= 1;
     });
-    breakdown.airportIndex = clamp(airportIndex, 0, 5);
+    breakdown.airportIndex = clamp(airportIndex, 0, 2);
 
     const baseTotalScore = Object.values(breakdown).reduce((sum, score) => sum + score, 0);
     const preferenceBonusRaw = computePreferenceBonusRaw(flight, context.preferenceProfile);
@@ -1068,7 +1067,8 @@ const scoreFlight = (
     // Power curve expands score separation and avoids clustered 9.x scores.
     const separatedScore = Math.pow(normalizedRaw, 1.35) * 100;
     const totalScore = clamp(Number(separatedScore.toFixed(2)), 0, 100);
-    const displayScore = Number((totalScore / 10).toFixed(1));
+    const tierBonus = reliability.tier === 'top' ? 1.0 : reliability.tier === 'low' ? -0.7 : 0;
+    const displayScore = Number(clamp((totalScore / 10) + tierBonus, 0, 10).toFixed(1));
 
     let valueTag = 'Balanced Option';
     const resolvedPersona = resolvePersona(context.persona as PersonaInput);
@@ -1121,11 +1121,11 @@ const scoreFlight = (
     if (avoidMultiStopWeight > 0) personalBiasRationale.push('negative_learning_multi_stop');
     if (avoidNightWeight > 0) personalBiasRationale.push('negative_learning_night');
 
-    if (breakdown.priceValue >= 16 && totalScore >= 75) {
+    if (breakdown.priceValue >= 20 && totalScore >= 75) {
         valueTag = 'Best Value';
-    } else if (breakdown.amenities >= 4 && breakdown.duration >= 12) {
+    } else if (breakdown.amenities >= 4 && breakdown.duration >= 16) {
         valueTag = 'Most Comfortable';
-    } else if (breakdown.reliability >= 8 && breakdown.connection >= 8) {
+    } else if (breakdown.reliability >= 12 && breakdown.connection >= 8) {
         valueTag = 'Lowest Risk';
     }
 
