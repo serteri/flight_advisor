@@ -293,6 +293,36 @@ const deriveTripStructure = (segments: Array<{ tripDirection?: 'OUTBOUND' | 'INB
     };
 };
 
+const detectRoundTripSplitIndex = (segments: Array<{
+    from: string;
+    to: string;
+    departureDateTime: string;
+    arrivalDateTime: string;
+    tripDirection?: 'OUTBOUND' | 'INBOUND';
+}>): number | null => {
+    if (segments.length < 2) return null;
+
+    const firstInboundIndex = segments.findIndex((segment) => segment.tripDirection === 'INBOUND');
+    if (firstInboundIndex > 0) {
+        return firstInboundIndex - 1;
+    }
+
+    const looksLikeClosedLoop = segments[0].from === segments[segments.length - 1].to;
+    if (!looksLikeClosedLoop) return null;
+
+    let maxLayover = -1;
+    let splitIndex = 0;
+    for (let i = 0; i < segments.length - 1; i += 1) {
+        const layover = durationBetween(segments[i].arrivalDateTime, segments[i + 1].departureDateTime);
+        if (layover > maxLayover) {
+            maxLayover = layover;
+            splitIndex = i;
+        }
+    }
+
+    return splitIndex;
+};
+
 const isUnknownAirline = (value?: string): boolean => !value || /^UNKN$/i.test(value.trim());
 
 const isUnknownFlightNumber = (value?: string): boolean => !value || /^UNKNOWN\d+$/i.test(value.trim());
@@ -483,11 +513,14 @@ const buildDetailedUnifiedFlight = (
     let outboundLayoverMinutes = 0;
     let inboundLayoverMinutes = 0;
     let tightConnectionCount = 0;
+    const roundTripSplitIndex = detectRoundTripSplitIndex(sortedSegments);
 
     for (let i = 0; i < sortedSegments.length - 1; i += 1) {
         const current = sortedSegments[i];
         const next = sortedSegments[i + 1];
-        const isDirectionBoundary = current.tripDirection && next.tripDirection && current.tripDirection !== next.tripDirection;
+        const isDirectionBoundary =
+            (roundTripSplitIndex !== null && i === roundTripSplitIndex)
+            || (current.tripDirection && next.tripDirection && current.tripDirection !== next.tripDirection);
 
         if (isDirectionBoundary) {
             comfortNotes.push(`Detected ${next.tripDirection?.toLowerCase()} leg boundary; skipping connection-risk checks across trip directions.`);
@@ -496,7 +529,10 @@ const buildDetailedUnifiedFlight = (
 
         const layoverDuration = durationBetween(current.arrivalDateTime, next.departureDateTime);
         totalLayoverMinutes += layoverDuration;
-        if (current.tripDirection === 'INBOUND') {
+        const inInboundLeg = roundTripSplitIndex !== null
+            ? i > roundTripSplitIndex
+            : current.tripDirection === 'INBOUND';
+        if (inInboundLeg) {
             inboundLayoverMinutes += layoverDuration;
         } else {
             outboundLayoverMinutes += layoverDuration;
@@ -583,20 +619,42 @@ const buildDetailedUnifiedFlight = (
             : 'RISKY';
 
     const routeRealism: DerivedStructureMetrics['routeRealism'] = realismScore >= 0.65 ? 'REALISTIC' : 'QUESTIONABLE';
-    const tripStructure = deriveTripStructure(sortedSegments);
-
-    // Per-direction flight time (excludes cross-direction layovers)
-    let outboundFlightMinutes = 0;
-    let inboundFlightMinutes = 0;
-    sortedSegments.forEach((segment, index) => {
-        if (segment.tripDirection === 'INBOUND') {
-            inboundFlightMinutes += segmentDurations[index] || 0;
-        } else {
-            outboundFlightMinutes += segmentDurations[index] || 0;
+    const splitIndex = roundTripSplitIndex;
+    const tripStructure = splitIndex !== null
+        ? {
+            tripType: 'ROUND_TRIP' as const,
+            outboundConnectionCount: Math.max(0, splitIndex),
+            inboundConnectionCount: Math.max(0, sortedSegments.length - (splitIndex + 2)),
+            connectionCount: Math.max(0, sortedSegments.length - 2),
         }
-    });
-    const outboundDurationMinutes = outboundFlightMinutes + outboundLayoverMinutes;
-    const inboundDurationMinutes = inboundFlightMinutes + inboundLayoverMinutes;
+        : deriveTripStructure(sortedSegments);
+
+    const outboundSegments = splitIndex !== null
+        ? sortedSegments.slice(0, splitIndex + 1)
+        : sortedSegments.filter((segment) => segment.tripDirection !== 'INBOUND');
+    const inboundSegments = splitIndex !== null
+        ? sortedSegments.slice(splitIndex + 1)
+        : sortedSegments.filter((segment) => segment.tripDirection === 'INBOUND');
+
+    const outboundDurationMinutes = outboundSegments.length > 0
+        ? durationBetween(
+            outboundSegments[0].departureDateTime,
+            outboundSegments[outboundSegments.length - 1].arrivalDateTime,
+        )
+        : totalDuration;
+    const inboundDurationMinutes = inboundSegments.length > 0
+        ? durationBetween(
+            inboundSegments[0].departureDateTime,
+            inboundSegments[inboundSegments.length - 1].arrivalDateTime,
+        )
+        : 0;
+
+    if (splitIndex !== null) {
+        totalLayoverMinutes = outboundLayoverMinutes + inboundLayoverMinutes;
+    }
+    const totalDurationMinutes = tripStructure.tripType === 'ROUND_TRIP'
+        ? outboundDurationMinutes + inboundDurationMinutes
+        : totalDuration;
 
     const unifiedSegments = sortedSegments.map((segment, index): FlightSegment => ({
         from: segment.from,
@@ -635,7 +693,7 @@ const buildDetailedUnifiedFlight = (
     const derived: DerivedStructureMetrics = {
         tripType: tripStructure.tripType,
         totalSegments: sortedSegments.length,
-        totalDurationMinutes: totalDuration,
+        totalDurationMinutes,
         totalLayoverMinutes,
         outboundDurationMinutes,
         inboundDurationMinutes,
@@ -854,7 +912,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         adults: input.adults ?? parsed.trip.adults ?? 1,
         children: input.children ?? parsed.trip.children ?? 0,
         infants: input.infants ?? parsed.trip.infants ?? 0,
-        checkedBaggageKg: typeof input.checkedBaggageKg === 'number'
+        checkedBaggageKg: Number.isFinite(input.checkedBaggageKg)
             ? input.checkedBaggageKg
             : parsed.trip.checkedBaggageKg ?? undefined,
         cabinBaggageKg: typeof input.cabinBaggageKg === 'number'

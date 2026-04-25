@@ -955,7 +955,7 @@ const scoreFlight = (
 
     if (checkedBaggage >= 20) {
         breakdown.baggage = 10;
-        comfortNotes.push('20kg+ checked baggage included');
+        comfortNotes.push(`${checkedBaggage}kg checked baggage included`);
     } else if (checkedBaggage >= 15) {
         breakdown.baggage = 9;
         comfortNotes.push('Checked baggage included');
