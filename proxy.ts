@@ -22,12 +22,33 @@ function apiBypass(req: NextRequest) {
     return null;
 }
 
+function notifyCompanyVisit(req: NextRequest) {
+    const company = req.nextUrl.searchParams.get('c');
+    if (!company) {
+        return;
+    }
+
+    const notifyUrl = new URL('/api/notify-visit', req.url);
+
+    void fetch(notifyUrl.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            company,
+            path: req.nextUrl.pathname,
+            timestamp: Date.now(),
+        }),
+    }).catch(() => undefined);
+}
+
 // @ts-ignore
 export default auth((req) => {
     const apiBypassResult = apiBypass(req as NextRequest);
     if (apiBypassResult !== null) {
         return apiBypassResult;
     }
+
+    notifyCompanyVisit(req as NextRequest);
 
     const pathname = req.nextUrl.pathname;
 
