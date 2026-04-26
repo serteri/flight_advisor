@@ -139,6 +139,7 @@ export type InputAssessment = {
     completenessScore: number;
     realismScore: number;
     priceContextAvailable: boolean;
+    livePriceBenchmarkAvailable: boolean;
     priceMissing: boolean;
     baggageUnverified: boolean;
     riskFlags: string[];
@@ -425,7 +426,8 @@ const buildQuickUnifiedFlight = (
         mode: 'quick',
         completenessScore: input.airline ? 0.58 : 0.5,
         realismScore: 0.45,
-        priceContextAvailable: false,
+        priceContextAvailable: true,
+        livePriceBenchmarkAvailable: false,
         priceMissing: false,
         baggageUnverified: false,
         riskFlags,
@@ -695,7 +697,8 @@ const buildDetailedUnifiedFlight = (
         mode: 'detailed',
         completenessScore,
         realismScore,
-        priceContextAvailable: false,
+        priceContextAvailable: hasPrice,
+        livePriceBenchmarkAvailable: false,
         priceMissing: !hasPrice,
         baggageUnverified: false,
         riskFlags,
@@ -833,6 +836,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
                 promptForDetails: parseWarnings.length > 0,
                 parseWarnings,
                 parseConfidence: 1,
+                priceContextAvailable: !!input.price,
+                livePriceBenchmarkAvailable: false,
                 priceMissing: !input.price,
             },
         };
@@ -981,6 +986,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             promptForDetails: adjustedWarnings.length > 0 || parseConfidence < 0.7,
             parseWarnings: adjustedWarnings,
             parseConfidence,
+            priceContextAvailable: !!inferredTotalPrice,
+            livePriceBenchmarkAvailable: false,
             priceMissing: !inferredTotalPrice,
             baggageUnverified: !Number.isFinite(input.checkedBaggageKg)
                 && parsed.trip.checkedBaggageKg !== null

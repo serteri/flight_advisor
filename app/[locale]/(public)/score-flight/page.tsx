@@ -87,6 +87,12 @@ interface ScoreResult {
         negativeFactors: string[];
         missingFactors: string[];
     };
+    scoreBreakdown?: Array<{
+        component: "price" | "duration" | "connections" | "airlineReliability" | "baggage" | "routeRealism" | "comfort";
+        label: string;
+        points: number;
+        reason: string;
+    }>;
     trackingPayload?: {
         trackingType: "ITINERARY_CANDIDATE";
         trip: {
@@ -132,6 +138,34 @@ interface ScoreResult {
     };
 }
 
+const CURRENCY_OPTIONS = [
+    "AUD",
+    "USD",
+    "EUR",
+    "GBP",
+    "CAD",
+    "NZD",
+    "SGD",
+    "TRY",
+    "JPY",
+    "HKD",
+    "AED",
+] as const;
+
+const getDefaultCurrency = (): string => {
+    try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        return tz.includes("Australia") ? "AUD" : "USD";
+    } catch {
+        return "USD";
+    }
+};
+
+const toMoney = (value: number, currency: string): string => {
+    if (!Number.isFinite(value)) return "-";
+    return `${value.toFixed(2)} ${currency}`;
+};
+
 const DECISION_CONFIG: Record<Decision, { label: string; color: string; bg: string; border: string; icon: typeof CheckCircle2 }> = {
     BUY: {
         label: "BUY",
@@ -174,7 +208,7 @@ export default function ScoreFlightPage() {
     const [itineraryText, setItineraryText] = useState("");
     const [overrides, setOverrides] = useState({
         price: "",
-        currency: "USD",
+        currency: getDefaultCurrency(),
         cabin: "",
         adults: "",
         children: "",
@@ -237,21 +271,30 @@ export default function ScoreFlightPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const normalizedPrice = Number(overrides.price);
+        if (!Number.isFinite(normalizedPrice) || normalizedPrice <= 0) {
+            setError("Enter total fare to calculate price value.");
+            return;
+        }
+
         setLoading(true);
         setTracked(false);
         setError(null);
 
         try {
             const useManualOverride = segmentsManuallyEdited && segments.length > 0;
+            const adults = overrides.adults.trim() !== "" ? parseInt(overrides.adults, 10) : 1;
+            const children = overrides.children.trim() !== "" ? parseInt(overrides.children, 10) : 0;
+            const infants = overrides.infants.trim() !== "" ? parseInt(overrides.infants, 10) : 0;
             const payload = {
                 mode: "paste",
                 itineraryText,
-                ...(overrides.price && { price: parseFloat(overrides.price) }),
-                ...(overrides.currency && { currency: overrides.currency.toUpperCase().trim() }),
+                price: normalizedPrice,
+                currency: (overrides.currency || getDefaultCurrency()).toUpperCase().trim(),
                 ...(overrides.cabin && { cabin: overrides.cabin }),
-                ...(overrides.adults.trim() !== "" && { adults: parseInt(overrides.adults, 10) }),
-                ...(overrides.children.trim() !== "" && { children: parseInt(overrides.children, 10) }),
-                ...(overrides.infants.trim() !== "" && { infants: parseInt(overrides.infants, 10) }),
+                adults,
+                children,
+                infants,
                 ...(overrides.checkedBaggageKg && { checkedBaggageKg: parseFloat(overrides.checkedBaggageKg) }),
                 refundable: overrides.refundable,
                 ...(useManualOverride && {
@@ -355,24 +398,28 @@ export default function ScoreFlightPage() {
                     </div>
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Optional overrides</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Pricing and passenger inputs</div>
+                        <p className="text-xs text-slate-500 mb-3">Total fare is required for score transparency and price value scoring.</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <input
                                 type="number"
                                 min="1"
                                 step="0.01"
-                                placeholder="Price"
+                                required
+                                placeholder="Total fare *"
                                 value={overrides.price}
                                 onChange={(e) => setOverrides((prev) => ({ ...prev, price: e.target.value }))}
                                 className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm"
                             />
-                            <input
-                                maxLength={3}
-                                placeholder="Currency"
+                            <select
                                 value={overrides.currency}
                                 onChange={(e) => setOverrides((prev) => ({ ...prev, currency: e.target.value }))}
-                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono uppercase"
-                            />
+                                className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm bg-white"
+                            >
+                                {CURRENCY_OPTIONS.map((currency) => (
+                                    <option key={currency} value={currency}>{currency}</option>
+                                ))}
+                            </select>
                             <select
                                 value={overrides.cabin}
                                 onChange={(e) => setOverrides((prev) => ({ ...prev, cabin: e.target.value }))}
@@ -525,14 +572,20 @@ export default function ScoreFlightPage() {
                                 <div className="font-semibold mb-1">Passenger-aware price context</div>
                                 <p>
                                     {result.passengerPricingContext.adults} adult, {result.passengerPricingContext.children} child, {result.passengerPricingContext.infants} infant
-                                    {" "}({result.passengerPricingContext.totalTravelers} traveler total). Entered total fare: {result.passengerPricingContext.totalPrice}.
+                                    {" "}({result.passengerPricingContext.totalTravelers} traveler total). Total fare: {toMoney(result.passengerPricingContext.totalPrice, result.trackingPayload?.trip.currency || overrides.currency)}.
                                 </p>
-                                {result.passengerPricingContext.totalTravelers > 1 && (
-                                    <p className="mt-1">
-                                        Comparable benchmark price per traveler: {result.passengerPricingContext.comparablePerTravelerPrice}
-                                        {result.passengerPricingContext.mixedTravelerTypes ? " (estimated due to mixed traveler types)." : "."}
-                                    </p>
-                                )}
+                                <p className="mt-1">
+                                    Comparable adult-equivalent fare: {toMoney(result.passengerPricingContext.comparablePerTravelerPrice, result.trackingPayload?.trip.currency || overrides.currency)}
+                                    {result.passengerPricingContext.mixedTravelerTypes ? " (estimated for mixed traveler types)." : "."}
+                                </p>
+                            </div>
+                        )}
+
+                        {(result.trackingPayload || result.extractedSegments?.length) && (
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+                                <div className="font-semibold mb-1">Cabin and booking class</div>
+                                <p>Cabin class: {(result.trackingPayload?.trip.cabin || "economy").toString().replace("_", " ")}</p>
+                                <p>Booking class: {result.extractedSegments?.[0]?.bookingClass ? result.extractedSegments[0].bookingClass : "Booking class not detected"}</p>
                             </div>
                         )}
 
@@ -630,6 +683,23 @@ export default function ScoreFlightPage() {
                                 <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
                                     <div className="text-xs font-bold uppercase tracking-wider text-sky-700 mb-1">What to do next</div>
                                     <p className="text-sm text-sky-900">{result.recommendationExplanation.actionHint}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {result.scoreBreakdown && result.scoreBreakdown.length > 0 && (
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Score breakdown</div>
+                                <div className="space-y-2">
+                                    {result.scoreBreakdown.map((item) => (
+                                        <div key={item.component} className="rounded-lg border border-slate-200 p-3 bg-slate-50">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-sm font-semibold text-slate-900">{item.label}</span>
+                                                <span className="text-sm font-bold text-slate-700">{item.points.toFixed(1)}/10</span>
+                                            </div>
+                                            <p className="text-xs text-slate-600 mt-1">{item.reason}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}

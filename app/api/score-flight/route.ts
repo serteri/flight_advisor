@@ -37,6 +37,13 @@ type RecommendationExplanation = {
     missingFactors: string[];
 };
 
+type ScoreBreakdownItem = {
+    component: 'price' | 'duration' | 'connections' | 'airlineReliability' | 'baggage' | 'routeRealism' | 'comfort';
+    label: string;
+    points: number;
+    reason: string;
+};
+
 type PassengerPricingContext = NonNullable<InputAssessment['passengerPricingContext']>;
 
 const normalizeDecision = (action?: string): ManualDecision => {
@@ -46,6 +53,96 @@ const normalizeDecision = (action?: string): ManualDecision => {
 };
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+const toOneDecimal = (value: number): number => Number(value.toFixed(1));
+
+const toTenPoint = (value: number | undefined, max: number): number => {
+    const numeric = Number(value || 0);
+    if (!Number.isFinite(numeric) || max <= 0) return 0;
+    return toOneDecimal(clamp((numeric / max) * 10, 0, 10));
+};
+
+const buildScoreBreakdown = (
+    flight: any,
+    derived: DerivedStructureMetrics,
+    assessment: InputAssessment,
+    passengerPricingContext?: PassengerPricingContext,
+): ScoreBreakdownItem[] => {
+    const breakdown = flight?.score?.breakdown || {};
+    const comfortSignals = (flight?.score?.comfortNotes || []) as string[];
+    const pricePoints = assessment.priceMissing ? 0 : toTenPoint(breakdown.priceScore, 20);
+    const durationPoints = toTenPoint(breakdown.durationScore, 15);
+    const connectionsPoints = toOneDecimal(clamp(((Number(breakdown.stopScore || 0) + Number(breakdown.connectionScore || 0)) / 2), 0, 10));
+    const reliabilityPoints = toTenPoint(breakdown.reliabilityScore, 10);
+    const baggagePoints = toTenPoint(breakdown.baggageScore, 10);
+    const routeRealismPoints = derived.routeRealism === 'REALISTIC' ? 9 : 5;
+    const amenities = Number(breakdown.amenitiesScore || 0);
+    const aircraft = Number(breakdown.airlineScore || 0);
+    const comfortPoints = toOneDecimal(clamp((((amenities / 5) + (aircraft / 5)) / 2) * 10, 0, 10));
+
+    const connectionReason = derived.tripType === 'ROUND_TRIP'
+        ? `Outbound connections: ${derived.outboundConnectionCount}, inbound connections: ${derived.inboundConnectionCount}.`
+        : `Total connections: ${derived.connectionCount}.`;
+    const durationReason = derived.tripType === 'ROUND_TRIP'
+        ? `Outbound duration ${derived.outboundDurationMinutes} min, inbound duration ${derived.inboundDurationMinutes} min.`
+        : `Total duration ${derived.totalDurationMinutes} min.`;
+
+    return [
+        {
+            component: 'price',
+            label: 'Price value',
+            points: pricePoints,
+            reason: assessment.priceMissing
+                ? 'Price not provided, so price value was not scored.'
+                : passengerPricingContext
+                    ? `${passengerPricingContext.totalPrice} total fare for ${passengerPricingContext.totalTravelers} traveler(s); adult-equivalent fare ${passengerPricingContext.comparablePerTravelerPrice.toFixed(2)}.`
+                    : 'Manual fare was used for estimated comparison.',
+        },
+        {
+            component: 'duration',
+            label: 'Duration',
+            points: durationPoints,
+            reason: durationReason,
+        },
+        {
+            component: 'connections',
+            label: 'Connections',
+            points: connectionsPoints,
+            reason: connectionReason,
+        },
+        {
+            component: 'airlineReliability',
+            label: 'Airline reliability',
+            points: reliabilityPoints,
+            reason: comfortSignals.some((note) => /top-tier airline/i.test(note))
+                ? 'Airline is treated as top-tier for reliability signals.'
+                : 'Reliability score is based on airline on-time and consistency signals.',
+        },
+        {
+            component: 'baggage',
+            label: 'Baggage',
+            points: baggagePoints,
+            reason: assessment.baggageUnverified
+                ? 'Baggage was detected from text but not fare-confirmed.'
+                : 'Checked baggage details were included in scoring.',
+        },
+        {
+            component: 'routeRealism',
+            label: 'Route realism',
+            points: routeRealismPoints,
+            reason: derived.routeRealism === 'REALISTIC'
+                ? 'Segment sequence and timing look realistic.'
+                : 'Route structure has realism warnings.',
+        },
+        {
+            component: 'comfort',
+            label: 'Comfort',
+            points: comfortPoints,
+            reason: comfortSignals.length > 0
+                ? comfortSignals.slice(0, 2).join(' ')
+                : 'Comfort score is based on aircraft and amenities signals.',
+        },
+    ];
+};
 
 const parseWarningSignals = (assessment: InputAssessment): WarningSignals => {
     const warnings = assessment.parseWarnings || [];
@@ -115,6 +212,16 @@ const computeConfidenceCap = (
     }
     if (assessment.priceMissing || assessment.baggageUnverified || signals.partialExtraction > 0) {
         cap = Math.min(cap, 65);
+    }
+    if (!assessment.priceMissing && !assessment.livePriceBenchmarkAvailable) {
+        const veryComplete = (assessment.completenessScore >= 0.9)
+            && (assessment.realismScore >= 0.9)
+            && ((assessment.parseConfidence ?? 0.7) >= 0.85)
+            && derived.routeRealism === 'REALISTIC'
+            && derived.connectionFeasibility !== 'RISKY';
+        if (!veryComplete) {
+            cap = Math.min(cap, 75);
+        }
     }
 
     return cap;
@@ -210,6 +317,9 @@ const buildWatchLabel = (
         if (signals.missingPrice > 0) {
             return 'Watch closely — no live price benchmark available; confirm fare before booking';
         }
+        if (!assessment.priceMissing && !assessment.livePriceBenchmarkAvailable) {
+            return 'Watch closely — price is provided, but live market benchmark is estimated.';
+        }
         if (!assessment.priceContextAvailable) {
             return 'Watch closely — price context unavailable; verify fare and availability first';
         }
@@ -257,7 +367,9 @@ const buildModeExplanation = (
         }
     }
 
-    if (!assessment.priceContextAvailable) {
+    if (!assessment.priceMissing && !assessment.livePriceBenchmarkAvailable) {
+        notes.push('Price is provided, but live market benchmark is estimated.');
+    } else if (!assessment.priceContextAvailable) {
         notes.push('No external route-price context is available; timing certainty is limited.');
     }
 
@@ -311,7 +423,7 @@ const buildRecommendationExplanation = (
     }
 
     if (signals.missingPrice > 0) {
-        missingFactors.push('Price is missing or inferred from fallback defaults.');
+        missingFactors.push('Price is missing and price value scoring is disabled.');
     }
     if (signals.missingSegmentTimes > 0) {
         missingFactors.push('Some segment departure/arrival times are missing.');
@@ -375,6 +487,15 @@ export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
         const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
+        if (assessment.priceMissing) {
+            return NextResponse.json(
+                {
+                    error: 'Enter total fare to calculate price value.',
+                    issues: [{ path: 'price', message: 'Enter total fare to calculate price value.' }],
+                },
+                { status: 400 },
+            );
+        }
         const passengerPricingContext = assessment.passengerPricingContext;
         const scoringComparablePrice = passengerPricingContext && passengerPricingContext.totalTravelers > 1
             ? passengerPricingContext.comparablePerTravelerPrice
@@ -558,6 +679,7 @@ export async function POST(request: NextRequest) {
                 explanation: selfChecked.flight.score.decisionReason || explanation,
             },
             recommendationExplanation,
+            scoreBreakdown: buildScoreBreakdown(selfChecked.flight, derived, assessment, passengerPricingContext),
             trackingPayload: {
                 trackingType: 'ITINERARY_CANDIDATE',
                 trip: {
@@ -612,6 +734,7 @@ export async function POST(request: NextRequest) {
                 baggageConfidenceScore: assessment.baggageConfidenceScore,
                 parseConfidence: assessment.parseConfidence,
                 priceContextAvailable: assessment.priceContextAvailable,
+                livePriceBenchmarkAvailable: assessment.livePriceBenchmarkAvailable,
                 connectionFeasibility: derived.connectionFeasibility,
                 routeRealism: derived.routeRealism,
                 warningSignals,
