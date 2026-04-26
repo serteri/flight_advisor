@@ -758,6 +758,7 @@ const scoreFlight = (
         expectedRouteDuration: number;
         markInvalidData: boolean;
         invalidReason?: string;
+        disablePriceScoring?: boolean;
         persona?: PersonaKey;
         preferenceProfile?: PreferenceProfile;
         personalBiasProfile?: PersonalBiasProfile;
@@ -789,7 +790,7 @@ const scoreFlight = (
     const loyaltyMatched = Boolean(loyaltyAirline && flightAirline && flightAirline.includes(loyaltyAirline));
 
     const price = Number(flight.price);
-    const validPrice = Number.isFinite(price) && price > 0 ? price : context.avgPrice;
+    const validPrice = Number.isFinite(price) && price > 0 ? price : 0;
 
     const durationMinutes = resolveDurationMinutes(flight);
     const expectedRouteDuration = Math.max(1, context.expectedRouteDuration || durationMinutes || 1);
@@ -803,29 +804,34 @@ const scoreFlight = (
     );
 
     let priceScoreValue = 10; // neutral default
-    if (context.maxPrice > context.minPrice) {
-        // Relative range scoring (search results batch)
-        const relativePriceRatio = (context.maxPrice - validPrice) / (context.maxPrice - context.minPrice);
-        priceScoreValue = clamp(relativePriceRatio * 25, 0, 25);
-    } else if (singleFlightFairPrice > 0) {
-        // Single-flight: score against cabin/route-duration fair market estimate.
-        // priceRatio 0.5 (half of fair) → ~13, 1.0 (at fair) → 10, 2.0 (2× fair) → 6.7
-        const priceRatio = validPrice / singleFlightFairPrice;
-        priceScoreValue = clamp(25 / (priceRatio + 1), 0, 25);
-        console.debug(
-            `[SCORING_SENSITIVITY] price=${validPrice} ${String(flight.currency || '?')} fairPrice=${singleFlightFairPrice} ratio=${priceRatio.toFixed(2)} priceScore=${priceScoreValue.toFixed(1)}`
-        );
-    }
-    const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 25);
-    breakdown.priceValue = Math.round(personalizedPriceScore);
+    if (context.disablePriceScoring) {
+        breakdown.priceValue = Math.round(BREAKDOWN_MAXES.priceValue / 2);
+        riskFlags.push('Price missing - price score disabled');
+    } else {
+        if (context.maxPrice > context.minPrice) {
+            // Relative range scoring (search results batch)
+            const relativePriceRatio = (context.maxPrice - validPrice) / (context.maxPrice - context.minPrice);
+            priceScoreValue = clamp(relativePriceRatio * 25, 0, 25);
+        } else if (singleFlightFairPrice > 0) {
+            // Single-flight: score against cabin/route-duration fair market estimate.
+            // priceRatio 0.5 (half of fair) → ~13, 1.0 (at fair) → 10, 2.0 (2× fair) → 6.7
+            const priceRatio = validPrice / singleFlightFairPrice;
+            priceScoreValue = clamp(25 / (priceRatio + 1), 0, 25);
+            console.debug(
+                `[SCORING_SENSITIVITY] price=${validPrice} ${String(flight.currency || '?')} fairPrice=${singleFlightFairPrice} ratio=${priceRatio.toFixed(2)} priceScore=${priceScoreValue.toFixed(1)}`
+            );
+        }
+        const personalizedPriceScore = clamp(priceScoreValue * (1 + priceWeightBoost), 0, 25);
+        breakdown.priceValue = Math.round(personalizedPriceScore);
 
-    // Set comfort notes based on price score
-    if (priceScoreValue >= 20) {
-        comfortNotes.push('Price is significantly below the route average');
-    } else if (priceScoreValue >= 15) {
-        comfortNotes.push('Price is below the route average');
-    } else if (priceScoreValue < 8) {
-        riskFlags.push('Price is above the route average');
+        // Set comfort notes based on price score
+        if (priceScoreValue >= 20) {
+            comfortNotes.push('Price is significantly below the route average');
+        } else if (priceScoreValue >= 15) {
+            comfortNotes.push('Price is below the route average');
+        } else if (priceScoreValue < 8) {
+            riskFlags.push('Price is above the route average');
+        }
     }
 
     // ── DURATION SCORING ──────────────────────────────────────────────────────
@@ -854,8 +860,9 @@ const scoreFlight = (
     }
 
     // ── REFERENCE PRICE FOR INTEL (separate from relative scoring) ──────────────
-    const referencePrice =
-        typeof context.medianPrice === 'number' && context.medianPrice > 0
+    const referencePrice = context.disablePriceScoring
+        ? 0
+        : typeof context.medianPrice === 'number' && context.medianPrice > 0
             ? context.medianPrice
             : context.avgPrice;
     const priceReferenceSource =
@@ -880,7 +887,7 @@ const scoreFlight = (
     }
     breakdown.stops = clamp(stopsScore, 0, 15);
 
-    if (flight.stops >= 2) {
+    if (flight.stops >= 2 && !context.disablePriceScoring) {
         riskFlags.push('Multiple connections');
     }
 
@@ -1044,8 +1051,12 @@ const scoreFlight = (
     const referenceForPenalty = referencePrice > 0
         ? referencePrice
         : (singleFlightFairPrice > 0 ? singleFlightFairPrice : context.avgPrice);
-    const priceDeviationPct = referenceForPenalty > 0 ? (validPrice - referenceForPenalty) / referenceForPenalty : 0;
-    const priceDeviationPenalty = clamp(Math.max(0, priceDeviationPct) * 15, 0, 8);
+    const priceDeviationPct = !context.disablePriceScoring && referenceForPenalty > 0
+        ? (validPrice - referenceForPenalty) / referenceForPenalty
+        : 0;
+    const priceDeviationPenalty = context.disablePriceScoring
+        ? 0
+        : clamp(Math.max(0, priceDeviationPct) * 15, 0, 8);
 
     const durationRatio = expectedRouteDuration > 0 ? durationMinutes / expectedRouteDuration : 1;
     const durationPenalty = clamp(Math.max(0, durationRatio - 1) * 6, 0, 8);
@@ -1073,7 +1084,10 @@ const scoreFlight = (
     let valueTag = 'Balanced Option';
     const resolvedPersona = resolvePersona(context.persona as PersonaInput);
     const personaScore = computePersonaScore(breakdown, resolvedPersona);
-    const priceIntel = computePriceIntel(validPrice, referencePrice, priceReferenceSource);
+    const priceIntel = context.disablePriceScoring
+        ? undefined
+        : computePriceIntel(validPrice, referencePrice, priceReferenceSource);
+    const priceIntelForExplanation = priceIntel ?? { label: 'Fair price', deltaPercent: 0 };
     const confidenceScore = computeConfidenceScore(flight);
     const finalRiskFlags = Array.from(new Set([
         ...riskFlags,
@@ -1082,7 +1096,9 @@ const scoreFlight = (
     const finalComfortNotes = Array.from(new Set(comfortNotes));
     const explanation = context.markInvalidData
         ? undefined
-        : generateScoreExplanation(flight, breakdown, finalComfortNotes, priceIntel, displayScore, connectionRisk, minConnectionMinutes);
+        : context.disablePriceScoring
+            ? `Scored without fare benchmark because price is missing. Connection risk: ${connectionRisk}.`
+            : generateScoreExplanation(flight, breakdown, finalComfortNotes, priceIntelForExplanation, displayScore, connectionRisk, minConnectionMinutes);
     const tradeoff = {
         price: clamp(Math.round((breakdown.priceValue / BREAKDOWN_MAXES.priceValue) * 100), 0, 100),
         time: clamp(Math.round((breakdown.duration / BREAKDOWN_MAXES.duration) * 100), 0, 100),
@@ -1640,6 +1656,7 @@ export async function applyAdvancedFlightScoring(
         destination?: string;
         departureDate?: string;
         useHistoricalMedian?: boolean;
+        disablePriceScoring?: boolean;
         persona?: PersonaInput;
         preferenceProfile?: PreferenceProfile;
         personalBiasProfile?: PersonalBiasProfile;
@@ -1704,6 +1721,7 @@ export async function applyAdvancedFlightScoring(
                 expectedRouteDuration,
                 markInvalidData,
                 invalidReason,
+                disablePriceScoring: options?.disablePriceScoring,
                 persona: resolvePersona(options?.persona),
                 preferenceProfile: options?.preferenceProfile,
                 personalBiasProfile: options?.personalBiasProfile,

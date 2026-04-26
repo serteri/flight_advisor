@@ -91,6 +91,7 @@ const computeConfidenceCap = (
     mode: 'quick' | 'detailed',
     signals: WarningSignals,
     derived: DerivedStructureMetrics,
+    assessment: InputAssessment,
 ): number => {
     let cap = mode === 'quick' ? 60 : 90;
 
@@ -112,6 +113,9 @@ const computeConfidenceCap = (
     if (derived.connectionFeasibility === 'RISKY') {
         cap = Math.min(cap, 74);
     }
+    if (assessment.priceMissing || assessment.baggageUnverified || signals.partialExtraction > 0) {
+        cap = Math.min(cap, 65);
+    }
 
     return cap;
 };
@@ -125,7 +129,7 @@ const computeModeConfidence = (
 ): number => {
     const parseConfidence = assessment.parseConfidence ?? (mode === 'quick' ? 0.5 : 0.65);
     const warningPenalty = signals.severityPenalty + (signals.totalWarnings * 0.8);
-    const confidenceCap = computeConfidenceCap(mode, signals, derived);
+    const confidenceCap = computeConfidenceCap(mode, signals, derived, assessment);
     const passengerContext = assessment.passengerPricingContext;
     const passengerPenalty = passengerContext?.mixedTravelerTypes
         ? 8
@@ -430,6 +434,7 @@ export async function POST(request: NextRequest) {
             destination: scoringDestination,
             departureDate: scoringFlight.departureTime,
             useHistoricalMedian: true,
+            disablePriceScoring: assessment.priceMissing,
         });
 
         const scoredFlight = scoredComparableFlight
@@ -464,6 +469,11 @@ export async function POST(request: NextRequest) {
             ...(enrichedFlight.score.riskFlags || []),
             ...assessment.riskFlags,
         ].filter((value, index, array) => array.indexOf(value) === index);
+        const filteredRiskFlags = mergedRiskFlags.filter((flag) => {
+            if (flag !== 'Multiple connections') return true;
+            if (derived.tripType !== 'ROUND_TRIP') return true;
+            return !(derived.outboundConnectionCount <= 1 && derived.inboundConnectionCount <= 1);
+        });
 
         const mergedComfortNotes = [
             ...(enrichedFlight.score.comfortNotes || []),
@@ -498,7 +508,7 @@ export async function POST(request: NextRequest) {
                 confidence: adjustedConfidence,
                 decisionConfidence: adjustedConfidence,
                 decisionReason: explanation,
-                riskFlags: mergedRiskFlags,
+                riskFlags: filteredRiskFlags,
                 comfortNotes: mergedComfortNotes,
                 buyWaitSignal: {
                     action: buyWaitAction,

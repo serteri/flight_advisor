@@ -86,7 +86,7 @@ async function run(): Promise<void> {
                 tripDirection: 'INBOUND',
             },
         ],
-        totalPrice: 1950,
+        price: 1950,
         currency: 'AUD',
         cabin: 'economy',
     } as any);
@@ -112,11 +112,58 @@ async function run(): Promise<void> {
     const comfortNotes = scored?.score?.comfortNotes || [];
     assert(comfortNotes.includes('30kg checked baggage included'), `Expected exact baggage comfort note, got: ${comfortNotes.join(' | ')}`);
 
+    const unverifiedText = [
+        'Passenger 1 checked baggage: 30kg',
+        'Outbound Flight:',
+        '| SQ266',
+        'Brisbane Arpt(BNE) to Changi Intl Arpt(SIN)',
+        'Depart: 2026-06-01T00:10:00+10:00',
+        'Arrive: 2026-06-01T06:30:00+08:00',
+        '',
+        'Outbound Flight:',
+        '| SQ392',
+        'Changi Intl Arpt(SIN) to Istanbul Airport(IST)',
+        'Depart: 2026-06-01T10:00:00+08:00',
+        'Arrive: 2026-06-01T16:30:00+03:00',
+        '',
+        'Inbound Flight:',
+        '| SQ391',
+        'Istanbul Airport(IST) to Changi Intl Arpt(SIN)',
+        'Depart: 2026-06-05T13:20:00+03:00',
+        'Arrive: 2026-06-06T04:40:00+08:00',
+        '',
+        'Inbound Flight:',
+        '| SQ265',
+        'Changi Intl Arpt(SIN) to Brisbane Arpt(BNE)',
+        'Depart: 2026-06-06T06:10:00+08:00',
+        'Arrive: 2026-06-06T15:45:00+10:00',
+    ].join('\n');
+
+    const unverifiedParsed = parseItineraryText(unverifiedText);
+    assert(unverifiedParsed.trip.checkedBaggageKg === 30, `Expected parser to detect 30kg mention, got ${unverifiedParsed.trip.checkedBaggageKg}`);
+    assert(unverifiedParsed.trip.checkedBaggageEvidence === 'passenger_mention', `Expected passenger baggage evidence, got ${unverifiedParsed.trip.checkedBaggageEvidence}`);
+
+    const unverifiedResult = itineraryInputToUnifiedFlight({
+        mode: 'paste',
+        itineraryText: unverifiedText,
+    } as any);
+
+    assert(unverifiedResult.assessment.priceMissing === true, 'Expected priceMissing=true when no price is provided');
+    assert(unverifiedResult.unifiedFlight.price === 0, `Expected no fallback price (0), got ${unverifiedResult.unifiedFlight.price}`);
+    assert(unverifiedResult.assessment.baggageUnverified === true, 'Expected baggageUnverified=true for passenger-line baggage mention');
+    assert(!unverifiedResult.unifiedFlight.baggage?.checked?.kg, `Expected unverified baggage to not become guaranteed checked kg, got ${unverifiedResult.unifiedFlight.baggage?.checked?.kg}`);
+    assert((unverifiedResult.assessment.parseWarnings || []).some((warning) => /not fare-confirmed/i.test(warning)), 'Expected parse warning for unverified baggage detection');
+
     console.log('PASS regression_baggage_roundtrip');
     console.log(JSON.stringify({
         parsedCheckedBaggageKg: parsed.trip.checkedBaggageKg,
         derived: manualOverrideResult.derived,
         comfortNotes,
+        unverifiedCase: {
+            priceMissing: unverifiedResult.assessment.priceMissing,
+            baggageUnverified: unverifiedResult.assessment.baggageUnverified,
+            parseWarnings: unverifiedResult.assessment.parseWarnings,
+        },
     }, null, 2));
 }
 

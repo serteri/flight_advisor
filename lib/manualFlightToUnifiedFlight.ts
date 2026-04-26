@@ -139,6 +139,8 @@ export type InputAssessment = {
     completenessScore: number;
     realismScore: number;
     priceContextAvailable: boolean;
+    priceMissing: boolean;
+    baggageUnverified: boolean;
     riskFlags: string[];
     comfortNotes: string[];
     promptForDetails: boolean;
@@ -156,6 +158,10 @@ export type InputAssessment = {
         comparablePerTravelerPrice: number;
         mixedTravelerTypes: boolean;
     };
+};
+
+type InternalDetailedInput = Omit<DetailedScoreInput, 'totalPrice'> & {
+    totalPrice?: number;
 };
 
 export type ParsedSegmentPreview = {
@@ -225,7 +231,7 @@ const isUnrealisticLongHaulDuration = (origin: string, destination: string, dura
     return durationMinutes < min;
 };
 
-const buildBaggageForDetailed = (input: DetailedScoreInput): BaggageAllowance | undefined => {
+const buildBaggageForDetailed = (input: InternalDetailedInput): BaggageAllowance | undefined => {
     if (typeof input.checkedBaggageKg !== 'number' && typeof input.cabinBaggageKg !== 'number') {
         return undefined;
     }
@@ -249,7 +255,7 @@ const buildBaggageForDetailed = (input: DetailedScoreInput): BaggageAllowance | 
     };
 };
 
-const buildPoliciesForDetailed = (input: DetailedScoreInput): FlightPolicies | undefined => {
+const buildPoliciesForDetailed = (input: InternalDetailedInput): FlightPolicies | undefined => {
     if (typeof input.refundable !== 'boolean') return undefined;
 
     return {
@@ -420,6 +426,8 @@ const buildQuickUnifiedFlight = (
         completenessScore: input.airline ? 0.58 : 0.5,
         realismScore: 0.45,
         priceContextAvailable: false,
+        priceMissing: false,
+        baggageUnverified: false,
         riskFlags,
         comfortNotes: [],
         promptForDetails: true,
@@ -489,7 +497,7 @@ const buildQuickUnifiedFlight = (
 };
 
 const buildDetailedUnifiedFlight = (
-    input: DetailedScoreInput,
+    input: InternalDetailedInput,
 ): ItineraryConversionResult => {
     const sortedSegments = [...input.segments].sort(
         (a, b) => parseDateMs(a.departureDateTime) - parseDateMs(b.departureDateTime),
@@ -568,23 +576,29 @@ const buildDetailedUnifiedFlight = (
         connectionPenalty += 0.25;
     }
 
+    const hasPrice = typeof input.totalPrice === 'number' && Number.isFinite(input.totalPrice) && input.totalPrice > 0;
     const baggageConfidenceScore = typeof input.checkedBaggageKg === 'number'
         ? (typeof input.cabinBaggageKg === 'number' ? 0.95 : 0.8)
         : (typeof input.cabinBaggageKg === 'number' ? 0.6 : 0.45);
-    const passengerPricingContext = summarizePassengerPricingContext({
-        totalPrice: input.totalPrice,
-        adults: input.adults,
-        children: input.children,
-        infants: input.infants,
-    });
+    const passengerPricingContext = hasPrice
+        ? summarizePassengerPricingContext({
+            totalPrice: input.totalPrice as number,
+            adults: input.adults,
+            children: input.children,
+            infants: input.infants,
+        })
+        : undefined;
 
     if (typeof input.checkedBaggageKg !== 'number') {
         riskFlags.push('Checked baggage kg missing; baggage confidence reduced.');
     }
-    if (passengerPricingContext.totalTravelers > 1) {
+    if (!hasPrice) {
+        riskFlags.push('Price missing; fare benchmark scoring disabled.');
+    }
+    if (passengerPricingContext && passengerPricingContext.totalTravelers > 1) {
         comfortNotes.push(`Fare reflects ${passengerPricingContext.totalTravelers} travelers; benchmark comparison uses an estimated per-traveler view.`);
     }
-    if (passengerPricingContext.mixedTravelerTypes) {
+    if (passengerPricingContext?.mixedTravelerTypes) {
         riskFlags.push('Mixed traveler types reduce direct comparability to standard adult fare benchmarks.');
     }
 
@@ -593,6 +607,7 @@ const buildDetailedUnifiedFlight = (
         1
             - (typeof input.checkedBaggageKg === 'number' ? 0 : 0.1)
             - (typeof input.cabinBaggageKg === 'number' ? 0 : 0.06)
+            - (hasPrice ? 0 : 0.14)
             - (typeof input.refundable === 'boolean' ? 0 : 0.05),
     );
 
@@ -681,6 +696,8 @@ const buildDetailedUnifiedFlight = (
         completenessScore,
         realismScore,
         priceContextAvailable: false,
+        priceMissing: !hasPrice,
+        baggageUnverified: false,
         riskFlags,
         comfortNotes,
         promptForDetails: false,
@@ -724,7 +741,7 @@ const buildDetailedUnifiedFlight = (
             cabinClass: normalizeCabinClass(input.cabin),
             segments: unifiedSegments as [FlightSegment, ...FlightSegment[]],
             layovers: layovers.length ? layovers : undefined,
-            price: input.totalPrice,
+            price: hasPrice ? (input.totalPrice as number) : 0,
             currency: input.currency,
             baggage: buildBaggageForDetailed(input),
             policies: buildPoliciesForDetailed(input),
@@ -778,9 +795,9 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             };
         });
 
-        const detailedInput: DetailedScoreInput = {
+        const detailedInput: InternalDetailedInput = {
             mode: 'detailed',
-            totalPrice: input.price ?? 999,
+            totalPrice: input.price,
             currency: input.currency ?? 'USD',
             cabin: input.cabin ?? 'economy',
             adults: input.adults,
@@ -796,7 +813,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         const parseWarnings = ['Using manually edited segments from UI.'];
 
         if (!input.price) {
-            parseWarnings.push('Price missing in manual override; fallback price baseline applied.');
+            parseWarnings.push('Price missing in manual override; fare benchmark scoring disabled.');
         }
 
         return {
@@ -816,6 +833,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
                 promptForDetails: parseWarnings.length > 0,
                 parseWarnings,
                 parseConfidence: 1,
+                priceMissing: !input.price,
             },
         };
     }
@@ -892,8 +910,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
     }
 
     const inferredTotalPrice = input.price
-        ?? parsed.trip.price
-        ?? 999;
+        ?? parsed.trip.price;
     const inferredCurrency = input.currency
         ?? parsed.trip.currency
         ?? 'USD';
@@ -904,7 +921,15 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         ? input.refundable
         : parsed.meta.refundable;
 
-    const detailedInput: DetailedScoreInput = {
+    const parserCheckedBaggageEvidence = parsed.trip.checkedBaggageEvidence;
+    const parsedCheckedBaggageIsVerified = parserCheckedBaggageEvidence === 'fare_allowance';
+    const inferredCheckedBaggageKg = Number.isFinite(input.checkedBaggageKg)
+        ? input.checkedBaggageKg
+        : parsedCheckedBaggageIsVerified
+            ? parsed.trip.checkedBaggageKg ?? undefined
+            : undefined;
+
+    const detailedInput: InternalDetailedInput = {
         mode: 'detailed',
         totalPrice: inferredTotalPrice,
         currency: inferredCurrency,
@@ -912,9 +937,7 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         adults: input.adults ?? parsed.trip.adults ?? 1,
         children: input.children ?? parsed.trip.children ?? 0,
         infants: input.infants ?? parsed.trip.infants ?? 0,
-        checkedBaggageKg: Number.isFinite(input.checkedBaggageKg)
-            ? input.checkedBaggageKg
-            : parsed.trip.checkedBaggageKg ?? undefined,
+        checkedBaggageKg: inferredCheckedBaggageKg,
         cabinBaggageKg: typeof input.cabinBaggageKg === 'number'
             ? input.cabinBaggageKg
             : parsed.trip.cabinBaggageKg ?? undefined,
@@ -931,7 +954,11 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         : parseWarnings;
 
     if (!input.price && !parsed.trip.price) {
-        adjustedWarnings.push('Price missing in text; fallback price baseline applied.');
+        adjustedWarnings.push('Price missing in text; fare benchmark scoring disabled.');
+    }
+
+    if (!Number.isFinite(input.checkedBaggageKg) && parsed.trip.checkedBaggageKg !== null && !parsedCheckedBaggageIsVerified) {
+        adjustedWarnings.push(`Checked baggage detected (${parsed.trip.checkedBaggageKg}kg) from passenger details and is not fare-confirmed.`);
     }
 
     const parseConfidence = parsed.confidence;
@@ -954,6 +981,23 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             promptForDetails: adjustedWarnings.length > 0 || parseConfidence < 0.7,
             parseWarnings: adjustedWarnings,
             parseConfidence,
+            priceMissing: !inferredTotalPrice,
+            baggageUnverified: !Number.isFinite(input.checkedBaggageKg)
+                && parsed.trip.checkedBaggageKg !== null
+                && !parsedCheckedBaggageIsVerified,
+            baggageConfidenceScore: !Number.isFinite(input.checkedBaggageKg)
+                && parsed.trip.checkedBaggageKg !== null
+                && !parsedCheckedBaggageIsVerified
+                ? Math.min(base.assessment.baggageConfidenceScore, 0.55)
+                : base.assessment.baggageConfidenceScore,
+            comfortNotes: !Number.isFinite(input.checkedBaggageKg)
+                && parsed.trip.checkedBaggageKg !== null
+                && !parsedCheckedBaggageIsVerified
+                ? [
+                    ...base.assessment.comfortNotes,
+                    `Checked baggage detected (${parsed.trip.checkedBaggageKg}kg) but not fare-confirmed.`,
+                ]
+                : base.assessment.comfortNotes,
             completenessScore: Math.max(0.45, Math.min(base.assessment.completenessScore, parseConfidence + 0.2)),
         },
     };

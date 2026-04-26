@@ -14,6 +14,7 @@ type ParsedTrip = {
     currency?: string;
     cabin?: 'economy' | 'premium' | 'business' | 'first';
     checkedBaggageKg: number | null;
+    checkedBaggageEvidence?: 'fare_allowance' | 'passenger_mention';
     cabinBaggageKg: number | null;
     adults: number;
     children: number;
@@ -311,10 +312,42 @@ const extractPrice = (text: string): { price?: number; currency?: string } => {
 
 const extractBaggage = (text: string): {
     checkedBaggageKg: number | null;
+    checkedBaggageEvidence?: 'fare_allowance' | 'passenger_mention';
     cabinBaggageKg: number | null;
     checkedBaggageIncluded?: boolean;
     cabinBaggageIncluded?: boolean;
 } => {
+    const lines = text.split(/\r?\n/);
+    const fareCheckedCandidates: number[] = [];
+    const passengerCheckedCandidates: number[] = [];
+    const cabinCandidates: number[] = [];
+
+    lines.forEach((line) => {
+        const hasBaggageContext = /baggage|bag|allowance|check-in|checked|cabin|carry[-\s]?on|hand\s*baggage/i.test(line);
+        if (!hasBaggageContext) return;
+
+        const kgMatch = line.match(/(\d{1,2})\s?(?:kg|k)\b/i);
+        if (!kgMatch) return;
+
+        const kg = Number(kgMatch[1]);
+        if (!Number.isFinite(kg) || kg <= 0) return;
+
+        const passengerContext = /passenger|traveler|adult|child|infant|pax|adt|chd|inf\b/i.test(line);
+        const cabinContext = /cabin|carry[-\s]?on|hand\s*baggage/i.test(line);
+
+        if (passengerContext) {
+            passengerCheckedCandidates.push(kg);
+            return;
+        }
+
+        if (cabinContext) {
+            cabinCandidates.push(kg);
+            return;
+        }
+
+        fareCheckedCandidates.push(kg);
+    });
+
     const checkedMatch = text.match(/(?:checked|check-in)\s*(?:baggage|bag|allowance)?[^\n\r]{0,30}?(\d{1,2})\s?kg/i)
         || text.match(/(\d{1,2})\s?kg[^\n\r]{0,20}?(?:checked|check-in)/i);
     const cabinMatch = text.match(/(?:cabin|carry[-\s]?on|hand\s*baggage)[^\n\r]{0,30}?(\d{1,2})\s?kg/i)
@@ -323,10 +356,22 @@ const extractBaggage = (text: string): {
         .map((match) => Number(match[1]))
         .filter((value) => Number.isFinite(value) && value > 0);
 
-    const checkedBaggageKg = checkedMatch
-        ? Number(checkedMatch[1])
+    const fareCandidate = fareCheckedCandidates.length > 0
+        ? Math.max(...fareCheckedCandidates)
         : (repeatedBaggageMatches.length ? Math.max(...repeatedBaggageMatches) : null);
-    const cabinBaggageKg = cabinMatch ? Number(cabinMatch[1]) : null;
+    const passengerCandidate = passengerCheckedCandidates.length > 0
+        ? Math.max(...passengerCheckedCandidates)
+        : null;
+
+    const checkedBaggageKg = fareCandidate ?? passengerCandidate;
+    const checkedBaggageEvidence = fareCandidate !== null
+        ? 'fare_allowance'
+        : passengerCandidate !== null
+            ? 'passenger_mention'
+            : undefined;
+    const cabinBaggageKg = cabinMatch
+        ? Number(cabinMatch[1])
+        : (cabinCandidates.length > 0 ? Math.max(...cabinCandidates) : null);
 
     const checkedIncluded = /(?:checked|check-in)[^\n\r]{0,20}included|included[^\n\r]{0,20}(?:checked|check-in)/i.test(text)
         || /\b\d+\s*(?:pc|piece|pieces)\b/i.test(text);
@@ -334,6 +379,7 @@ const extractBaggage = (text: string): {
 
     return {
         checkedBaggageKg,
+        checkedBaggageEvidence,
         cabinBaggageKg,
         checkedBaggageIncluded: checkedBaggageKg !== null ? true : checkedIncluded || undefined,
         cabinBaggageIncluded: cabinBaggageKg !== null ? true : cabinIncluded || undefined,
@@ -867,6 +913,7 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
             currency: priceData.currency,
             cabin,
             checkedBaggageKg: baggage.checkedBaggageKg,
+            checkedBaggageEvidence: baggage.checkedBaggageEvidence,
             cabinBaggageKg: baggage.cabinBaggageKg,
             adults: passengers.adults,
             children: passengers.children,
