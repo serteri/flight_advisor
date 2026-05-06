@@ -51,10 +51,14 @@ const AIRLINE_NAME_TO_CODE: Record<string, string> = {
 };
 
 const WEEKDAY_TOKENS = new Set(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']);
+// Currency codes that must never be treated as airline IATA prefixes
+const CURRENCY_CODES = new Set(['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY', 'TRY', 'NZD', 'CHF', 'CNY', 'HKD', 'SGD']);
 
 const ROUTE_REGEX = /\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/gi;
 const ALT_ROUTE_REGEX = /from\s+([A-Z]{3})\s+to\s+([A-Z]{3})/gi;
-const FLIGHT_NUMBER_REGEX = /\b([A-Z]{2,3})\s?-?(\d{1,4})(?!:)\b/g;
+// Flight numbers: 2-letter IATA airline code (letters only, not all-digits) + 1-4 digits
+// Lookahead rejects plain numbers followed by comma/space+digits (price context: "AUD 3,500")
+const FLIGHT_NUMBER_REGEX = /\b([A-Z]{2})\s?-?(\d{1,4})(?![\d,])\b/g;
 const FLIGHT_LINE_REGEX = /^\s*\|\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/i;
 const AIRPORT_WITH_IATA_REGEX = /([A-Za-z][A-Za-z0-9'.,\-\/\s]*?)\(([A-Z]{3})\)/;
 const AIRPORT_NAME_TO_IATA: Record<string, string> = {
@@ -101,6 +105,8 @@ const dedupeWarnings = (warnings: string[]): string[] => {
 const toIso = (date: Date): string => new Date(date.getTime()).toISOString();
 
 const isWeekdayToken = (value?: string): boolean => WEEKDAY_TOKENS.has((value || '').trim().toUpperCase());
+const isCurrencyCode = (value?: string): boolean => CURRENCY_CODES.has((value || '').trim().toUpperCase());
+const isInvalidFlightPrefix = (value?: string): boolean => isWeekdayToken(value) || isCurrencyCode(value);
 
 const parseNumber = (raw: string): number | undefined => {
     const cleaned = raw.replace(/\s/g, '');
@@ -410,6 +416,9 @@ const normalizeAirline = (context: string, flightCode?: string): string | undefi
 
 const normalizeDirection = (line: string): 'OUTBOUND' | 'INBOUND' | undefined => {
     const normalized = line.trim().toUpperCase();
+    // Match both "OUTBOUND FLIGHT" and standalone "OUTBOUND" / "INBOUND" headings
+    if (/^OUTBOUND(\s+FLIGHT)?\s*$/i.test(normalized)) return 'OUTBOUND';
+    if (/^INBOUND(\s+FLIGHT)?\s*$/i.test(normalized)) return 'INBOUND';
     if (normalized.includes('OUTBOUND FLIGHT')) return 'OUTBOUND';
     if (normalized.includes('INBOUND FLIGHT')) return 'INBOUND';
     return undefined;
@@ -684,6 +693,7 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
             arrival = new Date(Date.parse(arrival) + 24 * 60 * 60 * 1000).toISOString();
         }
         const flightCode = flightMatch[1].toUpperCase();
+        if (isInvalidFlightPrefix(flightCode)) continue;
         const flightNumber = `${flightCode}${flightMatch[2]}`;
         const airline = normalizeAirline(blockText, flightCode) || flightCode;
 
@@ -708,6 +718,134 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
             flightNumber,
             aircraft: aircraft || undefined,
             tripDirection: direction,
+        });
+    }
+
+    return segments;
+};
+
+// ---------------------------------------------------------------------------
+// Google-Flights-style block extractor
+//
+// Handles multi-line blocks of the form:
+//   [Airline Name] [FlightNumber]        <- optional preceding line
+//   [IATA] → [IATA] | [Date] | Departs [HH:MM] → Arrives [HH:MM]
+//   Aircraft: [type]                     <- optional following line
+//
+// Also handles the "Arrives [Day] [Date]" overnight format.
+// ---------------------------------------------------------------------------
+const GF_AIRLINE_FLIGHT_REGEX = /^([A-Za-z][A-Za-z\s]+?)\s+([A-Z]{2})(\d{1,4})\s*$/;
+const GF_ROUTE_LINE_REGEX = /^([A-Z]{3})\s*(?:->|→)\s*([A-Z]{3})\s*\|(.+)$/i;
+// Capture groups:
+//   1: departure HH:MM
+//   2: optional weekday  (Mon|Tue|...)
+//   3: optional full date  "11 Jun 2026"  (year present)
+//   4: optional day+month  "11 Jun"  (year absent, next-day shorthand)
+//   5: arrival HH:MM
+const GF_DEPARTS_ARRIVES_REGEX = /Departs?\s+(\d{1,2}:\d{2})\s*(?:->|→)\s*Arrives?\s+(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(?:(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})|(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)))\s+(\d{1,2}:\d{2})|Departs?\s+(\d{1,2}:\d{2})\s*(?:->|→)\s*Arrives?\s+(\d{1,2}:\d{2})/i;
+
+const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): ParsedSegment[] => {
+    const segments: ParsedSegment[] = [];
+    let currentDirection: 'OUTBOUND' | 'INBOUND' | undefined;
+
+    for (let i = 0; i < lines.length; i += 1) {
+        const line = lines[i];
+
+        // Track direction headings: OUTBOUND / INBOUND (with or without "FLIGHT")
+        const detectedDir = normalizeDirection(line);
+        if (detectedDir) {
+            currentDirection = detectedDir;
+            continue;
+        }
+
+        // Try to match a route line: IST → SIN | Tue 10 Jun 2026 | Departs 02:00 → Arrives 17:45
+        const routeMatch = line.match(GF_ROUTE_LINE_REGEX);
+        if (!routeMatch) continue;
+
+        const from = routeMatch[1].toUpperCase();
+        const to = routeMatch[2].toUpperCase();
+        const rest = routeMatch[3]; // everything after the first pipe
+
+        // Extract the date from rest: may have "Tue 10 Jun 2026 | Departs ..."
+        const dateMatch = rest.match(/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun\s+)?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\b/i);
+        const segDate = dateMatch ? parseDateOnly(dateMatch[0]) : (fallbackDate);
+
+        // Extract departs/arrives times from rest
+        const depArrMatch = rest.match(GF_DEPARTS_ARRIVES_REGEX);
+        let departure: string | undefined;
+        let arrival: string | undefined;
+
+        if (depArrMatch && segDate) {
+            // Two forms matched by the regex:
+            // Form A (groups 1,2,3,4,5): Departs HH:MM → Arrives [Weekday] [FullDate|ShortDate] HH:MM
+            // Form B (groups 6,7):        Departs HH:MM → Arrives HH:MM  (same-day or cross-midnight)
+            const depTime = depArrMatch[1] || depArrMatch[6];
+            departure = parseTimeToIso(segDate, depTime);
+
+            const fullDateStr = depArrMatch[3]; // "11 Jun 2026" with year
+            const shortDateStr = depArrMatch[4]; // "11 Jun" without year
+            const arrTime = depArrMatch[5] || depArrMatch[7];
+
+            if (arrTime) {
+                if (fullDateStr) {
+                    const arrDate = parseDateOnly(fullDateStr);
+                    if (arrDate) {
+                        arrival = parseTimeToIso(arrDate, arrTime);
+                    }
+                } else if (shortDateStr) {
+                    // Build a full date string by appending the year from segDate
+                    const year = segDate.getUTCFullYear();
+                    const arrDate = parseDateOnly(`${shortDateStr} ${year}`);
+                    if (arrDate) {
+                        arrival = parseTimeToIso(arrDate, arrTime);
+                    }
+                } else {
+                    // Same-day or cross-midnight
+                    arrival = parseTimeToIso(segDate, arrTime);
+                }
+            }
+            // Cross-midnight correction
+            if (departure && arrival && Date.parse(arrival) <= Date.parse(departure)) {
+                arrival = new Date(Date.parse(arrival) + 24 * 60 * 60 * 1000).toISOString();
+            }
+        }
+
+        // Look for airline + flight number on the line immediately BEFORE the route line
+        let flightNumber: string | undefined;
+        let airlineCode: string | undefined;
+        let airlineName: string | undefined;
+
+        if (i > 0) {
+            const prevLine = lines[i - 1].trim();
+            const airlineFlightMatch = prevLine.match(GF_AIRLINE_FLIGHT_REGEX);
+            if (airlineFlightMatch) {
+                const prefix = airlineFlightMatch[2].toUpperCase();
+                const digits = airlineFlightMatch[3];
+                if (!isInvalidFlightPrefix(prefix)) {
+                    flightNumber = `${prefix}${digits}`;
+                    airlineName = airlineFlightMatch[1].trim();
+                    airlineCode = normalizeAirline(prevLine, prefix) || prefix;
+                }
+            }
+        }
+
+        // Aircraft on the line immediately after (if present)
+        let aircraft: string | undefined;
+        if (i + 1 < lines.length && /^Aircraft:/i.test(lines[i + 1].trim())) {
+            aircraft = lines[i + 1].replace(/^Aircraft:\s*/i, '').trim() || undefined;
+        }
+
+        const airline = airlineCode || normalizeAirline(rest, undefined);
+
+        segments.push({
+            from,
+            to,
+            departure,
+            arrival,
+            airline,
+            flightNumber,
+            aircraft,
+            tripDirection: currentDirection,
         });
     }
 
@@ -744,7 +882,7 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
             const flight = flightFromLine || flightFromContext;
 
             const flightCode = flight?.[1]?.toUpperCase();
-            const validFlightCode = flightCode && !isWeekdayToken(flightCode) ? flightCode : undefined;
+            const validFlightCode = flightCode && !isInvalidFlightPrefix(flightCode) ? flightCode : undefined;
             const flightNumber = flight && validFlightCode ? `${validFlightCode}${flight[2]}` : undefined;
             const airline = normalizeAirline(context, validFlightCode);
             const lineDate = extractFirstDateContext(line) || fallbackDate;
@@ -768,7 +906,24 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
         }
     };
 
+    // Google-Flights-style block extractor runs first and takes priority.
+    // Handles the format:
+    //   Turkish Airlines TK54
+    //   IST → SIN | Tue 10 Jun 2026 | Departs 02:00 → Arrives 17:45
+    //   Aircraft: Boeing 777-300ER
+    for (const seg of extractGoogleFlightsBlocks(lines, fallbackDate)) {
+        const dedupeKey = `${seg.from}|${seg.to}|${seg.departure || ''}|${seg.arrival || ''}|${seg.flightNumber || ''}|${seg.tripDirection || ''}`;
+        if (!seenKeys.has(dedupeKey)) {
+            seenKeys.add(dedupeKey);
+            segments.push(seg);
+        }
+    }
+
+    // Only run generic line parsers for lines that weren't already captured
+    const capturedRoutes = new Set(segments.map((s) => `${s.from}|${s.to}`));
     for (let i = 0; i < lines.length; i += 1) {
+        const routeOnLine = extractRouteCodesFromLine(lines[i]);
+        if (routeOnLine && capturedRoutes.has(`${routeOnLine.from}|${routeOnLine.to}`)) continue;
         parseLine(lines[i], i, ROUTE_REGEX);
         parseLine(lines[i], i, ALT_ROUTE_REGEX);
     }

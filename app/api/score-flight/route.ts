@@ -662,6 +662,16 @@ export async function POST(request: NextRequest) {
                 ? 'WAIT'
                 : 'WATCH';
 
+        // Rebuild recommendation explanation using the post-self-check decision so all
+        // fields are consistent: decision, recommendationExplanation, and trackingPayload.
+        const finalRecommendationExplanation = buildRecommendationExplanation(
+            finalDecision,
+            adjustedConfidence,
+            assessment,
+            derived,
+            warningSignals,
+        );
+
         const inputSource = payload.mode === 'paste' && payload.source === 'manual_override'
             ? 'MANUAL_SEGMENTS'
             : 'PARSED_TEXT';
@@ -678,7 +688,7 @@ export async function POST(request: NextRequest) {
                 comfortNotes: selfChecked.flight.score.comfortNotes,
                 explanation: selfChecked.flight.score.decisionReason || explanation,
             },
-            recommendationExplanation,
+            recommendationExplanation: finalRecommendationExplanation,
             scoreBreakdown: buildScoreBreakdown(selfChecked.flight, derived, assessment, passengerPricingContext),
             trackingPayload: {
                 trackingType: 'ITINERARY_CANDIDATE',
@@ -699,13 +709,13 @@ export async function POST(request: NextRequest) {
                     stops: unifiedFlight.stops,
                 },
                 scoreSnapshot: {
-                    recommendation: decision,
+                    recommendation: finalDecision,
                     confidence: adjustedConfidence,
-                    primaryReason: recommendationExplanation.primaryReason,
-                    positiveFactor: recommendationExplanation.positiveFactors[0] ?? null,
-                    negativeFactor: recommendationExplanation.negativeFactors[0] ?? null,
-                    missingFactor: recommendationExplanation.missingFactors[0] ?? null,
-                    actionHint: recommendationExplanation.actionHint,
+                    primaryReason: finalRecommendationExplanation.primaryReason,
+                    positiveFactor: finalRecommendationExplanation.positiveFactors[0] ?? null,
+                    negativeFactor: finalRecommendationExplanation.negativeFactors[0] ?? null,
+                    missingFactor: finalRecommendationExplanation.missingFactors[0] ?? null,
+                    actionHint: finalRecommendationExplanation.actionHint,
                     dataSourceType: 'USER_PASTED_ITINERARY',
                     realTimeDataAvailable: false,
                 },
