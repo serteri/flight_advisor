@@ -823,3 +823,14 @@ model DecisionPerformanceMetric {
   @@index([dateWindow])
   @@index([experimentId])
 }
+
+// 📬 LEAD CAPTURE — Email / waitlist sign-ups
+model Lead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  source    String?  // "landing_page", "exit_intent", "pricing_page", etc.
+  createdAt DateTime @default(now())
+
+  @@map("leads")
+}
