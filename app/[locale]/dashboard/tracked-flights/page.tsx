@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { getUserTier } from '@/lib/tierUtils';
-import { TrendingDown, TrendingUp, Minus, Bell, Plane, ArrowRight, Calendar, Search, Clock, Briefcase } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Bell, Plane, ArrowRight, Calendar, Search, Clock, Briefcase, Activity } from 'lucide-react';
+import { computeSnapshotAgeMinutes, formatSnapshotAge, resolveMonitoringState } from '@/lib/monitoringState';
 import Link from 'next/link';
 import { RemoveWatchButton } from '@/components/RemoveWatchButton';
 import { RefreshPricesButton } from "@/components/RefreshPricesButton";
@@ -319,6 +320,22 @@ export default async function TrackedFlightsPage({
                                         </div>
                                     )}
 
+                                    {/* Monitoring transparency strip */}
+                                    {(() => {
+                                        const ageMinutes = computeSnapshotAgeMinutes(flight.lastChecked);
+                                        const ageLabel = formatSnapshotAge(ageMinutes);
+                                        const isStale = ageMinutes !== null && ageMinutes >= 120;
+                                        return (
+                                            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center gap-2 text-xs text-slate-500">
+                                                <Activity className="h-3.5 w-3.5" />
+                                                <span>Periodic monitoring</span>
+                                                <span className="text-slate-300">•</span>
+                                                <span>Last checked: <span className={isStale ? 'text-amber-700 font-semibold' : ''}>{ageLabel}</span></span>
+                                                {isStale && <span className="ml-auto px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">Snapshot outdated</span>}
+                                            </div>
+                                        );
+                                    })()}
+
                                     {/* Action Bar */}
                                     <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
                                         <Link
@@ -339,11 +356,11 @@ export default async function TrackedFlightsPage({
                 {/* Info Note */}
                 <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <div className="flex items-start gap-3">
-                        <Bell className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <Activity className="h-5 w-5 text-blue-500 mt-0.5" />
                         <div>
-                            <p className="text-sm font-medium text-blue-900">Daily Price Updates</p>
+                            <p className="text-sm font-medium text-blue-900">Periodic price monitoring</p>
                             <p className="text-xs text-blue-700 mt-1">
-                                Prices are automatically checked daily. The chart shows price changes over time.
+                                Prices are checked on a scheduled interval, not in real time. The chart reflects snapshots from those checks. Data marked “outdated” may not reflect the latest prices.
                             </p>
                         </div>
                     </div>

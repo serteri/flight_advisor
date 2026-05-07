@@ -15,7 +15,14 @@ import {
     TrendingDown,
     TrendingUp,
     ShieldAlert,
+    Activity,
+    Database,
 } from 'lucide-react';
+import {
+    buildMonitoringContext,
+    resolveDataSource,
+    type MonitoringState,
+} from '@/lib/monitoringState';
 
 type PriceHistoryEntry = {
     date?: string;
@@ -50,12 +57,13 @@ type ChangeType =
     | 'PRICE_DROP'
     | 'PRICE_RISE'
     | 'RECOMMENDATION_CHANGED'
-    | 'CONFIDENCE_DROP'
+    | 'RELIABILITY_DROP'
     | 'RISK_INCREASED'
     | 'DATA_QUALITY_DROP'
     | 'NO_SIGNIFICANT_CHANGE';
 
 type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+type ReliabilityTier = 'HIGH_RELIABILITY' | 'MODERATE_RELIABILITY' | 'LIMITED_RELIABILITY' | 'PRELIMINARY_ESTIMATE';
 
 type ChangeSummaryRow = {
     label: string;
@@ -83,6 +91,28 @@ const formatMoney = (amount: number, currency: string): string => {
 
 const formatPercent = (value: number): string => {
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+};
+
+const toReliabilityTier = (confidence?: number | null): ReliabilityTier => {
+    if (typeof confidence !== 'number') return 'PRELIMINARY_ESTIMATE';
+    if (confidence >= 85) return 'HIGH_RELIABILITY';
+    if (confidence >= 65) return 'MODERATE_RELIABILITY';
+    if (confidence >= 45) return 'LIMITED_RELIABILITY';
+    return 'PRELIMINARY_ESTIMATE';
+};
+
+const reliabilityLabel = (tier: ReliabilityTier): string => {
+    if (tier === 'HIGH_RELIABILITY') return 'High Reliability';
+    if (tier === 'MODERATE_RELIABILITY') return 'Moderate Reliability';
+    if (tier === 'LIMITED_RELIABILITY') return 'Limited Reliability';
+    return 'Preliminary Estimate';
+};
+
+const reliabilityRank: Record<ReliabilityTier, number> = {
+    PRELIMINARY_ESTIMATE: 1,
+    LIMITED_RELIABILITY: 2,
+    MODERATE_RELIABILITY: 3,
+    HIGH_RELIABILITY: 4,
 };
 
 const formatDateTime = (value?: string | Date | null): string => {
@@ -149,6 +179,64 @@ const isBaggageRelated = (value?: string | null): boolean => {
     return /(baggage|bag|checked|cabin)/i.test(value);
 };
 
+// ---------------------------------------------------------------------------
+// Monitoring Health Block — user-facing transparency component
+// ---------------------------------------------------------------------------
+
+const monitoringStateBadgeStyle = (state: MonitoringState): string => {
+    if (state === 'ACTIVE') return 'bg-emerald-100 text-emerald-700';
+    if (state === 'CHECKING') return 'bg-sky-100 text-sky-700';
+    if (state === 'DELAYED') return 'bg-amber-100 text-amber-800';
+    if (state === 'STALE') return 'bg-orange-100 text-orange-800';
+    if (state === 'LIMITED_DATA') return 'bg-yellow-100 text-yellow-800';
+    if (state === 'ESTIMATED_ONLY') return 'bg-slate-100 text-slate-600';
+    return 'bg-red-100 text-red-700'; // ERROR
+};
+
+const monitoringBlockBorderStyle = (state: MonitoringState): string => {
+    if (state === 'ACTIVE' || state === 'CHECKING') return 'border-emerald-200 bg-emerald-50';
+    if (state === 'DELAYED') return 'border-amber-200 bg-amber-50';
+    if (state === 'STALE' || state === 'ERROR') return 'border-orange-200 bg-orange-50';
+    return 'border-slate-200 bg-slate-50';
+};
+
+function MonitoringHealthBlock({ ctx }: { ctx: import('@/lib/monitoringState').MonitoringContext }) {
+    return (
+        <div className={`rounded-2xl border p-4 space-y-3 ${monitoringBlockBorderStyle(ctx.state)}`}>
+            <div className="flex items-center gap-3">
+                <Activity className="w-4 h-4 text-slate-500" />
+                <span className="text-xs uppercase tracking-wider font-bold text-slate-500">Monitoring status</span>
+                <span className={`ml-auto px-2.5 py-0.5 rounded-full text-xs font-bold ${monitoringStateBadgeStyle(ctx.state)}`}>
+                    {ctx.stateLabel}
+                </span>
+            </div>
+            <p className="text-sm text-slate-700">{ctx.stateDescription}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600">
+                <div>
+                    <span className="font-semibold block text-slate-500 uppercase tracking-wide mb-0.5">Last checked</span>
+                    {ctx.humanReadableAge}
+                </div>
+                <div>
+                    <span className="font-semibold block text-slate-500 uppercase tracking-wide mb-0.5">Next check</span>
+                    {ctx.humanReadableNext}
+                </div>
+                <div className="flex items-start gap-1">
+                    <Database className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                    <div>
+                        <span className="font-semibold block text-slate-500 uppercase tracking-wide mb-0.5">Data source</span>
+                        {ctx.dataSourceLabel}
+                    </div>
+                </div>
+            </div>
+            {ctx.suppressReassurance && (
+                <p className="text-xs text-amber-800 border-t border-amber-200 pt-2 mt-1">
+                    This snapshot may not reflect current prices or schedule. Verify before making booking decisions.
+                </p>
+            )}
+        </div>
+    );
+}
+
 export default async function TrackedItineraryDetailPage({
     params,
 }: {
@@ -204,6 +292,18 @@ export default async function TrackedItineraryDetailPage({
     const latestUpdateAt = watchedFlight.lastChecked || watchedFlight.updatedAt || watchedFlight.createdAt;
     const realTimeUnavailable = scoreSnapshot?.realTimeDataAvailable === false || trackingState?.realTimeDataUnavailable;
     const promotedTripId = promotionHistory?.trackingState?.promotedTripId || null;
+
+    // --- Monitoring transparency ---
+    const monitoringDataSource = resolveDataSource(
+        scoreSnapshot?.dataSourceType ?? null,
+        realTimeUnavailable ?? null,
+        trackingState?.limitedData ?? null,
+    );
+    const monitoringCtx = buildMonitoringContext(
+        watchedFlight.lastChecked ?? null,
+        trackingState ?? null,
+        monitoringDataSource,
+    );
     const promotedAt = promotionHistory?.trackingState?.promotedAt || null;
     const isPromotedToBooked = watchedFlight.status === 'BOUGHT' || Boolean(promotedTripId);
 
@@ -217,9 +317,10 @@ export default async function TrackedItineraryDetailPage({
     const currentConfidence = typeof scoreSnapshot?.confidence === 'number'
         ? scoreSnapshot.confidence
         : null;
-    const confidenceDelta = initialConfidence !== null && currentConfidence !== null
-        ? currentConfidence - initialConfidence
-        : null;
+    const initialReliability = toReliabilityTier(initialConfidence);
+    const currentReliability = toReliabilityTier(currentConfidence);
+    const reliabilityDropped = reliabilityRank[currentReliability] < reliabilityRank[initialReliability];
+    const reliabilityImproved = reliabilityRank[currentReliability] > reliabilityRank[initialReliability];
 
     const initialRiskLevel = toRiskLevel(initialSnapshot, initialTrackingState);
     const currentRiskLevel = toRiskLevel(scoreSnapshot, trackingState);
@@ -232,8 +333,8 @@ export default async function TrackedItineraryDetailPage({
     const realtimeWorsened = initialSnapshot?.realTimeDataAvailable !== false && scoreSnapshot?.realTimeDataAvailable === false;
     const dataQualityDropped = newMissingIssue || limitedDataWorsened || realtimeWorsened;
 
-    const confidenceDropReason = confidenceDelta !== null && confidenceDelta < -0.5 && isBaggageRelated(currentMissingFactor) && !isBaggageRelated(initialMissingFactor)
-        ? ' Confidence fell because baggage data is no longer available.'
+    const reliabilityDropReason = reliabilityDropped && isBaggageRelated(currentMissingFactor) && !isBaggageRelated(initialMissingFactor)
+        ? ' Reliability dropped because baggage data is no longer available.'
         : '';
 
     const changeSummaryRows: ChangeSummaryRow[] = [
@@ -270,24 +371,24 @@ export default async function TrackedItineraryDetailPage({
                 message: `Recommendation is unchanged at ${currentRecommendation}.`,
                 significant: false,
             },
-        confidenceDelta !== null && confidenceDelta < -0.5
+        reliabilityDropped
             ? {
-                label: 'Confidence',
-                type: 'CONFIDENCE_DROP',
-                message: `Confidence fell by ${Math.abs(confidenceDelta).toFixed(1)} points since tracking started.${confidenceDropReason}`,
+                label: 'Reliability',
+                type: 'RELIABILITY_DROP',
+                message: `Reliability changed from ${reliabilityLabel(initialReliability)} to ${reliabilityLabel(currentReliability)}.${reliabilityDropReason}`,
                 significant: true,
             }
-            : confidenceDelta !== null && confidenceDelta > 0.5
+            : reliabilityImproved
                 ? {
-                    label: 'Confidence',
+                    label: 'Reliability',
                     type: 'NO_SIGNIFICANT_CHANGE',
-                    message: `Confidence increased by ${confidenceDelta.toFixed(1)} points since tracking started.`,
+                    message: `Reliability improved from ${reliabilityLabel(initialReliability)} to ${reliabilityLabel(currentReliability)}.`,
                     significant: false,
                 }
                 : {
-                    label: 'Confidence',
+                    label: 'Reliability',
                     type: 'NO_SIGNIFICANT_CHANGE',
-                    message: 'Confidence is effectively unchanged since tracking started.',
+                    message: `Reliability remains ${reliabilityLabel(currentReliability)} since tracking started.`,
                     significant: false,
                 },
         riskIncreased
@@ -377,12 +478,8 @@ export default async function TrackedItineraryDetailPage({
                         </div>
                     </div>
 
-                    {realTimeUnavailable && (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                            <div className="font-semibold mb-1">Real-time data unavailable</div>
-                            <p>This itinerary is currently tracked from your scored itinerary snapshot, not live provider pricing.</p>
-                        </div>
-                    )}
+                    {/* ---- Monitoring Health Block ---- */}
+                    <MonitoringHealthBlock ctx={monitoringCtx} />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         <div className="rounded-2xl border border-slate-200 p-4">
@@ -401,7 +498,7 @@ export default async function TrackedItineraryDetailPage({
                         <div className="rounded-2xl border border-slate-200 p-4">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Latest recommendation</div>
                             <div className="text-lg font-black text-slate-900">{scoreSnapshot?.recommendation || 'WATCH'}</div>
-                            <div className="text-sm text-slate-500 mt-1">Current confidence: {scoreSnapshot?.confidence ?? 'Unknown'}%</div>
+                            <div className="text-sm text-slate-500 mt-1">Reliability: {reliabilityLabel(currentReliability)}</div>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 p-4">
@@ -416,9 +513,9 @@ export default async function TrackedItineraryDetailPage({
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 p-4">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Latest update</div>
-                            <div className="text-lg font-bold text-slate-900">{formatDateTime(latestUpdateAt)}</div>
-                            <div className="text-sm text-slate-500 mt-1">{hasImportantChange ? 'Important change detected' : 'No major change yet'}</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Last checked</div>
+                            <div className="text-lg font-bold text-slate-900">{monitoringCtx.humanReadableAge}</div>
+                            <div className="text-sm text-slate-500 mt-1">{hasImportantChange ? 'Change detected' : 'No major change yet'}</div>
                         </div>
                     </div>
                 </div>
@@ -439,7 +536,7 @@ export default async function TrackedItineraryDetailPage({
                             <div key={row.label} className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-start gap-3">
                                 {row.type === 'PRICE_DROP' && <TrendingDown className="w-4 h-4 mt-0.5 text-emerald-600" />}
                                 {row.type === 'PRICE_RISE' && <TrendingUp className="w-4 h-4 mt-0.5 text-red-600" />}
-                                {(row.type === 'CONFIDENCE_DROP' || row.type === 'DATA_QUALITY_DROP' || row.type === 'RISK_INCREASED') && <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />}
+                                {(row.type === 'RELIABILITY_DROP' || row.type === 'DATA_QUALITY_DROP' || row.type === 'RISK_INCREASED') && <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />}
                                 {row.type === 'RECOMMENDATION_CHANGED' && <Bell className="w-4 h-4 mt-0.5 text-sky-600" />}
                                 {row.type === 'NO_SIGNIFICANT_CHANGE' && <Minus className="w-4 h-4 mt-0.5 text-slate-400" />}
                                 <div>
@@ -521,15 +618,21 @@ export default async function TrackedItineraryDetailPage({
                             <ul className="space-y-3 text-sm text-slate-700">
                                 <li className="flex items-start gap-2">
                                     <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{isPromotedToBooked ? 'This itinerary is promoted to booked-trip monitoring.' : trackingState?.waitingForNextSnapshot ? 'Tracking is active and waiting for the next comparison snapshot.' : 'Tracking is active.'}</span>
+                                    <span>{
+                                        isPromotedToBooked
+                                            ? 'Promoted to booked-trip monitoring.'
+                                            : monitoringCtx.state === 'ACTIVE'
+                                                ? 'Periodic monitoring is active. Waiting for next scheduled check.'
+                                                : monitoringCtx.stateDescription
+                                    }</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <AlertTriangle className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{trackingState?.limitedData ? 'This itinerary has limited follow-up data so far.' : 'Tracking data coverage is healthy.'}</span>
+                                    <span>{trackingState?.limitedData ? 'Coverage is limited — some data is inferred, not directly observed.' : 'Data coverage is within normal range.'}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{hasImportantChange ? 'Something important changed since tracking started.' : 'Nothing materially changed since tracking started.'}</span>
+                                    <span>{hasImportantChange ? 'Something important changed since tracking started.' : 'No material change detected since tracking started.'}</span>
                                 </li>
                                 {isPromotedToBooked && (
                                     <li className="flex items-start gap-2 text-blue-800">
@@ -537,16 +640,16 @@ export default async function TrackedItineraryDetailPage({
                                         <span>{promotedAt ? `Promoted to booked-trip monitoring on ${formatDateTime(promotedAt)}.` : 'Promoted to booked-trip monitoring.'}</span>
                                     </li>
                                 )}
-                                {realTimeUnavailable && (
+                                {monitoringCtx.suppressReassurance && (
                                     <li className="flex items-start gap-2 text-amber-800">
-                                        <ShieldAlert className="w-4 h-4 mt-0.5 text-amber-600" />
-                                        <span>Real-time pricing data is unavailable; current status is based on the tracked itinerary snapshot.</span>
+                                        <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600" />
+                                        <span>Data may not reflect the latest prices or schedule. Check the monitoring status above before making decisions.</span>
                                     </li>
                                 )}
                                 {isPromotedToBooked && (
                                     <li className="flex items-start gap-2 text-slate-600">
                                         <AlertTriangle className="w-4 h-4 mt-0.5 text-slate-500" />
-                                        <span>Booking confirmation fields (PNR confirmation, ticket number) are still estimated placeholders unless you add official booking data later.</span>
+                                        <span>Booking confirmation fields (PNR, ticket number) are estimated placeholders unless official booking data is provided.</span>
                                     </li>
                                 )}
                             </ul>
@@ -556,7 +659,7 @@ export default async function TrackedItineraryDetailPage({
                             <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-3">
                                 <div className="text-xs uppercase tracking-wider font-bold text-sky-300">Booked trip monitoring</div>
                                 <p className="text-sm text-slate-200 leading-relaxed">
-                                    This itinerary is now connected to Guardian post-booking protection.
+                                    This itinerary is connected to Guardian periodic disruption monitoring.
                                 </p>
                                 <Link
                                     href={`/${locale}/dashboard/guardian/${promotedTripId}`}
@@ -573,7 +676,7 @@ export default async function TrackedItineraryDetailPage({
                                 </p>
                                 <PromoteTrackedItineraryButton locale={locale} trackedItineraryId={watchedFlight.id} />
                                 <p className="text-xs text-slate-300">
-                                    Promotion starts Guardian monitoring without re-entering this itinerary. Booking confirmation fields are marked as estimated until official booking data is provided.
+                                    Enabling Guardian starts periodic disruption monitoring. Booking fields are marked as estimated until official booking data is provided.
                                 </p>
                             </div>
                         )}

@@ -33,7 +33,7 @@ export default async function GuardianDashboard() {
                         <ShieldCheck className="w-8 h-8 text-emerald-600" />
                         Travel Guardian
                     </h1>
-                    <p className="text-slate-500 mt-1">SaaS Protection Engine Active.</p>
+                    <p className="text-slate-500 mt-1">Periodic disruption monitoring enabled.</p>
                 </div>
                 <div className="flex gap-4">
                     <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors">
@@ -45,7 +45,7 @@ export default async function GuardianDashboard() {
             {/* KPI CARDS */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">Protected Trips</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">Monitored Trips</p>
                     <p className="text-2xl font-bold text-slate-800">{activeTrips.length}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -53,8 +53,8 @@ export default async function GuardianDashboard() {
                     <p className="text-2xl font-bold text-amber-600">{alertsTotal}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">Scanning Frequency</p>
-                    <p className="text-2xl font-bold text-blue-600">Every 60m</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">Check Interval</p>
+                    <p className="text-2xl font-bold text-blue-600">~60 min</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <p className="text-xs font-semibold text-slate-400 uppercase">Est. Value Found</p>
@@ -64,7 +64,7 @@ export default async function GuardianDashboard() {
 
             {/* ACTIVE TRIPS */}
             <div className="space-y-6">
-                <h2 className="text-xl font-bold text-slate-800">Your Protected Journeys</h2>
+                <h2 className="text-xl font-bold text-slate-800">Your Monitored Trips</h2>
 
                 {trips.length === 0 ? (
                     <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300">

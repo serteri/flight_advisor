@@ -289,8 +289,8 @@ const buildRouteRecommendationExplanation = (
 
     const supportingReasons = [
         confidence < 65
-            ? `Confidence is ${confidence}%, so recommendation is intentionally cautious.`
-            : `Confidence is ${confidence}%, supported by observed route movement.`,
+            ? 'Data coverage is limited, so this recommendation is intentionally cautious.'
+            : 'Route movement data supports this recommendation.',
         ...(dataSourceType !== 'REAL_PROVIDER'
             ? ['This estimate is based on internal price benchmarks, not live airline pricing.']
             : []),
