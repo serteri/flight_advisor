@@ -41,7 +41,22 @@ type ScoreBreakdownItem = {
     component: 'price' | 'duration' | 'connections' | 'airlineReliability' | 'baggage' | 'routeRealism' | 'comfort';
     label: string;
     points: number;
+    maxPoints: number;
     reason: string;
+    sourceReliability: 'HIGH' | 'MEDIUM' | 'LOW';
+};
+
+type ScoreTrustContract = {
+    finalScore: number;
+    scoreQualityLabel: 'PRELIMINARY' | 'ADVISORY' | 'STRONG';
+    dataReliabilityLabel: 'LOW' | 'MEDIUM' | 'HIGH';
+    dataReliabilityScore: number;
+    decision: ManualDecision;
+    decisionReason: string;
+    confidenceExplanation: string;
+    scoreBreakdown: ScoreBreakdownItem[];
+    penalties: string[];
+    missingDataImpact: string[];
 };
 
 type PassengerPricingContext = NonNullable<InputAssessment['passengerPricingContext']>;
@@ -74,7 +89,6 @@ const buildScoreBreakdown = (
     const connectionsPoints = toOneDecimal(clamp(((Number(breakdown.stopScore || 0) + Number(breakdown.connectionScore || 0)) / 2), 0, 10));
     const reliabilityPoints = toTenPoint(breakdown.reliabilityScore, 10);
     const baggagePoints = toTenPoint(breakdown.baggageScore, 10);
-    const routeRealismPoints = derived.routeRealism === 'REALISTIC' ? 9 : 5;
     const amenities = Number(breakdown.amenitiesScore || 0);
     const aircraft = Number(breakdown.airlineScore || 0);
     const comfortPoints = toOneDecimal(clamp((((amenities / 5) + (aircraft / 5)) / 2) * 10, 0, 10));
@@ -85,63 +99,148 @@ const buildScoreBreakdown = (
     const durationReason = derived.tripType === 'ROUND_TRIP'
         ? `Outbound duration ${derived.outboundDurationMinutes} min, inbound duration ${derived.inboundDurationMinutes} min.`
         : `Total duration ${derived.totalDurationMinutes} min.`;
+    const hasUnknownAirline = /^(UNK|UNKN|UNKNOWN|MANUAL)/i.test(String(flight?.airline || ''));
+    const segmentTimesIncomplete = (assessment.parseWarnings || []).some((warning) => /missing segment times|incomplete times|fallback_date|inferred_date/i.test(warning));
+    const routeRealismPoints = (derived.routeRealism === 'REALISTIC' && !segmentTimesIncomplete) ? 9 : 5;
 
     return [
         {
             component: 'price',
             label: 'Price value',
             points: pricePoints,
+            maxPoints: 10,
             reason: assessment.priceMissing
                 ? 'Price not provided, so price value was not scored.'
                 : passengerPricingContext
                     ? `${passengerPricingContext.totalPrice} total fare for ${passengerPricingContext.totalTravelers} traveler(s); adult-equivalent fare ${passengerPricingContext.comparablePerTravelerPrice.toFixed(2)}.`
                     : 'Manual fare was used for estimated comparison.',
+            sourceReliability: assessment.priceMissing
+                ? 'LOW'
+                : assessment.livePriceBenchmarkAvailable
+                    ? 'HIGH'
+                    : 'MEDIUM',
         },
         {
             component: 'duration',
             label: 'Duration',
             points: durationPoints,
+            maxPoints: 10,
             reason: durationReason,
+            sourceReliability: segmentTimesIncomplete ? 'LOW' : 'HIGH',
         },
         {
             component: 'connections',
             label: 'Connections',
             points: connectionsPoints,
+            maxPoints: 10,
             reason: connectionReason,
+            sourceReliability: segmentTimesIncomplete ? 'LOW' : 'HIGH',
         },
         {
             component: 'airlineReliability',
             label: 'Airline reliability',
             points: reliabilityPoints,
-            reason: comfortSignals.some((note) => /top-tier airline/i.test(note))
+            maxPoints: 10,
+            reason: !hasUnknownAirline && comfortSignals.some((note) => /top-tier airline/i.test(note))
                 ? 'Airline is treated as top-tier for reliability signals.'
-                : 'Reliability score is based on airline on-time and consistency signals.',
+                : hasUnknownAirline
+                    ? 'Airline identity is uncertain, so reliability bonus is limited.'
+                    : 'Reliability score is based on airline on-time and consistency signals.',
+            sourceReliability: hasUnknownAirline ? 'LOW' : 'HIGH',
         },
         {
             component: 'baggage',
             label: 'Baggage',
             points: baggagePoints,
+            maxPoints: 10,
             reason: assessment.baggageUnverified
                 ? 'Baggage was detected from text but not fare-confirmed.'
                 : 'Checked baggage details were included in scoring.',
+            sourceReliability: assessment.baggageUnverified ? 'LOW' : 'HIGH',
         },
         {
             component: 'routeRealism',
             label: 'Route realism',
             points: routeRealismPoints,
-            reason: derived.routeRealism === 'REALISTIC'
+            maxPoints: 10,
+            reason: derived.routeRealism === 'REALISTIC' && !segmentTimesIncomplete
                 ? 'Segment sequence and timing look realistic.'
-                : 'Route structure has realism warnings.',
+                : segmentTimesIncomplete
+                    ? 'Route realism is limited because some segment fields are inferred or incomplete.'
+                    : 'Route structure has realism warnings.',
+            sourceReliability: segmentTimesIncomplete ? 'LOW' : 'MEDIUM',
         },
         {
             component: 'comfort',
             label: 'Comfort',
             points: comfortPoints,
+            maxPoints: 10,
             reason: comfortSignals.length > 0
                 ? comfortSignals.slice(0, 2).join(' ')
                 : 'Comfort score is based on aircraft and amenities signals.',
+            sourceReliability: hasUnknownAirline ? 'MEDIUM' : 'HIGH',
         },
     ];
+};
+
+const buildPenalties = (
+    assessment: InputAssessment,
+    signals: WarningSignals,
+): string[] => {
+    const penalties: string[] = [];
+    if (assessment.passengerPricingContext?.mixedTravelerTypes) penalties.push('mixed traveler pricing penalty');
+    if (!assessment.livePriceBenchmarkAvailable && !assessment.priceMissing) penalties.push('missing live price benchmark penalty');
+    if (signals.partialExtraction > 0) penalties.push('fallback/inferred extraction penalty');
+    if (assessment.baggageUnverified) penalties.push('low baggage certainty penalty');
+    if (signals.routeMismatch > 0) penalties.push('route mismatch penalty');
+    if (signals.unrealisticLayover > 0) penalties.push('excessive layover penalty');
+    if (assessment.airlineReliabilityMix === 'SINGLE_CARRIER') penalties.push('airline reliability bonus');
+    return penalties;
+};
+
+const buildMissingDataImpact = (
+    assessment: InputAssessment,
+    signals: WarningSignals,
+): string[] => {
+    const impacts: string[] = [];
+    if (assessment.priceMissing) impacts.push('Price benchmark is unavailable; recommendation strength is reduced.');
+    if (!assessment.priceMissing && !assessment.livePriceBenchmarkAvailable) impacts.push('Price benchmark is estimated; live market comparison is unavailable.');
+    if (assessment.baggageSource === 'INFERRED_BAGGAGE') impacts.push('Baggage was parsed from passenger lines and may not be fare-guaranteed.');
+    if (assessment.baggageSource === 'UNKNOWN_BAGGAGE') impacts.push('Baggage data is unknown; baggage component confidence is reduced.');
+    if (signals.missingSegmentTimes > 0) impacts.push('Some segment fields were inferred from partial timeline context.');
+    if (signals.partialExtraction > 0) impacts.push('Some itinerary fields were inferred/fallback-derived due to partial extraction.');
+    return impacts;
+};
+
+const computeDataReliability = (
+    assessment: InputAssessment,
+    signals: WarningSignals,
+): { score: number; label: 'LOW' | 'MEDIUM' | 'HIGH'; explanation: string } => {
+    let score = 85;
+    if (assessment.priceMissing) score -= 30;
+    else if (!assessment.livePriceBenchmarkAvailable) score -= 12;
+    if (assessment.baggageUnverified) score -= 15;
+    if (assessment.baggageSource === 'UNKNOWN_BAGGAGE') score -= 10;
+    score -= Math.min(28, signals.severityPenalty);
+    score = Math.round(clamp(score, 15, 95));
+
+    const label: 'LOW' | 'MEDIUM' | 'HIGH' = score < 50 ? 'LOW' : score < 75 ? 'MEDIUM' : 'HIGH';
+    const explanation = label === 'HIGH'
+        ? 'Most core inputs are verified and internally consistent.'
+        : label === 'MEDIUM'
+            ? 'Some key inputs are estimated or partially inferred.'
+            : 'Core scoring inputs are incomplete or inferred; recommendation is conservative.';
+
+    return { score, label, explanation };
+};
+
+const computeScoreQualityLabel = (
+    finalScore: number,
+    reliabilityLabel: 'LOW' | 'MEDIUM' | 'HIGH',
+): 'PRELIMINARY' | 'ADVISORY' | 'STRONG' => {
+    if (reliabilityLabel === 'LOW') return 'PRELIMINARY';
+    if (finalScore >= 7.5 && reliabilityLabel === 'HIGH') return 'STRONG';
+    return 'ADVISORY';
 };
 
 const parseWarningSignals = (assessment: InputAssessment): WarningSignals => {
@@ -328,7 +427,7 @@ const buildWatchLabel = (
         }
         return 'Watch closely — verify fare and availability before committing';
     }
-    return 'Watch closely — itinerary context still limited';
+    return 'Watch closely — key inputs are incomplete or inferred; verify full itinerary details first';
 };
 
 const buildModeExplanation = (
@@ -487,15 +586,6 @@ export async function POST(request: NextRequest) {
     try {
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
         const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
-        if (assessment.priceMissing) {
-            return NextResponse.json(
-                {
-                    error: 'Enter total fare to calculate price value.',
-                    issues: [{ path: 'price', message: 'Enter total fare to calculate price value.' }],
-                },
-                { status: 400 },
-            );
-        }
         const passengerPricingContext = assessment.passengerPricingContext;
         const scoringComparablePrice = passengerPricingContext && passengerPricingContext.totalTravelers > 1
             ? passengerPricingContext.comparablePerTravelerPrice
@@ -656,11 +746,19 @@ export async function POST(request: NextRequest) {
         };
 
         const selfChecked = runSelfCheckLayer(provisionalFlight, parseAuditFromParser);
-        const finalDecision: ManualDecision = selfChecked.flight.score.decisionRecommendation === 'BUY_NOW'
+        let finalDecision: ManualDecision = selfChecked.flight.score.decisionRecommendation === 'BUY_NOW'
             ? 'BUY'
             : selfChecked.flight.score.decisionRecommendation === 'WAIT'
                 ? 'WAIT'
                 : 'WATCH';
+
+        const reliability = computeDataReliability(assessment, warningSignals);
+        if (reliability.score < 50 && finalDecision === 'BUY') {
+            finalDecision = 'WAIT';
+        }
+        if (reliability.score < 40 && finalDecision !== 'WATCH') {
+            finalDecision = 'WATCH';
+        }
 
         // Rebuild recommendation explanation using the post-self-check decision so all
         // fields are consistent: decision, recommendationExplanation, and trackingPayload.
@@ -676,20 +774,62 @@ export async function POST(request: NextRequest) {
             ? 'MANUAL_SEGMENTS'
             : 'PARSED_TEXT';
 
-        return NextResponse.json({
+        const finalBuyWaitAction: 'BUY' | 'WAIT' | 'MONITOR' = finalDecision === 'BUY'
+            ? 'BUY'
+            : finalDecision === 'WAIT'
+                ? 'WAIT'
+                : 'MONITOR';
+
+        const trustAdjustedComposite = reliability.score < 50
+            ? Number(Math.min(selfChecked.flight.score.composite, 8.4).toFixed(1))
+            : selfChecked.flight.score.composite;
+
+        const enforcedFlight = {
             ...selfChecked.flight,
+            score: {
+                ...selfChecked.flight.score,
+                composite: trustAdjustedComposite,
+                buyWaitSignal: {
+                    ...(selfChecked.flight.score.buyWaitSignal || {}),
+                    action: finalBuyWaitAction,
+                    label: finalDecision === 'WATCH'
+                        ? buildWatchLabel(adjustedConfidence, warningSignals, assessment)
+                        : selfChecked.flight.score.buyWaitSignal?.label || 'Action signal available',
+                },
+            },
+        };
+
+        const breakdown = buildScoreBreakdown(enforcedFlight, derived, assessment, passengerPricingContext);
+        const penalties = buildPenalties(assessment, warningSignals);
+        const missingDataImpact = buildMissingDataImpact(assessment, warningSignals);
+        const scoreTrust: ScoreTrustContract = {
+            finalScore: enforcedFlight.score.composite,
+            scoreQualityLabel: computeScoreQualityLabel(enforcedFlight.score.composite, reliability.label),
+            dataReliabilityLabel: reliability.label,
+            dataReliabilityScore: reliability.score,
+            decision: finalDecision,
+            decisionReason: enforcedFlight.score.decisionReason || explanation,
+            confidenceExplanation: reliability.explanation,
+            scoreBreakdown: breakdown,
+            penalties,
+            missingDataImpact,
+        };
+
+        return NextResponse.json({
+            ...enforcedFlight,
             inputSource,
             selfCheckWarnings: selfChecked.userWarnings,
             decision: finalDecision,
             insights: {
                 decision: finalDecision,
-                confidence: selfChecked.flight.score.confidence,
-                riskFlags: selfChecked.flight.score.riskFlags,
-                comfortNotes: selfChecked.flight.score.comfortNotes,
-                explanation: selfChecked.flight.score.decisionReason || explanation,
+                confidence: enforcedFlight.score.confidence,
+                riskFlags: enforcedFlight.score.riskFlags,
+                comfortNotes: enforcedFlight.score.comfortNotes,
+                explanation: enforcedFlight.score.decisionReason || explanation,
             },
             recommendationExplanation: finalRecommendationExplanation,
-            scoreBreakdown: buildScoreBreakdown(selfChecked.flight, derived, assessment, passengerPricingContext),
+            scoreBreakdown: breakdown,
+            scoreTrust,
             trackingPayload: {
                 trackingType: 'ITINERARY_CANDIDATE',
                 trip: {
@@ -749,6 +889,10 @@ export async function POST(request: NextRequest) {
                 routeRealism: derived.routeRealism,
                 warningSignals,
                 passengerPricingContext,
+                priceSource: assessment.priceSource,
+                baggageSource: assessment.baggageSource,
+                dataReliabilityScore: reliability.score,
+                dataReliabilityLabel: reliability.label,
             },
             needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'

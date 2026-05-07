@@ -139,9 +139,11 @@ export type InputAssessment = {
     completenessScore: number;
     realismScore: number;
     priceContextAvailable: boolean;
+    priceSource: 'USER_PROVIDED' | 'PARSED_TEXT' | 'UNAVAILABLE';
     livePriceBenchmarkAvailable: boolean;
     priceMissing: boolean;
     baggageUnverified: boolean;
+    baggageSource: 'USER_PROVIDED_BAGGAGE' | 'PARSED_BAGGAGE' | 'INFERRED_BAGGAGE' | 'UNKNOWN_BAGGAGE';
     riskFlags: string[];
     comfortNotes: string[];
     promptForDetails: boolean;
@@ -427,9 +429,11 @@ const buildQuickUnifiedFlight = (
         completenessScore: input.airline ? 0.58 : 0.5,
         realismScore: 0.45,
         priceContextAvailable: true,
+        priceSource: 'USER_PROVIDED',
         livePriceBenchmarkAvailable: false,
         priceMissing: false,
         baggageUnverified: false,
+        baggageSource: 'UNKNOWN_BAGGAGE',
         riskFlags,
         comfortNotes: [],
         promptForDetails: true,
@@ -698,9 +702,13 @@ const buildDetailedUnifiedFlight = (
         completenessScore,
         realismScore,
         priceContextAvailable: hasPrice,
+        priceSource: hasPrice ? 'USER_PROVIDED' : 'UNAVAILABLE',
         livePriceBenchmarkAvailable: false,
         priceMissing: !hasPrice,
         baggageUnverified: false,
+        baggageSource: typeof input.checkedBaggageKg === 'number'
+            ? 'USER_PROVIDED_BAGGAGE'
+            : 'UNKNOWN_BAGGAGE',
         riskFlags,
         comfortNotes,
         promptForDetails: false,
@@ -770,14 +778,93 @@ const buildDetailedUnifiedFlight = (
     };
 };
 
-const toIsoOrFallback = (value: string | undefined, fallbackMs: number): string => {
-    if (value) {
-        const parsed = Date.parse(value);
-        if (Number.isFinite(parsed)) {
-            return new Date(parsed).toISOString();
+const parseIsoOrUndefined = (value?: string): string | undefined => {
+    if (!value) return undefined;
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) return undefined;
+    return new Date(parsed).toISOString();
+};
+
+const inferMissingSegmentTimes = (segments: Array<{
+    departureDateTime?: string;
+    arrivalDateTime?: string;
+}>): {
+    normalized: Array<{ departureDateTime: string; arrivalDateTime: string; dateSource: 'EXPLICIT_DATE' | 'INFERRED_DATE' | 'FALLBACK_DATE' }>;
+    usedGlobalFallback: boolean;
+} => {
+    const parsed = segments.map((segment) => ({
+        departure: parseIsoOrUndefined(segment.departureDateTime),
+        arrival: parseIsoOrUndefined(segment.arrivalDateTime),
+    }));
+    const hasAnyValidDate = parsed.some((segment) => !!segment.departure || !!segment.arrival);
+
+    const baseMs = Date.now() + 24 * 60 * 60 * 1000;
+    const normalized = parsed.map((segment, index) => {
+        if (!hasAnyValidDate) {
+            const fallbackDeparture = new Date(baseMs + index * 4 * 60 * 60 * 1000).toISOString();
+            const fallbackArrival = new Date(baseMs + index * 4 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString();
+            return {
+                departureDateTime: fallbackDeparture,
+                arrivalDateTime: fallbackArrival,
+                dateSource: 'FALLBACK_DATE' as const,
+            };
         }
-    }
-    return new Date(fallbackMs).toISOString();
+
+        const previous = index > 0 ? parsed[index - 1] : undefined;
+        const next = index + 1 < parsed.length ? parsed[index + 1] : undefined;
+
+        let departureDateTime = segment.departure;
+        let arrivalDateTime = segment.arrival;
+        let dateSource: 'EXPLICIT_DATE' | 'INFERRED_DATE' | 'FALLBACK_DATE' = 'EXPLICIT_DATE';
+
+        if (!departureDateTime) {
+            if (previous?.arrival && Number.isFinite(Date.parse(previous.arrival))) {
+                departureDateTime = new Date(Date.parse(previous.arrival) + 90 * 60 * 1000).toISOString();
+            } else if (next?.departure && Number.isFinite(Date.parse(next.departure))) {
+                departureDateTime = new Date(Date.parse(next.departure) - 2 * 60 * 60 * 1000).toISOString();
+            } else if (arrivalDateTime) {
+                departureDateTime = new Date(Date.parse(arrivalDateTime) - 2 * 60 * 60 * 1000).toISOString();
+            }
+            dateSource = 'INFERRED_DATE';
+        }
+
+        if (!arrivalDateTime) {
+            if (departureDateTime) {
+                arrivalDateTime = new Date(Date.parse(departureDateTime) + 2 * 60 * 60 * 1000).toISOString();
+            } else if (next?.departure) {
+                arrivalDateTime = new Date(Date.parse(next.departure) - 30 * 60 * 1000).toISOString();
+            }
+            dateSource = 'INFERRED_DATE';
+        }
+
+        // Defensive: this branch should be unreachable when at least one valid date exists,
+        // but keep a deterministic fallback guard for parser safety.
+        if (!departureDateTime || !arrivalDateTime) {
+            const fallbackDeparture = new Date(baseMs + index * 4 * 60 * 60 * 1000).toISOString();
+            const fallbackArrival = new Date(baseMs + index * 4 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString();
+            return {
+                departureDateTime: fallbackDeparture,
+                arrivalDateTime: fallbackArrival,
+                dateSource: 'FALLBACK_DATE' as const,
+            };
+        }
+
+        if (Date.parse(arrivalDateTime) <= Date.parse(departureDateTime)) {
+            arrivalDateTime = new Date(Date.parse(departureDateTime) + 2 * 60 * 60 * 1000).toISOString();
+            dateSource = dateSource === 'EXPLICIT_DATE' ? 'INFERRED_DATE' : dateSource;
+        }
+
+        return {
+            departureDateTime,
+            arrivalDateTime,
+            dateSource,
+        };
+    });
+
+    return {
+        normalized,
+        usedGlobalFallback: !hasAnyValidDate,
+    };
 };
 
 const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionResult => {
@@ -837,8 +924,12 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
                 parseWarnings,
                 parseConfidence: 1,
                 priceContextAvailable: !!input.price,
+                priceSource: input.price ? 'USER_PROVIDED' : 'UNAVAILABLE',
                 livePriceBenchmarkAvailable: false,
                 priceMissing: !input.price,
+                baggageSource: typeof input.checkedBaggageKg === 'number'
+                    ? 'USER_PROVIDED_BAGGAGE'
+                    : 'UNKNOWN_BAGGAGE',
             },
         };
     }
@@ -859,12 +950,11 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             tripDirection: segment.tripDirection,
         }));
 
-    const baseMs = Date.now() + 24 * 60 * 60 * 1000;
     const normalizationWarnings: string[] = [];
+    const normalizedTimes = inferMissingSegmentTimes(sourceSegments);
     const normalizedSegments = sourceSegments.map((segment, index) => {
-        const fallbackDeparture = baseMs + index * 4 * 60 * 60 * 1000;
-        const departureDateTime = toIsoOrFallback(segment.departureDateTime, fallbackDeparture);
-        const arrivalDateTime = toIsoOrFallback(segment.arrivalDateTime, fallbackDeparture + 2 * 60 * 60 * 1000);
+        const departureDateTime = normalizedTimes.normalized[index].departureDateTime;
+        const arrivalDateTime = normalizedTimes.normalized[index].arrivalDateTime;
         const airline = normalizeAirlineName(segment.airline || deriveAirlineFromFlightNumber(segment.flightNumber), segment.flightNumber);
         const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
 
@@ -895,8 +985,12 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
 
     normalizedSegments.forEach((segment, index) => {
         const source = sourceSegments[index];
-        if (!source?.departureDateTime || !source?.arrivalDateTime) {
-            normalizationWarnings.push(`Segment ${index + 1} had missing times; deterministic fallback times applied for scoring.`);
+        const sourceClass = normalizedTimes.normalized[index].dateSource;
+        if (sourceClass === 'INFERRED_DATE') {
+            normalizationWarnings.push(`Segment ${index + 1} had incomplete times; INFERRED_DATE timeline applied from nearby segment context.`);
+        }
+        if (sourceClass === 'FALLBACK_DATE') {
+            normalizationWarnings.push(`Segment ${index + 1} missing valid date context; FALLBACK_DATE timeline applied.`);
         }
         if (!source?.flightNumber) {
             normalizationWarnings.push(`Segment ${index + 1} missing flight number; placeholder assigned.`);
@@ -912,6 +1006,10 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
 
     if (!normalizedSegments.length) {
         throw new Error('Unable to parse itinerary segments from pasted text.');
+    }
+
+    if (normalizedTimes.usedGlobalFallback) {
+        normalizationWarnings.push('No valid explicit date detected in pasted text; fallback timeline used for all segments.');
     }
 
     const inferredTotalPrice = input.price
@@ -987,11 +1085,21 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             parseWarnings: adjustedWarnings,
             parseConfidence,
             priceContextAvailable: !!inferredTotalPrice,
+            priceSource: input.price
+                ? 'USER_PROVIDED'
+                : parsed.trip.price
+                    ? 'PARSED_TEXT'
+                    : 'UNAVAILABLE',
             livePriceBenchmarkAvailable: false,
             priceMissing: !inferredTotalPrice,
             baggageUnverified: !Number.isFinite(input.checkedBaggageKg)
                 && parsed.trip.checkedBaggageKg !== null
                 && !parsedCheckedBaggageIsVerified,
+            baggageSource: Number.isFinite(input.checkedBaggageKg)
+                ? 'USER_PROVIDED_BAGGAGE'
+                : parsed.trip.checkedBaggageKg !== null
+                    ? (parsedCheckedBaggageIsVerified ? 'PARSED_BAGGAGE' : 'INFERRED_BAGGAGE')
+                    : 'UNKNOWN_BAGGAGE',
             baggageConfidenceScore: !Number.isFinite(input.checkedBaggageKg)
                 && parsed.trip.checkedBaggageKg !== null
                 && !parsedCheckedBaggageIsVerified
