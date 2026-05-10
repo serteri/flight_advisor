@@ -8,6 +8,14 @@ import { EmailChannel } from "@/services/notifications/channels/email";
 import { SmsChannel } from "@/services/notifications/channels/sms";
 import { NotificationProviderManager } from "@/services/notifications/providers";
 import { GuardianEvent } from "@/workers/guardianWorker";
+import {
+    AlertDeliveryChannel,
+    queueAlertDelivery,
+    recordDeliveryAttemptStart,
+    recordDeliveryFailure,
+    recordDeliverySuccess,
+    recordSkippedDelivery,
+} from "@/lib/alertLifecycle";
 
 // Helper sleep mapping
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -326,11 +334,18 @@ async function attemptDispatch(
     eventId: string,
     tripId: string,
     channel: DeliveryChannel,
+    alertEventId?: string,
     maxRetries = 2
 ): Promise<void> {
     const claim = await claimNotificationDelivery(eventId, tripId, channel, channelKey);
+    const lifecycleDelivery = alertEventId
+        ? await queueAlertDelivery(alertEventId, channel as AlertDeliveryChannel, maxRetries + 1)
+        : null;
 
     if (claim.kind === 'skip') {
+        if (alertEventId) {
+            await recordSkippedDelivery(alertEventId, channel as AlertDeliveryChannel, claim.reason);
+        }
         return;
     }
 
@@ -339,17 +354,29 @@ async function attemptDispatch(
     // 2. DISPATCH & SYNC
     for (let currentAttempt = 0; currentAttempt < maxAttempts; currentAttempt++) {
         try {
+            if (lifecycleDelivery) {
+                await recordDeliveryAttemptStart(lifecycleDelivery.id);
+            }
             const result = await dispatchFn();
             if (!result.success) {
                 throw new Error(result.error || `${channel} provider returned unsuccessful response`);
             }
             await markDeliverySent(claim.deliveryId, claim.claimId);
+            if (lifecycleDelivery) {
+                await recordDeliverySuccess(lifecycleDelivery.id, result.providerMessageId);
+            }
             return;
         } catch (err: any) {
             if (currentAttempt === maxAttempts - 1) {
                 console.error(`🚨 [NOTIFIER] Complete delivery failure for ${channelKey} after ${maxAttempts} attempt(s): ${err.message}`);
                 await markDeliveryFailed(claim.deliveryId, claim.claimId, err.message);
+                if (lifecycleDelivery) {
+                    await recordDeliveryFailure(lifecycleDelivery.id, err.message);
+                }
                 return; // Suppress throwing to avoid cascading loop failures. Handled gracefully.
+            }
+            if (lifecycleDelivery) {
+                await recordDeliveryFailure(lifecycleDelivery.id, err.message);
             }
             const backoffMs = currentAttempt === 0 ? 1000 : 3000;
             console.warn(`⏳ [NOTIFIER] ${channelKey} retry ${currentAttempt + 1}/${maxRetries} failing... Backing off for ${backoffMs}ms`);
@@ -439,8 +466,8 @@ const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
         const shortSummary = delayMinutes > 0
             ? `${flightText} is now delayed by ${delayMinutes} minutes.`
             : `${flightText} delay signal detected.`;
-        const reason = `You are receiving this alert because ${flightText} on ${routeText} changed to delayed status.${eu261Hint}`;
-        const actionHint = 'Check rebooking options now and monitor further Guardian updates.';
+        const reason = `You are receiving this alert because periodic monitoring detected delayed status for ${flightText} on ${routeText}.${eu261Hint}`;
+        const actionHint = 'Check rebooking options and monitor further periodic updates.';
         const emailSubject = `[${severityLabel}] ${title}`;
         const emailBody = buildEmailBody({
             severityLabel,
@@ -467,8 +494,8 @@ const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
     if (event.type === 'CANCELLED') {
         const title = 'Flight cancellation detected';
         const shortSummary = `${flightText} is now marked as cancelled.`;
-        const reason = `You are receiving this alert because Guardian detected a cancellation for ${flightText} on ${routeText}.${eu261Hint}`;
-        const actionHint = 'Contact the airline immediately for rebooking and keep this notification for claim support.';
+        const reason = `You are receiving this alert because the latest monitoring check identified a possible cancellation for ${flightText} on ${routeText}.${eu261Hint}`;
+        const actionHint = 'Contact the airline for rebooking confirmation and keep this notification for claim support.';
         const emailSubject = `[${severityLabel}] ${title}`;
         const emailBody = buildEmailBody({
             severityLabel,
@@ -496,7 +523,7 @@ const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
         const departureGate = (event.current as any)?.departureGate || 'unknown';
         const title = `Gate change detected${departureGate !== 'unknown' ? `: ${departureGate}` : ''}`;
         const shortSummary = `${flightText} has a gate update.`;
-        const reason = `You are receiving this alert because gate information changed for ${flightText} on ${routeText}.`;
+        const reason = `You are receiving this alert because the latest check identified changed gate information for ${flightText} on ${routeText}.`;
         const actionHint = 'Head to airport displays and confirm your terminal/gate before boarding.';
         const emailSubject = `[${severityLabel}] ${title}`;
         const emailBody = buildEmailBody({
@@ -523,8 +550,8 @@ const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
 
     if (event.type === 'DATA_ISSUE') {
         const title = 'Monitoring confidence reduced';
-        const shortSummary = 'Guardian detected low-confidence live status data.';
-        const reason = `You are receiving this alert because live tracking quality for ${flightText} is currently lower than expected.`;
+        const shortSummary = 'Monitoring currently has low-confidence status data.';
+        const reason = `You are receiving this alert because provider status data for ${flightText} is currently delayed or unavailable.`;
         const actionHint = 'Monitor updates and verify critical changes directly with the airline.';
         const emailSubject = `[${severityLabel}] ${title}`;
         const emailBody = buildEmailBody({
@@ -614,13 +641,17 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
         const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'EMAIL', now);
         if (throttleLow) {
             await persistSkippedDelivery(eventId, event.tripId, 'EMAIL');
+            if (event.alertEventId) {
+                await recordSkippedDelivery(event.alertEventId, 'EMAIL', 'Low severity notification throttled');
+            }
         } else {
             notifications.push(attemptDispatch(
                 () => sendGuardianEmail(user.email!, formatted.emailSubject, formatted.emailBody, event.tripId, eu261Assessment),
                 emailKey,
                 eventId,
                 event.tripId,
-                'EMAIL'
+                'EMAIL',
+                event.alertEventId
             ));
         }
     }
@@ -636,11 +667,15 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
                 smsKey,
                 eventId,
                 event.tripId,
-                'SMS'
+                'SMS',
+                event.alertEventId
             ));
         } else {
             console.warn(`[NOTIFIER] Mandatory SMS degraded safely: User lacks a configured phoneNumber!`);
             await persistSkippedDelivery(eventId, event.tripId, 'SMS');
+            if (event.alertEventId) {
+                await recordSkippedDelivery(event.alertEventId, 'SMS', 'User lacks a configured phoneNumber');
+            }
         }
     }
 
@@ -650,13 +685,17 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
         const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'PUSH', now);
         if (throttleLow) {
             await persistSkippedDelivery(eventId, event.tripId, 'PUSH');
+            if (event.alertEventId) {
+                await recordSkippedDelivery(event.alertEventId, 'PUSH', 'Low severity notification throttled');
+            }
         } else {
             notifications.push(attemptDispatch(
                 () => sendGuardianPush(user.id, formatted.title, formatted.pushBody, event.tripId, eventId),
                 pushKey,
                 eventId,
                 event.tripId,
-                'PUSH'
+                'PUSH',
+                event.alertEventId
             ));
         }
     }

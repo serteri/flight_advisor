@@ -48,6 +48,31 @@ type TripDetailsClientProps = {
             isRead: boolean;
             createdAt: Date | string;
         }>;
+        alertEvents: Array<{
+            id: string;
+            eventType: string;
+            state: string;
+            severity: string;
+            title: string;
+            message: string;
+            detectedAt: Date | string;
+            queuedAt: Date | string | null;
+            sentAt: Date | string | null;
+            deliveredAt: Date | string | null;
+            failedAt: Date | string | null;
+            suppressionReason: string | null;
+            deliveries: Array<{
+                id: string;
+                channel: string;
+                status: string;
+                attempt: number;
+                maxAttempts: number;
+                lastError: string | null;
+                nextRetryAt: Date | string | null;
+                sentAt: Date | string | null;
+                updatedAt: Date | string;
+            }>;
+        }>;
         snapshot: {
             delayMinutes: number;
             status: string;
@@ -157,6 +182,13 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
 
     const recentChanges = [
+        ...trip.alertEvents.slice(0, 5).map((alert) => ({
+            id: alert.id,
+            when: formatDateTime(alert.detectedAt),
+            type: alert.eventType,
+            text: `${alert.title}: ${alert.message} State: ${alert.state}.`,
+            severity: alert.severity,
+        })),
         ...trip.alerts.slice(0, 5).map((alert) => ({
             id: alert.id,
             when: formatDateTime(alert.createdAt),
@@ -192,23 +224,28 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         { label: 'Upgrade Watch', enabled: trip.watchUpgrade },
     ];
 
-    const alertsTriggered = trip.alerts.length;
+    const alertsTriggered = trip.alertEvents.filter((alert) => alert.state !== 'SUPPRESSED').length || trip.alerts.length;
     const unreadAlerts = trip.alerts.filter((alert) => !alert.isRead).length;
     const latestRunAt = trip.lastCheckedAt || snapshot?.snapshotAt || null;
 
+    const lifecycleDeliveries = trip.alertEvents.flatMap((alert) => alert.deliveries);
+    const deliveryRows = lifecycleDeliveries.length > 0 ? lifecycleDeliveries : trip.deliveries;
+
     const channelState = Array.from(
-        trip.deliveries.reduce((map, delivery) => {
+        deliveryRows.reduce((map, delivery) => {
             const key = delivery.channel.toUpperCase();
             if (!map.has(key)) {
                 map.set(key, delivery);
             }
             return map;
-        }, new Map<string, TripDetailsClientProps['trip']['deliveries'][number]>()),
+        }, new Map<string, (typeof deliveryRows)[number]>()),
     ).map(([channel, delivery]) => ({
         channel,
         status: delivery.status,
         lastSent: delivery.sentAt,
         updatedAt: delivery.updatedAt,
+        attempt: 'attempt' in delivery ? delivery.attempt : undefined,
+        maxAttempts: 'maxAttempts' in delivery ? delivery.maxAttempts : undefined,
     }));
 
     const latestNotification = trip.deliveries
@@ -218,6 +255,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const latestAlertSummary = trip.alerts[0]
         ? `${trip.alerts[0].title}: ${trip.alerts[0].message}`
         : 'No alert summary is available yet for the latest notification.';
+    const latestLifecycleAlert = trip.alertEvents[0] || null;
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -249,7 +287,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <div className="font-semibold mb-1">Data honesty</div>
-                        <p>Guardian can only show verified values from latest monitoring runs. Unknown fields are shown as unknown and are not inferred as confirmed facts.</p>
+                        <p>Guardian reports periodic monitoring results. Unknown fields, delayed checks, and retried notification delivery are shown explicitly instead of being treated as confirmed facts.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -366,7 +404,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{alertsTriggered > 0 ? `${alertsTriggered} alerts triggered (${unreadAlerts} unread).` : 'No alerts triggered yet.'}</span>
+                                    <span>{alertsTriggered > 0 ? `${alertsTriggered} monitoring events detected (${unreadAlerts} legacy unread).` : 'No monitoring events detected yet.'}</span>
                                 </li>
                             </ul>
                         </div>
@@ -382,6 +420,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{channel.channel}</div>
                                         <div className="text-sm text-slate-800 mt-1">State: {channel.status || 'Unknown'}</div>
                                         <div className="text-xs text-slate-500 mt-1">Last sent: {formatDateTime(channel.lastSent)}</div>
+                                        {channel.attempt !== undefined && channel.maxAttempts !== undefined && (
+                                            <div className="text-xs text-slate-500 mt-1">Attempts: {channel.attempt}/{channel.maxAttempts}</div>
+                                        )}
                                     </div>
                                 )) : (
                                     <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No notification delivery records yet.</div>
@@ -393,7 +434,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                                 <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Latest notification detail</div>
                                 <div className="text-sm text-slate-800 mt-1">Type: {latestNotification ? latestNotificationType : 'UNKNOWN'}</div>
-                                <div className="text-sm text-slate-800 mt-1">Summary: {latestNotification ? latestAlertSummary : 'Unknown'}</div>
+                                <div className="text-sm text-slate-800 mt-1">Summary: {latestLifecycleAlert ? `${latestLifecycleAlert.title}: ${latestLifecycleAlert.message}` : latestNotification ? latestAlertSummary : 'Unknown'}</div>
+                                <div className="text-sm text-slate-800 mt-1">Lifecycle: {latestLifecycleAlert?.state || 'UNKNOWN'}</div>
                             </div>
                         </div>
 

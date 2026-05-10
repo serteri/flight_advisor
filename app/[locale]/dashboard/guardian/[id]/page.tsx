@@ -22,6 +22,18 @@ export default async function TripDetailsPage({ params }: { params: Promise<{ lo
                     createdAt: 'desc',
                 },
             },
+            alertEvents: {
+                orderBy: {
+                    detectedAt: 'desc',
+                },
+                include: {
+                    deliveries: {
+                        orderBy: {
+                            updatedAt: 'desc',
+                        },
+                    },
+                },
+            },
             snapshot: true,
             deliveries: {
                 orderBy: {

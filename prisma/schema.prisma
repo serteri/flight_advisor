@@ -42,6 +42,7 @@ model User {
   monitors        Monitor[]
   monitoredTrips  MonitoredTrip[]
   preferences     UserPreference[]
+  alertEvents     AlertEvent[]
   
   // 🧪 EXPERIMENT ASSIGNMENTS
   experimentAssignments ExperimentAssignment[]
@@ -113,6 +114,7 @@ model Route {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   priceSnapshots    PriceSnapshot[]
   alertLogs    AlertLog[]
+  alertEvents  AlertEvent[]
 
   @@index([userId])
   @@index([originCode, destinationCode])
@@ -385,6 +387,7 @@ model WatchedFlight {
   updatedAt     DateTime @updatedAt
 
   user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alertEvents   AlertEvent[]
 
   @@index([userId])
   @@index([origin, destination])
@@ -506,6 +509,7 @@ model MonitoredTrip {
   segments        FlightSegment[]
   passengers      Passenger[]
   alerts          GuardianAlert[]
+  alertEvents     AlertEvent[]
   snapshot        TripSnapshot?
   deliveries      NotificationDelivery[]
 
@@ -582,6 +586,125 @@ model GuardianAlert {
   createdAt   DateTime @default(now())
 
   trip        MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+enum AlertLifecycleState {
+  DETECTED
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  RETRYING
+  EXPIRED
+  SUPPRESSED
+}
+
+enum MonitoringEventType {
+  PRICE_DROP
+  PRICE_SPIKE
+  TARGET_PRICE_REACHED
+  ROUTE_STALE
+  DELAY_DETECTED
+  CANCELLATION_DETECTED
+  GATE_CHANGE
+  TERMINAL_CHANGE
+  CONNECTION_RISK
+  STATUS_UNAVAILABLE
+  MONITORING_STALE
+  PROVIDER_UNAVAILABLE
+  CHECK_DELAYED
+  MONITORING_RECOVERED
+}
+
+enum AlertSourceType {
+  ROUTE_WATCH
+  WATCHED_FLIGHT
+  MONITORED_TRIP
+  SYSTEM
+}
+
+enum AlertDeliveryChannel {
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum AlertDeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  RETRYING
+  SUPPRESSED
+}
+
+model AlertEvent {
+  id              String              @id @default(cuid())
+  userId          String?
+  routeId         String?
+  watchedFlightId String?
+  tripId          String?
+
+  sourceType      AlertSourceType
+  sourceId        String
+  eventType       MonitoringEventType
+  state           AlertLifecycleState @default(DETECTED)
+  severity        String              @default("INFO")
+  fingerprint     String
+  fingerprintKey  String
+  title           String
+  message         String
+  payload         Json?
+
+  cooldownUntil   DateTime?
+  suppressedById  String?
+  suppressionReason String?
+
+  detectedAt      DateTime            @default(now())
+  queuedAt        DateTime?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  failedAt        DateTime?
+  expiresAt       DateTime?
+  recoveredAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  route           Route?              @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  watchedFlight   WatchedFlight?      @relation(fields: [watchedFlightId], references: [id], onDelete: Cascade)
+  trip            MonitoredTrip?      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  deliveries      AlertNotificationDelivery[]
+
+  @@index([userId, detectedAt])
+  @@index([sourceType, sourceId, eventType, detectedAt])
+  @@index([state, detectedAt])
+  @@index([fingerprintKey, detectedAt])
+}
+
+model AlertNotificationDelivery {
+  id                String              @id @default(cuid())
+  alertEventId      String
+  channel           AlertDeliveryChannel
+  status            AlertDeliveryStatus @default(QUEUED)
+  attempt           Int                 @default(0)
+  maxAttempts       Int                 @default(4)
+  providerMessageId String?
+  lastError         String?
+  nextRetryAt       DateTime?
+  queuedAt          DateTime            @default(now())
+  attemptedAt       DateTime?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  alertEvent        AlertEvent          @relation(fields: [alertEventId], references: [id], onDelete: Cascade)
+
+  @@index([alertEventId])
+  @@index([status, nextRetryAt])
+  @@index([channel, status])
 }
 
 enum TripStatus {

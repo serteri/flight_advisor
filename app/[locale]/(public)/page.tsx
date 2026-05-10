@@ -71,7 +71,7 @@ export default function HomePage() {
                                 <MapPin className="w-7 h-7 text-white" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-2">Track a Route</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Monitor prices for a route over time. We alert you the moment the price drops to your target.</p>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Monitor prices for a route over time. Periodic checks notify you when the price reaches your target.</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold">
                                     Monitor Prices <ArrowRight className="ml-2 w-4 h-4" />
@@ -85,7 +85,7 @@ export default function HomePage() {
                                 <Mail className="w-7 h-7 text-white" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-2">Track My Booking</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Forward your booking email. We parse your trip, start disruption monitoring, and alert you automatically.</p>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Forward your booking email. We parse your trip, start periodic disruption monitoring, and track notification delivery.</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold">
                                     Protect My Trip <ArrowRight className="ml-2 w-4 h-4" />
@@ -98,7 +98,7 @@ export default function HomePage() {
                     <div className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 hover:opacity-80 transition-all duration-500">
                         <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> Trip Protection</span>
                         <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> Decision Intelligence</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> Live Disruption Alerts</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> Periodic Disruption Alerts</span>
                     </div>
                 </div>
             </section>

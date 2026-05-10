@@ -3,6 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { analyzeRoute } from '@/lib/anomalyDetector';
 import { recordRouteMetric } from '@/services/healthMetrics';
 import type { RouteMetricEvent } from '@/types/operatorHealth';
+import {
+    MonitoringEventType,
+    queueAlertDelivery,
+    recordDeliveryAttemptStart,
+    recordDeliveryFailure,
+    recordDeliverySuccess,
+    recordSkippedDelivery,
+    recordMonitoringEvent,
+} from '@/lib/alertLifecycle';
+import { EmailChannel } from '@/services/notifications/channels/email';
+import { NotificationProviderManager } from '@/services/notifications/providers';
 
 export type RouteTimingSignal = 'BUY' | 'WAIT' | 'WATCH';
 export type RouteTrendStatus = 'RISING' | 'FALLING' | 'STABLE' | 'INSUFFICIENT_DATA';
@@ -78,6 +89,22 @@ export type RouteWatchDetails = {
         message: string;
         createdAt: string;
     }>;
+    alertHistory: Array<{
+        id: string;
+        eventType: string;
+        state: string;
+        severity: string;
+        title: string;
+        message: string;
+        detectedAt: string;
+        deliveries: Array<{
+            channel: string;
+            status: string;
+            attempt: number;
+            maxAttempts: number;
+            nextRetryAt: string | null;
+        }>;
+    }>;
 };
 
 const toCabinClass = (value?: string): CabinClass => {
@@ -102,6 +129,8 @@ const daysUntil = (isoDate: Date): number => {
 };
 
 const round = (value: number): number => Math.round(value * 100) / 100;
+const emailChannel = EmailChannel.getInstance();
+const providerManager = NotificationProviderManager.getInstance();
 
 const hashRouteSeed = (routeId: string): number => {
     return routeId.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
@@ -316,7 +345,48 @@ const buildRouteRecommendationExplanation = (
     };
 };
 
-async function createRouteAlert(routeId: string, message: string, oldPrice?: number, newPrice?: number) {
+async function createRouteAlert(
+    routeId: string,
+    eventType: MonitoringEventType,
+    message: string,
+    oldPrice?: number,
+    newPrice?: number,
+    fingerprintParts: unknown[] = [],
+) {
+    const route = await prisma.route.findUnique({
+        where: { id: routeId },
+        include: { user: true },
+    });
+    if (!route) return;
+
+    const alertEvent = await recordMonitoringEvent({
+        userId: route.userId,
+        routeId,
+        sourceType: 'ROUTE_WATCH',
+        sourceId: routeId,
+        eventType,
+        severity: eventType === 'PRICE_SPIKE' || eventType === 'ROUTE_STALE' ? 'MEDIUM' : 'HIGH',
+        title: eventType === 'TARGET_PRICE_REACHED'
+            ? 'Periodic monitoring detected target price'
+            : eventType === 'PRICE_DROP'
+                ? 'Periodic monitoring detected a price drop'
+                : eventType === 'ROUTE_STALE'
+                    ? 'Route monitoring currently delayed'
+                    : 'Periodic monitoring detected a route price change',
+        message,
+        fingerprintParts: [routeId, eventType, ...fingerprintParts],
+        payload: {
+            oldPrice: oldPrice ?? null,
+            newPrice: newPrice ?? null,
+            origin: route.originCode,
+            destination: route.destinationCode,
+        },
+    });
+
+    if (alertEvent.suppressed) {
+        return;
+    }
+
     await prisma.alertLog.create({
         data: {
             routeId,
@@ -326,6 +396,80 @@ async function createRouteAlert(routeId: string, message: string, oldPrice?: num
             dropPercent: oldPrice && newPrice ? round(((oldPrice - newPrice) / oldPrice) * 100) : null,
         },
     });
+
+    if (route.user.email) {
+        const delivery = await queueAlertDelivery(alertEvent.alertId, 'EMAIL');
+        try {
+            await recordDeliveryAttemptStart(delivery.id);
+            const result = await emailChannel.send(route.user.email, {
+                userId: route.user.id,
+                type: eventType === 'PRICE_SPIKE' ? 'PRICE_DROP' : 'PRICE_DROP',
+                title: eventType === 'TARGET_PRICE_REACHED'
+                    ? 'Periodic monitoring detected target price'
+                    : eventType === 'ROUTE_STALE'
+                        ? 'Route monitoring currently delayed'
+                        : 'Periodic route monitoring detected a price change',
+                message,
+                priority: eventType === 'PRICE_SPIKE' || eventType === 'ROUTE_STALE' ? 'WARNING' : 'OPPORTUNITY',
+                data: {
+                    routeId,
+                    origin: route.originCode,
+                    destination: route.destinationCode,
+                },
+            });
+
+            if (!result.success) {
+                throw new Error('Email provider returned unsuccessful response');
+            }
+
+            await recordDeliverySuccess(delivery.id, result.id ?? null);
+        } catch (error) {
+            await recordDeliveryFailure(delivery.id, error instanceof Error ? error.message : String(error));
+        }
+    } else {
+        await recordSkippedDelivery(alertEvent.alertId, 'EMAIL', 'User email is not configured');
+    }
+
+    if (route.user.pushToken) {
+        const delivery = await queueAlertDelivery(alertEvent.alertId, 'PUSH');
+        try {
+            await recordDeliveryAttemptStart(delivery.id);
+            const result = await providerManager.sendPush({
+                userId: route.user.id,
+                title: eventType === 'TARGET_PRICE_REACHED'
+                    ? 'Periodic monitoring detected target price'
+                    : eventType === 'ROUTE_STALE'
+                        ? 'Route monitoring currently delayed'
+                        : 'Periodic route monitoring detected a price change',
+                body: message,
+                data: {
+                    routeId,
+                    eventType,
+                },
+            });
+
+            if (!result.success) {
+                throw new Error(result.error || 'Push provider returned unsuccessful response');
+            }
+
+            await recordDeliverySuccess(delivery.id, result.providerMessageId ?? null);
+        } catch (error) {
+            await recordDeliveryFailure(delivery.id, error instanceof Error ? error.message : String(error));
+        }
+    }
+}
+
+async function createRouteStaleAlert(routeId: string, latestSnapshotAt?: Date | null) {
+    await createRouteAlert(
+        routeId,
+        'ROUTE_STALE',
+        latestSnapshotAt
+            ? `Route monitoring is currently delayed. Last successful snapshot was ${latestSnapshotAt.toISOString()}.`
+            : 'Route monitoring is currently delayed because no successful snapshot is available yet.',
+        undefined,
+        undefined,
+        ['route_stale'],
+    );
 }
 
 export async function evaluateRouteTiming(routeId: string): Promise<{
@@ -487,7 +631,13 @@ export async function collectSnapshotAndEvaluateAlerts(routeId: string) {
     });
 
     const collected = await collectRouteSnapshot(routeId);
-    if (!collected) return null;
+    if (!collected) {
+        const route = await prisma.route.findUnique({ where: { id: routeId } });
+        if (route) {
+            await createRouteStaleAlert(routeId, route.latestSnapshotAt);
+        }
+        return null;
+    }
     const { snapshot } = collected;
 
     const route = await prisma.route.findUnique({ where: { id: routeId } });
@@ -501,24 +651,35 @@ export async function collectSnapshotAndEvaluateAlerts(routeId: string) {
     if (route.targetPrice && snapshot.amount <= route.targetPrice) {
         await createRouteAlert(
             routeId,
+            'TARGET_PRICE_REACHED',
             `Target reached: ${snapshot.amount} ${snapshot.currency} is below your threshold ${route.targetPrice}.`,
             previous?.amount,
             snapshot.amount,
+            [route.targetPrice, Math.round(snapshot.amount)],
         );
     }
 
     if (previous && snapshot.amount >= previous.amount * 1.12) {
         await createRouteAlert(
             routeId,
+            'PRICE_SPIKE',
             `Price spike: ${round(((snapshot.amount - previous.amount) / previous.amount) * 100)}% increase since last snapshot.`,
             previous.amount,
             snapshot.amount,
+            [Math.round(((snapshot.amount - previous.amount) / previous.amount) * 100)],
         );
     }
 
     const timing = await evaluateRouteTiming(routeId);
     if (timing.timingSignal === 'BUY' && timing.reason.toLowerCase().includes('booking window')) {
-        await createRouteAlert(routeId, `Strong booking window detected: ${timing.reason}`, previous?.amount, snapshot.amount);
+        await createRouteAlert(
+            routeId,
+            'PRICE_DROP',
+            `Strong booking window detected by periodic monitoring: ${timing.reason}`,
+            previous?.amount,
+            snapshot.amount,
+            ['booking_window', timing.reason],
+        );
     }
 
     return snapshot;
@@ -575,6 +736,16 @@ export async function getRouteWatchDetails(routeId: string, userId: string, refr
         where: { routeId: route.id },
         orderBy: { sentAt: 'desc' },
         take: 5,
+    });
+    const alertHistory = await prisma.alertEvent.findMany({
+        where: { routeId: route.id },
+        include: {
+            deliveries: {
+                orderBy: { updatedAt: 'desc' },
+            },
+        },
+        orderBy: { detectedAt: 'desc' },
+        take: 10,
     });
 
     return {
@@ -638,5 +809,21 @@ export async function getRouteWatchDetails(routeId: string, userId: string, refr
                 createdAt: a.sentAt.toISOString(),
             };
         }),
+        alertHistory: alertHistory.map((alert) => ({
+            id: alert.id,
+            eventType: alert.eventType,
+            state: alert.state,
+            severity: alert.severity,
+            title: alert.title,
+            message: alert.message,
+            detectedAt: alert.detectedAt.toISOString(),
+            deliveries: alert.deliveries.map((delivery) => ({
+                channel: delivery.channel,
+                status: delivery.status,
+                attempt: delivery.attempt,
+                maxAttempts: delivery.maxAttempts,
+                nextRetryAt: delivery.nextRetryAt?.toISOString() ?? null,
+            })),
+        })),
     };
 }

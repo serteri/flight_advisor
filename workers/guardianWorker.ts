@@ -7,6 +7,7 @@ import { assessEu261ForDisruption, isEu261Carrier, isEu261Country } from "@/serv
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
 import { recordGuardianMetric } from "@/services/healthMetrics";
 import type { GuardianMetricEvent } from "@/types/operatorHealth";
+import { MonitoringEventType, recordMonitoringEvent } from "@/lib/alertLifecycle";
 import airports from 'airports';
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE';
@@ -14,8 +15,10 @@ export type GuardianEventSeverity = 'low' | 'medium' | 'high';
 
 export interface GuardianEvent {
     eventId?: string;
+    alertEventId?: string;
     tripId: string;
     type: GuardianEventType;
+    lifecycleEventType?: MonitoringEventType;
     subType?: string;
     detailHash?: string;
     severity: GuardianEventSeverity;
@@ -53,6 +56,21 @@ const buildTransitionMarker = (snapshot: any): string => {
 
 const buildEventId = (tripId: string, eventType: GuardianEventType, subType: string, detailHash: string) => {
     return `${tripId}:${eventType}:${subType}:${detailHash}`;
+};
+
+const mapGuardianEventType = (eventType: GuardianEventType, subType?: string): MonitoringEventType => {
+    if (eventType === 'DELAY') return 'DELAY_DETECTED';
+    if (eventType === 'CANCELLED') return 'CANCELLATION_DETECTED';
+    if (eventType === 'GATE_CHANGE') {
+        return subType?.includes('terminal') ? 'TERMINAL_CHANGE' : 'GATE_CHANGE';
+    }
+    return 'STATUS_UNAVAILABLE';
+};
+
+const severityLabel = (severity: GuardianEventSeverity): 'LOW' | 'MEDIUM' | 'HIGH' => {
+    if (severity === 'high') return 'HIGH';
+    if (severity === 'medium') return 'MEDIUM';
+    return 'LOW';
 };
 
 const getAirportData = (iata: string): any | null => {
@@ -294,21 +312,89 @@ export async function processFlightMonitoring() {
                     console.warn(`   ⚠️ Exception during status fetch: ${err.message}`);
                 }
 
-                const queueDispatch = (
+                const queueDispatch = async (
                     event: Omit<GuardianEvent, 'tripId' | 'detectedAt' | 'eventId' | 'detailHash'>,
                     details: unknown,
                 ) => {
                     const detailHash = makeDetailHash(details);
                     const key = buildEventId(trip.id, event.type, event.subType || 'general', detailHash);
+                    const lifecycleEventType = event.lifecycleEventType ?? mapGuardianEventType(event.type, event.subType);
+                    const jsonDetails = JSON.parse(JSON.stringify(details ?? null));
+                    const title = lifecycleEventType === 'DELAY_DETECTED'
+                        ? 'Periodic monitoring detected a delay'
+                        : lifecycleEventType === 'CANCELLATION_DETECTED'
+                            ? 'Latest check identified a possible cancellation'
+                            : lifecycleEventType === 'GATE_CHANGE'
+                                ? 'Latest check identified a gate change'
+                                : lifecycleEventType === 'MONITORING_STALE'
+                                    ? 'Monitoring currently delayed'
+                                    : lifecycleEventType === 'MONITORING_RECOVERED'
+                                        ? 'Monitoring recovered'
+                                        : 'Monitoring status currently unavailable';
+                    const message = lifecycleEventType === 'MONITORING_STALE'
+                        ? 'The latest scheduled monitoring check was delayed. Notification delivery will resume when checks recover.'
+                        : lifecycleEventType === 'MONITORING_RECOVERED'
+                            ? 'Monitoring recovered after a delayed check window.'
+                            : lifecycleEventType === 'STATUS_UNAVAILABLE'
+                        ? 'Monitoring is currently working with delayed or unavailable provider status data.'
+                        : 'A periodic monitoring check detected a change on this booked trip.';
+                    const lifecycleAlert = await recordMonitoringEvent({
+                        userId: trip.userId,
+                        tripId: trip.id,
+                        sourceType: 'MONITORED_TRIP',
+                        sourceId: trip.id,
+                        eventType: lifecycleEventType,
+                        severity: severityLabel(event.severity),
+                        title,
+                        message,
+                        fingerprintParts: [trip.id, lifecycleEventType, event.subType || 'general', details],
+                        payload: {
+                            eventId: key,
+                            previous: event.previous,
+                            current: event.current,
+                            details: jsonDetails,
+                        },
+                    });
+
+                    if (lifecycleAlert.suppressed) {
+                        console.log(`[GUARDIAN] Suppressed duplicate ${lifecycleEventType} for trip ${trip.id} inside cooldown window.`);
+                        try {
+                            recordGuardianMetric({
+                                tripId: trip.id,
+                                eventType: lifecycleEventType,
+                                eventSeverity: event.severity,
+                                notificationAttempted: false,
+                                notificationSuppressed: true,
+                                timestamp: new Date(),
+                            });
+                        } catch (err) {
+                            console.debug('[GuardianMetrics] Error recording suppression metric:', err);
+                        }
+                        return;
+                    }
+
                     const eventPayload = {
                         eventId: key,
+                        alertEventId: lifecycleAlert.alertId,
                         detailHash,
                         tripId: trip.id,
                         detectedAt: new Date().toISOString(),
+                        lifecycleEventType,
                         ...event
                     };
                     generatedEvents.push(eventPayload);
                     newSnapshot.lastEventId = key;
+
+                    await prisma.guardianAlert.create({
+                        data: {
+                            tripId: trip.id,
+                            type: lifecycleEventType,
+                            severity: severityLabel(event.severity),
+                            title,
+                            message,
+                            isRead: false,
+                        },
+                    });
                     
                     if (trip.user) {
                         notificationPromises.push(
@@ -347,6 +433,42 @@ export async function processFlightMonitoring() {
                         );
                     }
                 };
+
+                const staleThresholdMs = Math.max(trip.checkFrequency * 3, 180) * 60 * 1000;
+                const lastCheckedAt = trip.lastCheckedAt ? new Date(trip.lastCheckedAt) : null;
+                const wasMonitoringStale = !lastCheckedAt || now.getTime() - lastCheckedAt.getTime() > staleThresholdMs;
+
+                if (wasMonitoringStale) {
+                    await queueDispatch({
+                        type: 'DATA_ISSUE',
+                        lifecycleEventType: 'MONITORING_STALE',
+                        subType: 'monitoring_stale',
+                        severity: 'medium',
+                        previous: lastCheckedAt ? lastCheckedAt.toISOString() : 'never_checked',
+                        current: {
+                            status: 'CHECK_DELAYED',
+                            lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
+                            ...flightContext,
+                        },
+                    }, {
+                        staleKind: 'monitoring_check_delayed',
+                        lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
+                        thresholdMinutes: Math.round(staleThresholdMs / 60000),
+                    });
+
+                    try {
+                        recordGuardianMetric({
+                            tripId: trip.id,
+                            eventType: 'MONITORING_STALE',
+                            eventSeverity: 'medium',
+                            notificationAttempted: false,
+                            staleMonitoringDetected: true,
+                            timestamp: new Date(),
+                        });
+                    } catch (err) {
+                        console.debug('[GuardianMetrics] Error recording stale metric:', err);
+                    }
+                }
 
                 let explicitDelayMinutes = previousState.delayMinutes;
                 let computedStatus: 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN' = 'UNKNOWN';
@@ -390,7 +512,7 @@ export async function processFlightMonitoring() {
 
                 if (computedStatus === 'UNKNOWN') {
                     if (previousState.status !== 'UNKNOWN' && previousState.status !== 'scheduled' && previousState.status !== 'CANCELLED') {
-                        queueDispatch({
+                        await queueDispatch({
                             type: 'DATA_ISSUE',
                             subType: 'status_unknown',
                             severity: 'medium',
@@ -426,7 +548,7 @@ export async function processFlightMonitoring() {
                         distanceKm,
                     });
                     const eligibleEU261 = eu261Assessment.eligible === true;
-                    queueDispatch({
+                    await queueDispatch({
                         type: 'CANCELLED',
                         subType: 'status_cancelled',
                         severity: 'high',
@@ -477,7 +599,7 @@ export async function processFlightMonitoring() {
                         });
                         const eligibleEU261 = eu261Assessment.eligible === true;
                         
-                        queueDispatch({
+                        await queueDispatch({
                             type: 'DELAY',
                             subType: `delay_bucket_${currBucket}`,
                             severity: severityMap[currBucket] || 'high',
@@ -522,7 +644,7 @@ export async function processFlightMonitoring() {
                                 ? 'gate_change_departure'
                                 : 'gate_change_arrival';
 
-                        queueDispatch({
+                        await queueDispatch({
                             type: 'GATE_CHANGE',
                             subType: gateSubType,
                             severity: 'high',
@@ -546,6 +668,38 @@ export async function processFlightMonitoring() {
                     newSnapshot.departureGate = newDepGate;
                     newSnapshot.arrivalGate = newArrGate;
                     newSnapshot.gateDetail = `dep:${previousState.departureGate || 'N/A'}>${newDepGate || 'N/A'}|arr:${previousState.arrivalGate || 'N/A'}>${newArrGate || 'N/A'}`;
+                }
+
+                if (wasMonitoringStale && currentStatus) {
+                    await queueDispatch({
+                        type: 'DATA_ISSUE',
+                        lifecycleEventType: 'MONITORING_RECOVERED',
+                        subType: 'monitoring_recovered',
+                        severity: 'low',
+                        previous: 'CHECK_DELAYED',
+                        current: {
+                            status: computedStatus,
+                            dataQuality: currentDataQuality,
+                            ...flightContext,
+                        },
+                    }, {
+                        recoveredKind: 'monitoring_check_completed',
+                        status: computedStatus,
+                        dataQuality: currentDataQuality,
+                    });
+
+                    try {
+                        recordGuardianMetric({
+                            tripId: trip.id,
+                            eventType: 'MONITORING_RECOVERED',
+                            eventSeverity: 'low',
+                            notificationAttempted: false,
+                            monitoringRecovered: true,
+                            timestamp: new Date(),
+                        });
+                    } catch (err) {
+                        console.debug('[GuardianMetrics] Error recording recovery metric:', err);
+                    }
                 }
 
                 const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);
