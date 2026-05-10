@@ -161,6 +161,8 @@ export interface GuardianHealth {
   // Throttling & batching
   eventsThrottled: number;
   eventsBatched: number;
+  notificationSuppressed: number;
+  retryingNotifications: number;
 
   // Disruption detection
   disruptionsDetected: number;
@@ -283,6 +285,9 @@ export interface GuardianMetricEvent {
   statusLookupSucceeded?: boolean;
   notificationAttempted: boolean;
   notificationSucceeded?: boolean;
+  notificationSuppressed?: boolean;
+  staleMonitoringDetected?: boolean;
+  monitoringRecovered?: boolean;
   channel?: string;
   timestamp: Date;
 }

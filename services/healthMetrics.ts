@@ -312,6 +312,9 @@ class HealthMetricsCollector {
     const notificationAttempts = events.filter((e) => e.notificationAttempted).length;
     const notificationSucceeded = events.filter((e) => e.notificationAttempted && e.notificationSucceeded === true).length;
     const notificationFailed = events.filter((e) => e.notificationAttempted && e.notificationSucceeded === false).length;
+    const notificationSuppressed = events.filter((e) => e.notificationSuppressed).length;
+    const retryingNotifications = events.filter((e) => e.eventType === 'NOTIFICATION_RETRYING').length;
+    const staleMonitoringDetected = events.filter((e) => e.staleMonitoringDetected).length;
 
     const notificationChannels = new Map<string, { attempted: number; succeeded: number }>();
     events.forEach((e) => {
@@ -333,15 +336,17 @@ class HealthMetricsCollector {
       statusLookupsAttempted,
       statusLookupsSucceeded,
       statusLookupsFailed,
-      staleSnapshotCount: 0, // Would need to check snapshot ages
+      staleSnapshotCount: staleMonitoringDetected,
       missingSeatMapData: eventsByType.get('UPGRADE') || 0,
       missingScheduleData: eventsByType.get('SCHEDULE_CHANGE') || 0,
       notificationAttempts,
       notificationSucceeded,
       notificationFailed,
       notificationChannels,
-      eventsThrottled: 0,
+      eventsThrottled: notificationSuppressed,
       eventsBatched: 0,
+      notificationSuppressed,
+      retryingNotifications,
       disruptionsDetected: eventsByType.get('DISRUPTION') || 0,
       scheduleChangesDetected: eventsByType.get('SCHEDULE_CHANGE') || 0,
       upgradesDetected: eventsByType.get('UPGRADE') || 0,

@@ -1,5 +1,7 @@
 // app/api/cron/guardian/route.ts
 import { processFlightMonitoring } from "@/workers/guardianWorker";
+import { processPendingAlertRetries } from "@/services/notifications/alertRetryWorker";
+import { expireDueAlertEvents } from "@/lib/alertLifecycle";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -62,12 +64,17 @@ export async function GET(request: NextRequest) {
         console.log("🛡️ [CRON] Guardian Worker triggered at", new Date().toISOString());
         
         // Run the monitoring cycle
-        await processFlightMonitoring();
+        const monitoring = await processFlightMonitoring();
+        const retries = await processPendingAlertRetries();
+        const expired = await expireDueAlertEvents();
         
         return NextResponse.json(
             { 
                 success: true, 
                 message: "Guardian monitoring cycle completed",
+                monitoring,
+                retries,
+                expired: expired.count,
                 timestamp: new Date().toISOString()
             },
             { status: 200 }
@@ -125,12 +132,17 @@ export async function POST(request: NextRequest) {
     
     try {
         console.log("🛡️ [CRON] Guardian Worker manually triggered");
-        await processFlightMonitoring();
+        const monitoring = await processFlightMonitoring();
+        const retries = await processPendingAlertRetries();
+        const expired = await expireDueAlertEvents();
         
         return NextResponse.json(
             { 
                 success: true, 
-                message: "Guardian monitoring cycle completed"
+                message: "Guardian monitoring cycle completed",
+                monitoring,
+                retries,
+                expired: expired.count
             },
             { status: 200 }
         );
