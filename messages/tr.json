@@ -1,6 +1,6 @@
 {
   "common": {
-    "motto": "Her milde hassasiyet, her uçuşta tutku.",
+    "motto": "Rezervasyondan once skorla. Sonra periyodik izle.",
     "purpose_title": "AMACIMIZ",
     "departure": "Gidiş",
     "return": "Dönüş",
@@ -8,7 +8,7 @@
     "to": "Nereye",
     "passengers": "Yolcular",
     "cabin_class": "Kabin Sınıfı",
-    "search_flights": "Uçuş Ara",
+    "search_flights": "Itinerary Skorla",
     "add_date": "Tarih Ekle",
     "travel_purpose": "Seyahat Amacı",
     "purpose_budget": "Bütçe",
@@ -18,45 +18,47 @@
   },
   "Navbar": {
     "home": "Ana Sayfa",
-    "search": "Uçuş Ara",
+    "search": "Itinerary Skorla",
     "pricing": "Fiyatlandırma",
     "features": "Özellikler",
     "blog": "Gezi Rehberi",
-    "aiMode": "AI MODU",
-    "aiModeActive": "AI MODU AKTİF",
+    "aiMode": "INTELLIGENCE MODE",
+    "aiModeActive": "INTELLIGENCE MODE",
     "login": "Giriş Yap",
     "logout": "Çıkış Yap",
     "dashboard": "Panel",
-    "getStarted": "Başlayın"
+    "getStarted": "Itinerary Skorla",
+    "scoreItinerary": "Itinerary Skorla",
+    "intelligenceMode": "ITINERARY INTELLIGENCE"
   },
   "PricingPage": {
-    "title": "Fiyatlandırma",
-    "subtitle": "Risk zekası ve rota bazlı fiyat içgörülerini açın.",
+    "title": "Itinerary Intelligence Plans",
+    "subtitle": "Scoring, advisor reports, scheduled monitoring ve alert history; real-time veya airline-grade vaat olmadan.",
     "back": "Geri",
-    "monthlyPro": "Aylık Pro",
-    "proDesc": "Sınırsız analiz + proaktif premium bildirimler.",
-    "proItem1": "Risk Analizi (Gecikme + Aktarma)",
-    "proItem2": "Fiyat Zekası ve Trend Tahmini",
-    "proItem3": "Detaylı Skor Dağılımı",
-    "proItem4": "Akıllı rota bildirimleri",
+    "monthlyPro": "Pro - Monthly",
+    "proDesc": "Decision engine access for scoring, advisor context, tracked itineraries, and scheduled monitoring transparency.",
+    "proItem1": "Itinerary score and connection-risk analysis",
+    "proItem2": "Fare context with estimated or snapshot-based pricing signals",
+    "proItem3": "Advisor reports and score breakdowns",
+    "proItem4": "Tracked itinerary updates and alert history",
     "connecting": "Stripe'a bağlanılıyor...",
-    "upgradeToPro": "Pro'ya Yükselt",
-    "oneTimeReport": "Tek Seferlik Uçuş Raporu",
-    "reportDesc": "Sadece bu rota için derin rapor, abonelik yok.",
-    "reportItem1": "Rota bazlı risk taraması",
-    "reportItem2": "Rota ortalamasına göre fiyat kıyası",
-    "reportItem3": "Kişiselleştirilmiş öneri özeti",
-    "buyOneTime": "Tek Seferlik Rapor Satın Al"
+    "upgradeToPro": "Start Pro",
+    "oneTimeReport": "One-time Advisor Report",
+    "reportDesc": "A single advisor-style itinerary report. No subscription required.",
+    "reportItem1": "Route structure and connection-risk review",
+    "reportItem2": "Fare context against available route signals",
+    "reportItem3": "Advisor recommendation with key trade-offs",
+    "buyOneTime": "Get Advisor Report - $4.99"
   },
   "BlogPage": {
     "title": "Seyahat Rehberleri ve İpuçları",
-    "subtitle": "FlightAdvisor ekibinden en iyi uçuş fırsatları, gizli rotalar ve seyahat tüyoları.",
+    "subtitle": "FlightAgent ekibinden itinerary kararlari, disruption riski, fare context ve monitoring transparency rehberleri.",
     "backToHome": "Ana Sayfaya Dön",
     "backToGuides": "Rehberlere Dön",
     "tag": "Seyahat İpuçları",
     "ctaTitle": "Keşfetmeye hazır mısın?",
-    "ctaDesc": "FlightAdvisor'da aramanı başlat ve bir sonraki maceran için en iyi fırsatları bul.",
-    "ctaButton": "Hemen Uçuş Ara"
+    "ctaDesc": "FlightAgent ile itinerary skorlayin ve daha net booking karari verin.",
+    "ctaButton": "Itinerary Skorla"
   },
   "Results": {
     "noFlights": "Uçuş bulunamadı",
@@ -127,56 +129,56 @@
   },
   "HomePage": {
     "hero": {
-      "title": "Kişisel Uçuş Fiyat",
-      "titleHighlight": "Karar Zekası",
-      "subtitle": "Ne zaman alacağınızı, ne zaman bekleyeceğinizi ve ne zaman harekete geçeceğinizi bilin. FlightAgent uçuşunuzu puanlar, aksamaları takip eder ve seyahatinizi otomatik olarak korur.",
+      "title": "Trip Decision",
+      "titleHighlight": "Intelligence",
+      "subtitle": "Rezervasyondan once itinerary skorlayin, advisor report inceleyin ve booked tripleri seffaf periyodik kontrollerle izleyin.",
       "ctaPrimary": "Keşfetmeye Başla",
       "ctaSecondary": "Daha Fazla Bilgi"
     },
     "badge": {
-      "engineActive": "v2.0 Karar Motoru Aktif",
-      "aiMode": "Flight Agent: AI Modu"
+      "engineActive": "Itinerary Intelligence Platform",
+      "aiMode": "Trip Decision Intelligence"
     },
     "trust": {
-      "airlines": "400+ Havayolu",
-      "secure": "Güvenli Rezervasyon",
-      "realtime": "Gerçek Zamanlı Durum"
+      "airlines": "Itinerary scoring",
+      "secure": "Advisor reports",
+      "realtime": "Monitoring snapshots"
     },
     "system": {
-      "label": "Flight Agent Sistemleri",
-      "title": "Sıfırdan sona ne inşa ettik",
-      "subtitle": "Flight Agent sadece bir fiyat listesi değil. Yolculuğunu skorlayan, öngören ve savunan bir koruma katmanıdır.",
+      "label": "FlightAgent Platform",
+      "title": "Rezervasyon oncesi ve sonrasi trip intelligence",
+      "subtitle": "FlightAgent OTA veya airfare search engine degildir. Itinerary riskini, fare contextini, monitoring durumunu ve alert historyyi anlamaniza yardim eder.",
       "cards": {
         "hybrid": {
-          "title": "Herhangi Bir Uçuşu Puanla",
-          "desc": "Herhangi bir yerden bulduğunuz uçuşu girin. 10 kriterli motorumuz saniyeler içinde değer, risk ve konfor puanı verir."
+          "title": "Itinerary Scoring",
+          "desc": "Analyze route structure, connection quality, fare context, and risk signals."
         },
         "scoring": {
-          "title": "Ana Uçuş Skorlaması",
-          "desc": "100 puanlık motor değer, risk, konfor ve güvenilirliği puanlar. Sadece ucuz değil, akıllı."
+          "title": "Advisor Reports",
+          "desc": "Premium reports explain recommendations with practical itinerary context."
         },
         "disruption": {
-          "title": "Aksama Avcısı + EU261",
-          "desc": "Rötar ve iptal riskini yakalar, 600 EUR'a kadar tazminat uygunluğunu kontrol eder."
+          "title": "Tracked Itineraries",
+          "desc": "Watch candidate routes using scheduled monitoring snapshots and estimated pricing context."
         },
         "guardian": {
-          "title": "Guardian İzleyici (7/24)",
-          "desc": "Her 15 dakikada izleme. Kapı değişimi, rötar, iptal, alarm."
+          "title": "Booked Trip Monitoring",
+          "desc": "Confirmed trips can receive periodic disruption checks for schedule, status, and connection-risk signals."
         },
         "notifications": {
-          "title": "Akıllı Bildirimler",
-          "desc": "Email, SMS ve push. Seviye bazlı uyarılar ve aksiyon rehberi."
+          "title": "Alert History",
+          "desc": "Detected events, notification attempts, retries, and status are recorded for visibility."
         },
         "inbox": {
-          "title": "Gelen Kutusu Ayrıştırıcı + Otomatik Takip",
-          "desc": "Rezervasyon mailini ilet, PNR parse eder, veriyi çeker ve korumayı başlatır."
+          "title": "Monitoring Transparency",
+          "desc": "Latest check status, stale states, and delayed monitoring signals are surfaced honestly."
         }
       }
     },
     "scoring": {
-      "label": "Canavar No.10",
-      "title": "Ana Uçuş Skorlama Motoru",
-      "subtitle": "Sistemin beyni. Bu olmadan diğerleri sadece özellik olur.",
+      "label": "Decision Engine",
+      "title": "Itinerary Scoring Engine",
+      "subtitle": "A practical advisory layer for comparing flight options by risk, route quality, fare context, and traveler burden.",
       "formula": {
         "title": "Geliştirilmiş Skorlama Formülü",
         "intro": "Toplam: 100 puan, sonra 10 puanlık skora normalize edilir.",
@@ -244,30 +246,30 @@
       }
     },
     "strategic": {
-      "label": "Stratejik Gerçek",
-      "title": "Skyscanner fiyat sıralar. Biz sonucu savunuruz.",
-      "subtitle": "Fiyat tek başına karar değildir. Risk modeller, senaryo simüle eder, krizde koruruz.",
+      "label": "Positioning",
+      "title": "Booking sites sort fares. FlightAgent explains itineraries.",
+      "subtitle": "Price alone is not a travel decision. FlightAgent adds risk analysis, advisor recommendations, and transparent monitoring after booking.",
       "typical": {
         "title": "Tipik Platformlar",
         "items": {
-          "price": "Sadece fiyat sıralama",
-          "risk": "Risk analizi yok",
-          "future": "Gelecek bozulma simülasyonu yok",
-          "crisis": "Kriz savunma katmanı yok"
+          "price": "Price sorting and booking links",
+          "risk": "Limited connection-risk context",
+          "future": "Little visibility after booking",
+          "crisis": "No alert lifecycle or delivery history"
         }
       },
       "agent": {
         "title": "Uçuş Asistanı",
         "items": {
-          "ranking": "Risk odaklı sıralama",
-          "scenario": "Senaryo simülasyonu",
-          "protection": "Proaktif bozulma koruması",
-          "compensation": "Tazminat ve toparlanma rehberi"
+          "ranking": "Route and connection analysis",
+          "scenario": "Advisor-style recommendations",
+          "protection": "Periodic disruption checks",
+          "compensation": "Alert history and monitoring transparency"
         }
       }
     },
     "features": {
-      "title": "Neden FlightAdvisor?",
+      "title": "Neden FlightAgent?",
       "subtitle": "En iyi uçuş fırsatlarını bulmanız için gereken her şey",
       "smartAlerts": {
         "title": "Akıllı Fiyat Alarmları",
@@ -309,18 +311,45 @@
         "title": "Tasarruf Et",
         "desc": "Fiyat düşüşünü size bildirdiğimizde rezervasyon yapın."
       }
+    },
+    "faq": {
+      "label": "Operational Honesty",
+      "title": "FlightAgent neyi yapar, neyi vaat etmez?",
+      "subtitle": "FlightAgent decision intelligence ve periodic monitoring urunudur; airline operations feed degildir.",
+      "items": {
+        "checks": {
+          "q": "How often are trips checked?",
+          "a": "Booked trips and tracked itineraries are checked on scheduled monitoring cycles. The dashboard shows the latest snapshot when available."
+        },
+        "systems": {
+          "q": "Does FlightAgent use live airline systems?",
+          "a": "FlightAgent does not claim airline-grade operational access. It uses available provider data and internal monitoring records."
+        },
+        "pricing": {
+          "q": "Are price signals estimated or live?",
+          "a": "Fare context may be estimated or snapshot-based depending on available data. Stale or unavailable data should be labelled."
+        },
+        "delayed": {
+          "q": "What happens if monitoring is delayed?",
+          "a": "Delayed or stale monitoring should be shown as an operational state, not hidden behind reassuring copy."
+        },
+        "delivery": {
+          "q": "How does alert delivery work?",
+          "a": "Detected events and notification attempts are tracked separately. Delivery can be retried, fail, or remain pending."
+        }
+      }
     }
   },
   "AboutPage": {
-    "title": "FlightAdvisor Hakkında",
-    "subtitle": "Seyahat verilerini herkes için demokratikleştiriyoruz.",
+    "title": "FlightAgent Hakkinda",
+    "subtitle": "Trip decision intelligence for long-haul travelers.",
     "mission": {
       "title": "Misyonumuz",
-      "content": "FlightAdvisor olarak seyahatin herkes için erişilebilir olması gerektiğine inanıyoruz. Misyonumuz, sürekli arama derdi olmadan en iyi uçuş fiyatlarını bulmanıza yardımcı olmak için gelişmiş analitik ve yapay zeka kullanmaktır."
+      "content": "FlightAgent, yolcularin rezervasyon oncesi itinerary kalitesini anlamasina ve booked tripleri seffaf scheduled checks ile izlemesine yardim eder. OTA degiliz; real-time airline operations vaadi vermeyiz."
     },
     "story": {
       "title": "Hikayemiz",
-      "content": "2024 yılında başlayan FlightAdvisor, şeffaf olmayan uçuş fiyatlandırmasından duyulan hayal kırıklığının bir sonucu olarak doğdu."
+      "content": "FlightAgent, cheap-price sorttan fazlasina ihtiyac duyan yolcular icin kuruldu. Long-haul itineraryler tight connection, self-transfer, stale data veya kotu rebooking opsiyonlariyla risk tasir; urun karar netligi ve honest monitoring state etrafinda tasarlandi."
     }
   },
   "Auth": {
@@ -748,21 +777,21 @@
     }
   },
   "pricing": {
-    "title": "Travel Guardian Premium",
-    "subtitle": "Seyahatinizi şansa bırakmayın.",
+    "title": "Itinerary Intelligence Premium",
+    "subtitle": "Advisor reports, scheduled monitoring, and transparent itinerary context.",
     "priceMonth": "/ay",
-    "feature1": "7/24 Uçuş Takibi (Sınırsız)",
-    "feature2": "Tazminat Avcısı (%0 Komisyon)",
-    "feature3": "Business Upgrade Fırsatları",
-    "feature4": "Fiyat Arbitraj Uyarıları",
-    "feature5": "Koltuk Casusu (Yan Koltuk Uyarısı)",
-    "feature6": "Öncelikli E-posta Bildirimleri",
-    "cta": "Korumayı Başlat",
+    "feature1": "Itinerary scoring and advisor reports",
+    "feature2": "Disruption risk review",
+    "feature3": "Booked trip monitoring records",
+    "feature4": "Tracked itinerary updates",
+    "feature5": "Alert history visibility",
+    "feature6": "Priority notification attempts",
+    "cta": "Itinerary Skorla",
     "secure": "İstediğiniz zaman iptal edebilirsiniz. Güvenli ödeme Stripe ile sağlanır."
   },
   "Pricing": {
-    "title": "Üyelik Planları",
-    "subtitle": "Her yolculuk tipi için özel koruma paketleri.",
+    "title": "Itinerary Intelligence Plans",
+    "subtitle": "Scoring, advisor reports, scheduled monitoring ve alert history; real-time veya airline-grade vaat olmadan.",
     "trial": "7 Gün Ücretsiz Deneme (Elite)",
     "monthly": "/ay",
     "yearly": "/yıl",
@@ -786,17 +815,17 @@
       }
     },
     "features": {
-      "search_score": "Arama & Skorlama",
-      "scenario_sim": "Senaryo Simülasyonu",
-      "disruption_hunter": "Aksama Avcısı",
-      "inbox_parser": "Gelen Kutusu Ayrıştırıcı (E-posta)",
-      "schedule_guardian": "Schedule Guardian",
-      "junior_guardian": "Junior Guardian",
-      "backup_generator": "Backup Generator",
-      "lounge_intel": "Lounge Intelligence",
-      "email_notifications": "E-posta Bildirimleri",
-      "sms_notifications": "SMS Bildirimleri",
-      "push_notifications": "Push Bildirimleri"
+      "search_score": "Itinerary Scoring",
+      "scenario_sim": "Advisor Recommendations",
+      "disruption_hunter": "Disruption Risk Review",
+      "inbox_parser": "Booking Email Parsing",
+      "schedule_guardian": "Periodic Trip Monitoring",
+      "junior_guardian": "Family Trip Context",
+      "backup_generator": "Recovery Guidance",
+      "lounge_intel": "Comfort Context",
+      "email_notifications": "Email Notification Attempts",
+      "sms_notifications": "SMS Notification Attempts",
+      "push_notifications": "Push Notification Attempts"
     },
     "values": {
       "unlimited": "Sınırsız",
@@ -806,9 +835,9 @@
       "priority": "Öncelikli Destek",
       "none": "Yok",
       "tickets_2": "Aylık 2 Bilet",
-      "watch_247": "7/24 Nöbet",
-      "full_protection": "Tam Koruma",
-      "crisis_mgmt": "Kriz Yönetimi",
+      "watch_247": "Scheduled checks",
+      "full_protection": "Monitoring history",
+      "crisis_mgmt": "Recovery guidance",
       "list_only": "Sadece Liste",
       "full_analysis": "Tam Erişim Analizi"
     },
@@ -827,38 +856,38 @@
       "notIncluded": "Dahil Değil"
     },
     "categories": {
-      "search_analysis": "Arama ve Analiz",
-      "monitoring": "İzleme (7/24)",
-      "notifications": "Bildirimler",
-      "automation": "Otomasyon",
-      "premium_features": "Premium Özellikler"
+      "search_analysis": "Itinerary Analysis",
+      "monitoring": "Scheduled Monitoring",
+      "notifications": "Notification Tracking",
+      "automation": "Trip Intake",
+      "premium_features": "Advisor Tools"
     }
   },
   "PricingFeaturesPage": {
     "title": "Özellik Karşılaştırması",
     "backToPricing": "Fiyatlandırmaya Dön",
     "ctaTitle": "Başlamaya hazır mısınız?",
-    "ctaDesc": "Seyahat koruma ihtiyacınıza uygun planı seçin.",
-    "viewPricingPlans": "Fiyatlandırma Planlarını Gör"
+    "ctaDesc": "Choose the plan that fits your itinerary analysis and monitoring needs.",
+    "viewPricingPlans": "View Plans"
   },
   "PricingUpsell": {
     "startingAt": "Başlangıç",
     "billedMonthly": "aylık faturalandırılır",
-    "guarantee": "14 gün para iade garantisi",
+    "guarantee": "Cancel anytime. Monitoring is periodic and provider-dependent.",
     "free": {
-      "title": "🚀 Flight Guardian Zekasını Aç",
-      "description": "Gerçek zamanlı aksama uyarıları, EU261 tazminat takibi ve yapay zeka destekli uçuş analizi alın",
-      "feature1": "Canlı uçuş durumu ve gecikme uyarıları",
-      "feature2": "EU261 tazminat hesaplayıcı",
-      "feature3": "Detaylı ikram ve uçak analizi",
+      "title": "Unlock Itinerary Intelligence",
+      "description": "Get itinerary scoring, advisor recommendations, and scheduled monitoring tools.",
+      "feature1": "Itinerary score and risk review",
+      "feature2": "Advisor report context",
+      "feature3": "Tracked itinerary monitoring",
       "cta": "PRO'ya Yükselt"
     },
     "elite": {
-      "title": "👑 Elite Güçlerini Aç",
-      "description": "ELITE üyelik ile SMS uyarıları, öncelikli destek ve gelişmiş aksama avcılığı alın",
-      "feature1": "Kritik aksamalarda SMS uyarıları",
-      "feature2": "Öncelikli müşteri desteği",
-      "feature3": "Gelişmiş upgrade fırsat uyarıları",
+      "title": "Unlock Premium Advisor Tools",
+      "description": "Add SMS notification attempts, priority support, and deeper monitoring visibility with ELITE.",
+      "feature1": "SMS notification attempts for critical alerts",
+      "feature2": "Priority support",
+      "feature3": "Expanded advisor and monitoring context",
       "cta": "ELITE'a Yükselt"
     },
     "compact": {

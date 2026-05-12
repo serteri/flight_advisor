@@ -233,15 +233,15 @@ Please check the browser console for full error details.
                                 <div className="mt-6 space-y-3 text-left">
                                     <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-blue-500" />
-                                        <span>Real-time Flight Tracking</span>
+                                        <span>Periodic itinerary monitoring</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-blue-500" />
-                                        <span>Price Drop Alerts</span>
+                                        <span>Tracked itinerary updates</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-blue-500" />
-                                        <span>Flight Inspector Premium</span>
+                                        <span>Advisor reports and score history</span>
                                     </div>
                                 </div>
 
@@ -286,7 +286,7 @@ Please check the browser console for full error details.
                                         <Crown className="w-5 h-5 drop-shadow-lg" /> {t('plans.elite.badge')}
                                     </div>
                                     <div className="text-3xl font-black text-white drop-shadow-lg">{t('plans.elite.name')}</div>
-                                    <p className="text-sm text-amber-200 mt-1 font-medium">Premium Protection Suite</p>
+                                    <p className="text-sm text-amber-200 mt-1 font-medium">Premium Advisor Suite</p>
                                 </div>
                                 <div className="mt-4">
                                     <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 drop-shadow-lg">
@@ -307,15 +307,15 @@ Please check the browser console for full error details.
                                 <div className="mt-6 space-y-3 text-left">
                                     <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-gradient-to-br from-amber-300 to-orange-400 shadow-lg shadow-orange-500/50" />
-                                        <span>Urgent SMS Notifications</span>
+                                        <span>SMS notification attempts</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-gradient-to-br from-orange-300 to-rose-400 shadow-lg shadow-rose-500/50" />
-                                        <span>Automated Compensation Recovery</span>
+                                        <span>Disruption guidance and records</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-amber-50 font-semibold text-sm">
                                         <span className="h-3 w-3 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 shadow-lg shadow-pink-500/50" />
-                                        <span>24/7 Proactive Crisis Management</span>
+                                        <span>Monitoring transparency and alert history</span>
                                     </div>
                                 </div>
 

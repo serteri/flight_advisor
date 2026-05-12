@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "@/i18n/routing";
-import { Menu, X, Plane, User, LogOut, Zap, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Menu, X, Plane, User, LogOut, BarChart3, LayoutDashboard, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ export default function Navbar() {
 
     const navLinks = [
         { name: tNav('home'), href: "/" },
+        { name: tNav('scoreItinerary'), href: "/score-flight" },
         { name: tNav('pricing'), href: "/pricing" },
         { name: tNav('blog'), href: "/blog" },
     ];
@@ -79,10 +80,10 @@ export default function Navbar() {
                         {/* ── RIGHT: Actions ───────────────────────────── */}
                         <div className="hidden md:flex items-center gap-x-3 shrink-0">
 
-                            {/* AI Mode pill */}
+                            {/* Product category pill */}
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-[10px] font-bold tracking-wider select-none whitespace-nowrap">
-                                <Zap size={10} className="fill-sky-500 text-sky-500" />
-                                {tNav('aiMode')}
+                                <BarChart3 size={10} className="text-sky-500" />
+                                {tNav('intelligenceMode')}
                             </div>
 
                             <LanguageSwitcher />
@@ -198,8 +199,8 @@ export default function Navbar() {
 
                         <div className="flex items-center justify-between px-3">
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-[10px] font-bold tracking-wider">
-                                <Zap size={10} className="fill-sky-500 text-sky-500" />
-                                {tNav('aiModeActive')}
+                                <BarChart3 size={10} className="text-sky-500" />
+                                {tNav('intelligenceMode')}
                             </div>
                             <LanguageSwitcher />
                         </div>

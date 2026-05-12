@@ -1,6 +1,6 @@
 {
   "common": {
-    "motto": "Know before you book. Protect after you do.",
+    "motto": "Score before you book. Monitor after you do.",
     "purpose_title": "OUR MISSION",
     "departure": "Departure",
     "return": "Return",
@@ -8,7 +8,7 @@
     "to": "To",
     "passengers": "Passengers",
     "cabin_class": "Cabin Class",
-    "search_flights": "Analyze Flight",
+    "search_flights": "Score Itinerary",
     "add_date": "Add Date",
     "travel_purpose": "Travel Purpose",
     "purpose_budget": "Budget",
@@ -18,16 +18,18 @@
   },
   "Navbar": {
     "home": "Home",
-    "search": "Track Route",
+    "search": "Score Itinerary",
     "pricing": "Pricing",
     "features": "Features",
     "blog": "Travel Tips",
-    "aiMode": "AI MODE",
-    "aiModeActive": "AI MODE ACTIVE",
+    "aiMode": "INTELLIGENCE MODE",
+    "aiModeActive": "INTELLIGENCE MODE",
     "login": "Log in",
     "logout": "Log out",
     "dashboard": "Dashboard",
-    "getStarted": "Get Started"
+    "getStarted": "Score Itinerary",
+    "scoreItinerary": "Score Itinerary",
+    "intelligenceMode": "ITINERARY INTELLIGENCE"
   },
   "Results": {
     "noFlights": "No flights found",
@@ -98,56 +100,56 @@
   },
   "HomePage": {
     "hero": {
-      "title": "Your Personal Flight",
-      "titleHighlight": "Decision Intelligence",
-      "subtitle": "Know when to buy, when to wait, and when to act. FlightAgent scores your flight, tracks disruptions, and protects your trip — automatically.",
+      "title": "Trip Decision",
+      "titleHighlight": "Intelligence",
+      "subtitle": "Score itineraries before booking, review advisor-style reports, and monitor booked trips with transparent periodic checks.",
       "ctaPrimary": "Score a Flight",
       "ctaSecondary": "See How It Works"
     },
     "badge": {
-      "engineActive": "v2.0 Decision Engine Active",
-      "aiMode": "Flight Agent: AI Mode"
+      "engineActive": "Itinerary Intelligence Platform",
+      "aiMode": "Trip Decision Intelligence"
     },
     "trust": {
-      "airlines": "400+ Airlines",
-      "secure": "Secure Booking",
-      "realtime": "Real-time Status"
+      "airlines": "Itinerary scoring",
+      "secure": "Advisor reports",
+      "realtime": "Monitoring snapshots"
     },
     "system": {
-      "label": "Flight Agent Systems",
-      "title": "What we built, end-to-end",
-      "subtitle": "Flight Agent is not just a price list. It is a protection stack that scores, predicts, and defends your trip.",
+      "label": "FlightAgent Platform",
+      "title": "Trip intelligence before and after booking",
+      "subtitle": "FlightAgent is not an OTA or airfare search engine. It helps you understand itinerary risk, fare context, monitoring status, and alert history.",
       "cards": {
         "hybrid": {
-          "title": "Score Any Flight",
-          "desc": "Paste a flight you found anywhere. Our 10-criteria engine scores it for value, risk, comfort, and reliability in seconds."
+          "title": "Itinerary Scoring",
+          "desc": "Paste or enter an itinerary you found elsewhere. FlightAgent reviews route structure, connection quality, fare context, and risk signals."
         },
         "scoring": {
-          "title": "Master Flight Scoring",
-          "desc": "100-point engine that evaluates value, risk, comfort, and reliability. Not just cheap, but safe and smart."
+          "title": "Advisor Reports",
+          "desc": "Premium reports explain the recommendation with route, fare, baggage, comfort, and disruption context."
         },
         "disruption": {
-          "title": "Disruption Hunter + EU261",
-          "desc": "Detects delays and cancellation risk, then checks compensation eligibility up to 600 EUR."
+          "title": "Tracked Itineraries",
+          "desc": "Watch candidate routes using scheduled monitoring snapshots and estimated pricing context."
         },
         "guardian": {
-          "title": "Guardian Worker (24/7)",
-          "desc": "Cron-driven flight monitoring every 15 minutes. Gate change, delay, cancellation, alert."
+          "title": "Booked Trip Monitoring",
+          "desc": "Confirmed trips can receive periodic disruption checks for schedule, status, and connection-risk signals."
         },
         "notifications": {
-          "title": "Smart Notifications",
-          "desc": "Email, SMS, and push alerts with severity levels and action guidance."
+          "title": "Alert History",
+          "desc": "Detected events, notification attempts, retries, and status are recorded so delivery state is visible."
         },
         "inbox": {
-          "title": "Inbox Parser + Auto Tracking",
-          "desc": "Forward your booking email, we parse PNR, detect trip data, and auto start protection."
+          "title": "Monitoring Transparency",
+          "desc": "Latest check status, stale states, and delayed monitoring signals are surfaced honestly when available."
         }
       }
     },
     "scoring": {
-      "label": "Monster No.10",
-      "title": "Master Flight Scoring Engine",
-      "subtitle": "The brain of the system. Without this, others are just features.",
+      "label": "Decision Engine",
+      "title": "Itinerary Scoring Engine",
+      "subtitle": "A practical advisory layer for comparing flight options by risk, route quality, fare context, and traveler burden.",
       "formula": {
         "title": "Advanced Scoring Formula",
         "intro": "Total: 100 points then normalized to a 10-point score.",
@@ -216,112 +218,139 @@
       }
     },
     "strategic": {
-      "label": "Strategic Reality",
-      "title": "Other platforms sort prices. We help you decide.",
-      "subtitle": "Price alone is not a decision. We model risk, simulate scenarios, and protect you during crises.",
+      "label": "Positioning",
+      "title": "Booking sites sort fares. FlightAgent explains itineraries.",
+      "subtitle": "Price alone is not a travel decision. FlightAgent adds risk analysis, advisor recommendations, and transparent monitoring after booking.",
       "typical": {
         "title": "Typical Platforms",
         "items": {
-          "price": "Price sorting only",
-          "risk": "No risk analysis",
-          "future": "No future disruption modeling",
-          "crisis": "No crisis defense layer"
+          "price": "Price sorting and booking links",
+          "risk": "Limited connection-risk context",
+          "future": "Little visibility after booking",
+          "crisis": "No alert lifecycle or delivery history"
         }
       },
       "agent": {
         "title": "Flight Agent",
         "items": {
-          "ranking": "Risk-aware ranking",
-          "scenario": "Scenario simulation",
-          "protection": "Proactive disruption protection",
-          "compensation": "Compensation and recovery guidance"
+          "ranking": "Route and connection analysis",
+          "scenario": "Advisor-style recommendations",
+          "protection": "Periodic disruption checks",
+          "compensation": "Alert history and monitoring transparency"
         }
       }
     },
     "features": {
-      "title": "Why Choose FlightAdvisor?",
-      "subtitle": "Make smarter flight decisions with confidence",
+      "title": "Why Choose FlightAgent?",
+      "subtitle": "Make smarter itinerary decisions with clear, operationally honest context",
       "smartAlerts": {
-        "title": "Smart Price Alerts",
-        "desc": "Set your target price and let our AI notify you the moment it drops."
+        "title": "Tracked Itinerary Updates",
+        "desc": "Set a route or itinerary watch and review scheduled monitoring snapshots when checks run."
       },
       "priceHistory": {
-        "title": "Price History",
-        "desc": "View historical price trends to understand the best time to fly."
+        "title": "Fare Context",
+        "desc": "Understand whether the fare appears strong, fair, or expensive using available route context."
       },
       "globalSearch": {
-        "title": "Global Search",
-        "desc": "Compare prices across thousands of airlines and travel agencies instantly."
+        "title": "Route Structure Analysis",
+        "desc": "Review stops, layovers, self-transfer exposure, and total travel burden before booking."
       },
       "noFees": {
-        "title": "No Hidden Fees",
-        "desc": "What you see is what you pay. We believe in complete transparency."
+        "title": "Transparent Limits",
+        "desc": "Monitoring status, stale snapshots, and estimated data are labelled clearly when available."
       },
       "instantNotify": {
-        "title": "Instant Notifications",
-        "desc": "Get notified via Email or SMS the second a deal is found."
+        "title": "Notification Tracking",
+        "desc": "Alert events and notification attempts are tracked separately so delivery state is visible."
       },
       "trends": {
-        "title": "Travel Trends",
-        "desc": "Discover popular destinations and seasonal pricing trends."
+        "title": "Advisor Reports",
+        "desc": "Download report-style analysis for itinerary decisions that need more than a simple score."
       }
     },
     "howItWorks": {
       "title": "How It Works",
-      "subtitle": "Simple steps to big savings",
+      "subtitle": "A practical workflow for decisions before booking and monitoring after booking",
       "step1": {
-        "title": "Search",
-        "desc": "Enter your destination and dates."
+        "title": "Score",
+        "desc": "Analyze an itinerary you found elsewhere."
       },
       "step2": {
         "title": "Track",
-        "desc": "Enable tracking for your desired route."
+        "desc": "Watch candidate itineraries with scheduled updates."
       },
       "step3": {
-        "title": "Save",
-        "desc": "Book when we notify you of the price drop."
+        "title": "Monitor",
+        "desc": "Add a booked trip for periodic disruption checks and alert history."
+      }
+    },
+    "faq": {
+      "label": "Operational Honesty",
+      "title": "What FlightAgent Does and Does Not Promise",
+      "subtitle": "Clear expectations matter. FlightAgent is decision intelligence and periodic monitoring, not an airline operations feed.",
+      "items": {
+        "checks": {
+          "q": "How often are trips checked?",
+          "a": "Booked trips and tracked itineraries are checked on scheduled monitoring cycles. The dashboard shows the latest monitoring snapshot when data is available."
+        },
+        "systems": {
+          "q": "Does FlightAgent use live airline systems?",
+          "a": "FlightAgent does not claim airline-grade operational access. It uses available provider data and internal monitoring records to surface practical risk signals."
+        },
+        "pricing": {
+          "q": "Are price signals estimated or live?",
+          "a": "Fare context may be estimated or snapshot-based depending on available data. We label stale or unavailable data instead of implying real-time certainty."
+        },
+        "delayed": {
+          "q": "What happens if monitoring is delayed?",
+          "a": "Delayed or stale monitoring should be shown as an operational state, not hidden behind reassuring copy."
+        },
+        "delivery": {
+          "q": "How does alert delivery work?",
+          "a": "Detected events and notification attempts are tracked separately. Delivery can be retried, fail, or remain pending depending on provider response."
+        }
       }
     }
   },
   "PricingPage": {
-    "title": "Upgrade to Pro",
-    "subtitle": "Make smarter booking decisions with real-time flight intelligence.",
+    "title": "Itinerary Intelligence Plans",
+    "subtitle": "Choose advisor reports, itinerary scoring, and scheduled monitoring without real-time or airline-grade promises.",
     "back": "Back",
-    "monthlyPro": "Pro — Monthly",
-    "proDesc": "Full decision engine access: risk scores, price trends, and proactive alerts for every search.",
-    "proItem1": "Delay & connection risk analysis",
-    "proItem2": "Price intelligence with trend forecasting",
-    "proItem3": "Full 10-criteria score breakdown",
-    "proItem4": "Smart route price alerts",
+    "monthlyPro": "Pro - Monthly",
+    "proDesc": "Decision engine access for scoring, advisor context, tracked itineraries, and scheduled monitoring transparency.",
+    "proItem1": "Itinerary score and connection-risk analysis",
+    "proItem2": "Fare context with estimated or snapshot-based pricing signals",
+    "proItem3": "Advisor reports and score breakdowns",
+    "proItem4": "Tracked itinerary updates and alert history",
     "connecting": "Connecting to Stripe...",
-    "upgradeToPro": "Start Pro — $19/month",
-    "oneTimeReport": "One-time Flight Report",
-    "reportDesc": "A single deep-dive report for one route. No subscription required.",
-    "reportItem1": "Route-specific risk & connection scan",
-    "reportItem2": "Price baseline vs route average",
-    "reportItem3": "Personalized BUY / WAIT / AVOID recommendation",
-    "buyOneTime": "Get Report — $4.99"
+    "upgradeToPro": "Start Pro",
+    "oneTimeReport": "One-time Advisor Report",
+    "reportDesc": "A single advisor-style itinerary report. No subscription required.",
+    "reportItem1": "Route structure and connection-risk review",
+    "reportItem2": "Fare context against available route signals",
+    "reportItem3": "Advisor recommendation with key trade-offs",
+    "buyOneTime": "Get Advisor Report - $4.99"
   },
   "BlogPage": {
     "title": "Travel Guides & Tips",
-    "subtitle": "Expert guides on flight decisions, travel planning, and booking strategies from the Flight Agent team.",
+    "subtitle": "Expert guides on itinerary decisions, disruption risk, fare context, and monitoring transparency from the FlightAgent team.",
     "backToHome": "Back to Home",
     "backToGuides": "Back to Guides",
     "tag": "Travel Tips",
     "ctaTitle": "Ready to explore?",
-    "ctaDesc": "Score your flight on Flight Agent and make confident booking decisions.",
-    "ctaButton": "Get Started"
+    "ctaDesc": "Score your itinerary on FlightAgent and make a clearer booking decision.",
+    "ctaButton": "Score Itinerary"
   },
   "AboutPage": {
-    "title": "About FlightAdvisor",
-    "subtitle": "Democratizing travel data for everyone.",
+    "title": "About FlightAgent",
+    "subtitle": "Trip decision intelligence for long-haul travelers.",
     "mission": {
       "title": "Our Mission",
-      "content": "At FlightAdvisor, we believe that travel should be accessible to everyone. Our mission is to use advanced analytics and AI to help you find the absolute best flight prices without the headache of constant searching."
+      "content": "FlightAgent helps travelers understand itinerary quality before booking and monitor booked trips afterward with transparent, scheduled checks. We focus on risk, route structure, fare context, and advisor-style recommendations rather than acting as an OTA or promising real-time airline operations."
     },
     "story": {
       "title": "Our Story",
-      "content": "Started in 2024, FlightAdvisor was born out of frustration with opaque flight pricing."
+      "content": "FlightAgent was built for travelers who need more than a cheap-price sort. Long-haul itineraries can fail through tight connections, self-transfers, stale data, or poor rebooking options, so our product is designed around decision clarity and honest monitoring state."
     }
   },
   "Auth": {
@@ -817,21 +846,21 @@
   "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
   "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route.",
   "pricing": {
-    "title": "Travel Guardian Premium",
-    "subtitle": "Don't leave your trip to chance.",
+    "title": "Itinerary Intelligence Premium",
+    "subtitle": "Advisor reports, scheduled monitoring, and transparent itinerary context.",
     "priceMonth": "/month",
-    "feature1": "24/7 Flight Tracking (Unlimited)",
-    "feature2": "Compensation Hunter (0% Commission)",
-    "feature3": "Business Upgrade Opportunities",
-    "feature4": "Price Arbitrage Alerts",
-    "feature5": "Seat Spy (Empty Seat Alert)",
-    "feature6": "Priority Email Notifications",
-    "cta": "Start Protection",
+    "feature1": "Itinerary scoring and advisor reports",
+    "feature2": "Disruption risk review",
+    "feature3": "Booked trip monitoring records",
+    "feature4": "Tracked itinerary updates",
+    "feature5": "Alert history visibility",
+    "feature6": "Priority notification attempts",
+    "cta": "Score Itinerary",
     "secure": "Cancel anytime. Secure payment via Stripe."
   },
   "Pricing": {
-    "title": "Membership Plans",
-    "subtitle": "Tailored protection packages for every traveler.",
+    "title": "Itinerary Intelligence Plans",
+    "subtitle": "Scoring, advisor reports, scheduled monitoring, and alert history for travelers who want clarity before and after booking.",
     "trial": "7 Days Free Trial (Elite)",
     "monthly": "/mo",
     "yearly": "/year",
@@ -855,17 +884,17 @@
       }
     },
     "features": {
-      "search_score": "Search & Scoring",
-      "scenario_sim": "Scenario Simulation",
-      "disruption_hunter": "Disruption Hunter",
-      "inbox_parser": "Inbox Parser (Email)",
-      "schedule_guardian": "Schedule Guardian",
-      "junior_guardian": "Junior Guardian",
-      "backup_generator": "Backup Generator",
-      "lounge_intel": "Lounge Intelligence",
-      "email_notifications": "Email Notifications",
-      "sms_notifications": "SMS Notifications",
-      "push_notifications": "Push Notifications"
+      "search_score": "Itinerary Scoring",
+      "scenario_sim": "Advisor Recommendations",
+      "disruption_hunter": "Disruption Risk Review",
+      "inbox_parser": "Booking Email Parsing",
+      "schedule_guardian": "Periodic Trip Monitoring",
+      "junior_guardian": "Family Trip Context",
+      "backup_generator": "Recovery Guidance",
+      "lounge_intel": "Comfort Context",
+      "email_notifications": "Email Notification Attempts",
+      "sms_notifications": "SMS Notification Attempts",
+      "push_notifications": "Push Notification Attempts"
     },
     "values": {
       "unlimited": "Unlimited",
@@ -875,9 +904,9 @@
       "priority": "Priority Support",
       "none": "None",
       "tickets_2": "2 Tickets/mo",
-      "watch_247": "24/7 Watch",
-      "full_protection": "Full Protection",
-      "crisis_mgmt": "Crisis Management",
+      "watch_247": "Scheduled checks",
+      "full_protection": "Monitoring history",
+      "crisis_mgmt": "Recovery guidance",
       "list_only": "List Only",
       "full_analysis": "Full Access Analysis"
     },
@@ -896,49 +925,49 @@
       "notIncluded": "Not Included"
     },
     "categories": {
-      "search_analysis": "Search & Analysis",
-      "monitoring": "Monitoring (24/7)",
-      "notifications": "Notifications",
-      "automation": "Automation",
-      "premium_features": "Premium Features"
+      "search_analysis": "Itinerary Analysis",
+      "monitoring": "Scheduled Monitoring",
+      "notifications": "Notification Tracking",
+      "automation": "Trip Intake",
+      "premium_features": "Advisor Tools"
     }
   },
   "PricingFeaturesPage": {
     "title": "Feature Comparison",
     "backToPricing": "Back to Pricing",
     "ctaTitle": "Ready to get started?",
-    "ctaDesc": "Choose the plan that suits your travel protection needs.",
-    "viewPricingPlans": "View Pricing Plans"
+    "ctaDesc": "Choose the plan that fits your itinerary analysis and monitoring needs.",
+    "viewPricingPlans": "View Plans"
   },
   "PricingUpsell": {
     "startingAt": "Starting at",
     "billedMonthly": "billed monthly",
-    "guarantee": "14-day money-back guarantee",
+    "guarantee": "Cancel anytime. Monitoring is periodic and provider-dependent.",
     "free": {
-      "title": "🚀 Unlock Flight Guardian Intelligence",
-      "description": "Get real-time disruption alerts, EU261 compensation tracking, and AI-powered flight analysis",
-      "feature1": "Live flight status & delay alerts",
-      "feature2": "EU261 compensation calculator",
-      "feature3": "Detailed amenity & aircraft analysis",
+      "title": "Unlock Itinerary Intelligence",
+      "description": "Get itinerary scoring, advisor recommendations, and scheduled monitoring tools.",
+      "feature1": "Itinerary score and risk review",
+      "feature2": "Advisor report context",
+      "feature3": "Tracked itinerary monitoring",
       "cta": "Upgrade to PRO"
     },
     "elite": {
-      "title": "👑 Unlock Elite Powers",
-      "description": "Get SMS alerts, priority support, and advanced disruption hunting with ELITE membership",
-      "feature1": "SMS alerts for critical disruptions",
-      "feature2": "Priority customer support",
-      "feature3": "Advanced upgrade opportunity alerts",
+      "title": "Unlock Premium Advisor Tools",
+      "description": "Add SMS notification attempts, priority support, and deeper monitoring visibility with ELITE.",
+      "feature1": "SMS notification attempts for critical alerts",
+      "feature2": "Priority support",
+      "feature3": "Expanded advisor and monitoring context",
       "cta": "Upgrade to ELITE"
     },
     "compact": {
       "learnMore": "Learn More",
       "free": {
         "title": "Upgrade to PRO",
-        "subtitle": "Unlock real-time alerts"
+        "subtitle": "Itinerary intelligence"
       },
       "elite": {
         "title": "Go ELITE",
-        "subtitle": "Get SMS alerts & priority support"
+        "subtitle": "SMS attempts and advisor support"
       }
     }
   },

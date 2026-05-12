@@ -768,7 +768,7 @@ export default function ScoreFlightPage() {
                             <div className="flex items-center gap-3">
                                 <Shield className="w-6 h-6 text-sky-400 shrink-0" />
                                 <div>
-                                    <p className="font-semibold text-white text-sm">Want full trip protection?</p>
+                                    <p className="font-semibold text-white text-sm">Want booked trip monitoring?</p>
                                     <p className="text-slate-400 text-xs">Track this itinerary without re-entering any details.</p>
                                 </div>
                             </div>

@@ -57,7 +57,7 @@ export default function HomePage() {
                                 <BarChart3 className="w-7 h-7 text-white" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-2">Score an Itinerary</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Use quick or detailed itinerary mode. Get route realism, transfer risk, and a BUY / WAIT / WATCH recommendation.</p>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Analyze route structure, transfer risk, fare context, and advisor recommendations before you book.</p>
                             <Link href="/score-flight">
                                 <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-semibold shadow-md shadow-blue-500/20">
                                     Score Itinerary <ArrowRight className="ml-2 w-4 h-4" />
@@ -65,16 +65,16 @@ export default function HomePage() {
                             </Link>
                         </div>
 
-                        {/* Card 2: Track a Route */}
+                        {/* Card 2: Track an Itinerary */}
                         <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all duration-300 group flex flex-col">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mb-5 shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <MapPin className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Track a Route</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Monitor prices for a route over time. Periodic checks notify you when the price reaches your target.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Track an Itinerary</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Watch candidate itineraries with scheduled price snapshots and transparent monitoring history.</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold">
-                                    Monitor Prices <ArrowRight className="ml-2 w-4 h-4" />
+                                    Track Itinerary <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
@@ -84,11 +84,11 @@ export default function HomePage() {
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5 shadow-md shadow-emerald-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <Mail className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Track My Booking</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Forward your booking email. We parse your trip, start periodic disruption monitoring, and track notification delivery.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">Add Booked Trip</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">Add a confirmed trip for periodic disruption checks, alert history, and notification delivery tracking.</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold">
-                                    Protect My Trip <ArrowRight className="ml-2 w-4 h-4" />
+                                    Add Booked Trip <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
@@ -96,9 +96,9 @@ export default function HomePage() {
 
                     {/* Trust Indicators */}
                     <div className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 hover:opacity-80 transition-all duration-500">
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> Trip Protection</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> Decision Intelligence</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> Periodic Disruption Alerts</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> Monitoring Transparency</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> Trip Decision Intelligence</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> Periodic Disruption Checks</span>
                     </div>
                 </div>
             </section>
@@ -248,6 +248,26 @@ export default function HomePage() {
                                 <li>{t('strategic.agent.items.compensation')}</li>
                             </ul>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Honesty FAQ */}
+            <section className="py-24 bg-white border-t border-slate-200">
+                <div className="container mx-auto px-4 md:px-6">
+                    <div className="max-w-4xl mx-auto text-center space-y-4 mb-12">
+                        <div className="text-xs uppercase tracking-[0.3em] font-semibold text-slate-500">{t('faq.label')}</div>
+                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900">{t('faq.title')}</h2>
+                        <p className="text-slate-600 text-lg">{t('faq.subtitle')}</p>
+                    </div>
+
+                    <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-2">
+                        {['checks', 'systems', 'pricing', 'delayed', 'delivery'].map((item) => (
+                            <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                                <h3 className="font-bold text-slate-900 mb-2">{t(`faq.items.${item}.q`)}</h3>
+                                <p className="text-sm text-slate-600">{t(`faq.items.${item}.a`)}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
