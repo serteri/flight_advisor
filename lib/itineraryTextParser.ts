@@ -7,6 +7,13 @@ type ParsedSegment = {
     flightNumber?: string;
     aircraft?: string;
     tripDirection?: 'OUTBOUND' | 'INBOUND';
+    provenance?: {
+        route: 'VERIFIED' | 'INFERRED' | 'FALLBACK';
+        flightNumber: 'VERIFIED' | 'INFERRED' | 'FALLBACK';
+        airline: 'VERIFIED' | 'INFERRED' | 'FALLBACK';
+        departure: 'EXPLICIT_DATE' | 'INFERRED_DATE' | 'FALLBACK_DATE';
+        arrival: 'EXPLICIT_DATE' | 'INFERRED_DATE' | 'FALLBACK_DATE';
+    };
 };
 
 type ParsedTrip = {
@@ -26,6 +33,7 @@ type ParsedMeta = {
     checkedBaggageIncluded?: boolean;
     cabinBaggageIncluded?: boolean;
     layoversMinutes: number[];
+    tripType?: 'ONE_WAY' | 'ROUND_TRIP' | 'MULTI_CITY';
 };
 
 export type ParsedItinerary = {
@@ -53,6 +61,8 @@ const AIRLINE_NAME_TO_CODE: Record<string, string> = {
 const WEEKDAY_TOKENS = new Set(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']);
 // Currency codes that must never be treated as airline IATA prefixes
 const CURRENCY_CODES = new Set(['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY', 'TRY', 'NZD', 'CHF', 'CNY', 'HKD', 'SGD']);
+const DATE_FRAGMENT_TOKENS = new Set(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'AM', 'PM']);
+const TIMEZONE_TOKENS = new Set(['UTC', 'GMT', 'EET', 'CET', 'BST', 'PST', 'EST', 'AEST', 'JST', 'KST']);
 
 const ROUTE_REGEX = /\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/gi;
 const ALT_ROUTE_REGEX = /from\s+([A-Z]{3})\s+to\s+([A-Z]{3})/gi;
@@ -106,7 +116,14 @@ const toIso = (date: Date): string => new Date(date.getTime()).toISOString();
 
 const isWeekdayToken = (value?: string): boolean => WEEKDAY_TOKENS.has((value || '').trim().toUpperCase());
 const isCurrencyCode = (value?: string): boolean => CURRENCY_CODES.has((value || '').trim().toUpperCase());
-const isInvalidFlightPrefix = (value?: string): boolean => isWeekdayToken(value) || isCurrencyCode(value);
+const isDateFragmentToken = (value?: string): boolean => DATE_FRAGMENT_TOKENS.has((value || '').trim().toUpperCase());
+const isTimezoneToken = (value?: string): boolean => TIMEZONE_TOKENS.has((value || '').trim().toUpperCase());
+const isInvalidFlightPrefix = (value?: string): boolean => (
+    isWeekdayToken(value)
+    || isCurrencyCode(value)
+    || isDateFragmentToken(value)
+    || isTimezoneToken(value)
+);
 
 const parseNumber = (raw: string): number | undefined => {
     const cleaned = raw.replace(/\s/g, '');
@@ -410,7 +427,7 @@ const normalizeAirline = (context: string, flightCode?: string): string | undefi
     for (const [name, code] of Object.entries(AIRLINE_NAME_TO_CODE)) {
         if (normalized.includes(name)) return code;
     }
-    if (flightCode && /^[A-Z]{2,3}$/.test(flightCode) && !isWeekdayToken(flightCode)) return flightCode;
+    if (flightCode && /^[A-Z]{2,3}$/.test(flightCode) && !isInvalidFlightPrefix(flightCode)) return flightCode;
     return undefined;
 };
 
@@ -677,7 +694,16 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
             toCode = nextAirport.code;
             blockStart = previousAirport.index;
         } else {
-            continue;
+            const blockLines = lines.slice(i, blockEnd + 1);
+            const departureAirportText = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Depart:');
+            const arrivalAirportText = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Arrive:');
+            const inferredFrom = inferAirportCodeFromText(departureAirportText);
+            const inferredTo = inferAirportCodeFromText(arrivalAirportText);
+            if (!inferredFrom || !inferredTo) {
+                continue;
+            }
+            fromCode = inferredFrom;
+            toCode = inferredTo;
         }
 
         const direction = currentDirection;
@@ -735,6 +761,7 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
 // Also handles the "Arrives [Day] [Date]" overnight format.
 // ---------------------------------------------------------------------------
 const GF_AIRLINE_FLIGHT_REGEX = /^([A-Za-z][A-Za-z\s]+?)\s+([A-Z]{2})(\d{1,4})\s*$/;
+const GF_PIPE_FLIGHT_REGEX = /^\|?\s*([A-Z]{2})\s?-?(\d{1,4})\s*$/;
 const GF_ROUTE_LINE_REGEX = /^([A-Z]{3})\s*(?:->|→)\s*([A-Z]{3})\s*\|(.+)$/i;
 // Capture groups:
 //   1: departure HH:MM
@@ -767,7 +794,7 @@ const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): Parse
         const rest = routeMatch[3]; // everything after the first pipe
 
         // Extract the date from rest: may have "Tue 10 Jun 2026 | Departs ..."
-        const dateMatch = rest.match(/\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun\s+)?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\b/i);
+        const dateMatch = rest.match(/\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+)?(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\b/i);
         const segDate = dateMatch ? parseDateOnly(dateMatch[0]) : (fallbackDate);
 
         // Extract departs/arrives times from rest
@@ -815,16 +842,40 @@ const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): Parse
         let airlineCode: string | undefined;
         let airlineName: string | undefined;
 
-        if (i > 0) {
-            const prevLine = lines[i - 1].trim();
-            const airlineFlightMatch = prevLine.match(GF_AIRLINE_FLIGHT_REGEX);
+        for (let lookback = 1; lookback <= 3 && i - lookback >= 0 && !flightNumber; lookback += 1) {
+            const candidateLine = lines[i - lookback].trim();
+            const airlineFlightMatch = candidateLine.match(GF_AIRLINE_FLIGHT_REGEX);
             if (airlineFlightMatch) {
                 const prefix = airlineFlightMatch[2].toUpperCase();
                 const digits = airlineFlightMatch[3];
                 if (!isInvalidFlightPrefix(prefix)) {
                     flightNumber = `${prefix}${digits}`;
                     airlineName = airlineFlightMatch[1].trim();
-                    airlineCode = normalizeAirline(prevLine, prefix) || prefix;
+                    airlineCode = normalizeAirline(candidateLine, prefix) || prefix;
+                    break;
+                }
+            }
+
+            const pipeFlightMatch = candidateLine.match(GF_PIPE_FLIGHT_REGEX);
+            if (pipeFlightMatch) {
+                const prefix = pipeFlightMatch[1].toUpperCase();
+                const digits = pipeFlightMatch[2];
+                if (!isInvalidFlightPrefix(prefix)) {
+                    flightNumber = `${prefix}${digits}`;
+                    const airlineContext = i - lookback - 1 >= 0 ? lines[i - lookback - 1].trim() : '';
+                    airlineCode = normalizeAirline(airlineContext, prefix) || prefix;
+                    break;
+                }
+            }
+
+            const looseTokenMatch = candidateLine.match(/\b([A-Z]{2})\s?-?(\d{1,4})\b/i);
+            if (looseTokenMatch) {
+                const prefix = looseTokenMatch[1].toUpperCase();
+                const digits = looseTokenMatch[2];
+                if (!isInvalidFlightPrefix(prefix)) {
+                    flightNumber = `${prefix}${digits}`;
+                    airlineCode = normalizeAirline(candidateLine, prefix) || prefix;
+                    break;
                 }
             }
         }
@@ -952,11 +1003,113 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
     return deduped;
 };
 
+const sortSegmentsChronologically = (segments: ParsedSegment[]): ParsedSegment[] => {
+    if (!segments.length) return segments;
+    const allHaveDeparture = segments.every((segment) => !!segment.departure && Number.isFinite(Date.parse(segment.departure)));
+    if (!allHaveDeparture) return segments;
+
+    return [...segments].sort((a, b) => Date.parse(a.departure!) - Date.parse(b.departure!));
+};
+
+const dropCollapsedSummarySegments = (segments: ParsedSegment[]): ParsedSegment[] => {
+    if (segments.length < 3) return segments;
+
+    return segments.filter((segment) => {
+        const lowEvidence = !segment.flightNumber && !segment.departure && !segment.arrival;
+        if (!lowEvidence) return true;
+
+        const connectors = segments.filter((candidate) =>
+            candidate !== segment
+            && candidate.from === segment.from
+            && candidate.to !== segment.to,
+        );
+        const canReachDestination = segments.some((candidate) =>
+            candidate !== segment
+            && connectors.some((c) => c.to === candidate.from)
+            && candidate.to === segment.to,
+        );
+        return !canReachDestination;
+    });
+};
+
+const inferTripGrouping = (segments: ParsedSegment[]): { grouped: ParsedSegment[]; tripType: 'ONE_WAY' | 'ROUND_TRIP' | 'MULTI_CITY' } => {
+    if (segments.length === 0) {
+        return { grouped: segments, tripType: 'ONE_WAY' };
+    }
+
+    const grouped = [...segments];
+    const hasInbound = grouped.some((segment) => segment.tripDirection === 'INBOUND');
+    const hasOutbound = grouped.some((segment) => segment.tripDirection === 'OUTBOUND');
+
+    if (hasInbound) {
+        const firstInbound = grouped.findIndex((segment) => segment.tripDirection === 'INBOUND');
+        if (firstInbound > 0) {
+            for (let i = 0; i < firstInbound; i += 1) {
+                if (!grouped[i].tripDirection) grouped[i].tripDirection = 'OUTBOUND';
+            }
+        }
+        return { grouped, tripType: 'ROUND_TRIP' };
+    }
+
+    const looksLikeRoundTrip = grouped.length >= 2 && grouped[0].from === grouped[grouped.length - 1].to;
+    if (looksLikeRoundTrip) {
+        let splitIndex = -1;
+        let maxLayover = -1;
+        for (let i = 0; i < grouped.length - 1; i += 1) {
+            const current = grouped[i];
+            const next = grouped[i + 1];
+            if (!current.arrival || !next.departure) continue;
+            const layover = Date.parse(next.departure) - Date.parse(current.arrival);
+            if (Number.isFinite(layover) && layover > maxLayover) {
+                maxLayover = layover;
+                splitIndex = i;
+            }
+        }
+        if (splitIndex < 0) {
+            splitIndex = Math.max(0, Math.floor((grouped.length - 1) / 2));
+        }
+
+        for (let i = 0; i < grouped.length; i += 1) {
+            grouped[i].tripDirection = i <= splitIndex ? 'OUTBOUND' : 'INBOUND';
+        }
+        return { grouped, tripType: 'ROUND_TRIP' };
+    }
+
+    const hasChainBreak = grouped.some((segment, index) => index > 0 && grouped[index - 1].to !== segment.from);
+    if (grouped.length > 1 && hasChainBreak && !hasOutbound) {
+        return { grouped, tripType: 'MULTI_CITY' };
+    }
+
+    for (const segment of grouped) {
+        if (!segment.tripDirection) segment.tripDirection = 'OUTBOUND';
+    }
+    return { grouped, tripType: 'ONE_WAY' };
+};
+
+const withSegmentProvenance = (segments: ParsedSegment[]): ParsedSegment[] => {
+    return segments.map((segment) => {
+        const isExplicitDate = (value?: string) => !!value && /^\d{4}-\d{2}-\d{2}T/.test(value);
+        const flightVerified = !!segment.flightNumber && /^[A-Z]{2}\d{1,4}$/i.test(segment.flightNumber);
+        const airlineVerified = !!segment.airline && (Object.values(AIRLINE_NAME_TO_CODE).includes(segment.airline.toUpperCase()) || /^[A-Z]{2,3}$/.test(segment.airline));
+
+        return {
+            ...segment,
+            provenance: {
+                route: segment.from && segment.to ? 'VERIFIED' : 'INFERRED',
+                flightNumber: flightVerified ? 'VERIFIED' : (segment.flightNumber ? 'INFERRED' : 'FALLBACK'),
+                airline: airlineVerified ? 'VERIFIED' : (segment.airline ? 'INFERRED' : 'FALLBACK'),
+                departure: segment.departure ? (isExplicitDate(segment.departure) ? 'EXPLICIT_DATE' : 'INFERRED_DATE') : 'FALLBACK_DATE',
+                arrival: segment.arrival ? (isExplicitDate(segment.arrival) ? 'EXPLICIT_DATE' : 'INFERRED_DATE') : 'FALLBACK_DATE',
+            },
+        };
+    });
+};
+
 const normalizeFlattenedConfirmationText = (text: string): string => {
     return text
         .replace(/\s+(Outbound Flight:|Inbound Flight:|Depart:|Arrive:|Status:|Cabin Class:|Aircraft:|Baggage:|Stopover of|Terminal:)/gi, '\n$1')
-        .replace(/\s+\|\s*([A-Z]{2,3})\s?-?(\d{1,4})\b/gi, '\n| $1$2')
-        .replace(/\|\s*([A-Z]{2,3}\d{1,4})\s+(Depart:|Arrive:|Status:|Cabin Class:|Aircraft:|Baggage:|Inbound Flight:|Outbound Flight:)/gi, '| $1\n$2')
+    .replace(/\s+\|\s*((?!(?:MON|TUE|WED|THU|FRI|SAT|SUN|USD|EUR|GBP|AUD|CAD|JPY|TRY|UTC|GMT)\b)[A-Z]{2})\s?-?(\d{1,4})\b/gi, '\n| $1$2')
+    .replace(/\|\s*([A-Z]{2}\d{1,4})\s+(Depart:|Arrive:|Status:|Cabin Class:|Aircraft:|Baggage:|Inbound Flight:|Outbound Flight:)/gi, '| $1\n$2')
         .replace(/\s{2,}/g, ' ')
         .trim();
 };
@@ -1026,7 +1179,10 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
 
     const warnings: string[] = [];
     const baseDate = extractFirstDateContext(text);
-    const segments = extractSegments(normalizedForSegmentation, baseDate);
+    const extractedSegments = extractSegments(normalizedForSegmentation, baseDate);
+    const continuityStabilized = dropCollapsedSummarySegments(sortSegmentsChronologically(extractedSegments));
+    const grouping = inferTripGrouping(continuityStabilized);
+    const segments = withSegmentProvenance(grouping.grouped);
 
     if (!segments.length) {
         warnings.push('Could not parse any route segment. Paste text with explicit route (e.g., SYD -> SIN).');
@@ -1079,6 +1235,7 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
             checkedBaggageIncluded: baggage.checkedBaggageIncluded,
             cabinBaggageIncluded: baggage.cabinBaggageIncluded,
             layoversMinutes,
+            tripType: grouping.tripType,
         },
         warnings: dedupeWarnings(warnings),
         confidence,

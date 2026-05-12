@@ -14,6 +14,10 @@ import { recordParserMetric } from '@/services/healthMetrics';
 import type { ParserMetricEvent } from '@/types/operatorHealth';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
+type ReliabilityTier = 'HIGH_RELIABILITY' | 'MODERATE_RELIABILITY' | 'LIMITED_RELIABILITY' | 'PRELIMINARY_ESTIMATE';
+type ReliabilityBand = 'LOW' | 'MEDIUM' | 'HIGH';
+type MarketDataSource = 'LIVE_PROVIDER_DATA' | 'HISTORICAL_ESTIMATE' | 'INTERNAL_ESTIMATE';
+type InputDataSource = 'USER_PROVIDED_INPUT' | 'PARSED_TEXT' | 'INFERRED_TEXT' | 'UNAVAILABLE_INPUT';
 
 type WarningSignals = {
     totalWarnings: number;
@@ -49,14 +53,50 @@ type ScoreBreakdownItem = {
 type ScoreTrustContract = {
     finalScore: number;
     scoreQualityLabel: 'PRELIMINARY' | 'ADVISORY' | 'STRONG';
-    dataReliabilityLabel: 'LOW' | 'MEDIUM' | 'HIGH';
+    reliabilityTier: ReliabilityTier;
+    reliabilityLabel: 'High Reliability' | 'Moderate Reliability' | 'Limited Reliability' | 'Preliminary Estimate';
+    dataReliabilityLabel: ReliabilityBand;
     dataReliabilityScore: number;
     decision: ManualDecision;
     decisionReason: string;
-    confidenceExplanation: string;
+    reliabilityExplanation: string;
+    verificationSummary: {
+        verified: string[];
+        inferred: string[];
+        estimated: string[];
+        uncertain: string[];
+    };
+    dataSourceDisclosure: {
+        marketData: MarketDataSource;
+        priceInput: InputDataSource;
+        baggageInput: InputDataSource;
+    };
     scoreBreakdown: ScoreBreakdownItem[];
     penalties: string[];
     missingDataImpact: string[];
+    whyReliabilityIsLimited: string[];
+};
+
+type PremiumReportSection = {
+    title: string;
+    summary: string;
+    bullets: string[];
+};
+
+type PremiumReport = {
+    executiveSummary: PremiumReportSection;
+    tripOverview: PremiumReportSection;
+    recommendationSummary: PremiumReportSection;
+    reliabilityAndVerification: PremiumReportSection;
+    routeAndConnectionAnalysis: PremiumReportSection;
+    airlineAndAircraftAnalysis: PremiumReportSection;
+    baggageAndFareConditions: PremiumReportSection;
+    riskAndDisruptionExposure: PremiumReportSection;
+    comfortAndFatigueAnalysis: PremiumReportSection;
+    pricingContext: PremiumReportSection;
+    keyRisks: PremiumReportSection;
+    whatWouldImproveThisItinerary: PremiumReportSection;
+    finalRecommendation: PremiumReportSection;
 };
 
 type PassengerPricingContext = NonNullable<InputAssessment['passengerPricingContext']>;
@@ -74,6 +114,45 @@ const toTenPoint = (value: number | undefined, max: number): number => {
     const numeric = Number(value || 0);
     if (!Number.isFinite(numeric) || max <= 0) return 0;
     return toOneDecimal(clamp((numeric / max) * 10, 0, 10));
+};
+
+const toReliabilityTier = (score: number): ReliabilityTier => {
+    if (score >= 85) return 'HIGH_RELIABILITY';
+    if (score >= 65) return 'MODERATE_RELIABILITY';
+    if (score >= 45) return 'LIMITED_RELIABILITY';
+    return 'PRELIMINARY_ESTIMATE';
+};
+
+const toReliabilityLabel = (tier: ReliabilityTier): ScoreTrustContract['reliabilityLabel'] => {
+    if (tier === 'HIGH_RELIABILITY') return 'High Reliability';
+    if (tier === 'MODERATE_RELIABILITY') return 'Moderate Reliability';
+    if (tier === 'LIMITED_RELIABILITY') return 'Limited Reliability';
+    return 'Preliminary Estimate';
+};
+
+const toReliabilityBand = (tier: ReliabilityTier): ReliabilityBand => {
+    if (tier === 'HIGH_RELIABILITY') return 'HIGH';
+    if (tier === 'MODERATE_RELIABILITY') return 'MEDIUM';
+    return 'LOW';
+};
+
+const toMarketDataSource = (assessment: InputAssessment): MarketDataSource => {
+    if (assessment.livePriceBenchmarkAvailable) return 'LIVE_PROVIDER_DATA';
+    if (assessment.priceMissing) return 'INTERNAL_ESTIMATE';
+    return 'HISTORICAL_ESTIMATE';
+};
+
+const toPriceInputSource = (assessment: InputAssessment): InputDataSource => {
+    if (assessment.priceSource === 'USER_PROVIDED') return 'USER_PROVIDED_INPUT';
+    if (assessment.priceSource === 'PARSED_TEXT') return 'PARSED_TEXT';
+    return 'UNAVAILABLE_INPUT';
+};
+
+const toBaggageInputSource = (assessment: InputAssessment): InputDataSource => {
+    if (assessment.baggageSource === 'USER_PROVIDED_BAGGAGE') return 'USER_PROVIDED_INPUT';
+    if (assessment.baggageSource === 'PARSED_BAGGAGE') return 'PARSED_TEXT';
+    if (assessment.baggageSource === 'INFERRED_BAGGAGE') return 'INFERRED_TEXT';
+    return 'UNAVAILABLE_INPUT';
 };
 
 const buildScoreBreakdown = (
@@ -215,31 +294,35 @@ const buildMissingDataImpact = (
 const computeDataReliability = (
     assessment: InputAssessment,
     signals: WarningSignals,
-): { score: number; label: 'LOW' | 'MEDIUM' | 'HIGH'; explanation: string } => {
+): { score: number; tier: ReliabilityTier; label: ScoreTrustContract['reliabilityLabel']; band: ReliabilityBand; explanation: string } => {
     let score = 85;
     if (assessment.priceMissing) score -= 30;
     else if (!assessment.livePriceBenchmarkAvailable) score -= 12;
     if (assessment.baggageUnverified) score -= 15;
     if (assessment.baggageSource === 'UNKNOWN_BAGGAGE') score -= 10;
     score -= Math.min(28, signals.severityPenalty);
-    score = Math.round(clamp(score, 15, 95));
+    score = Math.round(clamp(score, 15, 95) / 5) * 5;
 
-    const label: 'LOW' | 'MEDIUM' | 'HIGH' = score < 50 ? 'LOW' : score < 75 ? 'MEDIUM' : 'HIGH';
-    const explanation = label === 'HIGH'
-        ? 'Most core inputs are verified and internally consistent.'
-        : label === 'MEDIUM'
-            ? 'Some key inputs are estimated or partially inferred.'
-            : 'Core scoring inputs are incomplete or inferred; recommendation is conservative.';
+    const tier = toReliabilityTier(score);
+    const label = toReliabilityLabel(tier);
+    const band = toReliabilityBand(tier);
+    const explanation = tier === 'HIGH_RELIABILITY'
+        ? 'Based on verified itinerary structure with limited inference.'
+        : tier === 'MODERATE_RELIABILITY'
+            ? 'Some fields were inferred and price comparison may be estimated.'
+            : tier === 'LIMITED_RELIABILITY'
+                ? 'Several fields are inferred or estimated, so recommendation strength is limited.'
+                : 'This is a preliminary estimate with material uncertainty in key inputs.';
 
-    return { score, label, explanation };
+    return { score, tier, label, band, explanation };
 };
 
 const computeScoreQualityLabel = (
     finalScore: number,
-    reliabilityLabel: 'LOW' | 'MEDIUM' | 'HIGH',
+    reliabilityTier: ReliabilityTier,
 ): 'PRELIMINARY' | 'ADVISORY' | 'STRONG' => {
-    if (reliabilityLabel === 'LOW') return 'PRELIMINARY';
-    if (finalScore >= 7.5 && reliabilityLabel === 'HIGH') return 'STRONG';
+    if (reliabilityTier === 'PRELIMINARY_ESTIMATE' || reliabilityTier === 'LIMITED_RELIABILITY') return 'PRELIMINARY';
+    if (finalScore >= 7.5 && reliabilityTier === 'HIGH_RELIABILITY') return 'STRONG';
     return 'ADVISORY';
 };
 
@@ -484,7 +567,7 @@ const buildModeExplanation = (
 
 const buildRecommendationExplanation = (
     decision: ManualDecision,
-    confidence: number,
+    reliability: ReturnType<typeof computeDataReliability>,
     assessment: InputAssessment,
     derived: DerivedStructureMetrics,
     signals: WarningSignals,
@@ -516,9 +599,9 @@ const buildRecommendationExplanation = (
     }
 
     if ((assessment.parseConfidence ?? 0.5) >= 0.7) {
-        positiveFactors.push('Parser confidence is high for extracted itinerary details.');
+        positiveFactors.push('Parsed itinerary structure is mostly consistent.');
     } else {
-        negativeFactors.push('Parser confidence is limited for this itinerary text.');
+        negativeFactors.push('Parsed itinerary structure is partially inferred.');
     }
 
     if (signals.missingPrice > 0) {
@@ -553,8 +636,8 @@ const buildRecommendationExplanation = (
     let actionHint = '';
 
     if (decision === 'BUY') {
-        primaryReason = 'BUY is recommended because current itinerary signals are favorable and data quality is strong enough.';
-        actionHint = confidence >= 78
+        primaryReason = 'BUY is recommended because itinerary signals are favorable and reliability is sufficient for action.';
+        actionHint = reliability.tier === 'HIGH_RELIABILITY'
             ? 'Booking now is reasonable. Keep monitoring only for major fare drops.'
             : 'Buy is acceptable, but verify any remaining missing details before final payment.';
     } else if (decision === 'WAIT') {
@@ -566,7 +649,7 @@ const buildRecommendationExplanation = (
     }
 
     const supportingReasons = [
-        confidence < 65 ? `Confidence is ${confidence}%, which is not strong enough for an aggressive recommendation.` : `Confidence is ${confidence}%, supported by itinerary structure quality.`,
+        `Reliability tier: ${reliability.label}. ${reliability.explanation}`,
         ...positiveFactors.slice(0, 2),
         ...negativeFactors.slice(0, 2),
     ].filter(Boolean);
@@ -579,6 +662,215 @@ const buildRecommendationExplanation = (
         positiveFactors,
         negativeFactors,
         missingFactors,
+    };
+};
+
+const describeRiskLevel = (warningSignals: WarningSignals, derived: DerivedStructureMetrics): 'LOW' | 'MODERATE' | 'HIGH' => {
+    const riskScore =
+        (warningSignals.routeMismatch * 2)
+        + (warningSignals.unrealisticLayover * 2)
+        + (warningSignals.chronologyIssues * 2)
+        + (warningSignals.partialExtraction * 2)
+        + (derived.connectionFeasibility === 'RISKY' ? 3 : derived.connectionFeasibility === 'TIGHT' ? 1 : 0);
+    if (riskScore >= 6) return 'HIGH';
+    if (riskScore >= 3) return 'MODERATE';
+    return 'LOW';
+};
+
+const buildPremiumReport = (params: {
+    finalDecision: ManualDecision;
+    scoreTrust: ScoreTrustContract;
+    derived: DerivedStructureMetrics;
+    unifiedFlight: any;
+    extractedSegments: any[];
+    assessment: InputAssessment;
+    recommendationExplanation: RecommendationExplanation;
+    passengerPricingContext?: PassengerPricingContext;
+}): PremiumReport => {
+    const {
+        finalDecision,
+        scoreTrust,
+        derived,
+        unifiedFlight,
+        extractedSegments,
+        assessment,
+        recommendationExplanation,
+        passengerPricingContext,
+    } = params;
+
+    const carriers = Array.from(new Set((extractedSegments || []).map((segment) => segment.marketedAirline || segment.airline).filter(Boolean)));
+    const aircraft = Array.from(new Set((extractedSegments || []).map((segment) => segment.aircraft).filter(Boolean)));
+    const airports = Array.from(new Set((extractedSegments || []).flatMap((segment) => [segment.from, segment.to]).filter(Boolean)));
+    const totalTravelers = passengerPricingContext?.totalTravelers ?? 1;
+    const marketData = scoreTrust.dataSourceDisclosure.marketData;
+    const riskLevel = describeRiskLevel(
+        {
+            totalWarnings: assessment.parseWarnings?.length || 0,
+            missingBaggage: 0,
+            missingPrice: assessment.priceMissing ? 1 : 0,
+            missingSegmentTimes: (assessment.parseWarnings || []).filter((warning) => /missing segment times|missing times/i.test(warning)).length,
+            routeMismatch: (assessment.parseWarnings || []).filter((warning) => /route mismatch/i.test(warning)).length,
+            unrealisticLayover: (assessment.parseWarnings || []).filter((warning) => /unrealistic layover|negative layover/i.test(warning)).length,
+            chronologyIssues: (assessment.parseWarnings || []).filter((warning) => /chronology|negative layover/i.test(warning)).length,
+            partialExtraction: (assessment.parseWarnings || []).filter((warning) => /inferred|fallback|placeholder/i.test(warning)).length,
+            severityPenalty: 0,
+        },
+        derived,
+    );
+
+    const overnightSegments = (extractedSegments || []).filter((segment) => {
+        const dep = Date.parse(segment.departureDateTime || '');
+        const arr = Date.parse(segment.arrivalDateTime || '');
+        if (!Number.isFinite(dep) || !Number.isFinite(arr)) return false;
+        const depHour = new Date(dep).getUTCHours();
+        const arrHour = new Date(arr).getUTCHours();
+        return depHour <= 5 || depHour >= 22 || arrHour <= 5 || arrHour >= 22;
+    }).length;
+
+    const executiveSummaryLabel = scoreTrust.reliabilityTier === 'HIGH_RELIABILITY'
+        ? 'Strong itinerary with reliable structure'
+        : scoreTrust.reliabilityTier === 'MODERATE_RELIABILITY'
+            ? 'Moderate-value itinerary with limited certainty'
+            : scoreTrust.reliabilityTier === 'LIMITED_RELIABILITY'
+                ? 'Limited-reliability itinerary requiring caution'
+                : 'Preliminary itinerary assessment due to missing verification context';
+
+    const keyRisks = [
+        ...scoreTrust.whyReliabilityIsLimited,
+        ...(recommendationExplanation.negativeFactors || []),
+    ].filter((value, index, array) => value && array.indexOf(value) === index).slice(0, 5);
+
+    const improvements = [
+        derived.connectionFeasibility !== 'GOOD' ? 'Target safer connection windows at major hubs.' : '',
+        scoreTrust.dataSourceDisclosure.marketData !== 'LIVE_PROVIDER_DATA' ? 'Validate fare with a live provider quote before payment.' : '',
+        scoreTrust.dataSourceDisclosure.baggageInput !== 'USER_PROVIDED_INPUT' && scoreTrust.dataSourceDisclosure.baggageInput !== 'PARSED_TEXT'
+            ? 'Confirm baggage allowance directly from fare rules.'
+            : '',
+        carriers.length > 1 ? 'Prefer fewer carrier transitions to reduce disruption propagation risk.' : '',
+        overnightSegments > 0 ? 'Reduce overnight segments to improve sleep continuity and recovery.' : '',
+    ].filter(Boolean).slice(0, 5);
+
+    return {
+        executiveSummary: {
+            title: 'Executive Summary',
+            summary: `${executiveSummaryLabel}. Recommendation: ${finalDecision}. Reliability: ${scoreTrust.reliabilityLabel}.`,
+            bullets: [
+                `Trip type: ${derived.tripType === 'ROUND_TRIP' ? 'Round-trip' : 'One-way'}.`,
+                `Traveler count: ${totalTravelers}.`,
+                `Journey structure: ${derived.totalSegments} segment(s), ${derived.connectionCount} connection(s).`,
+            ],
+        },
+        tripOverview: {
+            title: 'Trip Overview',
+            summary: `Route covers ${airports.join(' -> ')} with ${carriers.length || 1} operating carrier pattern(s).`,
+            bullets: [
+                `Airlines: ${carriers.length > 0 ? carriers.join(', ') : unifiedFlight.airline || 'Unknown airline'}.`,
+                `Aircraft: ${aircraft.length > 0 ? aircraft.join(', ') : 'Not specified in source itinerary'}.`,
+                `Duration: ${derived.totalDurationMinutes} min total, layovers ${derived.totalLayoverMinutes} min.`,
+                `Baggage: ${assessment.baggageSource.replace(/_/g, ' ')}.`,
+            ],
+        },
+        recommendationSummary: {
+            title: 'Recommendation Summary',
+            summary: recommendationExplanation.primaryReason,
+            bullets: [
+                `Strongest positive: ${recommendationExplanation.positiveFactors[0] || 'No dominant positive signal.'}`,
+                `Strongest negative: ${recommendationExplanation.negativeFactors[0] || 'No dominant negative signal.'}`,
+                `Biggest uncertainty: ${scoreTrust.whyReliabilityIsLimited[0] || 'No major unresolved uncertainty was detected.'}`,
+            ],
+        },
+        reliabilityAndVerification: {
+            title: 'Reliability & Verification',
+            summary: `${scoreTrust.reliabilityLabel}. ${scoreTrust.reliabilityExplanation}`,
+            bullets: [
+                `Verified: ${scoreTrust.verificationSummary.verified.length > 0 ? scoreTrust.verificationSummary.verified.join('; ') : 'No high-certainty verified block detected'}.`,
+                `User provided: ${scoreTrust.dataSourceDisclosure.priceInput === 'USER_PROVIDED_INPUT' || scoreTrust.dataSourceDisclosure.baggageInput === 'USER_PROVIDED_INPUT' ? 'Present' : 'Not dominant in current assessment'}.`,
+                `Inferred: ${scoreTrust.verificationSummary.inferred.length > 0 ? scoreTrust.verificationSummary.inferred.join('; ') : 'None detected'}.`,
+                `Unavailable/uncertain: ${scoreTrust.verificationSummary.uncertain.length > 0 ? scoreTrust.verificationSummary.uncertain.join('; ') : 'No major unavailable field flagged'}.`,
+            ],
+        },
+        routeAndConnectionAnalysis: {
+            title: 'Route & Connection Analysis',
+            summary: `Connection feasibility is ${derived.connectionFeasibility}; route realism is ${derived.routeRealism}.`,
+            bullets: [
+                `Outbound connections: ${derived.outboundConnectionCount}; inbound connections: ${derived.inboundConnectionCount}.`,
+                `Layover profile: outbound ${derived.outboundLayoverMinutes} min, inbound ${derived.inboundLayoverMinutes} min.`,
+                `Self-transfer risk: ${assessment.selfTransferRisk}.`,
+                `Operational continuity: ${assessment.airlineReliabilityMix === 'SINGLE_CARRIER' ? 'Higher continuity from single-carrier flow.' : 'Mixed-carrier flow may increase handoff risk.'}`,
+            ],
+        },
+        airlineAndAircraftAnalysis: {
+            title: 'Airline & Aircraft Analysis',
+            summary: carriers.length > 1
+                ? 'Mixed-carrier operation introduces coordination and re-protection complexity.'
+                : 'Single-carrier pattern supports more consistent operational handling.',
+            bullets: [
+                `Carrier mix: ${assessment.airlineReliabilityMix}.`,
+                `Aircraft detail coverage: ${aircraft.length > 0 ? 'Available from itinerary text.' : 'Limited; aircraft comfort cannot be deeply verified.'}`,
+                `Long-haul suitability view: ${derived.totalDurationMinutes > 900 ? 'Long-haul itinerary; transfer quality becomes critical.' : 'Shorter total travel duration profile.'}`,
+            ],
+        },
+        baggageAndFareConditions: {
+            title: 'Baggage & Fare Conditions',
+            summary: `Baggage certainty is ${scoreTrust.dataSourceDisclosure.baggageInput}; fare context source is ${scoreTrust.dataSourceDisclosure.priceInput}.`,
+            bullets: [
+                `Baggage source: ${scoreTrust.dataSourceDisclosure.baggageInput}.`,
+                `Refundability signal: ${typeof unifiedFlight.policies?.refundable === 'boolean' ? (unifiedFlight.policies.refundable ? 'Refundable indicated' : 'Non-refundable indicated') : 'Not explicitly provided'}.`,
+                `Traveler pricing complexity: ${passengerPricingContext?.mixedTravelerTypes ? 'Mixed traveler types reduce direct benchmark comparability.' : 'Standard traveler profile.'}`,
+            ],
+        },
+        riskAndDisruptionExposure: {
+            title: 'Risk & Disruption Exposure',
+            summary: `Overall disruption exposure: ${riskLevel}.`,
+            bullets: [
+                `Tight/fragile transfer signals: ${derived.connectionFeasibility}.`,
+                `Carrier fragmentation risk: ${assessment.airlineReliabilityMix === 'MIXED' ? 'MODERATE' : 'LOW'}.`,
+                `Propagation sensitivity: ${carriers.length > 1 ? 'Delays may cascade across carriers.' : 'Lower propagation across same-carrier chain.'}`,
+                `Live operational feed: ${marketData === 'LIVE_PROVIDER_DATA' ? 'Available' : 'Unavailable in this assessment context'}.`,
+            ],
+        },
+        comfortAndFatigueAnalysis: {
+            title: 'Comfort & Fatigue Analysis',
+            summary: `Total journey burden is ${derived.totalDurationMinutes} minutes with ${overnightSegments} overnight-sensitive segment(s).`,
+            bullets: [
+                `Seated travel burden: approximately ${derived.totalDurationMinutes - derived.totalLayoverMinutes} minutes in-segment time.`,
+                `Overnight burden: ${overnightSegments > 0 ? `${overnightSegments} segment(s) cross late-night windows.` : 'No major overnight segment detected.'}`,
+                `Transfer exhaustion profile: ${derived.totalLayoverMinutes > 360 ? 'High layover burden may reduce comfort.' : 'Moderate transfer burden.'}`,
+                `Family complexity: ${totalTravelers > 1 ? 'Multi-traveler planning may increase fatigue coordination needs.' : 'Single-traveler complexity baseline.'}`,
+            ],
+        },
+        pricingContext: {
+            title: 'Pricing Context',
+            summary: marketData === 'LIVE_PROVIDER_DATA'
+                ? 'Pricing context uses live provider benchmark data.'
+                : marketData === 'HISTORICAL_ESTIMATE'
+                    ? 'Pricing context is estimated from historical baseline, not live market data.'
+                    : 'Pricing context is internally estimated due to missing direct fare anchors.',
+            bullets: [
+                `Total fare input: ${unifiedFlight.price} ${unifiedFlight.currency}.`,
+                `Benchmark source: ${marketData}.`,
+                `Traveler pricing logic: ${passengerPricingContext ? `Adult-equivalent comparison uses ${passengerPricingContext.comparablePerTravelerPrice.toFixed(2)} ${unifiedFlight.currency}.` : 'No traveler-adjusted benchmark available.'}`,
+                `${marketData !== 'LIVE_PROVIDER_DATA' ? 'This section should be interpreted as estimated context, not live quote certainty.' : 'Live benchmark context is available for this assessment.'}`,
+            ],
+        },
+        keyRisks: {
+            title: 'Key Risks',
+            summary: keyRisks.length > 0 ? 'Top risk drivers detected for this itinerary:' : 'No dominant risk driver exceeded reporting threshold.',
+            bullets: keyRisks.length > 0 ? keyRisks : ['No major risk beyond baseline itinerary variability.'],
+        },
+        whatWouldImproveThisItinerary: {
+            title: 'What Would Improve This Itinerary',
+            summary: 'Practical changes that would materially improve confidence and execution quality.',
+            bullets: improvements.length > 0 ? improvements : ['Current itinerary is already structurally strong under available data.'],
+        },
+        finalRecommendation: {
+            title: 'Final Recommendation',
+            summary: `${finalDecision} with ${scoreTrust.reliabilityLabel}. ${scoreTrust.decisionReason}`,
+            bullets: [
+                `Advisor conclusion: ${finalDecision} is aligned with current reliability and risk profile.`,
+                `Data honesty note: ${scoreTrust.dataSourceDisclosure.marketData} market context; unresolved uncertainty is explicitly listed above.`,
+            ],
+        },
     };
 };
 
@@ -674,7 +966,9 @@ export async function POST(request: NextRequest) {
         const effectiveMode = payload.mode === 'paste' ? assessment.mode : payload.mode;
         const warningSignals = parseWarningSignals(assessment);
         const adjustedConfidence = computeModeConfidence(effectiveMode, baseConfidence, assessment, derived, warningSignals);
+        const presentedConfidence = Math.round(clamp(adjustedConfidence, 0, 100) / 5) * 5;
         const decision = buildModeDecision(effectiveMode, initialDecision, adjustedConfidence, derived, warningSignals);
+        const reliability = computeDataReliability(assessment, warningSignals);
 
         const mergedRiskFlags = [
             ...(enrichedFlight.score.riskFlags || []),
@@ -700,7 +994,7 @@ export async function POST(request: NextRequest) {
         );
         const recommendationExplanation = buildRecommendationExplanation(
             decision,
-            adjustedConfidence,
+            reliability,
             assessment,
             derived,
             warningSignals,
@@ -716,8 +1010,8 @@ export async function POST(request: NextRequest) {
             ...enrichedFlight,
             score: {
                 ...enrichedFlight.score,
-                confidence: adjustedConfidence,
-                decisionConfidence: adjustedConfidence,
+                confidence: presentedConfidence,
+                decisionConfidence: presentedConfidence,
                 decisionReason: explanation,
                 riskFlags: filteredRiskFlags,
                 comfortNotes: mergedComfortNotes,
@@ -726,7 +1020,7 @@ export async function POST(request: NextRequest) {
                     label: payload.mode === 'quick'
                         ? 'Rough signal only - add detailed itinerary for high-accuracy scoring'
                         : decision === 'WATCH'
-                            ? buildWatchLabel(adjustedConfidence, warningSignals, assessment)
+                            ? buildWatchLabel(presentedConfidence, warningSignals, assessment)
                             : enrichedFlight.score.buyWaitSignal?.label || 'Action signal available',
                     urgencyDays: enrichedFlight.score.buyWaitSignal?.urgencyDays,
                     variant: enrichedFlight.score.buyWaitSignal?.variant,
@@ -752,7 +1046,6 @@ export async function POST(request: NextRequest) {
                 ? 'WAIT'
                 : 'WATCH';
 
-        const reliability = computeDataReliability(assessment, warningSignals);
         if (reliability.score < 50 && finalDecision === 'BUY') {
             finalDecision = 'WAIT';
         }
@@ -764,7 +1057,7 @@ export async function POST(request: NextRequest) {
         // fields are consistent: decision, recommendationExplanation, and trackingPayload.
         const finalRecommendationExplanation = buildRecommendationExplanation(
             finalDecision,
-            adjustedConfidence,
+            reliability,
             assessment,
             derived,
             warningSignals,
@@ -793,7 +1086,7 @@ export async function POST(request: NextRequest) {
                     ...(selfChecked.flight.score.buyWaitSignal || {}),
                     action: finalBuyWaitAction,
                     label: finalDecision === 'WATCH'
-                        ? buildWatchLabel(adjustedConfidence, warningSignals, assessment)
+                        ? buildWatchLabel(presentedConfidence, warningSignals, assessment)
                         : selfChecked.flight.score.buyWaitSignal?.label || 'Action signal available',
                 },
             },
@@ -802,18 +1095,68 @@ export async function POST(request: NextRequest) {
         const breakdown = buildScoreBreakdown(enforcedFlight, derived, assessment, passengerPricingContext);
         const penalties = buildPenalties(assessment, warningSignals);
         const missingDataImpact = buildMissingDataImpact(assessment, warningSignals);
+        const marketDataSource = toMarketDataSource(assessment);
+        const priceInputSource = toPriceInputSource(assessment);
+        const baggageInputSource = toBaggageInputSource(assessment);
+        const verificationSummary = {
+            verified: [
+                derived.routeRealism === 'REALISTIC' ? 'Itinerary route structure' : '',
+                assessment.priceSource === 'USER_PROVIDED' ? 'Price input provided by user' : '',
+                assessment.baggageSource === 'USER_PROVIDED_BAGGAGE' ? 'Baggage provided by user' : '',
+                assessment.baggageSource === 'PARSED_BAGGAGE' ? 'Baggage parsed from explicit fare allowance' : '',
+            ].filter(Boolean),
+            inferred: [
+                assessment.baggageSource === 'INFERRED_BAGGAGE' ? 'Baggage inferred from passenger text' : '',
+                warningSignals.missingSegmentTimes > 0 ? 'Some segment times inferred' : '',
+                warningSignals.partialExtraction > 0 ? 'Partial itinerary extraction required inference' : '',
+            ].filter(Boolean),
+            estimated: [
+                !assessment.priceMissing && !assessment.livePriceBenchmarkAvailable ? 'Price comparison uses estimated benchmark' : '',
+                marketDataSource !== 'LIVE_PROVIDER_DATA' ? `Market context source: ${marketDataSource}` : '',
+            ].filter(Boolean),
+            uncertain: [
+                assessment.priceMissing ? 'Price is missing' : '',
+                assessment.baggageSource === 'UNKNOWN_BAGGAGE' ? 'Baggage allowance unavailable' : '',
+                warningSignals.routeMismatch > 0 ? 'Route consistency warnings detected' : '',
+                warningSignals.unrealisticLayover > 0 ? 'Layover/chronology warnings detected' : '',
+            ].filter(Boolean),
+        };
+
         const scoreTrust: ScoreTrustContract = {
             finalScore: enforcedFlight.score.composite,
-            scoreQualityLabel: computeScoreQualityLabel(enforcedFlight.score.composite, reliability.label),
-            dataReliabilityLabel: reliability.label,
+            scoreQualityLabel: computeScoreQualityLabel(enforcedFlight.score.composite, reliability.tier),
+            reliabilityTier: reliability.tier,
+            reliabilityLabel: reliability.label,
+            dataReliabilityLabel: reliability.band,
             dataReliabilityScore: reliability.score,
             decision: finalDecision,
             decisionReason: enforcedFlight.score.decisionReason || explanation,
-            confidenceExplanation: reliability.explanation,
+            reliabilityExplanation: reliability.explanation,
+            verificationSummary,
+            dataSourceDisclosure: {
+                marketData: marketDataSource,
+                priceInput: priceInputSource,
+                baggageInput: baggageInputSource,
+            },
             scoreBreakdown: breakdown,
             penalties,
             missingDataImpact,
+            whyReliabilityIsLimited: [
+                ...missingDataImpact,
+                ...verificationSummary.uncertain,
+            ].filter((value, index, array) => array.indexOf(value) === index),
         };
+
+        const premiumReport = buildPremiumReport({
+            finalDecision,
+            scoreTrust,
+            derived,
+            unifiedFlight,
+            extractedSegments,
+            assessment,
+            recommendationExplanation: finalRecommendationExplanation,
+            passengerPricingContext,
+        });
 
         return NextResponse.json({
             ...enforcedFlight,
@@ -850,12 +1193,12 @@ export async function POST(request: NextRequest) {
                 },
                 scoreSnapshot: {
                     recommendation: finalDecision,
-                    confidence: adjustedConfidence,
-                    primaryReason: finalRecommendationExplanation.primaryReason,
+                    confidence: presentedConfidence,
+                    primaryReason: `[${scoreTrust.reliabilityLabel}] ${finalRecommendationExplanation.primaryReason}`,
                     positiveFactor: finalRecommendationExplanation.positiveFactors[0] ?? null,
                     negativeFactor: finalRecommendationExplanation.negativeFactors[0] ?? null,
-                    missingFactor: finalRecommendationExplanation.missingFactors[0] ?? null,
-                    actionHint: finalRecommendationExplanation.actionHint,
+                    missingFactor: scoreTrust.whyReliabilityIsLimited[0] ?? finalRecommendationExplanation.missingFactors[0] ?? null,
+                    actionHint: `${finalRecommendationExplanation.actionHint} Data source: ${marketDataSource}.`,
                     dataSourceType: 'USER_PASTED_ITINERARY',
                     realTimeDataAvailable: false,
                 },
@@ -878,6 +1221,8 @@ export async function POST(request: NextRequest) {
             _selfCheck: selfChecked.debug,
             confidenceInputs: {
                 baseConfidence,
+                adjustedConfidence,
+                presentedConfidence,
                 mode: effectiveMode,
                 completenessScore: assessment.completenessScore,
                 realismScore: assessment.realismScore,
@@ -892,11 +1237,21 @@ export async function POST(request: NextRequest) {
                 priceSource: assessment.priceSource,
                 baggageSource: assessment.baggageSource,
                 dataReliabilityScore: reliability.score,
-                dataReliabilityLabel: reliability.label,
+                dataReliabilityLabel: reliability.band,
+                reliabilityTier: reliability.tier,
+                marketDataSource,
             },
+            reportSummary: {
+                headline: `${scoreTrust.reliabilityLabel} - ${scoreTrust.scoreQualityLabel}`,
+                reliabilityExplanation: scoreTrust.reliabilityExplanation,
+                verificationSummary: scoreTrust.verificationSummary,
+                dataSourceDisclosure: scoreTrust.dataSourceDisclosure,
+                whyReliabilityIsLimited: scoreTrust.whyReliabilityIsLimited,
+            },
+            premiumReport,
             needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'
-                ? 'Switch to Detailed Itinerary Score to improve realism and confidence.'
+                ? 'Switch to Detailed Itinerary Score to improve reliability and verification coverage.'
                 : assessment.promptForDetails
                     ? 'Parsing was incomplete. Review and edit extracted segments for better scoring accuracy.'
                 : undefined,
