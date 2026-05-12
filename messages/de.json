@@ -1,725 +1,739 @@
 {
-    "common": {
-        "motto": "Präzision in jeder Meile, Leidenschaft in jedem Flug.",
-        "purpose_title": "UNSERE MISSION",
-        "departure": "Abflug",
-        "return": "Rückflug",
-        "from": "Von",
-        "to": "Nach",
-        "passengers": "Reisende",
-        "cabin_class": "Kabinenklasse",
-        "search_flights": "Flüge Suchen",
-        "add_date": "Datum hinzufügen",
-        "travel_purpose": "Reisezweck",
-        "purpose_budget": "Budget",
-        "purpose_comfort": "Komfort",
-        "purpose_business": "Geschäft",
-        "purpose_family": "Familie"
+  "common": {
+    "motto": "Präzision in jeder Meile, Leidenschaft in jedem Flug.",
+    "purpose_title": "UNSERE MISSION",
+    "departure": "Abflug",
+    "return": "Rückflug",
+    "from": "Von",
+    "to": "Nach",
+    "passengers": "Reisende",
+    "cabin_class": "Kabinenklasse",
+    "search_flights": "Flüge Suchen",
+    "add_date": "Datum hinzufügen",
+    "travel_purpose": "Reisezweck",
+    "purpose_budget": "Budget",
+    "purpose_comfort": "Komfort",
+    "purpose_business": "Geschäft",
+    "purpose_family": "Familie"
+  },
+  "Navbar": {
+    "home": "Startseite",
+    "search": "Flüge Suchen",
+    "pricing": "Preise",
+    "features": "Funktionen",
+    "blog": "Reisetipps",
+    "aiMode": "AI MODUS",
+    "aiModeActive": "AI MODUS AKTIV",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "dashboard": "Übersicht",
+    "getStarted": "Loslegen"
+  },
+  "PricingPage": {
+    "title": "Preise",
+    "subtitle": "Schalten Sie Risiko-Intelligenz und routenbasierte Preis-Insights frei.",
+    "back": "Zurück",
+    "monthlyPro": "Monatlich Pro",
+    "proDesc": "Unbegrenzte Analysen + proaktive Premium-Benachrichtigungen.",
+    "proItem1": "Risikoanalyse (Verspätung + Umstieg)",
+    "proItem2": "Preis-Intelligenz & Trendprognose",
+    "proItem3": "Detaillierte Score-Aufschlüsselung",
+    "proItem4": "Smarte Routen-Benachrichtigungen",
+    "connecting": "Verbindung zu Stripe...",
+    "upgradeToPro": "Auf Pro upgraden",
+    "oneTimeReport": "Einmaliger Flugbericht",
+    "reportDesc": "Tiefer Bericht nur für diese Route, kein Abo.",
+    "reportItem1": "Routenspezifischer Risiko-Scan",
+    "reportItem2": "Preis-Baseline vs. Routendurchschnitt",
+    "reportItem3": "Personalisierte Empfehlung",
+    "buyOneTime": "Einmalbericht kaufen"
+  },
+  "BlogPage": {
+    "title": "Reiseführer & Tipps",
+    "subtitle": "Expertenrat zu Flugdeals, Hidden Gems und Reise-Hacks vom FlightAdvisor-Team.",
+    "backToHome": "Zur Startseite",
+    "backToGuides": "Zurück zu den Guides",
+    "tag": "Reisetipps",
+    "ctaTitle": "Bereit zum Entdecken?",
+    "ctaDesc": "Starten Sie Ihre Suche bei FlightAdvisor und finden Sie die besten Angebote für Ihr nächstes Abenteuer.",
+    "ctaButton": "Jetzt Flüge suchen"
+  },
+  "SearchForm": {
+    "origin_placeholder": "Von wo?",
+    "destination_placeholder": "Wohin?",
+    "origin_label": "Von",
+    "destination_label": "Nach",
+    "date_label": "Hinflug",
+    "return_label": "Rückflug",
+    "passengers_label": "Reisende",
+    "search_button": "Suchen",
+    "one_way": "Hinflug",
+    "round_trip": "Hin- und Rückflug",
+    "multi_city": "Multi-City",
+    "purpose_label": "Reisezweck",
+    "invalid_selection": "Bitte wählen Sie gültige Flughäfen und ein Datum",
+    "search_error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "multicity_notice": "Die Multi-City-Suche ist derzeit für Desktop optimiert. Für komplexe Routen nutzen Sie bitte unseren Concierge-Service."
+  },
+  "DatePicker": {
+    "placeholder": "Datum wählen",
+    "today": "Zu Heute",
+    "close": "Schließen"
+  },
+  "Results": {
+    "total_duration": "Gesamtdauer",
+    "agentScore": "Flug-Intelligenz-Score",
+    "view_analysis": "Tarifdetails ansehen",
+    "track": "Beobachten",
+    "direct": "Direkt",
+    "stops": "Stopps",
+    "wifi_available": "WLAN verfügbar",
+    "wifi_none": "Kein WLAN",
+    "dataSources": "Datenquellen",
+    "active": "Aktiv",
+    "flightsFoundLower": "Flüge gefunden",
+    "noResultsLower": "keine Ergebnisse",
+    "totalResults": "Gesamtergebnisse",
+    "totalFlightsLabel": "{count} Flüge",
+    "decisionRecommendation": "Entscheidungsempfehlung",
+    "flightIntelligenceAlert": "Flight-Intelligence-Warnung",
+    "unlockIntelligence": "Intelligence freischalten",
+    "seatDataUnavailable": "Sitzdaten nicht verfügbar",
+    "tenCriteriaEngine": "10-Kriterien-Engine"
+  },
+  "HomePage": {
+    "hero": {
+      "title": "Ihr persönlicher",
+      "titleHighlight": "Entscheidungs-Intelligenz",
+      "subtitle": "Wissen Sie, wann Sie kaufen, warten oder handeln sollen. FlightAgent bewertet Ihren Flug, verfolgt Störungen und schützt Ihre Reise — automatisch.",
+      "ctaPrimary": "Jetzt Entdecken",
+      "ctaSecondary": "Mehr Erfahren"
     },
-    "Navbar": {
-        "home": "Startseite",
-        "search": "Flüge Suchen",
-        "pricing": "Preise",
-        "features": "Funktionen",
-        "blog": "Reisetipps",
-        "aiMode": "AI MODUS",
-        "aiModeActive": "AI MODUS AKTIV",
-        "login": "Anmelden",
-        "logout": "Abmelden",
-        "dashboard": "Übersicht",
-        "getStarted": "Loslegen"
+    "badge": {
+      "engineActive": "v2.0 Entscheidungsmotor Aktiv",
+      "aiMode": "Flight Agent: KI-Modus"
     },
-    "PricingPage": {
-        "title": "Preise",
-        "subtitle": "Schalten Sie Risiko-Intelligenz und routenbasierte Preis-Insights frei.",
-        "back": "Zurück",
-        "monthlyPro": "Monatlich Pro",
-        "proDesc": "Unbegrenzte Analysen + proaktive Premium-Benachrichtigungen.",
-        "proItem1": "Risikoanalyse (Verspätung + Umstieg)",
-        "proItem2": "Preis-Intelligenz & Trendprognose",
-        "proItem3": "Detaillierte Score-Aufschlüsselung",
-        "proItem4": "Smarte Routen-Benachrichtigungen",
-        "connecting": "Verbindung zu Stripe...",
-        "upgradeToPro": "Auf Pro upgraden",
-        "oneTimeReport": "Einmaliger Flugbericht",
-        "reportDesc": "Tiefer Bericht nur für diese Route, kein Abo.",
-        "reportItem1": "Routenspezifischer Risiko-Scan",
-        "reportItem2": "Preis-Baseline vs. Routendurchschnitt",
-        "reportItem3": "Personalisierte Empfehlung",
-        "buyOneTime": "Einmalbericht kaufen"
+    "trust": {
+      "airlines": "400+ Fluggesellschaften",
+      "secure": "Sichere Buchung",
+      "realtime": "Echtzeit-Status"
     },
-    "BlogPage": {
-        "title": "Reiseführer & Tipps",
-        "subtitle": "Expertenrat zu Flugdeals, Hidden Gems und Reise-Hacks vom FlightAdvisor-Team.",
-        "backToHome": "Zur Startseite",
-        "backToGuides": "Zurück zu den Guides",
-        "tag": "Reisetipps",
-        "ctaTitle": "Bereit zum Entdecken?",
-        "ctaDesc": "Starten Sie Ihre Suche bei FlightAdvisor und finden Sie die besten Angebote für Ihr nächstes Abenteuer.",
-        "ctaButton": "Jetzt Flüge suchen"
-    },
-    "SearchForm": {
-        "origin_placeholder": "Von wo?",
-        "destination_placeholder": "Wohin?",
-        "origin_label": "Von",
-        "destination_label": "Nach",
-        "date_label": "Hinflug",
-        "return_label": "Rückflug",
-        "passengers_label": "Reisende",
-        "search_button": "Suchen",
-        "one_way": "Hinflug",
-        "round_trip": "Hin- und Rückflug",
-        "multi_city": "Multi-City",
-        "purpose_label": "Reisezweck",
-        "invalid_selection": "Bitte wählen Sie gültige Flughäfen und ein Datum",
-        "search_error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
-        "multicity_notice": "Die Multi-City-Suche ist derzeit für Desktop optimiert. Für komplexe Routen nutzen Sie bitte unseren Concierge-Service."
-    },
-    "DatePicker": {
-        "placeholder": "Datum wählen",
-        "today": "Zu Heute",
-        "close": "Schließen"
-    },
-    "Results": {
-        "total_duration": "Gesamtdauer",
-        "agentScore": "Flug-Intelligenz-Score",
-        "view_analysis": "Tarifdetails ansehen",
-        "track": "Beobachten",
-        "direct": "Direkt",
-        "stops": "Stopps",
-        "wifi_available": "WLAN verfügbar",
-        "wifi_none": "Kein WLAN",
-        "dataSources": "Datenquellen",
-        "active": "Aktiv",
-        "flightsFoundLower": "Flüge gefunden",
-        "noResultsLower": "keine Ergebnisse",
-        "totalResults": "Gesamtergebnisse",
-        "totalFlightsLabel": "{count} Flüge",
-        "decisionRecommendation": "Entscheidungsempfehlung",
-        "flightIntelligenceAlert": "Flight-Intelligence-Warnung",
-        "unlockIntelligence": "Intelligence freischalten",
-        "seatDataUnavailable": "Sitzdaten nicht verfügbar",
-        "tenCriteriaEngine": "10-Kriterien-Engine"
-    },
-    "HomePage": {
-        "hero": {
-            "title": "Ihr persönlicher",
-            "titleHighlight": "Entscheidungs-Intelligenz",
-            "subtitle": "Wissen Sie, wann Sie kaufen, warten oder handeln sollen. FlightAgent bewertet Ihren Flug, verfolgt Störungen und schützt Ihre Reise — automatisch.",
-            "ctaPrimary": "Jetzt Entdecken",
-            "ctaSecondary": "Mehr Erfahren"
-        },
-        "badge": {
-            "engineActive": "v2.0 Entscheidungsmotor Aktiv",
-            "aiMode": "Flight Agent: KI-Modus"
-        },
-        "trust": {
-            "airlines": "400+ Fluggesellschaften",
-            "secure": "Sichere Buchung",
-            "realtime": "Echtzeit-Status"
-        },
-        "system": {
-            "label": "Flight Agent Systeme",
-            "title": "Was wir von Anfang bis Ende gebaut haben",
-            "subtitle": "Flight Agent ist nicht nur eine Preisliste. Es ist ein Schutz-Stack, der Ihre Reise bewertet, prognostiziert und verteidigt.",
-            "cards": {
-                "hybrid": {
-                    "title": "Jeden Flug bewerten",
-                    "desc": "Geben Sie einen Flug ein, den Sie irgendwo gefunden haben. Unser 10-Kriterien-Motor bewertet ihn in Sekunden."
-                },
-                "scoring": {
-                    "title": "Master-Flugbewertung",
-                    "desc": "100-Punkte-Engine, die Wert, Risiko, Komfort und Zuverlässigkeit bewertet. Nicht nur billig, sondern sicher und smart."
-                },
-                "disruption": {
-                    "title": "Störungsjäger + EU261",
-                    "desc": "Erkennt Verspätungs- und Stornorisiko und prüft Ansprüche bis 600 EUR."
-                },
-                "guardian": {
-                    "title": "Guardian-Monitor (24/7)",
-                    "desc": "Cron-basiertes Monitoring alle 15 Minuten. Gate-Wechsel, Verspätung, Storno, Alarm."
-                },
-                "notifications": {
-                    "title": "Intelligente Benachrichtigungen",
-                    "desc": "E-Mail, SMS und Push mit Schweregraden und Handlungsanweisung."
-                },
-                "inbox": {
-                    "title": "Posteingang-Parser + Auto-Tracking",
-                    "desc": "Buchungs-E-Mail weiterleiten, wir parsen PNR, erkennen Reisedaten und starten den Schutz."
-                }
-            }
+    "system": {
+      "label": "Flight Agent Systeme",
+      "title": "Was wir von Anfang bis Ende gebaut haben",
+      "subtitle": "Flight Agent ist nicht nur eine Preisliste. Es ist ein Schutz-Stack, der Ihre Reise bewertet, prognostiziert und verteidigt.",
+      "cards": {
+        "hybrid": {
+          "title": "Jeden Flug bewerten",
+          "desc": "Geben Sie einen Flug ein, den Sie irgendwo gefunden haben. Unser 10-Kriterien-Motor bewertet ihn in Sekunden."
         },
         "scoring": {
-            "label": "Monster Nr.10",
-            "title": "Master-Flugbewertungs-Engine",
-            "subtitle": "Das Gehirn des Systems. Ohne das sind die anderen nur Features.",
-            "formula": {
-                "title": "Erweiterte Scoring-Formel",
-                "intro": "Total: 100 Punkte, dann auf eine 10-Punkte-Skala normalisiert.",
-                "items": {
-                    "price": {
-                        "title": "1. Preis-Leistungs-Score (20)",
-                        "desc": "Medianpreis der Route, 20% günstiger = Bonus, 30% teurer = starke Strafe."
-                    },
-                    "duration": {
-                        "title": "2. Dauer-Effizienz (15)",
-                        "desc": "Schnellste Route als Basis, +25% länger = -5, +40% = -8."
-                    },
-                    "stops": {
-                        "title": "3. Anzahl Stopps (10)",
-                        "desc": "Direkt = voll, 1 Stopp = -2, 2+ Stopps = -6."
-                    },
-                    "connection": {
-                        "title": "4. Umstiegsqualität (10)",
-                        "desc": "<45 Min Risiko, 1-2.5 Std ideal, 5+ Std Ermüdung."
-                    },
-                    "selfTransfer": {
-                        "title": "5. Eigenständiges Umstiegsrisiko (10)",
-                        "desc": "Andere PNR, Low-Cost-Kombi, Terminalwechsel = starke Strafe."
-                    }
-                }
-            },
-            "quality": {
-                "title": "Qualitäts- und Komfort-Stack",
-                "items": {
-                    "baggage": {
-                        "title": "6. Gepäckfreigrenze (10)",
-                        "desc": "23kg inklusive = +10, nur Handgepäck = -5, keines = -10."
-                    },
-                    "reliability": {
-                        "title": "7. Fluglinien-Zuverlässigkeit (10)",
-                        "desc": "Pünktlichkeit, Sicherheitshistorie, Reputation."
-                    },
-                    "aircraft": {
-                        "title": "8. Flugzeugqualität (5)",
-                        "desc": "A350/787 +3, 20 Jahre altes Flugzeug = -2."
-                    },
-                    "amenity": {
-                        "title": "9. Komfort-Score (5)",
-                        "desc": "WiFi, IFE, Sitzabstand, Essensqualität."
-                    },
-                    "airport": {
-                        "title": "10. Flughafen-Schwierigkeitsindex (5)",
-                        "desc": "Terminalkomplexität, Umsteige-Leichtigkeit, Sicherheitsdichte."
-                    }
-                }
-            },
-            "final": {
-                "score": {
-                    "title": "Finale Score-Logik",
-                    "desc": "72/100 wird 7.2/10. Jeder Score enthält Risiko- und Komfort-Kontext."
-                },
-                "risk": {
-                    "title": "Risikoflaggen",
-                    "desc": "Rote Hinweise für kurze Umstiege, Eigen-Transfer-Risiken oder verspätungsanfällige Fluglinien."
-                },
-                "value": {
-                    "title": "Wert-Tags",
-                    "desc": "Grüne Wert-Tags und Komfort-Notizen erklären, warum ein Flug sich lohnt."
-                }
-            }
+          "title": "Master-Flugbewertung",
+          "desc": "100-Punkte-Engine, die Wert, Risiko, Komfort und Zuverlässigkeit bewertet. Nicht nur billig, sondern sicher und smart."
         },
-        "strategic": {
-            "label": "Strategische Realität",
-            "title": "Skyscanner sortiert Preise. Wir verteidigen Ergebnisse.",
-            "subtitle": "Preis allein ist keine Entscheidung. Wir modellieren Risiko, simulieren Szenarien und schützen in Krisen.",
-            "typical": {
-                "title": "Typische Plattformen",
-                "items": {
-                    "price": "Nur Preissortierung",
-                    "risk": "Keine Risikoanalyse",
-                    "future": "Kein Zukunfts-Disruption-Modell",
-                    "crisis": "Keine Krisen-Abwehrschicht"
-                }
-            },
-            "agent": {
-                "title": "Flugassistent",
-                "items": {
-                    "ranking": "Risikobewusstes Ranking",
-                    "scenario": "Szenario-Simulation",
-                    "protection": "Proaktiver Disruption-Schutz",
-                    "compensation": "Leitfaden für Entschädigung und Wiederherstellung"
-                }
-            }
+        "disruption": {
+          "title": "Störungsjäger + EU261",
+          "desc": "Erkennt Verspätungs- und Stornorisiko und prüft Ansprüche bis 600 EUR."
         },
-        "features": {
-            "title": "Warum FlightAdvisor?",
-            "subtitle": "Alles, was Sie brauchen, um die besten Flugangebote zu finden",
-            "smartAlerts": {
-                "title": "Intelligente Preisalarme",
-                "desc": "Legen Sie Ihren Wunschpreis fest und lassen Sie sich von unserer KI benachrichtigen, sobald er fällt."
-            },
-            "priceHistory": {
-                "title": "Preisverlauf",
-                "desc": "Sehen Sie sich historische Preistrends an, um die beste Reisezeit zu ermitteln."
-            },
-            "globalSearch": {
-                "title": "Globale Suche",
-                "desc": "Vergleichen Sie sofort Preise von Tausenden von Fluggesellschaften und Reisebüros."
-            },
-            "noFees": {
-                "title": "Keine versteckten Gebühren",
-                "desc": "Was Sie sehen, ist was Sie bezahlen. Wir glauben an völlige Transparenz."
-            },
-            "instantNotify": {
-                "title": "Sofortige Benachrichtigung",
-                "desc": "Erhalten Sie eine E-Mail oder SMS, sobald ein Angebot gefunden wird."
-            },
-            "trends": {
-                "title": "Reisetrends",
-                "desc": "Entdecken Sie beliebte Reiseziele und saisonale Preistrends."
-            }
+        "guardian": {
+          "title": "Guardian-Monitor (24/7)",
+          "desc": "Cron-basiertes Monitoring alle 15 Minuten. Gate-Wechsel, Verspätung, Storno, Alarm."
         },
-        "howItWorks": {
-            "title": "Wie es funktioniert",
-            "subtitle": "Einfache Schritte zu großen Einsparungen",
-            "step1": {
-                "title": "Suchen",
-                "desc": "Geben Sie Ihr Ziel und Ihre Daten ein."
-            },
-            "step2": {
-                "title": "Verfolgen",
-                "desc": "Aktivieren Sie die Verfolgung für Ihre gewünschte Route."
-            },
-            "step3": {
-                "title": "Sparen",
-                "desc": "Buchen Sie, wenn wir Sie über den Preisrückgang informieren."
-            }
+        "notifications": {
+          "title": "Intelligente Benachrichtigungen",
+          "desc": "E-Mail, SMS und Push mit Schweregraden und Handlungsanweisung."
+        },
+        "inbox": {
+          "title": "Posteingang-Parser + Auto-Tracking",
+          "desc": "Buchungs-E-Mail weiterleiten, wir parsen PNR, erkennen Reisedaten und starten den Schutz."
         }
+      }
     },
-    "AboutPage": {
-        "title": "Über FlightAdvisor",
-        "subtitle": "Reisedaten für alle demokratisieren.",
-        "mission": {
-            "title": "Unsere Mission",
-            "content": "Wir bei FlightAdvisor glauben, dass Reisen für jeden zugänglich sein sollte. Unsere Mission ist es, fortschrittliche Analysen und KI zu nutzen, um Ihnen zu helfen, die absolut besten Flugpreise ohne Kopfschmerzen zu finden."
-        },
-        "story": {
-            "title": "Unsere Geschichte",
-            "content": "FlightAdvisor wurde 2024 gegründet und entstand aus der Frustration über undurchsichtige Flugpreise."
+    "scoring": {
+      "label": "Monster Nr.10",
+      "title": "Master-Flugbewertungs-Engine",
+      "subtitle": "Das Gehirn des Systems. Ohne das sind die anderen nur Features.",
+      "formula": {
+        "title": "Erweiterte Scoring-Formel",
+        "intro": "Total: 100 Punkte, dann auf eine 10-Punkte-Skala normalisiert.",
+        "items": {
+          "price": {
+            "title": "1. Preis-Leistungs-Score (20)",
+            "desc": "Medianpreis der Route, 20% günstiger = Bonus, 30% teurer = starke Strafe."
+          },
+          "duration": {
+            "title": "2. Dauer-Effizienz (15)",
+            "desc": "Schnellste Route als Basis, +25% länger = -5, +40% = -8."
+          },
+          "stops": {
+            "title": "3. Anzahl Stopps (10)",
+            "desc": "Direkt = voll, 1 Stopp = -2, 2+ Stopps = -6."
+          },
+          "connection": {
+            "title": "4. Umstiegsqualität (10)",
+            "desc": "<45 Min Risiko, 1-2.5 Std ideal, 5+ Std Ermüdung."
+          },
+          "selfTransfer": {
+            "title": "5. Eigenständiges Umstiegsrisiko (10)",
+            "desc": "Andere PNR, Low-Cost-Kombi, Terminalwechsel = starke Strafe."
+          }
         }
-    },
-    "Auth": {
-        "title": "Willkommen zurück",
-        "subtitle": "Melden Sie sich bei Ihrem Konto an",
-        "registerTitle": "Konto erstellen",
-        "registerSubtitle": "Beginnen Sie heute mit der Flugverfolgung",
-        "signIn": "Anmelden",
-        "register": "Registrieren",
-        "email": "E-Mail",
-        "password": "Passwort",
-        "name": "Name",
-        "surname": "Nachname",
-        "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
-        "dontHaveAccount": "Haben Sie noch kein Konto?",
-        "signInWithGoogle": "Mit Google anmelden",
-        "signInWithGithub": "Mit GitHub anmelden",
-        "signInWithMicrosoft": "Mit Microsoft anmelden",
-        "backToHome": "Zurück zur Startseite"
-    },
-    "Dashboard": {
-        "title": "Übersicht",
-        "routes": "Routen",
-        "settings": "Einstellungen",
-        "home": "Startseite",
-        "trackNewRoute": "Neue Route verfolgen",
-        "noRoutes": "Sie verfolgen noch keine Flüge.",
-        "createAlert": "Ersten Alarm erstellen",
-        "trackedRoutes": "Verfolgte Routen",
-        "addNewRoute": "Neue Route hinzufügen",
-        "emptyState": "Beginnen Sie mit der Flugverfolgung, um sie hier zu sehen",
-        "pleaseSignIn": "Bitte anmelden",
-        "needLogin": "Sie müssen eingeloggt sein, um auf Ihr Flug-Dashboard zuzugreifen.",
-        "paymentSuccessTitle": "Zahlung bestätigt — willkommen an Bord!",
-        "paymentSuccessBody": "Ihr Plan ist jetzt aktiv. Premium-Schutz steht sofort bereit."
-    },
-    "FlightSearch": {
-        "title": "Flüge Suchen & Verfolgen",
-        "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
-        "heroTitle": "Wohin fliegen wir?",
-        "heroSubtitle": "Entdecken Sie die besten Flugangebote",
-        "mottoLabel": "FlightAgent Leitsatz",
-        "oneWay": "Nur Hinflug",
-        "roundTrip": "Hin- und Rückflug",
-        "from": "Von",
-        "to": "Nach",
-        "placeholder": "Stadt oder Flughafen suchen...",
-        "departureDate": "Abflugdatum",
-        "returnDate": "Rückflugdatum",
-        "selectDate": "Datum auswählen",
-        "optional": "optional (freiwillig)",
-        "cabin": "Kabinenklasse",
-        "economy": "Touristenklasse",
-        "premiumEconomy": "Premium-Economy",
-        "business": "Business-Klasse",
-        "firstClass": "Erste Klasse",
-        "adults": "Erwachsene",
-        "passengers": "Passagiere",
-        "children": "Kinder",
-        "infants": "Kleinkinder",
-        "adultLabel": "Erwachsener",
-        "childLabel": "Kind (2-11)",
-        "infantLabel": "Kleinkind (0-2)",
-        "travelers_label": "Reisende & Kabine",
-        "passengers_short": "Gast",
-        "totalPassengers": "Gesamt: {count} Passagiere",
-        "adultRequired": "Mindestens 1 Erwachsener ist erforderlich",
-        "infantsRequireAdults": "Kleinkinder dürfen Erwachsene nicht übersteigen",
-        "passengerLimit": "Maximal 9 Passagiere pro Suche werden unterstützt",
-        "invalidAirports": "Bitte wählen Sie gültige Flughäfen mit 3-stelligem IATA-Code",
-        "searching": "Flüge werden gesucht...",
-        "searchingDesc": "Wir durchsuchen 54+ Fluggesellschaften, um die besten Angebote zu finden",
-        "popularDestinations": "Beliebte Reiseziele",
-        "topFlightsToBookNow": "Top-Flüge zum aktuellen Beobachten",
-        "topFlightsSummary": "{count, plural, one {# Flug ist aktuell als starke Preisgelegenheit markiert.} other {# Flüge sind aktuell als starke Preisgelegenheiten markiert.}}",
-        "proactiveTip": "Proaktiver Tipp",
-        "upgradePlans": "Upgrade-Pläne",
-        "monthlyProTitle": "Monatlich Pro ($19)",
-        "monthlyProDesc": "Nicht zu viel zahlen. Schalten Sie die beste Entscheidung vor der Buchung frei.",
-        "unlockClearRecommendation": "Klare Empfehlung freischalten",
-        "oneTimeReportTitle": "Einmaliger Flugbericht ($4.99)",
-        "oneTimeReportDesc": "Tiefe Risiko- und Preisanalyse nur für diese Route.",
-        "oneTimeReportButton": "Einmalbericht ($4.99)",
-        "searchButton": "Flüge Finden",
-        "success": "Flug Gefunden!",
-        "error": "Suche Fehlgeschlagen",
-        "resultsFound": "Flüge gefunden",
-        "currentPrice": "Aktueller Preis",
-        "carrier": "Fluggesellschaft",
-        "score": "Bewertung",
-        "duration": "Dauer",
-        "stops": "Zwischenstopps",
-        "direct": "Direktflug",
-        "stop": "Stopp",
-        "airlines": "Fluggesellschaften",
-        "layover": "Aufenthalt",
-        "transferAt": "Umsteigen in",
-        "cheapest": "Günstigste",
-        "fastest": "Schnellste",
-        "bestScore": "Beste Bewertung",
-        "price": "Preis",
-        "trackFlight": "Diesen Flug Verfolgen",
-        "flightDetails": "Flugdetails",
-        "excellentDeal": "Ausgezeichnetes Angebot",
-        "goodDeal": "Gutes Angebot",
-        "fair": "Mittelmäßig",
-        "poor": "Schlecht",
-        "veryPoor": "Sehr Schlecht",
-        "noFlights": "Keine Flüge gefunden",
-        "fillAllFields": "Bitte füllen Sie alle Felder aus",
-        "trackingStarted": "Wir haben begonnen, diese Route für Sie zu verfolgen. Wir senden Benachrichtigungen, wenn wir Preissenkungen erkennen.",
-        "viewDashboard": "Dashboard Ansehen",
-        "flightTime": "Flugdauer",
-        "waitTime": "Aufenthalt",
-        "estimatedBaggage": "Geschätztes Gepäck",
-        "otherOptions": "Andere Preis-/Paketoptionen",
-        "select": "Auswählen",
-        "refundable": "Erstattungsfähig",
-        "noRefund": "Nicht erstattungsfähig",
-        "baggage": "Gepäck",
-        "lowBaggage": "Wenig Gepäck",
-        "whyBuy": "Warum Buchen?",
-        "watchOut": "Achtung",
-        "decision": "ENTSCHEIDUNG",
-        "baggageExtras": {
-            "noBaggage": "Kein Gepäck",
-            "excluded": "Ohne Gepäck (+~2500 TL)",
-            "restricted": "(Begrenzt)",
-            "generous": "(Großzügiges Gepäck)",
-            "warningTitle": "Achtung: Kein Gepäck enthalten!",
-            "warningDesc": "Sie müssen möglicherweise zusätzliches Gepäck bei der Fluggesellschaft kaufen. Durchschnittskosten: ~2.500 TL"
-        },
-        "hideDetails": "Details ausblenden",
-        "errors": {
-            "originRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
-            "destinationRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
-            "departureDateRequired": "Bitte wählen Sie ein Abflugdatum",
-            "departureDatePast": "Das Abflugdatum darf nicht in der Vergangenheit liegen",
-            "returnDateRequired": "Für Hin- und Rückflüge ist ein Rückflugdatum erforderlich",
-            "returnDateBeforeDeparture": "Das Rückflugdatum muss nach dem Abflugdatum liegen",
-            "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
-        },
-        "showMore": "Mehr anzeigen ({count} Flüge verbleibend)",
-        "trackingThisFlight": "Sie verfolgen diesen Flug",
-        "layover": {
-            "risk": {
-                "critical": "KRITISCH - Riskanter Umstieg!",
-                "high": "Riskant - Bitte beeilen",
-                "medium": "Mittel - Entspannt, aber aufmerksam",
-                "low": "Entspannt - Genießen Sie Ihre Zeit"
-            },
-            "advice": {
-                "default_short": "Kurzer Aufenthalt. Gehen Sie sofort zum Gate.",
-                "default_medium": "Ausreichend Zeit. Holen Sie sich kurz einen Kaffee, aber finden Sie zuerst Ihr Gate.",
-                "default_long": "Viel Zeit. Genießen Sie Lounge oder Restaurants.",
-                "DXB_short": "Dubai ist riesig. Gehen Sie sofort zügig zum Gate!",
-                "DXB_medium": "Möglicherweise ist der Terminal-3-Zug nötig. Sie haben Zeit, aber bummeln Sie nicht.",
-                "DXB_long": "Viel Zeit in Dubai. Probieren Sie Sleep Pods oder die Marhaba Lounge.",
-                "DOH_short": "Doha ist kompakt, aber unter 60 Minuten riskant. Direkt zum Gate.",
-                "DOH_medium": "Zeit für einen kurzen Kaffee im Orchard, aber prüfen Sie die Gate-Entfernung.",
-                "DOH_long": "Einer der besten Flughäfen der Welt. Schauen Sie sich den Orchard-Garten und Lounges an.",
-                "IST_short": "Der Flughafen Istanbul ist groß. 20 Minuten Fußweg sind möglich. Beeilen Sie sich!",
-                "IST_medium": "Die Wege sind lang. Erst das Gate finden, dann entspannen.",
-                "IST_long": "Die Turkish-Airlines-Business-Lounge ist legendär. Ein Besuch lohnt sich.",
-                "SIN_short": "Changi ist kompakt, aber die Sicherheitskontrolle ist streng. Lassen Sie Jewel aus.",
-                "SIN_medium": "Jewel ist verlockend, aber die Sicherheitskontrolle ist am Gate. Gehen Sie kein Risiko ein.",
-                "SIN_long": "Changi ist weltberühmt. Unbedingt den Jewel-Wasserfall und den Schmetterlingsgarten ansehen."
-            }
+      },
+      "quality": {
+        "title": "Qualitäts- und Komfort-Stack",
+        "items": {
+          "baggage": {
+            "title": "6. Gepäckfreigrenze (10)",
+            "desc": "23kg inklusive = +10, nur Handgepäck = -5, keines = -10."
+          },
+          "reliability": {
+            "title": "7. Fluglinien-Zuverlässigkeit (10)",
+            "desc": "Pünktlichkeit, Sicherheitshistorie, Reputation."
+          },
+          "aircraft": {
+            "title": "8. Flugzeugqualität (5)",
+            "desc": "A350/787 +3, 20 Jahre altes Flugzeug = -2."
+          },
+          "amenity": {
+            "title": "9. Komfort-Score (5)",
+            "desc": "WiFi, IFE, Sitzabstand, Essensqualität."
+          },
+          "airport": {
+            "title": "10. Flughafen-Schwierigkeitsindex (5)",
+            "desc": "Terminalkomplexität, Umsteige-Leichtigkeit, Sicherheitsdichte."
+          }
         }
-    },
-    "priceOracle": {
-        "title": "Preisorakel",
-        "confidence": "Vertrauen",
-        "riskScore": "Risikobewertung",
-        "badges": {
-            "buyNow": "JETZT KAUFEN",
-            "buy": "KAUFEN",
-            "wait": "WARTEN",
-            "monitor": "BEOBACHTEN"
+      },
+      "final": {
+        "score": {
+          "title": "Finale Score-Logik",
+          "desc": "72/100 wird 7.2/10. Jeder Score enthält Risiko- und Komfort-Kontext."
         },
-        "trends": {
-            "rising": "STEIGENDER TREND",
-            "falling": "FALLENDER TREND",
-            "stable": "STABIL"
+        "risk": {
+          "title": "Risikoflaggen",
+          "desc": "Rote Hinweise für kurze Umstiege, Eigen-Transfer-Risiken oder verspätungsanfällige Fluglinien."
         },
-        "signals": {
-            "last72Hours": "Letzte 72 Stunden: Preise können stündlich steigen.",
-            "lastWeek": "Letzte Woche! Preise könnten jederzeit sprunghaft ansteigen.",
-            "twoWeekRule": "14-Tage-Regel: Rabattierte Tarifklassen sind geschlossen.",
-            "idealTime": "Idealer Zeitpunkt: Sie befinden sich im sichersten Buchungsfenster.",
-            "tooEarly": "Zu früh: Wettbewerbsfähige Kampagnen haben möglicherweise noch nicht begonnen.",
-            "plentyOfTime": "4+ Monate übrig: Keine Eile, weiter beobachten.",
-            "lessThanMonth": "Weniger als ein Monat: Idealer Buchungszeitraum.",
-            "bottomPrice": "Tiefstpreis: Sie haben den Marktboden erreicht.",
-            "belowAverage": "Gelegenheit: {percent}% unter dem Marktdurchschnitt.",
-            "aboveAverage": "Teuer: {percent}% über dem Durchschnitt. Eine Korrektur könnte kommen.",
-            "peakSeason": "Hochsaison: Hohe globale Reisenachfrage (Sommer/Feiertage).",
-            "lowSeason": "Nebensaison: Nachfrage ist gering, Preise könnten fallen.",
-            "weekend": "Wochenendflug: Normalerweise teurer.",
-            "tuesdayWednesday": "Dienstag/Mittwoch: Normalerweise die günstigsten Tage."
+        "value": {
+          "title": "Wert-Tags",
+          "desc": "Grüne Wert-Tags und Komfort-Notizen erklären, warum ein Flug sich lohnt."
         }
+      }
     },
-    "baggage": {
-        "generous": "Großzügiges Gepäck",
-        "standard": "Standardgepäck",
-        "limited": "Begrenztes Gepäck",
-        "cabinOnly": "Nur Handgepäck",
-        "noInfo": "Keine Info"
-    },
-    "flightConsultant": {
-        "headlines": {
-            "undisputedLeader": "🏆 UNBESTRITTENER LEADER",
-            "stayAway": "🚫 FINGER WEG",
-            "sensibleChoice": "⭐ VERNÜNFTIGE WAHL",
-            "thinkTwice": "⚠️ ÜBERLEGEN SIE ES SICH",
-            "notRecommended": "❌ NICHT EMPFOHLEN"
-        },
-        "identities": {
-            "travelHacker": {
-                "label": "😎 Reise-Hacker",
-                "description": "Sie haben den besten Komfort zum besten Preis bekommen."
-            },
-            "transferVictim": {
-                "label": "😵 Transfer-Opfer",
-                "description": "Dieser Flug könnte Sie unterwegs altern lassen."
-            },
-            "timeIsValuable": {
-                "label": "🎩 Zeit ist Geld",
-                "description": "Sie haben extra bezahlt, um Zeit zu kaufen."
-            },
-            "logisticsExpert": {
-                "label": "📦 Logistik-Experte",
-                "description": "Sie tragen Ihr ganzes Haus mit - das macht am meisten Sinn."
-            },
-            "wasteOfMoney": {
-                "label": "💸 Geldverschwendung",
-                "description": "Es gibt keinen logischen Grund, dies zu kaufen."
-            },
-            "dealHunter": {
-                "label": "🦊 Schnäppchenjäger",
-                "description": "Sie haben die Qualität/Preis-Balance perfekt getroffen."
-            },
-            "standardPassenger": {
-                "label": "😐 Standardpassagier",
-                "description": "Weder gut noch schlecht, eine durchschnittliche Erfahrung."
-            }
-        },
-        "pros": {
-            "lowestPrice": "💰 Niedrigster Preis auf dem Markt.",
-            "lifesaverBaggage": "📦 Lebensrettendes Gepäck für Vielreisende.",
-            "lowStress": "😌 Niedriger Stress, komfortable Route.",
-            "fastestRoute": "⚡ Schnellste Route."
-        },
-        "cons": {
-            "highStress": "😰 Hoher Stress: Ermüdende Reise.",
-            "priceDifference": "💸 {amount} {currency} mehr als der günstigste.",
-            "tooManyTransfers": "🛑 Zu viele Umstiege: Könnte anstrengend sein."
-        },
-        "decisions": {
-            "mustBuy": "**Wir würden nicht zweimal überlegen.** Ein {identity} Paket, das sowohl Ihren Geldbeutel als auch Ihren Komfort schätzt. Nicht verpassen.",
-            "dontBuy": "**Wir würden das definitiv nicht kaufen.** Dieser Flug macht Sie zu einem \"{identity}\". Nicht wert für Ihr Geld oder Ihre Zeit.",
-            "risky": "Vorsicht. Dieser Flug mag günstig erscheinen, aber **Stressbewertung: {stress}/10**. Sie entscheiden, ob es die Erschöpfung wert ist.",
-            "goodWithTimeSaving": "Es gibt einen **{priceDiff} {currency}** Unterschied zum günstigsten, aber Sie sparen **{timeSaved} Stunden** Reisezeit. Lohnt sich, wenn Sie Komfort schätzen.",
-            "goodWithPrice": "Toller Preis{transferNote}. Budgetfreundlich, vernünftiger Kompromiss.",
-            "balanced": "Eine ausgewogene Option. Weder zu teuer noch zu lang. {description}"
-        },
-        "transferNote": ", aber {stops} Umstieg(e) könnten Sie ermüden",
-        "fareRestrictions": {
-            "noRefund": "Nicht erstattungsfähig",
-            "noChange": "Änderungen kostenpflichtig",
-            "noSeatSelection": "Sitzplatzwahl kostenpflichtig",
-            "noMeal": "Mahlzeiten kostenpflichtig",
-            "cabinBagOnly": "Nur Handgepäck"
+    "strategic": {
+      "label": "Strategische Realität",
+      "title": "Skyscanner sortiert Preise. Wir verteidigen Ergebnisse.",
+      "subtitle": "Preis allein ist keine Entscheidung. Wir modellieren Risiko, simulieren Szenarien und schützen in Krisen.",
+      "typical": {
+        "title": "Typische Plattformen",
+        "items": {
+          "price": "Nur Preissortierung",
+          "risk": "Keine Risikoanalyse",
+          "future": "Kein Zukunfts-Disruption-Modell",
+          "crisis": "Keine Krisen-Abwehrschicht"
         }
-    },
-    "pricing": {
-        "title": "Travel Guardian Premiumschutz",
-        "subtitle": "Überlassen Sie Ihre Reise nicht dem Zufall.",
-        "priceMonth": "/Monat",
-        "feature1": "24/7 Flugverfolgung (Unbegrenzt)",
-        "feature2": "Entschädigungsjäger (0% Provision)",
-        "feature3": "Business Upgrade Chancen",
-        "feature4": "Preis-Arbitrage-Alarme",
-        "feature5": "Sitzplatz-Spion (Leerer Nebensitz)",
-        "feature6": "Priorisierte E-Mail-Benachrichtigungen",
-        "cta": "Schutz Starten",
-        "secure": "Jederzeit kündbar. Sichere Zahlung über Stripe."
-    },
-    "Pricing": {
-        "title": "Mitgliedschaftspläne",
-        "subtitle": "Maßgeschneiderte Schutzpakete für jeden Reisenden.",
-        "trial": "7 Tage kostenlos (Elite)",
-        "monthly": "/Monat",
-        "yearly": "/Jahr",
-        "plans": {
-            "free": {
-                "name": "Kostenlos",
-                "badge": "Reisender",
-                "price": "$0"
-            },
-            "guardian": {
-                "name": "Guardian",
-                "badge": "Pro",
-                "price": "$9.90",
-                "price_yearly": "$89.10"
-            },
-            "elite": {
-                "name": "Elite",
-                "badge": "Familie & Biz",
-                "price": "$19.90",
-                "price_yearly": "$178.20"
-            }
-        },
-        "features": {
-            "search_score": "Suche & Bewertung",
-            "scenario_sim": "Szenario-Simulation",
-            "disruption_hunter": "Störungsjäger",
-            "inbox_parser": "Posteingang-Parser (E-Mail)",
-            "schedule_guardian": "Zeitplan-Wächter",
-            "junior_guardian": "Junior-Wächter",
-            "backup_generator": "Ersatzplan-Generator",
-            "lounge_intel": "Lounge-Intelligenz",
-            "email_notifications": "E-Mail-Benachrichtigungen",
-            "sms_notifications": "SMS-Benachrichtigungen",
-            "push_notifications": "Push-Benachrichtigungen"
-        },
-        "values": {
-            "unlimited": "Unbegrenzt",
-            "limited_3": "Begrenzt (3/Tag)",
-            "link_only": "Nur Link",
-            "auto_track": "Auto-Tracking",
-            "priority": "Priorisierter Support",
-            "none": "Keine",
-            "tickets_2": "2 Tickets/Monat",
-            "watch_247": "24/7 Überwachung",
-            "full_protection": "Vollschutz",
-            "crisis_mgmt": "Krisenmanagement",
-            "list_only": "Nur Liste",
-            "full_analysis": "Vollzugriffsanalyse"
-        },
-        "cta": {
-            "current": "Aktueller Plan",
-            "upgrade": "Hochstufen",
-            "start_trial": "Test starten"
-        },
-        "table": {
-            "title": "Funktionsvergleich",
-            "subtitle": "Sehen Sie genau, was Sie in jedem Plan erhalten",
-            "feature": "Funktion",
-            "legend": "Legende:",
-            "included": "Enthalten",
-            "limited": "Begrenzt",
-            "notIncluded": "Nicht enthalten"
-        },
-        "categories": {
-            "search_analysis": "Suche & Analyse",
-            "monitoring": "Überwachung (24/7)",
-            "notifications": "Benachrichtigungen",
-            "automation": "Automatisierung",
-            "premium_features": "Premium-Funktionen"
+      },
+      "agent": {
+        "title": "Flugassistent",
+        "items": {
+          "ranking": "Risikobewusstes Ranking",
+          "scenario": "Szenario-Simulation",
+          "protection": "Proaktiver Disruption-Schutz",
+          "compensation": "Leitfaden für Entschädigung und Wiederherstellung"
         }
+      }
     },
-    "PricingFeaturesPage": {
-        "title": "Funktionsvergleich",
-        "backToPricing": "Zurück zu Preisen",
-        "ctaTitle": "Bereit loszulegen?",
-        "ctaDesc": "Wählen Sie den Plan, der zu Ihrem Reiseschutz passt.",
-        "viewPricingPlans": "Preispläne ansehen"
+    "features": {
+      "title": "Warum FlightAdvisor?",
+      "subtitle": "Alles, was Sie brauchen, um die besten Flugangebote zu finden",
+      "smartAlerts": {
+        "title": "Intelligente Preisalarme",
+        "desc": "Legen Sie Ihren Wunschpreis fest und lassen Sie sich von unserer KI benachrichtigen, sobald er fällt."
+      },
+      "priceHistory": {
+        "title": "Preisverlauf",
+        "desc": "Sehen Sie sich historische Preistrends an, um die beste Reisezeit zu ermitteln."
+      },
+      "globalSearch": {
+        "title": "Globale Suche",
+        "desc": "Vergleichen Sie sofort Preise von Tausenden von Fluggesellschaften und Reisebüros."
+      },
+      "noFees": {
+        "title": "Keine versteckten Gebühren",
+        "desc": "Was Sie sehen, ist was Sie bezahlen. Wir glauben an völlige Transparenz."
+      },
+      "instantNotify": {
+        "title": "Sofortige Benachrichtigung",
+        "desc": "Erhalten Sie eine E-Mail oder SMS, sobald ein Angebot gefunden wird."
+      },
+      "trends": {
+        "title": "Reisetrends",
+        "desc": "Entdecken Sie beliebte Reiseziele und saisonale Preistrends."
+      }
     },
-    "PricingUpsell": {
-        "startingAt": "Ab",
-        "billedMonthly": "monatliche Abrechnung",
-        "guarantee": "14 Tage Geld-zurück-Garantie",
-        "free": {
-            "title": "🚀 Flight Guardian Intelligence freischalten",
-            "description": "Erhalten Sie Echtzeit-Störungswarnungen, EU261-Tracking und KI-gestützte Fluganalyse",
-            "feature1": "Live-Flugstatus & Verspätungswarnungen",
-            "feature2": "EU261-Entschädigungsrechner",
-            "feature3": "Detaillierte Amenity- und Flugzeuganalyse",
-            "cta": "Auf PRO upgraden"
-        },
-        "elite": {
-            "title": "👑 Elite-Powers freischalten",
-            "description": "Mit ELITE erhalten Sie SMS-Warnungen, Prioritäts-Support und erweitertes Disruption-Hunting",
-            "feature1": "SMS-Warnungen bei kritischen Störungen",
-            "feature2": "Prioritäts-Kundensupport",
-            "feature3": "Erweiterte Upgrade-Chancen-Warnungen",
-            "cta": "Auf ELITE upgraden"
-        },
-        "compact": {
-            "learnMore": "Mehr erfahren",
-            "free": {
-                "title": "Auf PRO upgraden",
-                "subtitle": "Echtzeit-Warnungen freischalten"
-            },
-            "elite": {
-                "title": "Zu ELITE",
-                "subtitle": "SMS-Warnungen & Prioritäts-Support"
-            }
-        }
-    },
-    "addTrip": {
-        "title": "Neue Reise Verfolgen",
-        "pnr": "PNR Code",
-        "pnrPlaceholder": "z.B. R7X992",
-        "flightNumber": "Flugnummer",
-        "flightPlaceholder": "z.B. TK1984",
-        "start": "Verfolgung Starten",
-        "close": "Schließen",
-        "processing": "PNR wird gesucht..."
-    },
-    "amenity": {
-        "title": "Service-Mangel-Bericht",
-        "subtitle": "Lief etwas schief? Wählen Sie Probleme für Entschädigung.",
-        "wifi": "WLAN Defekt",
-        "ife": "Bildschirm/TV Defekt",
-        "food": "Schlechtes/Kein Essen",
-        "seat": "Defekter Sitz",
-        "crew": "Unhöfliches Personal",
-        "target": "Ziel",
-        "summary": "Anspruchszusammenfassung",
-        "send": "Anspruch Senden",
-        "sent": "Anspruch Gesendet!",
-        "sentDesc": "Wir haben eine formelle Anfrage auf Kulanzentschädigung an {airline} gesendet. Sie sollten innerhalb von 7 Tagen eine Rückmeldung erhalten."
+    "howItWorks": {
+      "title": "Wie es funktioniert",
+      "subtitle": "Einfache Schritte zu großen Einsparungen",
+      "step1": {
+        "title": "Suchen",
+        "desc": "Geben Sie Ihr Ziel und Ihre Daten ein."
+      },
+      "step2": {
+        "title": "Verfolgen",
+        "desc": "Aktivieren Sie die Verfolgung für Ihre gewünschte Route."
+      },
+      "step3": {
+        "title": "Sparen",
+        "desc": "Buchen Sie, wenn wir Sie über den Preisrückgang informieren."
+      }
     }
+  },
+  "AboutPage": {
+    "title": "Über FlightAdvisor",
+    "subtitle": "Reisedaten für alle demokratisieren.",
+    "mission": {
+      "title": "Unsere Mission",
+      "content": "Wir bei FlightAdvisor glauben, dass Reisen für jeden zugänglich sein sollte. Unsere Mission ist es, fortschrittliche Analysen und KI zu nutzen, um Ihnen zu helfen, die absolut besten Flugpreise ohne Kopfschmerzen zu finden."
+    },
+    "story": {
+      "title": "Unsere Geschichte",
+      "content": "FlightAdvisor wurde 2024 gegründet und entstand aus der Frustration über undurchsichtige Flugpreise."
+    }
+  },
+  "Auth": {
+    "title": "Willkommen zurück",
+    "subtitle": "Melden Sie sich bei Ihrem Konto an",
+    "registerTitle": "Konto erstellen",
+    "registerSubtitle": "Beginnen Sie heute mit der Flugverfolgung",
+    "signIn": "Anmelden",
+    "register": "Registrieren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "name": "Name",
+    "surname": "Nachname",
+    "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+    "dontHaveAccount": "Haben Sie noch kein Konto?",
+    "signInWithGoogle": "Mit Google anmelden",
+    "signInWithGithub": "Mit GitHub anmelden",
+    "signInWithMicrosoft": "Mit Microsoft anmelden",
+    "backToHome": "Zurück zur Startseite"
+  },
+  "Dashboard": {
+    "title": "Übersicht",
+    "routes": "Routen",
+    "settings": "Einstellungen",
+    "home": "Startseite",
+    "trackNewRoute": "Neue Route verfolgen",
+    "noRoutes": "Sie beobachten noch keine Routen.",
+    "createAlert": "Erstes Itinerary beobachten",
+    "trackedRoutes": "Verfolgte Routen",
+    "addNewRoute": "Neue Route hinzufügen",
+    "emptyState": "Beobachten Sie Itineraries, um sie hier zu sehen",
+    "pleaseSignIn": "Bitte anmelden",
+    "needLogin": "Sie müssen eingeloggt sein, um auf Ihr Flug-Dashboard zuzugreifen.",
+    "paymentSuccessTitle": "Zahlung bestätigt — willkommen an Bord!",
+    "paymentSuccessBody": "Ihr Plan ist jetzt aktiv. Itinerary-Scoring und geplante Monitoring-Tools sind bereit.",
+    "decisionHub": "Decision Hub",
+    "scoreItinerary": "Itinerary bewerten",
+    "trackedItineraries": "Beobachtete Itineraries",
+    "myTrips": "Gebuchte Reisen",
+    "myTripsDesc": "Reisen mit periodischen Disruption-Checks.",
+    "addTrip": "Gebuchte Reise hinzufuegen",
+    "emptyTitle": "Noch keine gebuchten Reisen",
+    "emptyDesc": "Fuegen Sie eine gebuchte Reise hinzu, um periodisches Monitoring und Alert-Historie zu aktivieren.",
+    "addTripShort": "Gebuchte Reise hinzufuegen",
+    "protected": "MONITORED",
+    "monitored": "MONITORED",
+    "trackedFlights": "Beobachtete Itineraries",
+    "trackedFlightsDesc": "Kandidaten-Itineraries und Routen, die Sie beobachten.",
+    "trackedEmptyTitle": "Noch keine beobachteten Itineraries",
+    "noTrackedFlights": "Bewerten Sie ein Itinerary, beobachten Sie eine Route oder sehen Sie Advisor Reports aus Ihrer naechsten Analyse."
+  },
+  "FlightSearch": {
+    "title": "Flüge Suchen & Verfolgen",
+    "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
+    "heroTitle": "Wohin fliegen wir?",
+    "heroSubtitle": "Entdecken Sie die besten Flugangebote",
+    "mottoLabel": "FlightAgent Leitsatz",
+    "oneWay": "Nur Hinflug",
+    "roundTrip": "Hin- und Rückflug",
+    "from": "Von",
+    "to": "Nach",
+    "placeholder": "Stadt oder Flughafen suchen...",
+    "departureDate": "Abflugdatum",
+    "returnDate": "Rückflugdatum",
+    "selectDate": "Datum auswählen",
+    "optional": "optional (freiwillig)",
+    "cabin": "Kabinenklasse",
+    "economy": "Touristenklasse",
+    "premiumEconomy": "Premium-Economy",
+    "business": "Business-Klasse",
+    "firstClass": "Erste Klasse",
+    "adults": "Erwachsene",
+    "passengers": "Passagiere",
+    "children": "Kinder",
+    "infants": "Kleinkinder",
+    "adultLabel": "Erwachsener",
+    "childLabel": "Kind (2-11)",
+    "infantLabel": "Kleinkind (0-2)",
+    "travelers_label": "Reisende & Kabine",
+    "passengers_short": "Gast",
+    "totalPassengers": "Gesamt: {count} Passagiere",
+    "adultRequired": "Mindestens 1 Erwachsener ist erforderlich",
+    "infantsRequireAdults": "Kleinkinder dürfen Erwachsene nicht übersteigen",
+    "passengerLimit": "Maximal 9 Passagiere pro Suche werden unterstützt",
+    "invalidAirports": "Bitte wählen Sie gültige Flughäfen mit 3-stelligem IATA-Code",
+    "searching": "Flüge werden gesucht...",
+    "searchingDesc": "Wir durchsuchen 54+ Fluggesellschaften, um die besten Angebote zu finden",
+    "popularDestinations": "Beliebte Reiseziele",
+    "topFlightsToBookNow": "Top-Flüge zum aktuellen Beobachten",
+    "topFlightsSummary": "{count, plural, one {# Flug ist aktuell als starke Preisgelegenheit markiert.} other {# Flüge sind aktuell als starke Preisgelegenheiten markiert.}}",
+    "proactiveTip": "Proaktiver Tipp",
+    "upgradePlans": "Upgrade-Pläne",
+    "monthlyProTitle": "Monatlich Pro ($19)",
+    "monthlyProDesc": "Nicht zu viel zahlen. Schalten Sie die beste Entscheidung vor der Buchung frei.",
+    "unlockClearRecommendation": "Klare Empfehlung freischalten",
+    "oneTimeReportTitle": "Einmaliger Flugbericht ($4.99)",
+    "oneTimeReportDesc": "Tiefe Risiko- und Preisanalyse nur für diese Route.",
+    "oneTimeReportButton": "Einmalbericht ($4.99)",
+    "searchButton": "Flüge Finden",
+    "success": "Flug Gefunden!",
+    "error": "Suche Fehlgeschlagen",
+    "resultsFound": "Flüge gefunden",
+    "currentPrice": "Aktueller Preis",
+    "carrier": "Fluggesellschaft",
+    "score": "Bewertung",
+    "duration": "Dauer",
+    "stops": "Zwischenstopps",
+    "direct": "Direktflug",
+    "stop": "Stopp",
+    "airlines": "Fluggesellschaften",
+    "layover": {
+      "risk": {
+        "critical": "KRITISCH - Riskanter Umstieg!",
+        "high": "Riskant - Bitte beeilen",
+        "medium": "Mittel - Entspannt, aber aufmerksam",
+        "low": "Entspannt - Genießen Sie Ihre Zeit"
+      },
+      "advice": {
+        "default_short": "Kurzer Aufenthalt. Gehen Sie sofort zum Gate.",
+        "default_medium": "Ausreichend Zeit. Holen Sie sich kurz einen Kaffee, aber finden Sie zuerst Ihr Gate.",
+        "default_long": "Viel Zeit. Genießen Sie Lounge oder Restaurants.",
+        "DXB_short": "Dubai ist riesig. Gehen Sie sofort zügig zum Gate!",
+        "DXB_medium": "Möglicherweise ist der Terminal-3-Zug nötig. Sie haben Zeit, aber bummeln Sie nicht.",
+        "DXB_long": "Viel Zeit in Dubai. Probieren Sie Sleep Pods oder die Marhaba Lounge.",
+        "DOH_short": "Doha ist kompakt, aber unter 60 Minuten riskant. Direkt zum Gate.",
+        "DOH_medium": "Zeit für einen kurzen Kaffee im Orchard, aber prüfen Sie die Gate-Entfernung.",
+        "DOH_long": "Einer der besten Flughäfen der Welt. Schauen Sie sich den Orchard-Garten und Lounges an.",
+        "IST_short": "Der Flughafen Istanbul ist groß. 20 Minuten Fußweg sind möglich. Beeilen Sie sich!",
+        "IST_medium": "Die Wege sind lang. Erst das Gate finden, dann entspannen.",
+        "IST_long": "Die Turkish-Airlines-Business-Lounge ist legendär. Ein Besuch lohnt sich.",
+        "SIN_short": "Changi ist kompakt, aber die Sicherheitskontrolle ist streng. Lassen Sie Jewel aus.",
+        "SIN_medium": "Jewel ist verlockend, aber die Sicherheitskontrolle ist am Gate. Gehen Sie kein Risiko ein.",
+        "SIN_long": "Changi ist weltberühmt. Unbedingt den Jewel-Wasserfall und den Schmetterlingsgarten ansehen."
+      }
+    },
+    "transferAt": "Umsteigen in",
+    "cheapest": "Günstigste",
+    "fastest": "Schnellste",
+    "bestScore": "Beste Bewertung",
+    "price": "Preis",
+    "trackFlight": "Diesen Flug Verfolgen",
+    "flightDetails": "Flugdetails",
+    "excellentDeal": "Ausgezeichnetes Angebot",
+    "goodDeal": "Gutes Angebot",
+    "fair": "Mittelmäßig",
+    "poor": "Schlecht",
+    "veryPoor": "Sehr Schlecht",
+    "noFlights": "Keine Flüge gefunden",
+    "fillAllFields": "Bitte füllen Sie alle Felder aus",
+    "trackingStarted": "Wir haben begonnen, diese Route für Sie zu verfolgen. Wir senden Benachrichtigungen, wenn wir Preissenkungen erkennen.",
+    "viewDashboard": "Dashboard Ansehen",
+    "flightTime": "Flugdauer",
+    "waitTime": "Aufenthalt",
+    "estimatedBaggage": "Geschätztes Gepäck",
+    "otherOptions": "Andere Preis-/Paketoptionen",
+    "select": "Auswählen",
+    "refundable": "Erstattungsfähig",
+    "noRefund": "Nicht erstattungsfähig",
+    "baggage": "Gepäck",
+    "lowBaggage": "Wenig Gepäck",
+    "whyBuy": "Warum Buchen?",
+    "watchOut": "Achtung",
+    "decision": "ENTSCHEIDUNG",
+    "baggageExtras": {
+      "noBaggage": "Kein Gepäck",
+      "excluded": "Ohne Gepäck (+~2500 TL)",
+      "restricted": "(Begrenzt)",
+      "generous": "(Großzügiges Gepäck)",
+      "warningTitle": "Achtung: Kein Gepäck enthalten!",
+      "warningDesc": "Sie müssen möglicherweise zusätzliches Gepäck bei der Fluggesellschaft kaufen. Durchschnittskosten: ~2.500 TL"
+    },
+    "hideDetails": "Details ausblenden",
+    "errors": {
+      "originRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
+      "destinationRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
+      "departureDateRequired": "Bitte wählen Sie ein Abflugdatum",
+      "departureDatePast": "Das Abflugdatum darf nicht in der Vergangenheit liegen",
+      "returnDateRequired": "Für Hin- und Rückflüge ist ein Rückflugdatum erforderlich",
+      "returnDateBeforeDeparture": "Das Rückflugdatum muss nach dem Abflugdatum liegen",
+      "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "showMore": "Mehr anzeigen ({count} Flüge verbleibend)",
+    "trackingThisFlight": "Sie verfolgen diesen Flug"
+  },
+  "priceOracle": {
+    "title": "Preisorakel",
+    "confidence": "Vertrauen",
+    "riskScore": "Risikobewertung",
+    "badges": {
+      "buyNow": "JETZT KAUFEN",
+      "buy": "KAUFEN",
+      "wait": "WARTEN",
+      "monitor": "BEOBACHTEN"
+    },
+    "trends": {
+      "rising": "STEIGENDER TREND",
+      "falling": "FALLENDER TREND",
+      "stable": "STABIL"
+    },
+    "signals": {
+      "last72Hours": "Letzte 72 Stunden: Preise können stündlich steigen.",
+      "lastWeek": "Letzte Woche! Preise könnten jederzeit sprunghaft ansteigen.",
+      "twoWeekRule": "14-Tage-Regel: Rabattierte Tarifklassen sind geschlossen.",
+      "idealTime": "Idealer Zeitpunkt: Sie befinden sich im sichersten Buchungsfenster.",
+      "tooEarly": "Zu früh: Wettbewerbsfähige Kampagnen haben möglicherweise noch nicht begonnen.",
+      "plentyOfTime": "4+ Monate übrig: Keine Eile, weiter beobachten.",
+      "lessThanMonth": "Weniger als ein Monat: Idealer Buchungszeitraum.",
+      "bottomPrice": "Tiefstpreis: Sie haben den Marktboden erreicht.",
+      "belowAverage": "Gelegenheit: {percent}% unter dem Marktdurchschnitt.",
+      "aboveAverage": "Teuer: {percent}% über dem Durchschnitt. Eine Korrektur könnte kommen.",
+      "peakSeason": "Hochsaison: Hohe globale Reisenachfrage (Sommer/Feiertage).",
+      "lowSeason": "Nebensaison: Nachfrage ist gering, Preise könnten fallen.",
+      "weekend": "Wochenendflug: Normalerweise teurer.",
+      "tuesdayWednesday": "Dienstag/Mittwoch: Normalerweise die günstigsten Tage."
+    }
+  },
+  "baggage": {
+    "generous": "Großzügiges Gepäck",
+    "standard": "Standardgepäck",
+    "limited": "Begrenztes Gepäck",
+    "cabinOnly": "Nur Handgepäck",
+    "noInfo": "Keine Info"
+  },
+  "flightConsultant": {
+    "headlines": {
+      "undisputedLeader": "🏆 UNBESTRITTENER LEADER",
+      "stayAway": "🚫 FINGER WEG",
+      "sensibleChoice": "⭐ VERNÜNFTIGE WAHL",
+      "thinkTwice": "⚠️ ÜBERLEGEN SIE ES SICH",
+      "notRecommended": "❌ NICHT EMPFOHLEN"
+    },
+    "identities": {
+      "travelHacker": {
+        "label": "😎 Reise-Hacker",
+        "description": "Sie haben den besten Komfort zum besten Preis bekommen."
+      },
+      "transferVictim": {
+        "label": "😵 Transfer-Opfer",
+        "description": "Dieser Flug könnte Sie unterwegs altern lassen."
+      },
+      "timeIsValuable": {
+        "label": "🎩 Zeit ist Geld",
+        "description": "Sie haben extra bezahlt, um Zeit zu kaufen."
+      },
+      "logisticsExpert": {
+        "label": "📦 Logistik-Experte",
+        "description": "Sie tragen Ihr ganzes Haus mit - das macht am meisten Sinn."
+      },
+      "wasteOfMoney": {
+        "label": "💸 Geldverschwendung",
+        "description": "Es gibt keinen logischen Grund, dies zu kaufen."
+      },
+      "dealHunter": {
+        "label": "🦊 Schnäppchenjäger",
+        "description": "Sie haben die Qualität/Preis-Balance perfekt getroffen."
+      },
+      "standardPassenger": {
+        "label": "😐 Standardpassagier",
+        "description": "Weder gut noch schlecht, eine durchschnittliche Erfahrung."
+      }
+    },
+    "pros": {
+      "lowestPrice": "💰 Niedrigster Preis auf dem Markt.",
+      "lifesaverBaggage": "📦 Lebensrettendes Gepäck für Vielreisende.",
+      "lowStress": "😌 Niedriger Stress, komfortable Route.",
+      "fastestRoute": "⚡ Schnellste Route."
+    },
+    "cons": {
+      "highStress": "😰 Hoher Stress: Ermüdende Reise.",
+      "priceDifference": "💸 {amount} {currency} mehr als der günstigste.",
+      "tooManyTransfers": "🛑 Zu viele Umstiege: Könnte anstrengend sein."
+    },
+    "decisions": {
+      "mustBuy": "**Wir würden nicht zweimal überlegen.** Ein {identity} Paket, das sowohl Ihren Geldbeutel als auch Ihren Komfort schätzt. Nicht verpassen.",
+      "dontBuy": "**Wir würden das definitiv nicht kaufen.** Dieser Flug macht Sie zu einem \"{identity}\". Nicht wert für Ihr Geld oder Ihre Zeit.",
+      "risky": "Vorsicht. Dieser Flug mag günstig erscheinen, aber **Stressbewertung: {stress}/10**. Sie entscheiden, ob es die Erschöpfung wert ist.",
+      "goodWithTimeSaving": "Es gibt einen **{priceDiff} {currency}** Unterschied zum günstigsten, aber Sie sparen **{timeSaved} Stunden** Reisezeit. Lohnt sich, wenn Sie Komfort schätzen.",
+      "goodWithPrice": "Toller Preis{transferNote}. Budgetfreundlich, vernünftiger Kompromiss.",
+      "balanced": "Eine ausgewogene Option. Weder zu teuer noch zu lang. {description}"
+    },
+    "transferNote": ", aber {stops} Umstieg(e) könnten Sie ermüden",
+    "fareRestrictions": {
+      "noRefund": "Nicht erstattungsfähig",
+      "noChange": "Änderungen kostenpflichtig",
+      "noSeatSelection": "Sitzplatzwahl kostenpflichtig",
+      "noMeal": "Mahlzeiten kostenpflichtig",
+      "cabinBagOnly": "Nur Handgepäck"
+    }
+  },
+  "pricing": {
+    "title": "Travel Guardian Premiumschutz",
+    "subtitle": "Überlassen Sie Ihre Reise nicht dem Zufall.",
+    "priceMonth": "/Monat",
+    "feature1": "24/7 Flugverfolgung (Unbegrenzt)",
+    "feature2": "Entschädigungsjäger (0% Provision)",
+    "feature3": "Business Upgrade Chancen",
+    "feature4": "Preis-Arbitrage-Alarme",
+    "feature5": "Sitzplatz-Spion (Leerer Nebensitz)",
+    "feature6": "Priorisierte E-Mail-Benachrichtigungen",
+    "cta": "Schutz Starten",
+    "secure": "Jederzeit kündbar. Sichere Zahlung über Stripe."
+  },
+  "Pricing": {
+    "title": "Mitgliedschaftspläne",
+    "subtitle": "Maßgeschneiderte Schutzpakete für jeden Reisenden.",
+    "trial": "7 Tage kostenlos (Elite)",
+    "monthly": "/Monat",
+    "yearly": "/Jahr",
+    "plans": {
+      "free": {
+        "name": "Kostenlos",
+        "badge": "Reisender",
+        "price": "$0"
+      },
+      "guardian": {
+        "name": "Guardian",
+        "badge": "Pro",
+        "price": "$9.90",
+        "price_yearly": "$89.10"
+      },
+      "elite": {
+        "name": "Elite",
+        "badge": "Familie & Biz",
+        "price": "$19.90",
+        "price_yearly": "$178.20"
+      }
+    },
+    "features": {
+      "search_score": "Suche & Bewertung",
+      "scenario_sim": "Szenario-Simulation",
+      "disruption_hunter": "Störungsjäger",
+      "inbox_parser": "Posteingang-Parser (E-Mail)",
+      "schedule_guardian": "Zeitplan-Wächter",
+      "junior_guardian": "Junior-Wächter",
+      "backup_generator": "Ersatzplan-Generator",
+      "lounge_intel": "Lounge-Intelligenz",
+      "email_notifications": "E-Mail-Benachrichtigungen",
+      "sms_notifications": "SMS-Benachrichtigungen",
+      "push_notifications": "Push-Benachrichtigungen"
+    },
+    "values": {
+      "unlimited": "Unbegrenzt",
+      "limited_3": "Begrenzt (3/Tag)",
+      "link_only": "Nur Link",
+      "auto_track": "Auto-Tracking",
+      "priority": "Priorisierter Support",
+      "none": "Keine",
+      "tickets_2": "2 Tickets/Monat",
+      "watch_247": "24/7 Überwachung",
+      "full_protection": "Vollschutz",
+      "crisis_mgmt": "Krisenmanagement",
+      "list_only": "Nur Liste",
+      "full_analysis": "Vollzugriffsanalyse"
+    },
+    "cta": {
+      "current": "Aktueller Plan",
+      "upgrade": "Hochstufen",
+      "start_trial": "Test starten"
+    },
+    "table": {
+      "title": "Funktionsvergleich",
+      "subtitle": "Sehen Sie genau, was Sie in jedem Plan erhalten",
+      "feature": "Funktion",
+      "legend": "Legende:",
+      "included": "Enthalten",
+      "limited": "Begrenzt",
+      "notIncluded": "Nicht enthalten"
+    },
+    "categories": {
+      "search_analysis": "Suche & Analyse",
+      "monitoring": "Überwachung (24/7)",
+      "notifications": "Benachrichtigungen",
+      "automation": "Automatisierung",
+      "premium_features": "Premium-Funktionen"
+    }
+  },
+  "PricingFeaturesPage": {
+    "title": "Funktionsvergleich",
+    "backToPricing": "Zurück zu Preisen",
+    "ctaTitle": "Bereit loszulegen?",
+    "ctaDesc": "Wählen Sie den Plan, der zu Ihrem Reiseschutz passt.",
+    "viewPricingPlans": "Preispläne ansehen"
+  },
+  "PricingUpsell": {
+    "startingAt": "Ab",
+    "billedMonthly": "monatliche Abrechnung",
+    "guarantee": "14 Tage Geld-zurück-Garantie",
+    "free": {
+      "title": "🚀 Flight Guardian Intelligence freischalten",
+      "description": "Erhalten Sie Echtzeit-Störungswarnungen, EU261-Tracking und KI-gestützte Fluganalyse",
+      "feature1": "Live-Flugstatus & Verspätungswarnungen",
+      "feature2": "EU261-Entschädigungsrechner",
+      "feature3": "Detaillierte Amenity- und Flugzeuganalyse",
+      "cta": "Auf PRO upgraden"
+    },
+    "elite": {
+      "title": "👑 Elite-Powers freischalten",
+      "description": "Mit ELITE erhalten Sie SMS-Warnungen, Prioritäts-Support und erweitertes Disruption-Hunting",
+      "feature1": "SMS-Warnungen bei kritischen Störungen",
+      "feature2": "Prioritäts-Kundensupport",
+      "feature3": "Erweiterte Upgrade-Chancen-Warnungen",
+      "cta": "Auf ELITE upgraden"
+    },
+    "compact": {
+      "learnMore": "Mehr erfahren",
+      "free": {
+        "title": "Auf PRO upgraden",
+        "subtitle": "Echtzeit-Warnungen freischalten"
+      },
+      "elite": {
+        "title": "Zu ELITE",
+        "subtitle": "SMS-Warnungen & Prioritäts-Support"
+      }
+    }
+  },
+  "addTrip": {
+    "title": "Neue Reise Verfolgen",
+    "pnr": "PNR Code",
+    "pnrPlaceholder": "z.B. R7X992",
+    "flightNumber": "Flugnummer",
+    "flightPlaceholder": "z.B. TK1984",
+    "start": "Verfolgung Starten",
+    "close": "Schließen",
+    "processing": "PNR wird gesucht..."
+  },
+  "amenity": {
+    "title": "Service-Mangel-Bericht",
+    "subtitle": "Lief etwas schief? Wählen Sie Probleme für Entschädigung.",
+    "wifi": "WLAN Defekt",
+    "ife": "Bildschirm/TV Defekt",
+    "food": "Schlechtes/Kein Essen",
+    "seat": "Defekter Sitz",
+    "crew": "Unhöfliches Personal",
+    "target": "Ziel",
+    "summary": "Anspruchszusammenfassung",
+    "send": "Anspruch Senden",
+    "sent": "Anspruch Gesendet!",
+    "sentDesc": "Wir haben eine formelle Anfrage auf Kulanzentschädigung an {airline} gesendet. Sie sollten innerhalb von 7 Tagen eine Rückmeldung erhalten."
+  }
 }

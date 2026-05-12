@@ -113,7 +113,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
                 {/* STEP 1: ENTER FLIGHT */}
                 {step === 1 && (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-slate-900">Add Trip</h3>
+                        <h3 className="text-xl font-bold text-slate-900">Add Booked Trip</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -146,7 +146,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
                                 className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                             <p className="text-[10px] text-slate-400 mt-1">
-                                PNR is only used for compensation claims if needed.
+                                PNR helps connect monitoring records to your booking when available.
                             </p>
                         </div>
 
@@ -188,7 +188,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
                         </div>
 
                         <button onClick={handleSave} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold mb-2 hover:bg-emerald-700">
-                            Yes, Track This Trip
+                            Yes, Monitor This Trip
                         </button>
                         <button onClick={() => setStep(1)} className="w-full text-slate-500 py-2 font-bold hover:text-slate-800">
                             No, Edit Details
@@ -203,7 +203,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
                             <CheckCircle className="w-8 h-8" />
                         </div>
                         <h3 className="text-xl font-bold text-slate-900">Trip Added!</h3>
-                        <p className="text-slate-500 mt-2 text-sm">We are now monitoring this flight for price drops and delays.</p>
+                        <p className="text-slate-500 mt-2 text-sm">Periodic disruption monitoring and alert history are now enabled for this booked trip.</p>
                         <button onClick={handleClose} className="mt-6 text-slate-900 font-bold underline">
                             Return to Dashboard
                         </button>

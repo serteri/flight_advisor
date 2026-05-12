@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Plane, Sparkles } from 'lucide-react';
+import { FileText, Plus, Plane, Route, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
@@ -328,8 +328,8 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                 <div className="rounded-2xl border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 p-8 shadow-lg">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Unlock Premium Features</h3>
-                            <p className="text-slate-600 mb-4">Get real-time flight tracking, price alerts, and Flight Inspector with a 7-day free trial.</p>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Unlock Decision Tools</h3>
+                            <p className="text-slate-600 mb-4">Score itineraries, review advisor reports, and enable scheduled monitoring with a 7-day free trial.</p>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setBillingCycle('monthly')}
@@ -392,7 +392,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                             <Sparkles className="w-5 h-5 text-blue-500" />
                             <h2 className="text-2xl font-bold text-slate-900">Flight Inspector</h2>
                         </div>
-                        <p className="text-slate-500">Inspect flights before booking to see real-time pricing, historical delays, and smart recommendations.</p>
+                        <p className="text-slate-500">Analyze an itinerary before booking. Review route structure, connection risk, fare context, and advisor recommendations.</p>
                     </div>
 
                     {!showFlightInspector ? (
@@ -401,7 +401,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
                         >
                             <Sparkles className="w-5 h-5" />
-                            Start Flight Inspection
+                            Score an Itinerary
                         </button>
                     ) : (
                         <div className="space-y-4">
@@ -438,16 +438,26 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                         <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-slate-400">
                             <Plane className="w-6 h-6" />
                         </div>
-                        <h3 className="text-sm font-bold text-slate-900">{t('emptyTitle')}</h3>
-                        <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">
-                            {t('emptyDesc')}
-                        </p>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="text-emerald-600 text-sm font-bold hover:underline"
-                        >
-                            {t('addTripShort')}
-                        </button>
+                            <h3 className="text-sm font-bold text-slate-900">{t('emptyTitle')}</h3>
+                            <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">
+                                {t('emptyDesc')}
+                            </p>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                            >
+                                <Plus className="w-4 h-4" />
+                                {t('addTripShort')}
+                            </button>
+                            <Link
+                                href={`/${locale}/score-flight`}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                            >
+                                <FileText className="w-4 h-4" />
+                                View advisor reports
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid gap-6">
@@ -472,7 +482,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                                     <div className="text-right">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${trip.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             }`}>
-                                            {trip.status === 'ACTIVE' ? t('protected') : trip.status}
+                                            {trip.status === 'ACTIVE' ? t('monitored') : trip.status}
                                         </span>
                                     </div>
                                 </div>
@@ -492,7 +502,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                 {!hasPremium ? (
                     <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
                         <h3 className="text-lg font-bold text-slate-900">Premium Feature</h3>
-                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to track flights manually and see advanced scoring.</p>
+                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to track candidate itineraries and review advanced scoring.</p>
                         <Link
                             href={`/${locale}/pricing`}
                             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
@@ -501,8 +511,35 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                         </Link>
                     </div>
                 ) : trackedFlights.length === 0 ? (
-                    <div className="text-center py-8 opacity-60">
-                        <p>{t('noTrackedFlights')}</p>
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center flex flex-col items-center">
+                        <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-slate-400">
+                            <Route className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900">{t('trackedEmptyTitle')}</h3>
+                        <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">{t('noTrackedFlights')}</p>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                            <Link
+                                href={`/${locale}/score-flight`}
+                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+                            >
+                                <FileText className="w-4 h-4" />
+                                Score an itinerary
+                            </Link>
+                            <Link
+                                href={`/${locale}/score-flight`}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                            >
+                                <FileText className="w-4 h-4" />
+                                View advisor reports
+                            </Link>
+                            <Link
+                                href={`/${locale}/flight-search`}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                            >
+                                <Route className="w-4 h-4" />
+                                Track an itinerary
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">

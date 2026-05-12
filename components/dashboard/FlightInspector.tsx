@@ -125,8 +125,8 @@ export function FlightInspector({ locale }: FlightInspectorProps) {
             Flight Inspector
           </h2>
           <p className="text-slate-400">
-            Inspect any flight before booking to see real-time pricing,
-            historical delays, and booking recommendations.
+            Analyze a flight before booking to review route structure,
+            connection risk, fare context, and advisor recommendations.
           </p>
         </div>
 
@@ -198,9 +198,9 @@ export function FlightInspector({ locale }: FlightInspectorProps) {
           <div className="p-3 bg-blue-950/30 border border-blue-700/30 rounded-lg">
             <p className="text-xs text-blue-200">
               💡
-              <strong>Tip:</strong> Use this tool to verify flight reliability
-              before booking. We show historical delays, price trends, and
-              booking conditions to help you make informed decisions.
+              <strong>Tip:</strong> Use this tool to review itinerary risk
+              before booking. We show historical delay context, fare signals,
+              and booking conditions to help you make informed decisions.
             </p>
           </div>
         </div>
@@ -440,9 +440,9 @@ function FlightInspectionResult({
             </h3>
             <div className="space-y-3">
               <p className="text-sm text-slate-300">
-                After booking, click below to enable AI monitoring. We'll track
-                delays, price changes, and help you claim compensation if
-                needed.
+                After booking, click below to enable periodic monitoring. We'll
+                check for disruption signals and keep an alert history when
+                changes are detected.
               </p>
 
               {/* Optional PNR Input */}
@@ -478,11 +478,11 @@ function FlightInspectionResult({
                 {tracking ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Starting Tracking...
+                    Starting Monitoring...
                   </>
                 ) : (
                   <>
-                    ✓ I Booked This - Track for Delays
+                    I booked this - monitor trip
                   </>
                 )}
               </Button>
