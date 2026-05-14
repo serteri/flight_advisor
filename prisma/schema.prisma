@@ -598,6 +598,19 @@ model FlightLeg {
   @@index([regulationZone])
 }
 
+model ConnectionCache {
+  id           String   @id @default(cuid())
+  flightIdent  String
+  analysisDate DateTime @db.Date
+  historyData  Json
+  onTimeRate   Float
+  sampleSize   Int
+  expiresAt    DateTime
+
+  @@unique([flightIdent, analysisDate])
+  @@index([expiresAt])
+}
+
 // NOT: GuardianAlert tablosunu da güncellememiz gerekecek çünkü artık alarm
 // bir Trip'e değil, spesifik bir Segment'e (Uçağa) ait olabilir.
 model GuardianAlert {
