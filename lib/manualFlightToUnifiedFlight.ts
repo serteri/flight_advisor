@@ -11,6 +11,7 @@ import type {
     UnifiedFlight,
 } from '@/types/unifiedFlight';
 import { parseItineraryText } from '@/lib/itineraryTextParser';
+import { isForbiddenFakeFlightToken, normalizeFlightNumber } from '@/lib/parser/flightNumberValidation';
 
 const ISO_DATETIME_ERROR = 'Must be a valid ISO 8601 datetime';
 const IATA_ERROR = 'Must be a 3-letter IATA airport code';
@@ -62,16 +63,20 @@ const quickScoreInputSchema = z.object({
     cabin: z.enum(['economy', 'premium', 'business', 'first']).optional(),
 });
 
+const optionalTrimmedString = z.string().trim().optional().transform((value) => (value && value.length > 0 ? value : undefined));
+
+const optionalFlightNumberSchema = z.string().trim().optional().transform((value) => normalizeFlightNumber(value));
+
 const itinerarySegmentSchema = z.object({
     from: iataSchema,
     to: iataSchema,
     departureDateTime: isoDateTimeSchema,
     arrivalDateTime: isoDateTimeSchema,
-    airline: z.string().trim().min(1),
-    flightNumber: z.string().trim().min(1),
+    airline: optionalTrimmedString,
+    flightNumber: optionalFlightNumberSchema,
     aircraft: z.string().trim().min(1).optional(),
     marketedAirline: z.string().trim().min(1).optional(),
-    bookingClass: z.string().trim().min(1).max(4).optional(),
+    bookingClass: z.string().trim().max(4).optional().transform((value) => (value && value.length > 0 ? value : undefined)),
     tripDirection: z.enum(['OUTBOUND', 'INBOUND']).optional(),
 });
 
@@ -337,9 +342,24 @@ const isUnknownAirline = (value?: string): boolean => !value || /^UNKN$/i.test(v
 const isUnknownFlightNumber = (value?: string): boolean => !value || /^UNKNOWN\d+$/i.test(value.trim());
 
 const deriveAirlineFromFlightNumber = (flightNumber?: string): string | undefined => {
-    if (!flightNumber || isUnknownFlightNumber(flightNumber)) return undefined;
-    const match = flightNumber.toUpperCase().match(/^([A-Z]{2,3})\d{1,4}$/);
+    const normalized = normalizeFlightNumber(flightNumber);
+    if (!normalized || isUnknownFlightNumber(normalized)) return undefined;
+    const match = normalized.match(/^([A-Z0-9]{2})\d{1,4}$/);
     return match?.[1];
+};
+
+const internalFlightNumber = (value: string | undefined, index: number): string => {
+    return normalizeFlightNumber(value) || `UNKNOWN${index + 1}`;
+};
+
+const publicFlightNumber = (value?: string): string => {
+    if (!value || isUnknownFlightNumber(value) || isForbiddenFakeFlightToken(value)) return '';
+    return normalizeFlightNumber(value) || '';
+};
+
+const publicAirlineName = (value?: string, flightNumber?: string): string => {
+    const normalized = normalizeAirlineName(value, flightNumber);
+    return isUnknownAirline(normalized) ? '' : normalized;
 };
 
 const normalizeAirlineName = (value?: string, flightNumber?: string): string => {
@@ -569,9 +589,11 @@ const buildDetailedUnifiedFlight = (
             comfortNotes.push(`Connection at ${current.to} appears feasible (${layoverDuration} min).`);
         }
 
-        if (current.airline.trim().toUpperCase() !== next.airline.trim().toUpperCase()) {
+        const currentAirline = current.airline || '';
+        const nextAirline = next.airline || '';
+        if (currentAirline.trim().toUpperCase() !== nextAirline.trim().toUpperCase()) {
             selfTransferRiskScore += 1;
-            riskFlags.push(`Airline change ${current.airline} -> ${next.airline} may imply self-transfer risk.`);
+            riskFlags.push(`Airline change ${currentAirline || 'not detected'} -> ${nextAirline || 'not detected'} may imply self-transfer risk.`);
         }
     }
 
@@ -625,7 +647,7 @@ const buildDetailedUnifiedFlight = (
             ? 'MEDIUM'
             : 'LOW';
 
-    const airlineMix = assessAirlineMix(sortedSegments.map((s) => s.airline));
+    const airlineMix = assessAirlineMix(sortedSegments.map((s) => s.airline || 'UNKN'));
     if (airlineMix === 'SINGLE_CARRIER') {
         comfortNotes.push('Single-carrier itinerary improves operational consistency.');
     }
@@ -677,25 +699,30 @@ const buildDetailedUnifiedFlight = (
         ? outboundDurationMinutes + inboundDurationMinutes
         : totalDuration;
 
-    const unifiedSegments = sortedSegments.map((segment, index): FlightSegment => ({
-        from: segment.from,
-        to: segment.to,
-        departureTime: segment.departureDateTime,
-        arrivalTime: segment.arrivalDateTime,
-        duration: segmentDurations[index] || 0,
-        carrier: deriveCarrierCode({
-            flightNumber: segment.flightNumber,
-            airline: segment.airline,
-            marketedAirline: segment.marketedAirline,
-        }),
-        marketingCarrier: deriveCarrierCode({
-            flightNumber: segment.flightNumber,
-            airline: segment.marketedAirline || segment.airline,
-            marketedAirline: segment.marketedAirline,
-        }),
-        flightNumber: segment.flightNumber,
-        aircraft: segment.aircraft,
-    }));
+    const unifiedSegments = sortedSegments.map((segment, index): FlightSegment => {
+        const flightNumber = internalFlightNumber(segment.flightNumber, index);
+        return {
+            from: segment.from,
+            to: segment.to,
+            departureTime: segment.departureDateTime,
+            arrivalTime: segment.arrivalDateTime,
+            duration: segmentDurations[index] || 0,
+            carrier: deriveCarrierCode({
+                flightNumber,
+                airline: segment.airline,
+                marketedAirline: segment.marketedAirline,
+            }),
+            marketingCarrier: deriveCarrierCode({
+                flightNumber,
+                airline: segment.marketedAirline || segment.airline,
+                marketedAirline: segment.marketedAirline,
+            }),
+            flightNumber,
+            aircraft: segment.aircraft,
+        };
+    });
+
+    const publicFirstFlightNumber = publicFlightNumber(firstSegment.flightNumber);
 
     const assessment: InputAssessment = {
         mode: 'detailed',
@@ -745,9 +772,9 @@ const buildDetailedUnifiedFlight = (
             departureTime: firstSegment.departureDateTime,
             arrivalTime: lastSegment.arrivalDateTime,
             duration: totalDuration,
-            airline: normalizeAirlineName(firstSegment.airline, firstSegment.flightNumber),
-            operatingAirline: normalizeAirlineName(firstSegment.airline, firstSegment.flightNumber),
-            flightNumber: firstSegment.flightNumber,
+            airline: normalizeAirlineName(firstSegment.airline, publicFirstFlightNumber),
+            operatingAirline: normalizeAirlineName(firstSegment.airline, publicFirstFlightNumber),
+            flightNumber: publicFirstFlightNumber || internalFlightNumber(firstSegment.flightNumber, 0),
             stops,
             cabinClass: normalizeCabinClass(input.cabin),
             segments: unifiedSegments as [FlightSegment, ...FlightSegment[]],
@@ -766,8 +793,8 @@ const buildDetailedUnifiedFlight = (
             to: segment.to,
             departureDateTime: segment.departureDateTime,
             arrivalDateTime: segment.arrivalDateTime,
-            airline: segment.airline,
-            flightNumber: segment.flightNumber,
+            airline: publicAirlineName(segment.airline, segment.flightNumber),
+            flightNumber: publicFlightNumber(segment.flightNumber),
             aircraft: segment.aircraft,
             marketedAirline: segment.marketedAirline
                 ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
@@ -870,7 +897,7 @@ const inferMissingSegmentTimes = (segments: Array<{
 const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionResult => {
     if (input.source === 'manual_override' && input.segments && input.segments.length > 0) {
         const normalizedSegments = input.segments.map((segment, index) => {
-            const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
+            const flightNumber = internalFlightNumber(segment.flightNumber, index);
             return {
                 from: segment.from,
                 to: segment.to,
@@ -910,8 +937,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             ...base,
             extractedSegments: base.extractedSegments.map((segment) => ({
                 ...segment,
-                airline: /^UNKN$/i.test(segment.airline) ? '' : normalizeAirlineName(segment.airline, segment.flightNumber),
-                flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
+                airline: publicAirlineName(segment.airline, segment.flightNumber),
+                flightNumber: publicFlightNumber(segment.flightNumber),
                 marketedAirline: segment.marketedAirline
                     ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
                     : (!isUnknownAirline(segment.airline) ? normalizeAirlineName(segment.airline, segment.flightNumber) : undefined),
@@ -955,8 +982,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
     const normalizedSegments = sourceSegments.map((segment, index) => {
         const departureDateTime = normalizedTimes.normalized[index].departureDateTime;
         const arrivalDateTime = normalizedTimes.normalized[index].arrivalDateTime;
-        const airline = normalizeAirlineName(segment.airline || deriveAirlineFromFlightNumber(segment.flightNumber), segment.flightNumber);
-        const flightNumber = segment.flightNumber || `UNKNOWN${index + 1}`;
+        const flightNumber = internalFlightNumber(segment.flightNumber, index);
+        const airline = normalizeAirlineName(segment.airline || deriveAirlineFromFlightNumber(flightNumber), flightNumber);
 
         return {
             from: segment.from,
@@ -993,10 +1020,10 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
             normalizationWarnings.push(`Segment ${index + 1} missing valid date context; FALLBACK_DATE timeline applied.`);
         }
         if (!source?.flightNumber) {
-            normalizationWarnings.push(`Segment ${index + 1} missing flight number; placeholder assigned.`);
+            normalizationWarnings.push(`Segment ${index + 1} missing flight number; internal placeholder withheld from user-facing output.`);
         }
         if (isUnknownAirline(segment.airline)) {
-            normalizationWarnings.push(`Segment ${index + 1} missing airline; placeholder assigned.`);
+            normalizationWarnings.push(`Segment ${index + 1} missing airline; internal placeholder withheld from user-facing output.`);
         }
 
         if (!segment.marketedAirline && !isUnknownAirline(segment.airline)) {
@@ -1071,8 +1098,8 @@ const buildPasteUnifiedFlight = (input: PasteScoreInput): ItineraryConversionRes
         ...base,
         extractedSegments: base.extractedSegments.map((segment) => ({
             ...segment,
-            airline: /^UNKN$/i.test(segment.airline) ? '' : normalizeAirlineName(segment.airline, segment.flightNumber),
-            flightNumber: /^UNKNOWN\d+$/i.test(segment.flightNumber) ? '' : segment.flightNumber,
+            airline: publicAirlineName(segment.airline, segment.flightNumber),
+            flightNumber: publicFlightNumber(segment.flightNumber),
             marketedAirline: segment.marketedAirline
                 ? normalizeAirlineName(segment.marketedAirline, segment.flightNumber)
                 : (!isUnknownAirline(segment.airline) ? normalizeAirlineName(segment.airline, segment.flightNumber) : undefined),

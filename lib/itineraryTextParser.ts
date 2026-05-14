@@ -1,3 +1,5 @@
+import { normalizeFlightNumber, normalizeFlightNumberParts } from '@/lib/parser/flightNumberValidation';
+
 type ParsedSegment = {
     from: string;
     to: string;
@@ -125,6 +127,22 @@ const isInvalidFlightPrefix = (value?: string): boolean => (
     || isTimezoneToken(value)
 );
 
+const validatedFlightNumber = (prefix?: string, digits?: string): string | undefined => {
+    if (!prefix || !digits) return undefined;
+    return normalizeFlightNumberParts(prefix, digits);
+};
+const NOT_AIRPORT_CODES = new Set([
+    'AUD', 'USD', 'EUR', 'GBP', 'CAD', 'TRY', 'NZD', 'JPY', 'CHF', 'SGD',
+    'WAY', 'ONE', 'THE', 'AND', 'FOR', 'TOO', 'DEP', 'ARR', 'BAG', 'ECO',
+]);
+
+const detectTripIntent = (text: string): 'ONE_WAY' | 'ROUND_TRIP' | 'MULTI_CITY' | 'UNKNOWN' => {
+    if (/\b(round\s*trip|return\s+trip|inbound\s+flight|outbound\s+flight)\b/i.test(text)) return 'ROUND_TRIP';
+    if (/\b(multi[-\s]?city|open[-\s]?jaw)\b/i.test(text)) return 'MULTI_CITY';
+    if (/\b(one[-\s]?way|single\s+trip)\b/i.test(text)) return 'ONE_WAY';
+    return 'UNKNOWN';
+};
+
 const parseNumber = (raw: string): number | undefined => {
     const cleaned = raw.replace(/\s/g, '');
     const hasDot = cleaned.includes('.');
@@ -247,7 +265,11 @@ const parseDateTimesFromContext = (context: string, fallbackDate?: Date): { depa
     const seen = new Set<string>();
     const dtMatches = context.match(ISO_DATE_TIME_REGEX) || [];
     for (const value of dtMatches) {
-        const parsed = Date.parse(value.replace(' ', 'T'));
+        const normalizedValue = value.replace(' ', 'T');
+        const withZone = /(Z|[+\-]\d{2}:?\d{2})$/i.test(normalizedValue)
+            ? normalizedValue
+            : `${normalizedValue}Z`;
+        const parsed = Date.parse(withZone);
         if (Number.isFinite(parsed)) {
             const iso = new Date(parsed).toISOString();
             if (!seen.has(iso)) {
@@ -427,7 +449,7 @@ const normalizeAirline = (context: string, flightCode?: string): string | undefi
     for (const [name, code] of Object.entries(AIRLINE_NAME_TO_CODE)) {
         if (normalized.includes(name)) return code;
     }
-    if (flightCode && /^[A-Z]{2,3}$/.test(flightCode) && !isInvalidFlightPrefix(flightCode)) return flightCode;
+    if (flightCode && /^[A-Z0-9]{2}$/.test(flightCode) && !isInvalidFlightPrefix(flightCode)) return flightCode;
     return undefined;
 };
 
@@ -439,6 +461,11 @@ const normalizeDirection = (line: string): 'OUTBOUND' | 'INBOUND' | undefined =>
     if (normalized.includes('OUTBOUND FLIGHT')) return 'OUTBOUND';
     if (normalized.includes('INBOUND FLIGHT')) return 'INBOUND';
     return undefined;
+};
+
+const isLikelyAirportCode = (code?: string): boolean => {
+    const normalized = (code || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(normalized) && !NOT_AIRPORT_CODES.has(normalized);
 };
 
 const extractLabeledText = (lines: string[], start: number, end: number, label: string): string | undefined => {
@@ -499,6 +526,7 @@ const extractLabeledDateTime = (lines: string[], start: number, end: number, lab
 const extractRouteCodesFromLine = (line: string): { from: string; to: string } | undefined => {
     const routeCodes = Array.from(line.matchAll(/\(([A-Z]{3})\)/g)).map((match) => match[1].toUpperCase());
     if (routeCodes.length >= 2) {
+        if (!isLikelyAirportCode(routeCodes[0]) || !isLikelyAirportCode(routeCodes[1])) return undefined;
         return {
             from: routeCodes[0],
             to: routeCodes[1],
@@ -507,6 +535,7 @@ const extractRouteCodesFromLine = (line: string): { from: string; to: string } |
 
     const directRoute = line.match(/\b([A-Z]{3})\b\s*(?:->|→|to|\|)\s*\b([A-Z]{3})\b/i);
     if (directRoute) {
+        if (!isLikelyAirportCode(directRoute[1]) || !isLikelyAirportCode(directRoute[2])) return undefined;
         return {
             from: directRoute[1].toUpperCase(),
             to: directRoute[2].toUpperCase(),
@@ -684,26 +713,29 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
         let toCode: string | undefined;
         let blockStart = routeNearFlight?.index ?? i;
 
-        const previousAirport = findNearestAirportBefore(lines, i - 1);
-        const nextAirport = findNearestAirportAfter(lines, i + 1);
         if (routeNearFlight) {
             fromCode = routeNearFlight.from;
             toCode = routeNearFlight.to;
-        } else if (previousAirport && nextAirport) {
-            fromCode = previousAirport.code;
-            toCode = nextAirport.code;
-            blockStart = previousAirport.index;
         } else {
             const blockLines = lines.slice(i, blockEnd + 1);
             const departureAirportText = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Depart:');
             const arrivalAirportText = extractLabeledText(blockLines, 0, blockLines.length - 1, 'Arrive:');
             const inferredFrom = inferAirportCodeFromText(departureAirportText);
             const inferredTo = inferAirportCodeFromText(arrivalAirportText);
-            if (!inferredFrom || !inferredTo) {
-                continue;
+            if (inferredFrom && inferredTo) {
+                fromCode = inferredFrom;
+                toCode = inferredTo;
+            } else {
+                const previousAirport = findNearestAirportBefore(lines, i - 1);
+                const nextAirport = findNearestAirportAfter(lines, i + 1);
+                if (previousAirport && nextAirport) {
+                    fromCode = previousAirport.code;
+                    toCode = nextAirport.code;
+                    blockStart = previousAirport.index;
+                } else {
+                    continue;
+                }
             }
-            fromCode = inferredFrom;
-            toCode = inferredTo;
         }
 
         const direction = currentDirection;
@@ -719,8 +751,8 @@ const extractConfirmationSegments = (lines: string[], fallbackDate?: Date): Pars
             arrival = new Date(Date.parse(arrival) + 24 * 60 * 60 * 1000).toISOString();
         }
         const flightCode = flightMatch[1].toUpperCase();
-        if (isInvalidFlightPrefix(flightCode)) continue;
-        const flightNumber = `${flightCode}${flightMatch[2]}`;
+        const flightNumber = validatedFlightNumber(flightCode, flightMatch[2]);
+        if (!flightNumber) continue;
         const airline = normalizeAirline(blockText, flightCode) || flightCode;
 
         const dedupeKey = [
@@ -848,8 +880,9 @@ const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): Parse
             if (airlineFlightMatch) {
                 const prefix = airlineFlightMatch[2].toUpperCase();
                 const digits = airlineFlightMatch[3];
-                if (!isInvalidFlightPrefix(prefix)) {
-                    flightNumber = `${prefix}${digits}`;
+                const normalizedFlight = validatedFlightNumber(prefix, digits);
+                if (normalizedFlight) {
+                    flightNumber = normalizedFlight;
                     airlineName = airlineFlightMatch[1].trim();
                     airlineCode = normalizeAirline(candidateLine, prefix) || prefix;
                     break;
@@ -860,8 +893,9 @@ const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): Parse
             if (pipeFlightMatch) {
                 const prefix = pipeFlightMatch[1].toUpperCase();
                 const digits = pipeFlightMatch[2];
-                if (!isInvalidFlightPrefix(prefix)) {
-                    flightNumber = `${prefix}${digits}`;
+                const normalizedFlight = validatedFlightNumber(prefix, digits);
+                if (normalizedFlight) {
+                    flightNumber = normalizedFlight;
                     const airlineContext = i - lookback - 1 >= 0 ? lines[i - lookback - 1].trim() : '';
                     airlineCode = normalizeAirline(airlineContext, prefix) || prefix;
                     break;
@@ -872,8 +906,9 @@ const extractGoogleFlightsBlocks = (lines: string[], fallbackDate?: Date): Parse
             if (looseTokenMatch) {
                 const prefix = looseTokenMatch[1].toUpperCase();
                 const digits = looseTokenMatch[2];
-                if (!isInvalidFlightPrefix(prefix)) {
-                    flightNumber = `${prefix}${digits}`;
+                const normalizedFlight = validatedFlightNumber(prefix, digits);
+                if (normalizedFlight) {
+                    flightNumber = normalizedFlight;
                     airlineCode = normalizeAirline(candidateLine, prefix) || prefix;
                     break;
                 }
@@ -917,6 +952,10 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
         while (match) {
             const from = match[1].toUpperCase();
             const to = match[2].toUpperCase();
+            if (!isLikelyAirportCode(from) || !isLikelyAirportCode(to)) {
+                match = regex.exec(line);
+                continue;
+            }
             const matchStart = typeof match.index === 'number' ? match.index : 0;
             const key = `${lineIndex}|${matchStart}|${from}|${to}`;
             if (seenKeys.has(key)) {
@@ -933,8 +972,8 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
             const flight = flightFromLine || flightFromContext;
 
             const flightCode = flight?.[1]?.toUpperCase();
-            const validFlightCode = flightCode && !isInvalidFlightPrefix(flightCode) ? flightCode : undefined;
-            const flightNumber = flight && validFlightCode ? `${validFlightCode}${flight[2]}` : undefined;
+            const flightNumber = flight ? validatedFlightNumber(flightCode, flight[2]) : undefined;
+            const validFlightCode = flightNumber ? flightNumber.match(/^([A-Z0-9]{2})/)?.[1] : undefined;
             const airline = normalizeAirline(context, validFlightCode);
             const lineDate = extractFirstDateContext(line) || fallbackDate;
             const dateTimesFromLine = parseDateTimesFromContext(line, lineDate);
@@ -971,7 +1010,9 @@ const extractSegments = (text: string, fallbackDate?: Date): ParsedSegment[] => 
     }
 
     // Only run generic line parsers for lines that weren't already captured
-    const capturedRoutes = new Set(segments.map((s) => `${s.from}|${s.to}`));
+    const capturedRoutes = new Set(segments
+        .filter((s) => s.departure || s.arrival)
+        .map((s) => `${s.from}|${s.to}`));
     for (let i = 0; i < lines.length; i += 1) {
         const routeOnLine = extractRouteCodesFromLine(lines[i]);
         if (routeOnLine && capturedRoutes.has(`${routeOnLine.from}|${routeOnLine.to}`)) continue;
@@ -1009,6 +1050,33 @@ const sortSegmentsChronologically = (segments: ParsedSegment[]): ParsedSegment[]
     if (!allHaveDeparture) return segments;
 
     return [...segments].sort((a, b) => Date.parse(a.departure!) - Date.parse(b.departure!));
+};
+
+const preferCompleteDuplicateSegments = (segments: ParsedSegment[]): ParsedSegment[] => {
+    const byRouteAndFlight = new Map<string, ParsedSegment>();
+
+    const score = (segment: ParsedSegment): number => {
+        return (segment.departure ? 2 : 0)
+            + (segment.arrival ? 2 : 0)
+            + (segment.flightNumber ? 1 : 0)
+            + (segment.airline ? 1 : 0)
+            + (segment.tripDirection ? 1 : 0);
+    };
+
+    for (const segment of segments) {
+        const key = [
+            segment.from,
+            segment.to,
+            segment.flightNumber || '',
+            segment.tripDirection || '',
+        ].join('|');
+        const existing = byRouteAndFlight.get(key);
+        if (!existing || score(segment) > score(existing)) {
+            byRouteAndFlight.set(key, segment);
+        }
+    }
+
+    return Array.from(byRouteAndFlight.values());
 };
 
 const dropCollapsedSummarySegments = (segments: ParsedSegment[]): ParsedSegment[] => {
@@ -1089,7 +1157,8 @@ const inferTripGrouping = (segments: ParsedSegment[]): { grouped: ParsedSegment[
 const withSegmentProvenance = (segments: ParsedSegment[]): ParsedSegment[] => {
     return segments.map((segment) => {
         const isExplicitDate = (value?: string) => !!value && /^\d{4}-\d{2}-\d{2}T/.test(value);
-        const flightVerified = !!segment.flightNumber && /^[A-Z]{2}\d{1,4}$/i.test(segment.flightNumber);
+        const normalizedFlight = normalizeFlightNumber(segment.flightNumber);
+        const flightVerified = !!normalizedFlight;
         const airlineVerified = !!segment.airline && (Object.values(AIRLINE_NAME_TO_CODE).includes(segment.airline.toUpperCase()) || /^[A-Z]{2,3}$/.test(segment.airline));
 
         return {
@@ -1178,14 +1247,23 @@ export function parseItineraryText(rawText: string): ParsedItinerary {
     const normalizedForSegmentation = normalizeFlattenedConfirmationText(text);
 
     const warnings: string[] = [];
+    const tripIntent = detectTripIntent(text);
     const baseDate = extractFirstDateContext(text);
     const extractedSegments = extractSegments(normalizedForSegmentation, baseDate);
-    const continuityStabilized = dropCollapsedSummarySegments(sortSegmentsChronologically(extractedSegments));
+    const continuityStabilized = dropCollapsedSummarySegments(sortSegmentsChronologically(preferCompleteDuplicateSegments(extractedSegments)));
     const grouping = inferTripGrouping(continuityStabilized);
     const segments = withSegmentProvenance(grouping.grouped);
 
     if (!segments.length) {
         warnings.push('Could not parse any route segment. Paste text with explicit route (e.g., SYD -> SIN).');
+    }
+
+    if (tripIntent === 'ROUND_TRIP' && grouping.tripType !== 'ROUND_TRIP') {
+        warnings.push('Trip text indicates round trip, but inbound grouping could not be verified. Review extracted segments before scoring.');
+    }
+
+    if (tripIntent === 'UNKNOWN' && grouping.tripType === 'ONE_WAY' && segments.length > 1) {
+        warnings.push('Trip type not explicitly detected; treating extracted chain as partial one-way until reviewed.');
     }
 
     const { incompleteCount } = validateSegments(segments, warnings);

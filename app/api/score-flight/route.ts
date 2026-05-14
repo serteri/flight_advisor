@@ -12,6 +12,7 @@ import { applyAdvancedFlightScoring, applyRouteIntelligenceFeatures } from '@/li
 import { buildParseAudit, runSelfCheckLayer, type ParseAudit } from '@/lib/audit/selfCheckLayer';
 import { recordParserMetric } from '@/services/healthMetrics';
 import type { ParserMetricEvent } from '@/types/operatorHealth';
+import { isForbiddenFakeFlightToken } from '@/lib/parser/flightNumberValidation';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 type ReliabilityTier = 'HIGH_RELIABILITY' | 'MODERATE_RELIABILITY' | 'LIMITED_RELIABILITY' | 'PRELIMINARY_ESTIMATE';
@@ -29,6 +30,16 @@ type WarningSignals = {
     chronologyIssues: number;
     partialExtraction: number;
     severityPenalty: number;
+};
+
+const publicSegmentFlightNumber = (value?: string): string => {
+    if (!value || /^UNKNOWN\d+$/i.test(value) || isForbiddenFakeFlightToken(value)) return '';
+    return value;
+};
+
+const publicSegmentAirline = (value?: string): string => {
+    if (!value || /^UNK(N)?$/i.test(value)) return '';
+    return value;
 };
 
 type RecommendationExplanation = {
@@ -1157,6 +1168,7 @@ export async function POST(request: NextRequest) {
             recommendationExplanation: finalRecommendationExplanation,
             passengerPricingContext,
         });
+        const allowPremiumReport = !(assessment.promptForDetails && (assessment.parseConfidence ?? 1) < 0.45);
 
         return NextResponse.json({
             ...enforcedFlight,
@@ -1207,8 +1219,8 @@ export async function POST(request: NextRequest) {
                     to: segment.to,
                     departureDateTime: segment.departureTime,
                     arrivalDateTime: segment.arrivalTime,
-                    airline: segment.marketingCarrier || segment.carrier,
-                    flightNumber: segment.flightNumber,
+                    airline: publicSegmentAirline(segment.marketingCarrier || segment.carrier),
+                    flightNumber: publicSegmentFlightNumber(segment.flightNumber),
                     aircraft: segment.aircraft,
                 })),
             },
@@ -1248,10 +1260,12 @@ export async function POST(request: NextRequest) {
                 dataSourceDisclosure: scoreTrust.dataSourceDisclosure,
                 whyReliabilityIsLimited: scoreTrust.whyReliabilityIsLimited,
             },
-            premiumReport,
+            premiumReport: allowPremiumReport ? premiumReport : undefined,
             needsReview: assessment.promptForDetails || (assessment.parseWarnings?.length || 0) > 0,
             accuracyHint: payload.mode === 'quick'
                 ? 'Switch to Detailed Itinerary Score to improve reliability and verification coverage.'
+                : !allowPremiumReport
+                    ? 'Review extracted itinerary before scoring. Premium report is withheld until parser reliability improves.'
                 : assessment.promptForDetails
                     ? 'Parsing was incomplete. Review and edit extracted segments for better scoring accuracy.'
                 : undefined,
