@@ -451,19 +451,28 @@ enum ClaimStatus {
 
 model CompensationClaim {
   id              String      @id @default(cuid())
-  monitorId       String
-  type            ClaimType
+  monitorId       String?
+  flightLegId     String?     @unique
+  type            ClaimType?
   amount          Float?
   currency        String      @default("EUR")
   status          ClaimStatus @default(DRAFT)
   details         Json?       // detailed reason, flight context
+  eligibilityStatus String?
+  regulation      String?
+  estimatedAmount Int?
+  delayMinutes    Int?
+  calculatedAt    DateTime    @default(now())
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  monitor         Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitor         Monitor?    @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  flightLeg       FlightLeg?  @relation(fields: [flightLegId], references: [id], onDelete: Cascade)
 
   @@index([monitorId])
+  @@index([flightLegId])
+  @@index([eligibilityStatus])
 }
 
 // ----------------------------
@@ -507,6 +516,7 @@ model MonitoredTrip {
   // Relationships
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   segments        FlightSegment[]
+  flightLegs      FlightLeg[]
   passengers      Passenger[]
   alerts          GuardianAlert[]
   alertEvents     AlertEvent[]
@@ -562,6 +572,30 @@ model FlightSegment {
   trip          MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@index([tripId])
+}
+
+model FlightLeg {
+  id              String   @id @default(cuid())
+  tripId          String
+  flightNumber    String
+  origin          String
+  destination     String
+  scheduledDep    DateTime
+  scheduledArr    DateTime
+  actualDep       DateTime?
+  actualArr       DateTime?
+  carrier         String
+  distanceKm      Int?
+  regulationZone  String
+  createdAt       DateTime @default(now())
+
+  trip            MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  compensationClaim CompensationClaim?
+
+  @@index([tripId])
+  @@index([origin, destination])
+  @@index([flightNumber, scheduledDep])
+  @@index([regulationZone])
 }
 
 // NOT: GuardianAlert tablosunu da güncellememiz gerekecek çünkü artık alarm
