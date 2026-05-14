@@ -10,6 +10,7 @@
     "lint": "eslint",
     "check-env": "npx tsx scripts/check_env.ts",
     "test-sky-resolver": "npx tsx scripts/test_sky_resolver.ts",
+    "test:report-pdf": "npx tsx scripts/report_pdf_smoke.ts",
     "test:alert-infra": "npx tsx scripts/alert_infra_smoke.ts",
     "worker": "npx tsx scripts/start-worker.ts",
     "scheduler": "npx tsx workers/scheduler.ts",

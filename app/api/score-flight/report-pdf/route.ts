@@ -3,6 +3,8 @@ import { z, ZodError } from 'zod';
 
 import { generateItineraryAdvisorPDF } from '@/services/reports/itineraryPdf';
 
+export const runtime = 'nodejs';
+
 const reportSectionSchema = z.object({
     title: z.string().min(1),
     summary: z.string().min(1),
@@ -10,7 +12,7 @@ const reportSectionSchema = z.object({
 });
 
 const payloadSchema = z.object({
-    decision: z.enum(['BUY', 'WAIT', 'WATCH']).optional(),
+    decision: z.enum(['BUY', 'WAIT', 'WATCH']),
     generatedAt: z.string().optional(),
     scoreTrust: z.object({
         reliabilityLabel: z.string().optional(),
@@ -21,7 +23,7 @@ const payloadSchema = z.object({
             priceInput: z.string().optional(),
             baggageInput: z.string().optional(),
         }).optional(),
-    }).optional(),
+    }),
     trackingPayload: z.object({
         trip: z.object({
             origin: z.string().optional(),
@@ -42,7 +44,7 @@ const payloadSchema = z.object({
             flightNumber: z.string().optional(),
             aircraft: z.string().optional(),
         })).optional(),
-    }).optional(),
+    }),
     premiumReport: z.object({
         executiveSummary: reportSectionSchema,
         tripOverview: reportSectionSchema,
@@ -62,8 +64,21 @@ const payloadSchema = z.object({
 
 export async function POST(request: NextRequest) {
     try {
-        const payload = payloadSchema.parse(await request.json());
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json({
+                error: 'Invalid JSON payload',
+                issues: [{ path: 'body', message: 'Request body must be valid JSON.' }],
+            }, { status: 400 });
+        }
+
+        const payload = payloadSchema.parse(body);
         const pdfBuffer = await generateItineraryAdvisorPDF(payload);
+        if (!pdfBuffer.byteLength) {
+            throw new Error('PDF renderer returned an empty buffer');
+        }
 
         const origin = payload.trackingPayload?.trip?.origin || 'TRIP';
         const destination = payload.trackingPayload?.trip?.destination || 'REPORT';
