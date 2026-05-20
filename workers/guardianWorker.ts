@@ -744,5 +744,7 @@ export async function processFlightMonitoring() {
     } catch (error) {
         console.error("❌ [GUARDIAN WORKER] Error:", error);
         return { success: false, error };
+    } finally {
+        await prisma.$disconnect();
     }
 }

@@ -4,6 +4,7 @@
  * Kept for backward compatibility with old external triggers.
  */
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { processFlightMonitoring } from '@/workers/guardianWorker';
 
 export async function GET(request: Request) {
@@ -13,8 +14,11 @@ export async function GET(request: Request) {
 
     console.log("⏱️ Cron Job Triggered: Guardian Sync");
 
-    // Auto-run the worker
-    const result = await processFlightMonitoring();
-
-    return NextResponse.json(result);
+    try {
+        // Auto-run the worker
+        const result = await processFlightMonitoring();
+        return NextResponse.json(result);
+    } finally {
+        await prisma.$disconnect();
+    }
 }

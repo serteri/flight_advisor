@@ -118,5 +118,7 @@ export async function GET(request: Request) {
             { error: 'Trial reminder failed', details: String(error) },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }

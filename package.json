@@ -14,7 +14,9 @@
     "test:alert-infra": "npx tsx scripts/alert_infra_smoke.ts",
     "worker": "npx tsx scripts/start-worker.ts",
     "scheduler": "npx tsx workers/scheduler.ts",
-    "seed:flights": "npx tsx scripts/run-daily-searches.ts"
+    "seed:flights": "npx tsx scripts/run-daily-searches.ts",
+    "cleanup:legacy-data:dry": "npx tsx scripts/cleanup_legacy_flight_data.ts --dry-run",
+    "cleanup:legacy-data": "npx tsx scripts/cleanup_legacy_flight_data.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

@@ -2,6 +2,7 @@
 import { processFlightMonitoring } from "@/workers/guardianWorker";
 import { processPendingAlertRetries } from "@/services/notifications/alertRetryWorker";
 import { expireDueAlertEvents } from "@/lib/alertLifecycle";
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -90,6 +91,8 @@ export async function GET(request: NextRequest) {
             },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }
 
@@ -152,5 +155,7 @@ export async function POST(request: NextRequest) {
             { error: error?.message || "Unknown error" },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }

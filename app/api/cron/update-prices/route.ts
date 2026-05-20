@@ -174,5 +174,7 @@ export async function GET(request: Request) {
             { error: 'Price update failed', details: String(error) },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }
