@@ -2,15 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { parseBookingLikeInput } from '@/lib/parser/bookingTextParser';
+import { parseBookingLikeInput } from '@/lib/parser/bookingParser';
 import { autoCreateMonitoredTripFromParsedBooking } from '@/services/guardian/inboxAutoTrack';
 
 type EmailIngestPayload = {
+    userId?: string;
     subject?: string;
     body?: string;
+    text?: string;
+    html?: string;
     from?: string;
     rawText?: string;
+    structured?: Record<string, unknown>;
     metadata?: Record<string, unknown>;
+};
+
+const htmlToText = (html?: string): string => {
+    if (!html || typeof html !== 'string') return '';
+    return html
+        .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
 const extractEmail = (from?: string): string | null => {
@@ -46,19 +62,46 @@ const stripForwardingBoilerplate = (value: string): string => {
 
 const normalizeEmailInput = (payload: EmailIngestPayload) => {
     const cleanSubject = stripForwardPrefix(String(payload.subject || ''));
-    const cleanBody = stripForwardingBoilerplate(String(payload.body || ''));
-    const cleanRawText = stripForwardingBoilerplate(String(payload.rawText || ''));
+    const cleanBody = stripForwardingBoilerplate(String(payload.body || payload.text || ''));
+    const cleanRawText = stripForwardingBoilerplate(String(payload.rawText || htmlToText(payload.html) || ''));
+
+    const structuredPayload = payload.structured && typeof payload.structured === 'object'
+        ? payload.structured
+        : payload.metadata && typeof payload.metadata === 'object'
+            ? payload.metadata
+            : undefined;
 
     return {
         subject: cleanSubject,
         body: cleanBody,
         rawText: cleanRawText,
-        structured: payload.metadata,
+        structured: structuredPayload,
     };
 };
 
-const resolveUserId = async (requestFrom: string | undefined, sessionUserId?: string) => {
+const extractBearerToken = (value: string | null): string | null => {
+    if (!value) return null;
+    if (!value.startsWith('Bearer ')) return null;
+    return value.slice('Bearer '.length).trim() || null;
+};
+
+const isInboundAuthorized = (request: NextRequest): boolean => {
+    const configuredSecret = process.env.EMAIL_INGEST_SECRET || process.env.CRON_SECRET;
+    if (!configuredSecret) return false;
+
+    const secretHeader = request.headers.get('x-email-ingest-secret') || request.headers.get('x-webhook-secret');
+    const bearerToken = extractBearerToken(request.headers.get('authorization'));
+
+    return secretHeader === configuredSecret || bearerToken === configuredSecret;
+};
+
+const resolveUserId = async (
+    requestFrom: string | undefined,
+    payloadUserId?: string,
+    sessionUserId?: string,
+) => {
     if (sessionUserId) return sessionUserId;
+    if (payloadUserId) return payloadUserId;
 
     const email = extractEmail(requestFrom);
     if (!email) return null;
@@ -73,8 +116,13 @@ const resolveUserId = async (requestFrom: string | undefined, sessionUserId?: st
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
         const payload = (await request.json()) as EmailIngestPayload;
+        const inboundAuthorized = isInboundAuthorized(request);
+        const session = inboundAuthorized ? null : await auth();
+
+        if (!inboundAuthorized && !session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const normalized = normalizeEmailInput(payload || {});
         const parseResult = parseBookingLikeInput(normalized);
@@ -103,7 +151,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const userId = await resolveUserId(payload?.from, session?.user?.id);
+        const payloadUserId = typeof payload?.userId === 'string'
+            ? payload.userId
+            : typeof normalized.structured?.userId === 'string'
+                ? normalized.structured.userId
+                : undefined;
+
+        const userId = await resolveUserId(payload?.from, payloadUserId, session?.user?.id);
         if (!userId) {
             return NextResponse.json({
                 success: true,
@@ -133,5 +187,7 @@ export async function POST(request: NextRequest) {
             { error: 'Failed to ingest email payload' },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }

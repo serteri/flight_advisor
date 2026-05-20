@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
-import { parseBookingLikeInput } from '@/lib/parser/bookingTextParser';
+import { parseBookingLikeInput } from '@/lib/parser/bookingParser';
 import { autoCreateMonitoredTripFromParsedBooking } from '@/services/guardian/inboxAutoTrack';
 
 export async function POST(request: NextRequest) {
