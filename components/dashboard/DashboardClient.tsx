@@ -13,8 +13,20 @@ import { WelcomeBanner } from '@/components/onboarding/WelcomeBanner';
 import { useSession } from 'next-auth/react';
 
 interface DashboardClientProps {
-    trips: Array<Record<string, unknown>>;
-    trackedFlights: Array<Record<string, unknown>>;
+    trips: Array<{
+        id: string | number;
+        origin?: string;
+        destination?: string;
+        pnr?: string;
+        departureDate?: string | Date;
+        flightNumber?: string;
+        status?: string;
+        [key: string]: unknown;
+    }>;
+    trackedFlights: Array<{
+        id: string | number;
+        [key: string]: unknown;
+    }>;
     showFirstTimeOnboarding: boolean;
     user: {
         id?: string;
@@ -475,27 +487,27 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                 ) : (
                     <div className="grid gap-6">
                         {trips.map((trip) => (
-                            <Link href={`/dashboard/guardian/${trip.id}`} key={trip.id}>
+                            <Link href={`/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div className="p-3 bg-slate-100 rounded-lg text-slate-600 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                                             <Plane className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-emerald-700 transition-colors">{trip.origin} ➝ {trip.destination}</h3>
+                                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-emerald-700 transition-colors">{trip.origin || '-'} ➝ {trip.destination || '-'}</h3>
                                             <div className="flex items-center gap-2 text-sm text-slate-500">
-                                                <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{trip.pnr}</span>
+                                                <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{trip.pnr || '-'}</span>
                                                 <span>•</span>
-                                                <span>{new Date(trip.departureDate).toLocaleDateString('tr-TR')}</span>
+                                                <span>{trip.departureDate ? new Date(trip.departureDate).toLocaleDateString('tr-TR') : '-'}</span>
                                                 <span>•</span>
-                                                <span>{trip.flightNumber}</span>
+                                                <span>{trip.flightNumber || '-'}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${trip.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             }`}>
-                                            {trip.status === 'ACTIVE' ? t('monitored') : trip.status}
+                                            {trip.status === 'ACTIVE' ? t('monitored') : (trip.status || '-')}
                                         </span>
                                     </div>
                                 </div>
@@ -557,7 +569,7 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
                         {trackedFlights.map((flight) => (
-                            <WatchedFlightCard key={flight.id} flight={flight} />
+                            <WatchedFlightCard key={String(flight.id)} flight={flight} />
                         ))}
                     </div>
                 )}

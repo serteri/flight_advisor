@@ -33,20 +33,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let userId = session.user.id;
-  if (!userId && session.user.email) {
+  let resolvedUserId: string | undefined = session.user.id;
+  if (!resolvedUserId && session.user.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
     });
-    userId = user?.id;
+    resolvedUserId = user?.id;
   }
 
-  if (!userId) {
+  if (!resolvedUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const limit = await checkLimit(userId, parsed.data.feature);
+  const limit = await checkLimit(resolvedUserId, parsed.data.feature);
 
   if (!limit.allowed) {
     return NextResponse.json(

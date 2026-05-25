@@ -29,7 +29,18 @@ interface InspectionResult {
       cancelledPercentage: number;
       totalFlights: number;
     };
-    offer: unknown;
+    offer?: {
+      price?: number;
+      currency?: string;
+      duration?: string;
+      cabinClass?: string;
+      fareType?: string;
+      segments?: Array<{
+        aircraft?: string;
+        cabinClass?: string;
+      }>;
+      [key: string]: unknown;
+    };
     masterScore: number;
     scoreDetails: unknown;
     hiddenTraps: Array<{
