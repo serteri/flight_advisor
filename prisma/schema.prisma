@@ -522,6 +522,7 @@ model MonitoredTrip {
   alertEvents     AlertEvent[]
   snapshot        TripSnapshot?
   deliveries      NotificationDelivery[]
+  playbook        DisruptionPlaybook?
 
   @@index([userId])
   @@index([status, nextCheckAt])
@@ -992,6 +993,30 @@ model DecisionPerformanceMetric {
   @@index([origin, destination])
   @@index([dateWindow])
   @@index([experimentId])
+}
+
+// ─── DISRUPTION PLAYBOOK ─────────────────────────────────────────────────────
+// Pre-generated "if X happens, do Y" scenario cards for a booked trip.
+// Upserted at generation time; one record per MonitoredTrip.
+model DisruptionPlaybook {
+  id              String   @id @default(cuid())
+  monitoredTripId String   @unique
+
+  generatedAt     DateTime @default(now())
+
+  // ScenarioCard objects serialised as JSON
+  scenarioA       Json     // MissedConnection  (null when direct flight)
+  scenarioB       Json     // SignificantDelay
+  scenarioC       Json     // Cancellation
+
+  airlineIata     String
+  regulationZone  String   // EU261 | UK261 | DGCA | NONE
+  connectionCount Int      @default(0)
+
+  monitoredTrip   MonitoredTrip @relation(fields: [monitoredTripId], references: [id], onDelete: Cascade)
+
+  @@index([monitoredTripId])
+  @@index([airlineIata])
 }
 
 // 📬 LEAD CAPTURE — Email / waitlist sign-ups
