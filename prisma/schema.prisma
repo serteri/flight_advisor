@@ -159,17 +159,16 @@ enum AirportType {
 
 model Airport {
   id        String   @id @default(cuid())
-  cityId    String
-  code      String   // IATA code
+  cityId    String?                        // nullable — not required for bulk import
+  code      String   @unique              // IATA code; unique enables createMany skipDuplicates
   name      String   // Airport name
   isMajor   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  city      City?    @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@index([cityId])
-  @@index([code])
 }
 
 model City {

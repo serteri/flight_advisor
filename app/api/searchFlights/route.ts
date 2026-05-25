@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
                 where: { code: { in: allLayoverAirports } },
                 select: { code: true, city: { select: { name: true } } }
             });
-            const cityMap = Object.fromEntries(airportData.map(a => [a.code, a.city.name]));
+            const cityMap = Object.fromEntries(airportData.map(a => [a.code, a.city?.name ?? a.code]));
             results.forEach((group: any) => {
                 group.options.forEach((flight: any) => {
                     flight.layovers.forEach((layover: any) => {

@@ -5,94 +5,54 @@ import path from "path";
 
 const prisma = new PrismaClient();
 
-async function main() {
-    const results: any[] = [];
-    const csvPath = path.join(process.cwd(), "data", "airports.csv");
-
-    console.log(`Reading airports from ${csvPath}...`);
-
-    fs.createReadStream(csvPath)
-        .pipe(csv())
-        .on("data", (data) => {
-            // Include both large_airport AND medium_airport for Skyscanner-like coverage
-            // This gives us ~2000+ airports instead of ~300
-            const type = data.type || data.airport_type || "";
-            const iataCode = data.iata_code || "";
-
-            // Must have IATA code to be useful for flight search
-            if (!iataCode || iataCode.trim() === "") return;
-
-            // Include large and medium airports (commercial airports)
-            if (type === "large_airport" || type === "medium_airport") {
-                results.push({
-                    ...data,
-                    isMajor: type === "large_airport" // Mark large airports as major
-                });
-            }
-        })
-        .on("end", async () => {
-            console.log(`Found ${results.length} airports with IATA codes. Importing...`);
-
-            let imported = 0;
-            let skipped = 0;
-
-            for (const row of results) {
-                try {
-                    const cityName = row.municipality || row.name || "Unknown City";
-                    const countryCode = row.iso_country || "XX";
-                    const iataCode = row.iata_code?.trim();
-
-                    if (!iataCode) {
-                        skipped++;
-                        continue;
-                    }
-
-                    // Find or create city
-                    let city = await prisma.city.findFirst({
-                        where: {
-                            name: cityName,
-                            country: countryCode
-                        }
-                    });
-
-                    if (!city) {
-                        city = await prisma.city.create({
-                            data: {
-                                name: cityName,
-                                country: countryCode,
-                            },
-                        });
-                    }
-
-                    // Create airport linked to city (avoid duplicates)
-                    const existingAirport = await prisma.airport.findFirst({
-                        where: { code: iataCode }
-                    });
-
-                    if (!existingAirport) {
-                        await prisma.airport.create({
-                            data: {
-                                cityId: city.id,
-                                code: iataCode,
-                                name: row.name,
-                                isMajor: row.isMajor === true || row.isMajor === "true",
-                            },
-                        });
-                        imported++;
-                    } else {
-                        skipped++;
-                    }
-                } catch (error) {
-                    console.error(`Error importing ${row.iata_code}:`, error);
-                    skipped++;
-                }
-            }
-
-            console.log(`✅ Imported ${imported} airports, skipped ${skipped} (already exist or invalid)`);
-            console.log("Airport import complete!");
-            await prisma.$disconnect();
-            process.exit(0);
-        });
+interface AirportRow {
+  code: string;
+  name: string;
+  isMajor: boolean;
 }
 
-main();
+async function main() {
+  const csvPath = path.join(process.cwd(), "data", "airports.csv");
+  console.log(`Reading airports from ${csvPath}...`);
+
+  // ── 1. Read all rows into memory ──────────────────────────────────────────
+  const airports = await new Promise<AirportRow[]>((resolve, reject) => {
+    const rows: AirportRow[] = [];
+
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on("data", (data) => {
+        const type = (data.type || data.airport_type || "") as string;
+        const iataCode = (data.iata_code || "").trim();
+
+        // Must have IATA code and be a commercial airport
+        if (!iataCode) return;
+        if (type !== "large_airport" && type !== "medium_airport") return;
+
+        rows.push({
+          code: iataCode,
+          name: data.name || iataCode,
+          isMajor: type === "large_airport",
+        });
+      })
+      .on("end", () => resolve(rows))
+      .on("error", reject);
+  });
+
+  console.log(`Found ${airports.length} airports. Bulk inserting...`);
+
+  // ── 2. Single createMany — skips rows whose code already exists ───────────
+  const result = await prisma.airport.createMany({
+    data: airports,
+    skipDuplicates: true,
+  });
+
+  console.log(`✅ Inserted ${result.count} new airports (${airports.length - result.count} already existed).`);
+  await prisma.$disconnect();
+}
+
+main().catch(async (err) => {
+  console.error(err);
+  await prisma.$disconnect();
+  process.exit(1);
+});
