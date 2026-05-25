@@ -288,124 +288,187 @@ const localizedOverrides: Record<Exclude<BlogLocale, 'en'>, Record<string, BlogP
                         title: "2026'da Avustralya'dan Avrupa'ya Ucuz Ucus Nasil Bulunur?",
                         excerpt: 'Gercek rezervasyon penceresi, sezon etkisi ve havaalani stratejisiyle uzun mesafe ucus maliyetini dusurun.',
                         date: '10 Subat 2026',
-                        readTime: '10 dk okuma',
+                                                readTime: '11 dk okuma',
                         content: `
-            <h2>2026'da fiyat resmi: hala firsat var</h2>
-            <p>Talep yuksek, son dakika fiyatlari sert. Ama dogru zamanda arama yapanlar icin hala cok iyi fiyat pencereleri var. Ozellikle varis sehri esnekligi bu hatta en buyuk avantaj.</p>
+                        <h2>2026'da fiyat resmi: zor ama yonetilebilir</h2>
+                        <p>Avustralya'dan Avrupa'ya ucuslar hala pahali gorunuyor, cunku talep yuksek ve son dakika biletleri hizla tuketiliyor. Buna ragmen fiyatlar tamamen sansa birakilmis degil. Dogru strateji uygulandiginda ciddi tasarruf hala mumkun. Ozellikle tek bir sehre kilitlenmek yerine birden fazla varis noktasini ayni anda takip etmek fark yaratiyor.</p>
 
-            <h2>1. Dogru zamanda al: 5-7 ay penceresi</h2>
-            <p>Avustralya-Avrupa rotalarinda en dengeli fiyatlar genellikle 5-7 ay once ortaya cikiyor. Cok erken alis her zaman avantaj degil; cok gec kalmak ise pahali bilet siniflarina yakalanmak demek.</p>
+                        <h2>1. Gercek satin alma penceresi: 5-7 ay</h2>
+                        <p>Cok erken arama yapmak her zaman en ucuz sonucu vermiyor. Pek cok rota ilk acildiginda taban degil, orta seviye tarifeden satiliyor. En dengeli fiyatlarin cogu 5 ile 7 ay arasinda ortaya cikiyor. Son uc haftaya kalmak ise genellikle en pahali secenek oluyor. Bu nedenle alarm kurup surekli takip etmek, tek sefer aramaktan daha verimli.</p>
 
-            <h2>2. Sadece Londra/Paris aramayin</h2>
-            <p>Roma, Milano, Barselona, Frankfurt gibi alternatif varis noktalarini ayni tarihte karsilastirin. Avrupa ici gecisle toplam butceyi daha iyi yonetebilirsiniz.</p>
+                        <h2>2. Londra ve Paris disindaki girisleri ciddiye alin</h2>
+                        <p>Roma, Milano, Barselona, Frankfurt, Munih gibi alternatif varis sehirleri bazen yuzlerce dolar fark yaratabiliyor. Avrupa ici gecisler ucuz oldugu icin ana long-haul biletteki tasarruf toplam maliyeti asagi cekiyor. Ayni tarihte 4 veya 5 varis secenegini karsilastirmak, bilet aramanin en kritik adimi. Sadece en populer sehre odaklanmak gereksiz yere pahaliya mal olabilir.</p>
 
-            <h2>3. Sadece fiyat degil, rota kalitesi de onemli</h2>
-            <ul>
-                <li>Toplam yolculuk suresi</li>
-                <li>Aktarma guvenlik payi</li>
-                <li>Bagaj kurallari</li>
-                <li>Varis saati ve konaklama etkisi</li>
-            </ul>
+                        <h2>3. Fiyat kadar rota kalitesini de puanlayin</h2>
+                        <p>Ucuz bir bilet, kotu bir aktarma duzeni varsa toplam yolculukta yipratici olabilir. Gece yarisi uzun terminal beklemeleri, kis mevsiminde dar baglanti sureleri ve bagaj yeniden teslim riski gizli maliyet olusturur. Bu nedenle su sorulara bakmak gerekir:</p>
+                        <ul>
+                                <li>Toplam yolculuk suresi kac saat?</li>
+                                <li>Aktarma tampon suresi guvenli mi?</li>
+                                <li>Bagaj kurali net mi, tekrar teslim gerekiyor mu?</li>
+                                <li>Varis saati konaklama ve transfer planina uyuyor mu?</li>
+                        </ul>
 
-            <h2>4. Split ticket dikkatli kullanilmali</h2>
-            <p>Ayrik biletler ciddi tasarruf saglayabilir ama baglanti riski artar. Uzun tampon sure, net transit kurali kontrolu ve tecrube bu modelde kritik.</p>
+                        <h2>4. Split ticket modeli ne zaman mantikli?</h2>
+                        <p>Ayrik bilet modeli bazen cok iyi fiyat verir ama riskli bir modeldir. Ilk ucus gecikirse ikinci ucusu havayolu otomatik korumaz. Bu yontem ancak uzun baglanti marji, net transit kurali ve B plani olan yolcular icin uygundur. Tecrubesi az yolcular icin tek PNR'li bilet cogu zaman daha guvenli secenektir.</p>
 
-            <h2>Sonuc</h2>
-            <p>En ucuz bilet her zaman en iyi bilet degil. Dogru fiyat + guvenilir rota kombinasyonu yakalandiginda alin. FlightAdvisor ile hedef fiyat kurup duzensiz dususleri kacirmayin.</p>
+                        <h2>5. Sehir bazli sezon farkini kullanin</h2>
+                        <p>Sydney ve Melbourne cikislari daha fazla opsiyon sundugu icin fiyat dalgalanmasi da daha belirgin olur. Brisbane, Adelaide veya Perth cikisli yolcular icin bazen once ic hatla baglanip ana long-haul'u baska sehirden almak daha avantajli olabilir. Ama bu kararda sure, bagaj ve yorgunluk dengesi mutlaka hesaplanmali.</p>
+
+                        <h2>Kisa eylem plani</h2>
+                        <p>Ilk adimda hedef butcenizi belirleyin ve en az uc alternatif varis sehri secin. Sonra haftalik duzenli takip yapin, fiyat ve rota kalitesi birlikte uygun seviyeye indiginde gecikmeden satin alin. Bu disiplin, uzun hatta en iyi sonucu verir.</p>
+
+                        <h2>Sonuc</h2>
+                        <p>En ucuz etiket her zaman en iyi yolculuk demek degil. Dogru strateji, dogru zaman ve guvenilir rota bir araya geldiginde gercek kazanc ortaya cikar. FlightAdvisor ile hedef fiyat alarmi kurarak dususleri kacirmadan, daha kontrollu bir satin alma karari verebilirsiniz.</p>
         `,
                 },
                 'best-stopover-cities-singapore-dubai-doha': {
                         title: 'En Iyi Stopover Sehirleri: Singapur mu, Dubai mi, Doha mi?',
                         excerpt: 'Avustralya-Avrupa uzun yolunu daha konforlu hale getirmek icin hangi aktarma merkezinin size uygun oldugunu belirleyin.',
                         date: '28 Ocak 2026',
-                        readTime: '9 dk okuma',
+                                                readTime: '10 dk okuma',
                         content: `
-            <h2>Dogru stopover tum yolculugu degistirir</h2>
-            <p>Uzun hatta tek bir dogru mola, jet lag ve yorgunlugu ciddi azaltir. Karari verirken sadece bilet fiyati degil, transfer rahatligi da degerlendirilmelidir.</p>
+                        <h2>Stopover secimi neden kritik?</h2>
+                        <p>Avustralya-Avrupa hatti uzun oldugu icin tek bir dogru mola bile yolculugun kalitesini ciddi sekilde artirir. Jet lag, uyku duzeni ve varis performansi stopover tercihiyle dogrudan etkilenir. Karar verirken sadece bilet fiyati degil, transfer akisi ve havalimani konforu da hesaba katilmalidir.</p>
 
-            <h2>Singapur (SIN)</h2>
-            <p>Ailece seyahat edenler icin en dusuk stresli seceneklerden biri. Havalimani akisi cok duzenli, tabelalar net, transfer kolay.</p>
+                        <h2>Singapur (SIN): en dusuk stresli akıs</h2>
+                        <p>Singapur ozellikle aileler ve ilk kez uzun hat ucacak yolcular icin cok guvenli bir secenek. Terminal yonlendirmeleri net, transfer surecleri tutarli, havalimani ici imkanlar guclu. Kisa sureli bir mola bile zihinsel olarak toparlanma saglar. Cocukla seyahatte bekleme alanlarinin duzeni ekstra avantaj yaratir.</p>
 
-            <h2>Dubai (DXB)</h2>
-            <p>Sehir molasi yapmak isteyenler icin guclu secenek. Ucus frekansi yuksek, premium kabin bulunurlugu iyi. Yaz sicagi planlamada dikkate alinmali.</p>
+                        <h2>Dubai (DXB): sehir deneyimi isteyenlere</h2>
+                        <p>Dubai, yuksek ucus frekansi ve premium kabin secenekleriyle guclu bir merkez. Eger 12 saat ve uzeri bosluk varsa, hizli bir sehir turu veya kisa bir aktivite eklemek mumkun. Ancak yaz doneminde asiri sicakligi planlamak gerekir. Buyuk terminal yapisi nedeniyle baglanti kapisi farklari da dikkate alinmali.</p>
 
-            <h2>Doha (DOH)</h2>
-            <p>Daha sakin, premium odakli transfer deneyimi arayanlar icin dengeli bir merkez. Is seyahati ritmine cok uygun.</p>
+                        <h2>Doha (DOH): sakin ve premium dengesi</h2>
+                        <p>Doha, daha sakin bir terminal ritmi isteyen yolcular icin cok uygun. Is seyahatinde odak kaybetmeden transfer yapmak isteyenler genellikle DOH'u tercih ediyor. Lounge kalitesi ve terminal duzeni premium deneyimi destekliyor. Uzun hatta yorgunluk yonetimi acisindan da dengeli bir secenek.</p>
 
-            <h2>Pratik secim kurali</h2>
-            <ul>
-                <li>Cocukla seyahat: Singapur</li>
-                <li>Kisa sehir deneyimi: Dubai</li>
-                <li>Sakin premium akis: Doha</li>
-            </ul>
+                        <h2>Stopover suresi ne kadar olmali?</h2>
+                        <p>6 saat altinda sehir cikisi genelde onerilmez. 8-14 saat araligi kontrollu bir mola icin idealdir. 20-30 saatlik planlarda ise uyku reseti ve mini sehir deneyimi daha rahat uygulanir. Burada kisit, bir sonraki ucusun riskini artirmamak olmalidir.</p>
+
+                        <h2>Pratik secim kurali</h2>
+                        <ul>
+                                <li>Cocuklu veya stressiz transfer isteyenler: Singapur</li>
+                                <li>Kisa sehir deneyimi ve yuksek enerji isteyenler: Dubai</li>
+                                <li>Sakin premium akis arayanlar: Doha</li>
+                        </ul>
+
+                        <h2>Sonuc</h2>
+                        <p>Tek bir dogru yok; dogru secim seyahat amaciniza gore degisir. En iyi stopover, sizi varis noktasina daha az yorulmus ve daha kontrollu tasiyan secenektir. FlightAdvisor ile fiyat ve rota kalitesini birlikte izleyip stopover kararini veriyle verebilirsiniz.</p>
         `,
                 },
                 'hidden-gems-turkey-australian-travelers': {
                         title: "Istanbul Disinda Turkiye'de 5 Gizli Rota",
                         excerpt: 'Istanbul ve Kapadokya disinda kalan, daha az bilinen ama cok daha ozel 5 rota ve ulasim ipuclari.',
                         date: '2 Subat 2026',
-                        readTime: '11 dk okuma',
+                                                readTime: '12 dk okuma',
                         content: `
-            <h2>Turistik rotanin disina cikma zamani</h2>
-            <p>Avustralya'dan gelen bircok gezgin Gelibolu + Kapadokya ile sinirli kaliyor. Oysa asıl buyu, Ege-Akdeniz gecisindeki sakin kasabalar ve az bilinen tarih noktalarinda.</p>
+                        <h2>Turistik rotanin disina cikma zamani</h2>
+                        <p>Avustralya'dan gelen bircok ziyaretci Turkiye'yi Istanbul + Kapadokya ile tanimliyor. Bu iki nokta guclu olsa da ulkenin asil ritmi Ege ve Akdeniz gecisindeki daha sakin yerlerde hissediliyor. Daha az kalabalik, daha dogrudan yerel yasam ve daha dengeli fiyatlar isteyenler icin bu listede gercek alternatifler var.</p>
 
-            <h2>1) Kas</h2>
-            <p>Rahat ritim, temiz koylar, dalis ve uzun sahil aksamlari. En yakin kapı: Dalaman (DLM).</p>
+                        <h2>1) Kas: yavas ama karakterli bir sahil kasabasi</h2>
+                        <p>Kas, dalis kulturunun guclu oldugu ama sadece dalisla sinirli kalmayan bir yer. Gunun ilk yarisi koy gezisi, ikinci yarisi liman cevresinde sakin bir yemek ritmi sunuyor. Yaz ortasinda bile Bodrum kadar gergin bir tempo olusmuyor. Ciftler, tek basina gezenler ve sakin sahil isteyenler icin ideal.</p>
 
-            <h2>2) Alacati</h2>
-            <p>Tas evler, iyi mutfak, ruzgar sporlari. Yaz disinda daha dengeli fiyat/kalite. En yakin kapı: Izmir (ADB).</p>
+                        <h2>2) Alacati: tas mimari + guclu mutfak + ruzgar</h2>
+                        <p>Alacati sadece Instagram karelerinden ibaret degil; iyi secilmis mekanlarda mutfak kalitesi oldukca yuksek. Ruzgar sporlarina ilgi duyanlar icin teknik olarak da guclu bir destinasyon. Sezon disinda ziyaret edildiginde hem sokak keyfi hem fiyat dengesi daha iyi hissediliyor.</p>
 
-            <h2>3) Kelebekler Vadisi</h2>
-            <p>Tekne veya yuruyusle ulasilan, sade ve doga odakli bir kacis. Otel degil, deneyim odakli bir rota.</p>
+                        <h2>3) Kelebekler Vadisi: gercek bir dijital detoks</h2>
+                        <p>Ulasimi kisitli oldugu icin burasi dogal olarak daha korunakli kaliyor. Klasik otel konforu bekleyenler icin degil, sade deneyim arayanlar icin cok guclu bir secenek. Tekneyle varis, vadinin ritmine hazir olmanizi sagliyor. Kalabaliktan fiziksel olarak uzaklasmak isteyenler icin birebir.</p>
 
-            <h2>4) Nemrut Dagi</h2>
-            <p>Gundogumunda dev tas baslarla baska bir atmosfer. Lojistik zorlu ama odulu cok yuksek.</p>
+                        <h2>4) Nemrut Dagi: tarih ve manzaranin ayni noktada bulusmasi</h2>
+                        <p>Gundogumu saatinde dev tas heykellerle karsilasmak etkileyici bir deneyim. Ulasim plani dikkat istiyor, cunku rota esneklik istemiyor. Ama dogru planlandiginda bu durak tum gezi boyunca unutulmaz bir zirveye donusuyor.</p>
 
-            <h2>5) Datca Yarimadasi</h2>
-            <p>Daha yavas bir Ege-Akdeniz temposu, temiz hava ve guclu yerel mutfak.</p>
+                        <h2>5) Datca Yarimadasi: sessiz kalite arayanlara</h2>
+                        <p>Datca, gece hayati yerine sakinlik isteyen yolcular icin guclu bir alternatif. Koy bazli gezi, yerel urunler ve sahil yemekleriyle daha yavas bir tatil vadediyor. Uzun konaklamaya en uygun Turk sahil rotalarindan biri olarak one cikiyor.</p>
 
-            <h2>Son not</h2>
-            <p>Bu gezi tipinde sadece Istanbul aramak yerine Dalaman, Izmir ve Bodrum'u birlikte takip etmek toplam yolculuk kalitesini ciddi artirir.</p>
+                        <h2>Ne zaman gidilmeli?</h2>
+                        <p>Mayis-Haziran donemi deniz sezonunun acildigi ama yogunlugun zirveye cikmadigi bir aralik. Eylul-Ekim ise denizin hala sicak kaldigi, fakat kalabaligin azaldigi en dengeli donem. Bu iki pencere kalite/fiyat acisindan genelde en iyi sonucu verir.</p>
+
+                        <h2>Son not</h2>
+                        <p>Bu gezi tipinde sadece Istanbul varisli arama yapmak gereksiz transfer maliyeti yaratabiliyor. Dalaman, Izmir ve Bodrum kapilarini birlikte takip etmek toplam yolculuk suresini ve yorgunlugu ciddi azaltir. FlightAdvisor'da birden fazla gateway alarmi kurarak en uygun bileti rota kalitesiyle birlikte yakalayabilirsiniz.</p>
         `,
                 },
                 'best-time-to-visit-turkey-from-australia-2026': {
                         title: "Avustralya'dan Turkiye'ye Gitmek Icin En Iyi Donem (2026)",
                         excerpt: 'Hava, kalabalik ve fiyat dengesine gore ay-ay planlama rehberi.',
                         date: '3 Mart 2026',
-                        readTime: '9 dk okuma',
+                                                readTime: '10 dk okuma',
                         content: `
-            <h2>Mevsimi dogru secmek tum geziyi etkiler</h2>
-            <p>Turkiye tek iklimli bir rota degil. Istanbul, Kapadokya ve sahil ayni tarihte cok farkli hissedilebilir. Mevsim secimi hem butceyi hem keyfi belirler.</p>
-            <h2>En dengeli donem</h2>
-            <p>Mayis-Haziran ve Eylul-Ekim genelde en iyi fiyat/kalite dengesini verir.</p>
+                        <h2>Mevsim secimi neden en kritik karar?</h2>
+                        <p>Turkiye tek iklimli bir rota degil; ayni hafta icinde Istanbul serin, Kapadokya kuru, sahil ise sicak olabilir. Bu nedenle mevsim karari sadece hava durumunu degil, gezi ritmini de belirler. Dogru mevsim secimi hem otel hem ucus maliyetini etkiler.</p>
+
+                        <h2>Ilkbahar (Nisan-Haziran)</h2>
+                        <p>Sehir + sahil + tarih karmasi yapmak isteyenler icin en dengeli donemlerden biri. Sicakliklar daha yumusak, uzun yuruyusler daha konforlu. Kalabalik yaz kadar yuksek degil, bu da deneyimi iyilestiriyor.</p>
+
+                        <h2>Yaz (Temmuz-Agustos)</h2>
+                        <p>Deniz odakli gezi icin guclu bir donem ama fiyatlar da en yuksek seviyede oluyor. Sahil destinasyonlari dolu oldugu icin erken rezervasyon kritik. Sehir gezi temposu sicaklik nedeniyle daha zorlayici olabilir.</p>
+
+                        <h2>Sonbahar (Eylul-Ekim)</h2>
+                        <p>Deniz hala sicak kalirken kalabalik yavas yavas azalir. Fiyat dengesi yaz sonrasinda daha makul hale gelir. Ciftler ve daha sakin gezi isteyenler icin cok iyi bir pencere.</p>
+
+                        <h2>Kis (Kasim-Mart)</h2>
+                        <p>Kultur ve sehir gezileri icin daha ekonomik secenekler bulunabilir. Kapadokya kis manzaralari guclu bir fotograf deneyimi sunar. Ancak hava kaynakli gecikme riskleri planlamada dikkate alinmalidir.</p>
+
+                        <h2>Pratik karar modeli</h2>
+                        <p>Eger onceliginiz dengeyse Mayis-Haziran veya Eylul-Ekim secin. Eger deniz tatili birinci hedefse yaz doneminde erken satin alin. Eger kultur odakli daha uygun butce ariyorsaniz kis aylarini degerlendirin.</p>
         `,
                 },
                 'dalaman-vs-izmir-which-airport-for-turkey-coast': {
                         title: 'Dalaman mi Izmir mi? Sahil Turkiye Icin Dogru Havalimani Secimi',
                         excerpt: 'Sahil tatilinde sadece bilet fiyatina degil, transfer suresine de bakarak karar verin.',
                         date: '16 Mart 2026',
-                        readTime: '8 dk okuma',
+                                                readTime: '10 dk okuma',
                         content: `
-            <h2>Dogru havalimani saatler kazandirir</h2>
-            <p>Kas-Fethiye hattina gidiyorsaniz Dalaman genelde avantajli. Alacati-Cesme-Izmir cevresinde ise ADB daha mantikli olur.</p>
-            <h2>Karsilastirma kriterleri</h2>
-            <ol>
-                <li>Toplam yolculuk suresi</li>
-                <li>Aktarma riski</li>
-                <li>Inis sonrasi kara transferi</li>
-            </ol>
+                        <h2>Dogru havalimani secimi neden fark yaratir?</h2>
+                        <p>Sahil tatillerinde en buyuk hata sadece ucak biletine bakmak. Gercek maliyet, inis sonrasi kara transferiyle ortaya cikiyor. Bazen daha ucuz gorunen bilet, toplam yolculukta saatler kaybettirebiliyor.</p>
+
+                        <h2>Dalaman ne zaman avantajli?</h2>
+                        <p>Kas, Kalkan, Fethiye, Oludeniz ve Gocek hattina gidiyorsaniz DLM cogu senaryoda daha mantikli. Transfer suresi genelde daha kisa ve rota daha direkt oluyor. Tatilin ilk gununde yorgunluk azaltmak icin guclu secenek.</p>
+
+                        <h2>Izmir ne zaman avantajli?</h2>
+                        <p>Alacati, Cesme, Izmir merkez ve Efes cevresi planlanıyorsa ADB daha dogru kapidir. Ege odakli rotada geri donus transferini de kolaylastirir. Kisa gezi planlarinda zaman kazanci burada daha belirgin olur.</p>
+
+                        <h2>Karsilastirma kriterleri</h2>
+                        <ol>
+                                <li>Toplam yolculuk suresi (kapidan otele)</li>
+                                <li>Aktarma sayisi ve gecikme riski</li>
+                                <li>Inis sonrasi transfer bedeli</li>
+                                <li>Varis saati ve check-in uyumu</li>
+                        </ol>
+
+                        <h2>Teknik ama kritik bir detay</h2>
+                        <p>Uzun hat sonrasinda gece varisi ve uzun kara transferi bir araya geldiginde ilk gun verimsiz geciyor. Bu nedenle bir miktar daha pahali ama daha temiz transferli rota genelde daha iyi deneyim sunuyor.</p>
+
+                        <h2>Sonuc</h2>
+                        <p>Kas/Fethiye odakli gezi icin Dalaman, Alacati/Cesme odakli gezi icin Izmir daha guclu secenek. En iyi karar, iki gateway'i ayni anda takip edip toplam rota kalitesine gore vermektir. FlightAdvisor ile bu karsilastirmayi tek ekranda yapmak daha hizli sonuc verir.</p>
         `,
                 },
                 'how-to-build-a-turkey-itinerary-from-australia': {
                         title: "Avustralya Cikisli 12 Gunluk Turkiye Rotasi Nasil Kurulur?",
                         excerpt: 'Istanbul, sahil ve tarih dengesini yormadan kuran pratik 12 gunluk rota sablonu.',
                         date: '28 Mart 2026',
-                        readTime: '12 dk okuma',
+                                                readTime: '11 dk okuma',
                         content: `
-            <h2>Rota hiz degil enerji yonetimidir</h2>
-            <p>En sik hata, cok nokta-sifir dinlenme planidir. Daha iyi model: 1 buyuk sehir + 1 sahil ussu + 1 tarih odagi.</p>
-            <h2>12 gunluk omurga</h2>
-            <p>Gun 1-3 Istanbul, gun 4-7 sahil, gun 8-10 tarih/doga odagi, son 2 gun tampon ve donus.</p>
+                        <h2>Rota hiz degil enerji yonetimidir</h2>
+                        <p>Avustralya cikisli uzun ucustan sonra en buyuk hata, ilk gunden itibaren asiri yogun programa girmektir. Yorgun bedenle hizli rota denemek gezi keyfini dusurur. Basarili bir plan, gorulecek yer kadar dinlenme ritmini de tasarlar.</p>
+
+                        <h2>12 gunluk omurga modeli</h2>
+                        <p><strong>Gun 1-3:</strong> Istanbul, sehre alisma ve kultur odagi.<br>
+                        <strong>Gun 4-7:</strong> Sahil ussu (Kas, Fethiye, Alacati gibi tek ana baz).<br>
+                        <strong>Gun 8-10:</strong> Tarih veya doga segmenti (Efes, Kapadokya veya Nemrut hatti).<br>
+                        <strong>Gun 11-12:</strong> Tampon gun + donus hazirligi.</p>
+
+                        <h2>Neden tek sahil ussu daha iyi?</h2>
+                        <p>Her gun otel degistirmek teoride cok yer gormek gibi dursa da pratikte ciddi zaman kaybettirir. Tek uss secip gunluk kisa cikislar yapmak daha verimli olur. Bu model, hem yeme-icme hem de lojistik tarafinda konforu artirir.</p>
+
+                        <h2>Aktarma gunu kurallari</h2>
+                        <ul>
+                                <li>2 saati asan transfer gunlerinde ekstra aktivite eklemeyin</li>
+                                <li>Ilk long-haul varis gunune yarim gun tampon koyun</li>
+                                <li>Donus oncesi en az bir esnek gun birakin</li>
+                        </ul>
+
+                        <h2>Open-jaw plani dusunun</h2>
+                        <p>Gidis Istanbul, donus Izmir veya Dalaman gibi bir kurgu bazen geri donus transferini ortadan kaldirir. Bu da toplam yorgunlugu ve kara yolu maliyetini azaltir. Uzun hatta en kritik kazanclardan biri budur.</p>
+
+                        <h2>Sonuc</h2>
+                        <p>Basarili 12 gunluk Turkiye plani; sehir, sahil ve tarih dengesini kurarken enerjinizi koruyan plandir. Cok nokta degil, dogru ritim daha iyi deneyim verir. FlightAdvisor ile birden fazla varis-donus kombinasyonunu ayni anda takip ederek en temiz rotayi yakalayabilirsiniz.</p>
         `,
                 },
         },
