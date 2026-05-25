@@ -1,9 +1,56 @@
 
+import type { Metadata } from 'next';
 import { getBlogPostBySlug, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
 import { ArrowLeft, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+
+function normalizeLocale(locale: string): BlogLocale {
+    return locale === 'tr' || locale === 'de' ? locale : 'en';
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
+    const { slug, locale } = await params;
+    const currentLocale = normalizeLocale(locale);
+    const post = getBlogPostBySlug(currentLocale, slug);
+
+    if (!post) {
+        return {};
+    }
+
+    return {
+        title: post.seoTitle || post.title,
+        description: post.seoDescription || post.excerpt,
+        alternates: {
+            canonical: `/${currentLocale}/blog/${slug}`,
+            languages: {
+                en: `/en/blog/${slug}`,
+                tr: `/tr/blog/${slug}`,
+                de: `/de/blog/${slug}`,
+                'x-default': `/en/blog/${slug}`,
+            },
+        },
+        keywords: post.keywordFocus,
+        openGraph: {
+            title: post.seoTitle || post.title,
+            description: post.seoDescription || post.excerpt,
+            type: 'article',
+            locale: currentLocale,
+            images: post.coverImage ? [post.coverImage] : undefined,
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: post.seoTitle || post.title,
+            description: post.seoDescription || post.excerpt,
+            images: post.coverImage ? [post.coverImage] : undefined,
+        },
+    };
+}
 
 export default async function BlogPost({
     params,
@@ -12,15 +59,53 @@ export default async function BlogPost({
 }) {
     const t = await getTranslations('BlogPage');
     const { slug, locale } = await params;
-    const currentLocale: BlogLocale = locale === 'tr' || locale === 'de' ? locale : 'en';
+    const currentLocale = normalizeLocale(locale);
     const post = getBlogPostBySlug(currentLocale, slug);
 
     if (!post) {
         return notFound();
     }
 
+    const faqSchema = post.faq?.length
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            inLanguage: currentLocale,
+            mainEntity: post.faq.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: item.answer,
+                },
+            })),
+        }
+        : null;
+
+    const articleSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: post.title,
+        description: post.seoDescription || post.excerpt,
+        image: post.coverImage,
+        inLanguage: currentLocale,
+        datePublished: post.date,
+        author: {
+            '@type': 'Person',
+            name: post.author.name,
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: 'FlightAgent.io',
+        },
+    };
+
     return (
         <div className="min-h-screen bg-white pb-20">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+            {faqSchema && (
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+            )}
             {/* HEADER IMAGE */}
             <div className="h-[400px] w-full relative">
                 <div className="absolute inset-0 bg-black/40 z-10"></div>
