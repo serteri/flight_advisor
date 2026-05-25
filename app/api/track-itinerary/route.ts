@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z, ZodError } from 'zod';
 
 import { auth } from '@/lib/auth';
+import { withFreemiumGate } from '@/lib/freemium/gate';
 import { prisma } from '@/lib/prisma';
 
 const segmentSchema = z.object({
@@ -77,7 +78,6 @@ export async function POST(request: NextRequest) {
         }));
 
         const firstSegment = payload.segments[0];
-        const lastSegment = payload.segments[payload.segments.length - 1];
         const airlineLabel = new Set(payload.segments.map((segment) => segment.airline)).size === 1
             ? firstSegment.airline
             : `${firstSegment.airline} +${payload.segments.length - 1}`;
@@ -85,49 +85,51 @@ export async function POST(request: NextRequest) {
             ? firstSegment.flightNumber
             : `${firstSegment.flightNumber} +${payload.segments.length - 1}`;
 
-        const watchedFlight = await prisma.watchedFlight.create({
-            data: {
-                userId: user.id,
-                flightNumber: flightLabel,
-                airline: airlineLabel,
-                origin: payload.trip.origin,
-                destination: payload.trip.destination,
-                departureDate: new Date(payload.trip.departureDate),
-                initialPrice: payload.trip.price,
-                currentPrice: payload.trip.price,
-                currency: payload.trip.currency,
-                priceHistory: [{
-                    date: new Date().toISOString(),
-                    price: payload.trip.price,
-                    source: 'score_handoff',
-                    trackingType: payload.trackingType,
-                    scoreSnapshot: payload.scoreSnapshot,
-                    trackingState: {
-                        status: 'ACTIVE',
-                        waitingForNextSnapshot: true,
-                        limitedData: true,
-                        realTimeDataUnavailable: !payload.scoreSnapshot.realTimeDataAvailable,
-                        importantChanged: false,
-                    },
-                }],
-                status: 'ACTIVE',
-                lastChecked: new Date(),
-                totalDuration: payload.trip.totalDurationMinutes,
-                stops: payload.trip.stops,
-                segments: payload.segments,
-                layovers,
-                baggageWeight: payload.trip.baggage.checkedBaggageKg ?? payload.trip.baggage.cabinBaggageKg ?? null,
-                cabin: payload.trip.cabin.toUpperCase(),
-            },
-        });
+        return withFreemiumGate(user.id, 'tracked_itinerary', async () => {
+            const watchedFlight = await prisma.watchedFlight.create({
+                data: {
+                    userId: user.id,
+                    flightNumber: flightLabel,
+                    airline: airlineLabel,
+                    origin: payload.trip.origin,
+                    destination: payload.trip.destination,
+                    departureDate: new Date(payload.trip.departureDate),
+                    initialPrice: payload.trip.price,
+                    currentPrice: payload.trip.price,
+                    currency: payload.trip.currency,
+                    priceHistory: [{
+                        date: new Date().toISOString(),
+                        price: payload.trip.price,
+                        source: 'score_handoff',
+                        trackingType: payload.trackingType,
+                        scoreSnapshot: payload.scoreSnapshot,
+                        trackingState: {
+                            status: 'ACTIVE',
+                            waitingForNextSnapshot: true,
+                            limitedData: true,
+                            realTimeDataUnavailable: !payload.scoreSnapshot.realTimeDataAvailable,
+                            importantChanged: false,
+                        },
+                    }],
+                    status: 'ACTIVE',
+                    lastChecked: new Date(),
+                    totalDuration: payload.trip.totalDurationMinutes,
+                    stops: payload.trip.stops,
+                    segments: payload.segments,
+                    layovers,
+                    baggageWeight: payload.trip.baggage.checkedBaggageKg ?? payload.trip.baggage.cabinBaggageKg ?? null,
+                    cabin: payload.trip.cabin.toUpperCase(),
+                },
+            });
 
-        return NextResponse.json({
-            success: true,
-            trackingType: 'ITINERARY_CANDIDATE',
-            id: watchedFlight.id,
-            status: watchedFlight.status,
-            message: 'Itinerary tracking created',
-        }, { status: 201 });
+            return NextResponse.json({
+                success: true,
+                trackingType: 'ITINERARY_CANDIDATE',
+                id: watchedFlight.id,
+                status: watchedFlight.status,
+                message: 'Itinerary tracking created',
+            }, { status: 201 });
+        });
     } catch (error) {
         if (error instanceof ZodError) {
             return NextResponse.json({

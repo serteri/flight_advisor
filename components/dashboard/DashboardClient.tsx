@@ -8,15 +8,25 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
 import { WatchedFlightCard } from '@/components/WatchedFlightCard';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import { WelcomeBanner } from '@/components/onboarding/WelcomeBanner';
 import { useSession } from 'next-auth/react';
 
 interface DashboardClientProps {
-    trips: any[];           // MonitoredTrip[]
-    trackedFlights: any[];  // WatchedFlight[]
-    user: any;
+    trips: Array<Record<string, unknown>>;
+    trackedFlights: Array<Record<string, unknown>>;
+    showFirstTimeOnboarding: boolean;
+    user: {
+        id?: string;
+        subscriptionPlan?: string;
+        isPremium?: boolean;
+        trialEndsAt?: string | Date | null;
+        subscriptionStatus?: string | null;
+        [key: string]: unknown;
+    };
 }
 
-export function DashboardClient({ trips, trackedFlights, user }: DashboardClientProps) {
+export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFlightInspector, setShowFlightInspector] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
@@ -164,7 +174,7 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
                 autoCheckoutRef.current = false;
             }
         })();
-    }, [cycleParam, hasAutoCheckoutParams, normalizedPlanParam, pathname, searchParams, trialParam]);
+    }, [cycleParam, hasAutoCheckoutParams, locale, normalizedPlanParam, pathname, searchParams, trialParam]);
 
     useEffect(() => {
         if (!isAutoCheckoutLoading) return;
@@ -313,6 +323,9 @@ export function DashboardClient({ trips, trackedFlights, user }: DashboardClient
 
     return (
         <div className="space-y-12">
+            <WelcomeBanner enabled={showFirstTimeOnboarding} />
+            <OnboardingModal enabled={showFirstTimeOnboarding} />
+
             {isTrialing && daysLeft !== null && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-amber-900">
                     <div className="text-sm font-bold">

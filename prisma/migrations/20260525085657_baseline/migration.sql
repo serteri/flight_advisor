@@ -1,9 +1,9 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "CabinClass" AS ENUM ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST');
 
-  - A unique constraint covering the columns `[stripeCustomerId]` on the table `User` will be added. If there are existing duplicate values, this will fail.
+-- CreateEnum
+CREATE TYPE "AirportType" AS ENUM ('DOMESTIC', 'INTERNATIONAL', 'REGIONAL');
 
-*/
 -- CreateEnum
 CREATE TYPE "MonitorType" AS ENUM ('UPGRADE_SNIPER', 'DISRUPTION_HUNTER', 'EMPTY_SEAT', 'SCHEDULE_GUARDIAN', 'AMENITY_WATCHDOG');
 
@@ -17,22 +17,162 @@ CREATE TYPE "ClaimType" AS ENUM ('DELAY', 'CANCELLATION', 'AMENITY');
 CREATE TYPE "ClaimStatus" AS ENUM ('DRAFT', 'SENT', 'PAID', 'REJECTED');
 
 -- CreateEnum
+CREATE TYPE "AlertLifecycleState" AS ENUM ('DETECTED', 'QUEUED', 'SENT', 'DELIVERED', 'FAILED', 'RETRYING', 'EXPIRED', 'SUPPRESSED');
+
+-- CreateEnum
+CREATE TYPE "MonitoringEventType" AS ENUM ('PRICE_DROP', 'PRICE_SPIKE', 'TARGET_PRICE_REACHED', 'ROUTE_STALE', 'DELAY_DETECTED', 'CANCELLATION_DETECTED', 'GATE_CHANGE', 'TERMINAL_CHANGE', 'CONNECTION_RISK', 'STATUS_UNAVAILABLE', 'MONITORING_STALE', 'PROVIDER_UNAVAILABLE', 'CHECK_DELAYED', 'MONITORING_RECOVERED');
+
+-- CreateEnum
+CREATE TYPE "AlertSourceType" AS ENUM ('ROUTE_WATCH', 'WATCHED_FLIGHT', 'MONITORED_TRIP', 'SYSTEM');
+
+-- CreateEnum
+CREATE TYPE "AlertDeliveryChannel" AS ENUM ('EMAIL', 'SMS', 'PUSH');
+
+-- CreateEnum
+CREATE TYPE "AlertDeliveryStatus" AS ENUM ('QUEUED', 'SENT', 'DELIVERED', 'FAILED', 'RETRYING', 'SUPPRESSED');
+
+-- CreateEnum
 CREATE TYPE "TripStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'CANCELLED', 'ARCHIVED');
 
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "isPremium" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "notificationTone" TEXT NOT NULL DEFAULT 'STANDARD',
-ADD COLUMN     "phoneNumber" TEXT,
-ADD COLUMN     "pushToken" TEXT,
-ADD COLUMN     "stripeCurrentPeriodEnd" TIMESTAMP(3),
-ADD COLUMN     "stripeCustomerId" TEXT,
-ADD COLUMN     "stripePriceId" TEXT,
-ADD COLUMN     "stripeSubscriptionId" TEXT,
-ADD COLUMN     "subscriptionPlan" TEXT NOT NULL DEFAULT 'FREE',
-ADD COLUMN     "subscriptionStatus" TEXT,
-ADD COLUMN     "telegramId" TEXT,
-ADD COLUMN     "trialEndsAt" TIMESTAMP(3),
-ADD COLUMN     "trialReminderSentAt" TIMESTAMP(3);
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "emailVerified" TIMESTAMP(3),
+    "image" TEXT,
+    "password" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "stripeCustomerId" TEXT,
+    "stripeSubscriptionId" TEXT,
+    "stripePriceId" TEXT,
+    "stripeCurrentPeriodEnd" TIMESTAMP(3),
+    "subscriptionStatus" TEXT,
+    "trialEndsAt" TIMESTAMP(3),
+    "trialReminderSentAt" TIMESTAMP(3),
+    "isPremium" BOOLEAN NOT NULL DEFAULT false,
+    "subscriptionPlan" TEXT NOT NULL DEFAULT 'FREE',
+    "notificationTone" TEXT NOT NULL DEFAULT 'STANDARD',
+    "phoneNumber" TEXT,
+    "telegramId" TEXT,
+    "pushToken" TEXT,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "sessionToken" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Route" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "originCode" TEXT NOT NULL,
+    "destinationCode" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3),
+    "tripType" TEXT NOT NULL DEFAULT 'ONE_WAY',
+    "cabin" "CabinClass" NOT NULL DEFAULT 'ECONOMY',
+    "maxStops" INTEGER,
+    "targetPrice" DOUBLE PRECISION,
+    "baggageRequired" BOOLEAN,
+    "preferredAirlines" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "trendStatus" TEXT DEFAULT 'UNKNOWN',
+    "timingSignal" TEXT DEFAULT 'WATCH_CLOSELY',
+    "timingReason" TEXT,
+    "latestSnapshotAt" TIMESTAMP(3),
+    "lastSignalAt" TIMESTAMP(3),
+    "currentPrice" DOUBLE PRECISION,
+    "stats_mean" DOUBLE PRECISION,
+    "stats_stdDev" DOUBLE PRECISION,
+    "stats_lastUpdated" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Route_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PriceSnapshot" (
+    "id" TEXT NOT NULL,
+    "routeId" TEXT NOT NULL,
+    "provider" TEXT NOT NULL DEFAULT 'Skyscanner',
+    "amount" DOUBLE PRECISION NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'TRY',
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "score" DOUBLE PRECISION,
+    "explanation" TEXT,
+    "duration" INTEGER,
+    "stops" INTEGER,
+
+    CONSTRAINT "PriceSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AlertLog" (
+    "id" TEXT NOT NULL,
+    "routeId" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "score" DOUBLE PRECISION,
+    "oldPrice" DOUBLE PRECISION,
+    "newPrice" DOUBLE PRECISION,
+    "dropPercent" DOUBLE PRECISION,
+    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AlertLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Airport" (
+    "id" TEXT NOT NULL,
+    "cityId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "isMajor" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Airport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "City" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "country" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "City_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "RouteStatistics" (
@@ -72,6 +212,13 @@ CREATE TABLE "FlightSearchRecord" (
     "departureDate" TIMESTAMP(3) NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "provider" TEXT NOT NULL,
+    "airlineName" TEXT,
+    "airlineCode" TEXT,
+    "stops" INTEGER,
+    "totalDurationMinutes" INTEGER,
+    "layoverAirports" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "departureTime" TIMESTAMP(3),
+    "arrivalTime" TIMESTAMP(3),
     "rawResponse" JSONB,
     "cacheStatus" TEXT DEFAULT 'SUCCESS',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -219,12 +366,18 @@ CREATE TABLE "Monitor" (
 -- CreateTable
 CREATE TABLE "CompensationClaim" (
     "id" TEXT NOT NULL,
-    "monitorId" TEXT NOT NULL,
-    "type" "ClaimType" NOT NULL,
+    "monitorId" TEXT,
+    "flightLegId" TEXT,
+    "type" "ClaimType",
     "amount" DOUBLE PRECISION,
     "currency" TEXT NOT NULL DEFAULT 'EUR',
     "status" "ClaimStatus" NOT NULL DEFAULT 'DRAFT',
     "details" JSONB,
+    "eligibilityStatus" TEXT,
+    "regulation" TEXT,
+    "estimatedAmount" INTEGER,
+    "delayMinutes" INTEGER,
+    "calculatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -252,6 +405,8 @@ CREATE TABLE "MonitoredTrip" (
     "lastCheckedAt" TIMESTAMP(3),
     "nextCheckAt" TIMESTAMP(3) NOT NULL,
     "checkFrequency" INTEGER NOT NULL DEFAULT 60,
+    "processingLeaseId" TEXT,
+    "processingLeaseExpiresAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -288,6 +443,38 @@ CREATE TABLE "FlightSegment" (
 );
 
 -- CreateTable
+CREATE TABLE "FlightLeg" (
+    "id" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "flightNumber" TEXT NOT NULL,
+    "origin" TEXT NOT NULL,
+    "destination" TEXT NOT NULL,
+    "scheduledDep" TIMESTAMP(3) NOT NULL,
+    "scheduledArr" TIMESTAMP(3) NOT NULL,
+    "actualDep" TIMESTAMP(3),
+    "actualArr" TIMESTAMP(3),
+    "carrier" TEXT NOT NULL,
+    "distanceKm" INTEGER,
+    "regulationZone" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "FlightLeg_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ConnectionCache" (
+    "id" TEXT NOT NULL,
+    "flightIdent" TEXT NOT NULL,
+    "analysisDate" DATE NOT NULL,
+    "historyData" JSONB NOT NULL,
+    "onTimeRate" DOUBLE PRECISION NOT NULL,
+    "sampleSize" INTEGER NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ConnectionCache_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "GuardianAlert" (
     "id" TEXT NOT NULL,
     "tripId" TEXT NOT NULL,
@@ -302,6 +489,97 @@ CREATE TABLE "GuardianAlert" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "GuardianAlert_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AlertEvent" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "routeId" TEXT,
+    "watchedFlightId" TEXT,
+    "tripId" TEXT,
+    "sourceType" "AlertSourceType" NOT NULL,
+    "sourceId" TEXT NOT NULL,
+    "eventType" "MonitoringEventType" NOT NULL,
+    "state" "AlertLifecycleState" NOT NULL DEFAULT 'DETECTED',
+    "severity" TEXT NOT NULL DEFAULT 'INFO',
+    "fingerprint" TEXT NOT NULL,
+    "fingerprintKey" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "payload" JSONB,
+    "cooldownUntil" TIMESTAMP(3),
+    "suppressedById" TEXT,
+    "suppressionReason" TEXT,
+    "detectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "queuedAt" TIMESTAMP(3),
+    "sentAt" TIMESTAMP(3),
+    "deliveredAt" TIMESTAMP(3),
+    "failedAt" TIMESTAMP(3),
+    "expiresAt" TIMESTAMP(3),
+    "recoveredAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AlertEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AlertNotificationDelivery" (
+    "id" TEXT NOT NULL,
+    "alertEventId" TEXT NOT NULL,
+    "channel" "AlertDeliveryChannel" NOT NULL,
+    "status" "AlertDeliveryStatus" NOT NULL DEFAULT 'QUEUED',
+    "attempt" INTEGER NOT NULL DEFAULT 0,
+    "maxAttempts" INTEGER NOT NULL DEFAULT 4,
+    "providerMessageId" TEXT,
+    "lastError" TEXT,
+    "nextRetryAt" TIMESTAMP(3),
+    "queuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "attemptedAt" TIMESTAMP(3),
+    "sentAt" TIMESTAMP(3),
+    "deliveredAt" TIMESTAMP(3),
+    "failedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AlertNotificationDelivery_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TripSnapshot" (
+    "id" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "delayMinutes" INTEGER NOT NULL DEFAULT 0,
+    "status" TEXT NOT NULL DEFAULT 'scheduled',
+    "dataQuality" TEXT NOT NULL DEFAULT 'UNKNOWN',
+    "departureGate" TEXT,
+    "arrivalGate" TEXT,
+    "statusDetail" TEXT,
+    "gateDetail" TEXT,
+    "lastEventId" TEXT,
+    "eu261Eligible" BOOLEAN NOT NULL DEFAULT false,
+    "snapshotAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TripSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NotificationDelivery" (
+    "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "channel" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "sentAt" TIMESTAMP(3),
+    "claimedAt" TIMESTAMP(3),
+    "processingLeaseId" TEXT,
+    "processingLeaseExpiresAt" TIMESTAMP(3),
+    "attemptCount" INTEGER NOT NULL DEFAULT 0,
+    "lastError" TEXT,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "NotificationDelivery_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -423,6 +701,59 @@ CREATE TABLE "DecisionPerformanceMetric" (
     CONSTRAINT "DecisionPerformanceMetric_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "DisruptionPlaybook" (
+    "id" TEXT NOT NULL,
+    "monitoredTripId" TEXT NOT NULL,
+    "generatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "scenarioA" JSONB NOT NULL,
+    "scenarioB" JSONB NOT NULL,
+    "scenarioC" JSONB NOT NULL,
+    "airlineIata" TEXT NOT NULL,
+    "regulationZone" TEXT NOT NULL,
+    "connectionCount" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "DisruptionPlaybook_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "leads" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "source" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "leads_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_stripeCustomerId_key" ON "User"("stripeCustomerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+
+-- CreateIndex
+CREATE INDEX "Route_userId_idx" ON "Route"("userId");
+
+-- CreateIndex
+CREATE INDEX "Route_originCode_destinationCode_idx" ON "Route"("originCode", "destinationCode");
+
+-- CreateIndex
+CREATE INDEX "Airport_cityId_idx" ON "Airport"("cityId");
+
+-- CreateIndex
+CREATE INDEX "Airport_code_idx" ON "Airport"("code");
+
+-- CreateIndex
+CREATE INDEX "City_name_idx" ON "City"("name");
+
 -- CreateIndex
 CREATE INDEX "RouteStatistics_originCode_destinationCode_idx" ON "RouteStatistics"("originCode", "destinationCode");
 
@@ -502,7 +833,16 @@ CREATE INDEX "Monitor_userId_idx" ON "Monitor"("userId");
 CREATE INDEX "Monitor_status_idx" ON "Monitor"("status");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "CompensationClaim_flightLegId_key" ON "CompensationClaim"("flightLegId");
+
+-- CreateIndex
 CREATE INDEX "CompensationClaim_monitorId_idx" ON "CompensationClaim"("monitorId");
+
+-- CreateIndex
+CREATE INDEX "CompensationClaim_flightLegId_idx" ON "CompensationClaim"("flightLegId");
+
+-- CreateIndex
+CREATE INDEX "CompensationClaim_eligibilityStatus_idx" ON "CompensationClaim"("eligibilityStatus");
 
 -- CreateIndex
 CREATE INDEX "MonitoredTrip_userId_idx" ON "MonitoredTrip"("userId");
@@ -511,10 +851,64 @@ CREATE INDEX "MonitoredTrip_userId_idx" ON "MonitoredTrip"("userId");
 CREATE INDEX "MonitoredTrip_status_nextCheckAt_idx" ON "MonitoredTrip"("status", "nextCheckAt");
 
 -- CreateIndex
+CREATE INDEX "MonitoredTrip_status_nextCheckAt_processingLeaseExpiresAt_idx" ON "MonitoredTrip"("status", "nextCheckAt", "processingLeaseExpiresAt");
+
+-- CreateIndex
 CREATE INDEX "Passenger_tripId_idx" ON "Passenger"("tripId");
 
 -- CreateIndex
 CREATE INDEX "FlightSegment_tripId_idx" ON "FlightSegment"("tripId");
+
+-- CreateIndex
+CREATE INDEX "FlightLeg_tripId_idx" ON "FlightLeg"("tripId");
+
+-- CreateIndex
+CREATE INDEX "FlightLeg_origin_destination_idx" ON "FlightLeg"("origin", "destination");
+
+-- CreateIndex
+CREATE INDEX "FlightLeg_flightNumber_scheduledDep_idx" ON "FlightLeg"("flightNumber", "scheduledDep");
+
+-- CreateIndex
+CREATE INDEX "FlightLeg_regulationZone_idx" ON "FlightLeg"("regulationZone");
+
+-- CreateIndex
+CREATE INDEX "ConnectionCache_expiresAt_idx" ON "ConnectionCache"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ConnectionCache_flightIdent_analysisDate_key" ON "ConnectionCache"("flightIdent", "analysisDate");
+
+-- CreateIndex
+CREATE INDEX "AlertEvent_userId_detectedAt_idx" ON "AlertEvent"("userId", "detectedAt");
+
+-- CreateIndex
+CREATE INDEX "AlertEvent_sourceType_sourceId_eventType_detectedAt_idx" ON "AlertEvent"("sourceType", "sourceId", "eventType", "detectedAt");
+
+-- CreateIndex
+CREATE INDEX "AlertEvent_state_detectedAt_idx" ON "AlertEvent"("state", "detectedAt");
+
+-- CreateIndex
+CREATE INDEX "AlertEvent_fingerprintKey_detectedAt_idx" ON "AlertEvent"("fingerprintKey", "detectedAt");
+
+-- CreateIndex
+CREATE INDEX "AlertNotificationDelivery_alertEventId_idx" ON "AlertNotificationDelivery"("alertEventId");
+
+-- CreateIndex
+CREATE INDEX "AlertNotificationDelivery_status_nextRetryAt_idx" ON "AlertNotificationDelivery"("status", "nextRetryAt");
+
+-- CreateIndex
+CREATE INDEX "AlertNotificationDelivery_channel_status_idx" ON "AlertNotificationDelivery"("channel", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TripSnapshot_tripId_key" ON "TripSnapshot"("tripId");
+
+-- CreateIndex
+CREATE INDEX "NotificationDelivery_tripId_idx" ON "NotificationDelivery"("tripId");
+
+-- CreateIndex
+CREATE INDEX "NotificationDelivery_status_processingLeaseExpiresAt_idx" ON "NotificationDelivery"("status", "processingLeaseExpiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NotificationDelivery_eventId_channel_key" ON "NotificationDelivery"("eventId", "channel");
 
 -- CreateIndex
 CREATE INDEX "Experiment_status_idx" ON "Experiment"("status");
@@ -559,7 +953,34 @@ CREATE INDEX "DecisionPerformanceMetric_experimentId_idx" ON "DecisionPerformanc
 CREATE UNIQUE INDEX "DecisionPerformanceMetric_origin_destination_dateWindow_dec_key" ON "DecisionPerformanceMetric"("origin", "destination", "dateWindow", "decisionType");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_stripeCustomerId_key" ON "User"("stripeCustomerId");
+CREATE UNIQUE INDEX "DisruptionPlaybook_monitoredTripId_key" ON "DisruptionPlaybook"("monitoredTripId");
+
+-- CreateIndex
+CREATE INDEX "DisruptionPlaybook_monitoredTripId_idx" ON "DisruptionPlaybook"("monitoredTripId");
+
+-- CreateIndex
+CREATE INDEX "DisruptionPlaybook_airlineIata_idx" ON "DisruptionPlaybook"("airlineIata");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "leads_email_key" ON "leads"("email");
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Route" ADD CONSTRAINT "Route_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PriceSnapshot" ADD CONSTRAINT "PriceSnapshot_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "Route"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertLog" ADD CONSTRAINT "AlertLog_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "Route"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Airport" ADD CONSTRAINT "Airport_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES "City"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserPreference" ADD CONSTRAINT "UserPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -574,6 +995,9 @@ ALTER TABLE "Monitor" ADD CONSTRAINT "Monitor_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "CompensationClaim" ADD CONSTRAINT "CompensationClaim_monitorId_fkey" FOREIGN KEY ("monitorId") REFERENCES "Monitor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CompensationClaim" ADD CONSTRAINT "CompensationClaim_flightLegId_fkey" FOREIGN KEY ("flightLegId") REFERENCES "FlightLeg"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "MonitoredTrip" ADD CONSTRAINT "MonitoredTrip_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -583,10 +1007,37 @@ ALTER TABLE "Passenger" ADD CONSTRAINT "Passenger_tripId_fkey" FOREIGN KEY ("tri
 ALTER TABLE "FlightSegment" ADD CONSTRAINT "FlightSegment_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "FlightLeg" ADD CONSTRAINT "FlightLeg_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "GuardianAlert" ADD CONSTRAINT "GuardianAlert_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertEvent" ADD CONSTRAINT "AlertEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertEvent" ADD CONSTRAINT "AlertEvent_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "Route"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertEvent" ADD CONSTRAINT "AlertEvent_watchedFlightId_fkey" FOREIGN KEY ("watchedFlightId") REFERENCES "WatchedFlight"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertEvent" ADD CONSTRAINT "AlertEvent_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AlertNotificationDelivery" ADD CONSTRAINT "AlertNotificationDelivery_alertEventId_fkey" FOREIGN KEY ("alertEventId") REFERENCES "AlertEvent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TripSnapshot" ADD CONSTRAINT "TripSnapshot_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "NotificationDelivery" ADD CONSTRAINT "NotificationDelivery_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ExperimentAssignment" ADD CONSTRAINT "ExperimentAssignment_experimentId_fkey" FOREIGN KEY ("experimentId") REFERENCES "Experiment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ExperimentAssignment" ADD CONSTRAINT "ExperimentAssignment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DisruptionPlaybook" ADD CONSTRAINT "DisruptionPlaybook_monitoredTripId_fkey" FOREIGN KEY ("monitoredTripId") REFERENCES "MonitoredTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import UpgradePrompt from "@/components/freemium/UpgradePrompt";
+import type { FreemiumFeature } from "@/lib/freemium/limits";
 import {
     BarChart3,
     Plane,
@@ -431,6 +433,11 @@ export default function ScoreFlightPage() {
     const [tracked, setTracked] = useState(false);
     const [result, setResult] = useState<ScoreResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [upgradePrompt, setUpgradePrompt] = useState<{
+        feature: FreemiumFeature;
+        current?: number;
+        limit?: number;
+    } | null>(null);
 
     const updateSegment = (index: number, patch: Partial<SegmentInput>) => {
         setSegmentsManuallyEdited(true);
@@ -459,6 +466,15 @@ export default function ScoreFlightPage() {
             });
 
             const data = await res.json();
+            if (res.status === 402) {
+                setUpgradePrompt({
+                    feature: data.feature as FreemiumFeature,
+                    current: data.current,
+                    limit: data.limit,
+                });
+                return;
+            }
+
             if (!res.ok) {
                 setError(data?.error || "Failed to track itinerary");
                 return;
@@ -499,6 +515,16 @@ export default function ScoreFlightPage() {
             });
 
             if (!res.ok) {
+                if (res.status === 402) {
+                    const data = await res.json().catch(() => ({}));
+                    setUpgradePrompt({
+                        feature: (data.feature as FreemiumFeature) || 'advisor_report',
+                        current: data.current,
+                        limit: data.limit,
+                    });
+                    return;
+                }
+
                 const data = await res.json().catch(() => ({}));
                 setError(data?.error || "Failed to generate advisor report PDF.");
                 return;
@@ -576,6 +602,15 @@ export default function ScoreFlightPage() {
 
             const data = await res.json();
 
+            if (res.status === 402) {
+                setUpgradePrompt({
+                    feature: (data.feature as FreemiumFeature) || 'itinerary_analysis',
+                    current: data.current,
+                    limit: data.limit,
+                });
+                return;
+            }
+
             if (!res.ok) {
                 const msg = data?.issues
                     ? data.issues.map((i: { path: string; message: string }) => `${i.path}: ${i.message}`).join(" | ")
@@ -606,6 +641,15 @@ export default function ScoreFlightPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-28 pb-24">
+            {upgradePrompt && (
+                <UpgradePrompt
+                    feature={upgradePrompt.feature}
+                    current={upgradePrompt.current}
+                    limit={upgradePrompt.limit}
+                    onDismiss={() => setUpgradePrompt(null)}
+                />
+            )}
+
             <div className="container mx-auto px-4 md:px-6 max-w-5xl">
                 <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors mb-8">
                     <ArrowLeft className="w-4 h-4" /> Back to home
@@ -629,7 +673,7 @@ export default function ScoreFlightPage() {
                             Paste your itinerary *
                         </label>
                         <p className="text-xs text-slate-500 mb-2">
-                            You don't need to fill forms - just paste your flight details.
+                            You don&apos;t need to fill forms - just paste your flight details.
                         </p>
                         <textarea
                             required

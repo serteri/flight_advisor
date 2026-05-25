@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
+import { auth } from '@/lib/auth';
+import { checkLimit, incrementUsage } from '@/lib/freemium/usage';
 import {
     itineraryScoreInputSchema,
     itineraryInputToUnifiedFlight,
@@ -13,6 +15,7 @@ import { buildParseAudit, runSelfCheckLayer, type ParseAudit } from '@/lib/audit
 import { recordParserMetric } from '@/services/healthMetrics';
 import type { ParserMetricEvent } from '@/types/operatorHealth';
 import { isForbiddenFakeFlightToken } from '@/lib/parser/flightNumberValidation';
+import { prisma } from '@/lib/prisma';
 
 type ManualDecision = 'BUY' | 'WAIT' | 'WATCH';
 type ReliabilityTier = 'HIGH_RELIABILITY' | 'MODERATE_RELIABILITY' | 'LIMITED_RELIABILITY' | 'PRELIMINARY_ESTIMATE';
@@ -886,7 +889,38 @@ const buildPremiumReport = (params: {
 };
 
 export async function POST(request: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
+        const user = await prisma.user.upsert({
+            where: { email: session.user.email },
+            create: {
+                email: session.user.email,
+                name: session.user.name || 'User',
+            },
+            update: {
+                name: session.user.name || undefined,
+            },
+            select: { id: true },
+        });
+
+        const access = await checkLimit(user.id, 'itinerary_analysis');
+        if (!access.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'LIMIT_REACHED',
+                    feature: 'itinerary_analysis',
+                    current: access.current,
+                    limit: access.limit,
+                    upgradeUrl: '/pricing',
+                },
+                { status: 402 },
+            );
+        }
+
         const payload = itineraryScoreInputSchema.parse((await request.json()) as ItineraryScoreInput);
         const { unifiedFlight, assessment, derived, extractedSegments } = itineraryInputToUnifiedFlight(payload);
         const passengerPricingContext = assessment.passengerPricingContext;
@@ -1170,7 +1204,7 @@ export async function POST(request: NextRequest) {
         });
         const allowPremiumReport = !(assessment.promptForDetails && (assessment.parseConfidence ?? 1) < 0.45);
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             ...enforcedFlight,
             inputSource,
             selfCheckWarnings: selfChecked.userWarnings,
@@ -1270,6 +1304,12 @@ export async function POST(request: NextRequest) {
                     ? 'Parsing was incomplete. Review and edit extracted segments for better scoring accuracy.'
                 : undefined,
         });
+
+        void incrementUsage(user.id, 'itinerary_analysis').catch((error) => {
+            console.error('[SCORE_FLIGHT] Failed to increment freemium usage:', error);
+        });
+
+        return response;
     } catch (error) {
         if (error instanceof ZodError) {
             return NextResponse.json(

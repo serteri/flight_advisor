@@ -1,11 +1,28 @@
 'use client';
 import { useState } from 'react';
-import { Loader2, Plane, AlertTriangle, Search, X, CheckCircle } from 'lucide-react';
+import { Loader2, Plane, Search, X, CheckCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { PricingTable } from './PricingTable';
+import UpgradePrompt from '@/components/freemium/UpgradePrompt';
+import type { FreemiumFeature } from '@/lib/freemium/limits';
 
-export function AddTripModal({ onClose, user }: { onClose: () => void, user: any }) {
+type AddTripUser = {
+    id?: string;
+    subscriptionPlan?: string;
+};
+
+type VerifiedFlight = {
+    airlineCode?: string;
+    flightNumber?: string;
+    date?: string;
+    origin?: string;
+    departureTime?: string;
+    destination?: string;
+    arrivalTime?: string;
+};
+
+export function AddTripModal({ onClose, user }: { onClose: () => void, user: AddTripUser }) {
     const t = useTranslations('addTrip');
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -17,9 +34,14 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
     const [flightNo, setFlightNo] = useState(''); // e.g. TK59
     const [date, setDate] = useState(''); // YYYY-MM-DD
     const [pnr, setPnr] = useState('');
+    const [upgradePrompt, setUpgradePrompt] = useState<{
+        feature: FreemiumFeature;
+        current?: number;
+        limit?: number;
+    } | null>(null);
 
     // Verified Data
-    const [verifiedFlight, setVerifiedFlight] = useState<any>(null);
+    const [verifiedFlight, setVerifiedFlight] = useState<VerifiedFlight | null>(null);
 
     const handleVerifyFlight = async () => {
         setLoading(true);
@@ -52,7 +74,7 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
             } else {
                 alert("Flight not found on this date. Please check the code and date.");
             }
-        } catch (e) {
+        } catch {
             alert("System error.");
         } finally {
             setLoading(false);
@@ -72,13 +94,23 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
                 })
             });
 
+            if (res.status === 402) {
+                const data = await res.json().catch(() => ({}));
+                setUpgradePrompt({
+                    feature: (data.feature as FreemiumFeature) || 'monitored_trip',
+                    current: data.current,
+                    limit: data.limit,
+                });
+                return;
+            }
+
             if (res.ok) {
                 setStep(3); // Success
                 router.refresh();
             } else {
                 alert("Failed to save trip.");
             }
-        } catch (e) {
+        } catch {
             alert("Connection error");
         }
     };
@@ -105,6 +137,15 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: any
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            {upgradePrompt && (
+                <UpgradePrompt
+                    feature={upgradePrompt.feature}
+                    current={upgradePrompt.current}
+                    limit={upgradePrompt.limit}
+                    onDismiss={() => setUpgradePrompt(null)}
+                />
+            )}
+
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
                 <button onClick={handleClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10">
                     <X className="w-5 h-5" />

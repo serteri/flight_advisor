@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z, ZodError } from 'zod';
 
+import { auth } from '@/lib/auth';
+import { withFreemiumGate } from '@/lib/freemium/gate';
+import { prisma } from '@/lib/prisma';
 import { generateItineraryAdvisorPDF } from '@/services/reports/itineraryPdf';
 
 export const runtime = 'nodejs';
@@ -63,6 +66,11 @@ const payloadSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         let body: unknown;
         try {
@@ -75,23 +83,34 @@ export async function POST(request: NextRequest) {
         }
 
         const payload = payloadSchema.parse(body);
-        const pdfBuffer = await generateItineraryAdvisorPDF(payload);
-        if (!pdfBuffer.byteLength) {
-            throw new Error('PDF renderer returned an empty buffer');
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { id: true },
+        });
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const origin = payload.trackingPayload?.trip?.origin || 'TRIP';
-        const destination = payload.trackingPayload?.trip?.destination || 'REPORT';
-        const fileName = `advisor-report-${origin}-${destination}.pdf`;
+        return withFreemiumGate(user.id, 'advisor_report', async () => {
+            const pdfBuffer = await generateItineraryAdvisorPDF(payload);
+            if (!pdfBuffer.byteLength) {
+                throw new Error('PDF renderer returned an empty buffer');
+            }
 
-        return new NextResponse(new Uint8Array(pdfBuffer), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="${fileName}"`,
-                'Content-Length': String(pdfBuffer.byteLength),
-                'Cache-Control': 'no-store',
-            },
+            const origin = payload.trackingPayload?.trip?.origin || 'TRIP';
+            const destination = payload.trackingPayload?.trip?.destination || 'REPORT';
+            const fileName = `advisor-report-${origin}-${destination}.pdf`;
+
+            return new NextResponse(new Uint8Array(pdfBuffer), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `attachment; filename="${fileName}"`,
+                    'Content-Length': String(pdfBuffer.byteLength),
+                    'Cache-Control': 'no-store',
+                },
+            });
         });
     } catch (error) {
         if (error instanceof ZodError) {

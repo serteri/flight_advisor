@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Search, Loader2 } from 'lucide-react';
+import UpgradePrompt from '@/components/freemium/UpgradePrompt';
+import type { FreemiumFeature } from '@/lib/freemium/limits';
 
 interface InspectionResult {
   success: boolean;
@@ -27,9 +29,9 @@ interface InspectionResult {
       cancelledPercentage: number;
       totalFlights: number;
     };
-    offer: any;
+    offer: unknown;
     masterScore: number;
-    scoreDetails: any;
+    scoreDetails: unknown;
     hiddenTraps: Array<{
       type: string;
       title: string;
@@ -223,6 +225,11 @@ function FlightInspectionResult({
   const [bookingPnr, setBookingPnr] = useState('');
   const [tracking, setTracking] = useState(false);
   const [trackingError, setTrackingError] = useState('');
+  const [upgradePrompt, setUpgradePrompt] = useState<{
+    feature: FreemiumFeature;
+    current?: number;
+    limit?: number;
+  } | null>(null);
   const router = useRouter();
 
   const handleTrackFlight = async () => {
@@ -248,6 +255,15 @@ function FlightInspectionResult({
       );
 
       const data = await response.json();
+
+      if (response.status === 402) {
+        setUpgradePrompt({
+          feature: (data.feature as FreemiumFeature) || 'monitored_trip',
+          current: data.current,
+          limit: data.limit,
+        });
+        return;
+      }
 
       if (!response.ok) {
         setTrackingError(
@@ -281,6 +297,15 @@ function FlightInspectionResult({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
+      {upgradePrompt && (
+        <UpgradePrompt
+          feature={upgradePrompt.feature}
+          current={upgradePrompt.current}
+          limit={upgradePrompt.limit}
+          onDismiss={() => setUpgradePrompt(null)}
+        />
+      )}
+
       {/* Header */}
       <Button
         onClick={onBack}
@@ -440,7 +465,7 @@ function FlightInspectionResult({
             </h3>
             <div className="space-y-3">
               <p className="text-sm text-slate-300">
-                After booking, click below to enable periodic monitoring. We'll
+                After booking, click below to enable periodic monitoring. We&apos;ll
                 check for disruption signals and keep an alert history when
                 changes are detected.
               </p>
