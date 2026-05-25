@@ -1,13 +1,18 @@
 
 import { blogPosts } from '@/app/lib/blog-data';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowLeft, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-export default async function BlogPost({ params }: { params: { slug: string; locale: string } }) {
+export default async function BlogPost({
+    params,
+}: {
+    params: Promise<{ slug: string; locale: string }>;
+}) {
     const t = await getTranslations('BlogPage');
-    const post = blogPosts.find(p => p.slug === params.slug);
+    const { slug, locale } = await params;
+    const post = blogPosts.find(p => p.slug === slug);
 
     if (!post) {
         return notFound();
@@ -22,7 +27,7 @@ export default async function BlogPost({ params }: { params: { slug: string; loc
 
                 <div className="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-black/80 to-transparent pt-32 pb-10 px-6">
                     <div className="max-w-3xl mx-auto">
-                        <Link href={`/${params.locale}/blog`} className="inline-flex items-center text-white/80 hover:text-white mb-6 text-sm transition-colors">
+                        <Link href="/blog" locale={locale} className="inline-flex items-center text-white/80 hover:text-white mb-6 text-sm transition-colors">
                             <ArrowLeft className="w-4 h-4 mr-2" /> {t('backToGuides')}
                         </Link>
                         <h1 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
@@ -81,7 +86,7 @@ export default async function BlogPost({ params }: { params: { slug: string; loc
                     <div className="mt-16 bg-blue-50 border border-blue-100 rounded-2xl p-8 text-center">
                         <h3 className="text-2xl font-bold text-slate-900 mb-2">{t('ctaTitle')}</h3>
                         <p className="text-slate-600 mb-6">{t('ctaDesc')}</p>
-                        <Link href={`/${params.locale}`} className="inline-block bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                        <Link href="/" locale={locale} className="inline-block bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
                             {t('ctaButton')}
                         </Link>
                     </div>
