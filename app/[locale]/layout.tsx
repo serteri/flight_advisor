@@ -4,7 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import SessionProvider from "@/components/SessionProvider";
 import BuyNowVariantBootstrap from '@/components/experiment/BuyNowVariantBootstrap';
-import { ConsentBannerWrapper } from "@/components/analytics/ConsentBannerWrapper";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import "../globals.css";
 
 const GA_ID = "G-04HJXKRJFE";
@@ -61,8 +61,8 @@ export default async function RootLayout({
                     </NextIntlClientProvider>
                 </SessionProvider>
 
-                {/* Restores prior consent + shows banner for new visitors */}
-                <ConsentBannerWrapper />
+                {/* Restores prior consent + shows banner for first-time visitors */}
+                <AnalyticsProvider />
             </body>
         </html>
     );
