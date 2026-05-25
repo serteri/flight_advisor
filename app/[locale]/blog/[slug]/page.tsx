@@ -1,5 +1,5 @@
 
-import { blogPosts } from '@/app/lib/blog-data';
+import { getBlogPostBySlug, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
 import { ArrowLeft, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -12,7 +12,8 @@ export default async function BlogPost({
 }) {
     const t = await getTranslations('BlogPage');
     const { slug, locale } = await params;
-    const post = blogPosts.find(p => p.slug === slug);
+    const currentLocale: BlogLocale = locale === 'tr' || locale === 'de' ? locale : 'en';
+    const post = getBlogPostBySlug(currentLocale, slug);
 
     if (!post) {
         return notFound();

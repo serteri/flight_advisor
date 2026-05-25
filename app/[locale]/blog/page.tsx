@@ -1,5 +1,5 @@
 
-import { blogPosts } from '@/app/lib/blog-data';
+import { getBlogPosts, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -11,6 +11,8 @@ export default async function BlogIndex({
 }) {
     const t = await getTranslations('BlogPage');
     const { locale } = await params;
+    const currentLocale: BlogLocale = locale === 'tr' || locale === 'de' ? locale : 'en';
+    const posts = getBlogPosts(currentLocale);
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20">
@@ -28,7 +30,7 @@ export default async function BlogIndex({
                 </Link>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {blogPosts.map((post) => (
+                    {posts.map((post) => (
                         <Link href={`/blog/${post.slug}`} locale={locale} key={post.slug} className="group">
                             <article className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col border border-slate-100 group-hover:border-blue-200">
                                 {/* IMAGE */}
