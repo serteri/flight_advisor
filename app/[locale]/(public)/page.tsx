@@ -56,11 +56,11 @@ export default function HomePage() {
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center mb-5 shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <BarChart3 className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Score an Itinerary</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Analyze route structure, transfer risk, fare context, and advisor recommendations before you book.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.score.title')}</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.score.desc')}</p>
                             <Link href="/score-flight">
                                 <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-semibold shadow-md shadow-blue-500/20">
-                                    Score Itinerary <ArrowRight className="ml-2 w-4 h-4" />
+                                    {t('primaryActions.score.cta')} <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
@@ -70,11 +70,11 @@ export default function HomePage() {
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mb-5 shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <MapPin className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Track an Itinerary</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Watch candidate itineraries with scheduled price snapshots and transparent monitoring history.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.track.title')}</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.track.desc')}</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold">
-                                    Track Itinerary <ArrowRight className="ml-2 w-4 h-4" />
+                                    {t('primaryActions.track.cta')} <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
@@ -84,11 +84,11 @@ export default function HomePage() {
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5 shadow-md shadow-emerald-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <Mail className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Add Booked Trip</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">Add a confirmed trip for periodic disruption checks, alert history, and notification delivery tracking.</p>
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.add.title')}</h3>
+                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.add.desc')}</p>
                             <Link href="/dashboard">
                                 <Button variant="outline" className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold">
-                                    Add Booked Trip <ArrowRight className="ml-2 w-4 h-4" />
+                                    {t('primaryActions.add.cta')} <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
@@ -96,9 +96,9 @@ export default function HomePage() {
 
                     {/* Trust Indicators */}
                     <div className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 hover:opacity-80 transition-all duration-500">
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> Monitoring Transparency</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> Trip Decision Intelligence</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> Periodic Disruption Checks</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> {t('trust.monitoring')}</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> {t('trust.decision')}</span>
+                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> {t('trust.disruption')}</span>
                     </div>
                 </div>
             </section>

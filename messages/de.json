@@ -8,7 +8,7 @@
     "to": "Nach",
     "passengers": "Reisende",
     "cabin_class": "Kabinenklasse",
-    "search_flights": "Itinerary bewerten",
+    "search_flights": "Flug Bewerten",
     "add_date": "Datum hinzufügen",
     "travel_purpose": "Reisezweck",
     "purpose_budget": "Budget",
@@ -18,18 +18,18 @@
   },
   "Navbar": {
     "home": "Startseite",
-    "search": "Itinerary bewerten",
+    "search": "Flug Bewerten",
     "pricing": "Preise",
     "features": "Funktionen",
     "blog": "Reisetipps",
-    "aiMode": "INTELLIGENCE MODE",
-    "aiModeActive": "INTELLIGENCE MODE",
+    "aiMode": "ENTSCHEIDUNGSMODUS",
+    "aiModeActive": "ENTSCHEIDUNGSMODUS",
     "login": "Anmelden",
     "logout": "Abmelden",
     "dashboard": "Übersicht",
-    "getStarted": "Itinerary bewerten",
-    "scoreItinerary": "Itinerary bewerten",
-    "intelligenceMode": "ITINERARY INTELLIGENCE"
+    "getStarted": "Flug Bewerten",
+    "scoreItinerary": "Flug Bewerten",
+    "intelligenceMode": "REISEINTELLIGENZ"
   },
   "PricingPage": {
     "title": "Itinerary Intelligence Plans",
@@ -101,218 +101,263 @@
     "flightIntelligenceAlert": "Flight-Intelligence-Warnung",
     "unlockIntelligence": "Intelligence freischalten",
     "seatDataUnavailable": "Sitzdaten nicht verfügbar",
-    "tenCriteriaEngine": "10-Kriterien-Engine"
+    "tenCriteriaEngine": "10-Kriterien-Engine",
+    "noFlights": "No flights found",
+    "bookButton": "View Deal",
+    "stop": "Stop",
+    "source": "DATA SOURCE",
+    "meal": "Meal",
+    "wifi": "Wi-Fi",
+    "baggage": "Baggage",
+    "included": "Included",
+    "paid": "Paid / None",
+    "unknown": "Unknown",
+    "meal_included": "Meal Included",
+    "meal_paid": "Paid / None",
+    "meal_unknown": "No Info",
+    "baggage_info": "Baggage Info",
+    "premium_upgrade": "Go Premium",
+    "book_aviasales": "Book with Aviasales",
+    "book_site": "Book on Site",
+    "partnerRedirect": "You will be redirected to our partner",
+    "official_site": "Official Site Redirect",
+    "currency_aud": "A$",
+    "check": "Check",
+    "select": "Select",
+    "safeRedirect": "Safe Redirect (OBSOLETE)",
+    "premiumLock": "Login for Analysis"
   },
   "HomePage": {
     "hero": {
-      "title": "Trip Decision",
-      "titleHighlight": "Intelligence",
-      "subtitle": "Bewerten Sie Itineraries vor der Buchung, lesen Sie Advisor Reports und monitoren Sie gebuchte Reisen mit transparenten periodischen Checks.",
-      "ctaPrimary": "Jetzt Entdecken",
-      "ctaSecondary": "Mehr Erfahren"
+      "title": "Entscheidungsunterstützung",
+      "titleHighlight": "Reiseintelligenz",
+      "subtitle": "Bewerte Flüge vor der Buchung, prüfe Entscheidungsberichte und überwache gebuchte Reisen mit transparenten, periodischen Kontrollen.",
+      "ctaPrimary": "Flug Bewerten",
+      "ctaSecondary": "So funktioniert es"
     },
     "badge": {
-      "engineActive": "Itinerary Intelligence Platform",
-      "aiMode": "Trip Decision Intelligence"
+      "engineActive": "Reiseintelligenz Plattform",
+      "aiMode": "Entscheidungsunterstützung"
     },
     "trust": {
-      "airlines": "Itinerary scoring",
-      "secure": "Advisor reports",
-      "realtime": "Monitoring snapshots"
+      "airlines": "Reiseintelligenz",
+      "secure": "Entscheidungsunterstützung",
+      "realtime": "Störungsprüfungen",
+      "monitoring": "Monitoring-Transparenz",
+      "decision": "Entscheidungsunterstützung",
+      "disruption": "Störungsprüfungen"
     },
     "system": {
-      "label": "FlightAgent Platform",
-      "title": "Trip Intelligence vor und nach der Buchung",
-      "subtitle": "FlightAgent ist keine OTA oder Flugpreis-Suchmaschine. Es hilft, Itinerary-Risiko, Fare Context, Monitoring Status und Alert History zu verstehen.",
+      "label": "FlightAgent Plattform",
+      "title": "Entscheidungsunterstützung vor und nach der Buchung",
+      "subtitle": "FlightAgent ist keine OTA. Die Plattform hilft, Routenqualität, Risiko, Tarifkontext und Monitoring-Status klar zu bewerten.",
       "cards": {
         "hybrid": {
-          "title": "Itinerary Scoring",
-          "desc": "Analyze route structure, connection quality, fare context, and risk signals."
+          "title": "Reiseintelligenz Bewertung",
+          "desc": "Analysiert Routenstruktur, Umstiegsqualität, Tarifkontext und Risikosignale."
         },
         "scoring": {
-          "title": "Advisor Reports",
-          "desc": "Premium reports explain recommendations with practical itinerary context."
+          "title": "Entscheidungsberichte",
+          "desc": "Begründet Empfehlungen über Route, Tarif, Gepäck, Komfort und Störungsrisiko."
         },
         "disruption": {
-          "title": "Tracked Itineraries",
-          "desc": "Watch candidate routes using scheduled monitoring snapshots and estimated pricing context."
+          "title": "Verfolgte Routen",
+          "desc": "Beobachte Kandidatenrouten mit geplanten Monitoring-Snapshots und Tarifkontext."
         },
         "guardian": {
-          "title": "Booked Trip Monitoring",
-          "desc": "Confirmed trips can receive periodic disruption checks for schedule, status, and connection-risk signals."
+          "title": "Überwachung Gebuchte Reise",
+          "desc": "Für gebuchte Reisen laufen planmäßige Störungsprüfungen auf Zeitplan und Anschlussrisiko."
         },
         "notifications": {
-          "title": "Alert History",
-          "desc": "Detected events, notification attempts, retries, and status are recorded for visibility."
+          "title": "Benachrichtigungsverlauf",
+          "desc": "Ereignisse, Zustellversuche und Ergebnisse werden nachvollziehbar protokolliert."
         },
         "inbox": {
-          "title": "Monitoring Transparency",
-          "desc": "Latest check status, stale states, and delayed monitoring signals are surfaced honestly."
+          "title": "Monitoring-Transparenz",
+          "desc": "Letzter Check, Verzögerungen und ausstehende Zustände werden offen angezeigt."
         }
       }
     },
     "scoring": {
-      "label": "Decision Engine",
-      "title": "Itinerary Scoring Engine",
-      "subtitle": "A practical advisory layer for comparing flight options by risk, route quality, fare context, and traveler burden.",
+      "label": "Entscheidungsmotor",
+      "title": "Reiseintelligenz Bewertungsmodell",
+      "subtitle": "Praktische Entscheidungslogik für Flugoptionen anhand von Risiko, Routenqualität, Tarifkontext und Reisebelastung.",
       "formula": {
-        "title": "Erweiterte Scoring-Formel",
-        "intro": "Total: 100 Punkte, dann auf eine 10-Punkte-Skala normalisiert.",
+        "title": "Erweiterte Bewertungsformel",
+        "intro": "Gesamt 100 Punkte, anschließend auf eine 10-Punkte-Skala normalisiert.",
         "items": {
+          "pricing": "Preislogik",
           "price": {
-            "title": "1. Preis-Leistungs-Score (20)",
-            "desc": "Medianpreis der Route, 20% günstiger = Bonus, 30% teurer = starke Strafe."
+            "title": "1. Preis-Wert-Score (20)",
+            "desc": "Bewertung gegen Routenmedian; 20 % günstiger = Bonus, 30 % teurer = starke Abwertung."
           },
           "duration": {
-            "title": "2. Dauer-Effizienz (15)",
-            "desc": "Schnellste Route als Basis, +25% länger = -5, +40% = -8."
+            "title": "2. Zeit-Effizienz (15)",
+            "desc": "Schnellste Route als Referenz; +25 % = -5, +40 % = -8."
           },
           "stops": {
-            "title": "3. Anzahl Stopps (10)",
-            "desc": "Direkt = voll, 1 Stopp = -2, 2+ Stopps = -6."
+            "title": "3. Anzahl Umstiege (10)",
+            "desc": "Direktflug volle Punkte; 1 Umstieg -2, 2+ Umstiege -6."
           },
           "connection": {
             "title": "4. Umstiegsqualität (10)",
-            "desc": "<45 Min Risiko, 1-2.5 Std ideal, 5+ Std Ermüdung."
+            "desc": "Unter 45 Min riskant; 1–2,5 Std ideal; 5+ Std belastend."
           },
           "selfTransfer": {
-            "title": "5. Eigenständiges Umstiegsrisiko (10)",
-            "desc": "Andere PNR, Low-Cost-Kombi, Terminalwechsel = starke Strafe."
+            "title": "5. Self-Transfer-Risiko (10)",
+            "desc": "Getrennte PNR, Low-Cost-Kombinationen und Terminalwechsel erhöhen das Risiko deutlich."
           }
         }
       },
       "quality": {
-        "title": "Qualitäts- und Komfort-Stack",
+        "title": "Qualitäts- und Komfortebene",
         "items": {
           "baggage": {
-            "title": "6. Gepäckfreigrenze (10)",
-            "desc": "23kg inklusive = +10, nur Handgepäck = -5, keines = -10."
+            "title": "6. Gepäckregelung (10)",
+            "desc": "23 kg inkludiert +10, nur Handgepäck -5, kein Gepäck -10."
           },
           "reliability": {
-            "title": "7. Fluglinien-Zuverlässigkeit (10)",
-            "desc": "Pünktlichkeit, Sicherheitshistorie, Reputation."
+            "title": "7. Airline-Zuverlässigkeit (10)",
+            "desc": "Pünktlichkeit, Sicherheitsprofil und operative Stabilität fließen ein."
           },
           "aircraft": {
             "title": "8. Flugzeugqualität (5)",
-            "desc": "A350/787 +3, 20 Jahre altes Flugzeug = -2."
+            "desc": "Neuere Flotten und Kabinenkomfort verbessern die Bewertung."
           },
           "amenity": {
             "title": "9. Komfort-Score (5)",
-            "desc": "WiFi, IFE, Sitzabstand, Essensqualität."
+            "desc": "Wi-Fi, Sitzabstand, Bordunterhaltung und Servicequalität werden bewertet."
           },
           "airport": {
-            "title": "10. Flughafen-Schwierigkeitsindex (5)",
-            "desc": "Terminalkomplexität, Umsteige-Leichtigkeit, Sicherheitsdichte."
+            "title": "10. Flughafen-Komplexität (5)",
+            "desc": "Terminallogik, Sicherheitsdichte und Umstiegsfreundlichkeit zählen mit."
           }
         }
       },
       "final": {
         "score": {
-          "title": "Finale Score-Logik",
-          "desc": "72/100 wird 7.2/10. Jeder Score enthält Risiko- und Komfort-Kontext."
+          "title": "Finale Bewertungslogik",
+          "desc": "Ein Ergebnis wie 72/100 wird als 7,2/10 dargestellt und mit Risiko-Kommentar ergänzt."
         },
         "risk": {
-          "title": "Risikoflaggen",
-          "desc": "Rote Hinweise für kurze Umstiege, Eigen-Transfer-Risiken oder verspätungsanfällige Fluglinien."
+          "title": "Risikohinweise",
+          "desc": "Kurze Umstiege, Self-Transfer und verspätungsanfällige Konstellationen werden klar markiert."
         },
         "value": {
-          "title": "Wert-Tags",
-          "desc": "Grüne Wert-Tags und Komfort-Notizen erklären, warum ein Flug sich lohnt."
+          "title": "Wertsignale",
+          "desc": "Wert- und Komfortindikatoren zeigen, warum eine Option operativ sinnvoll ist."
         }
       }
     },
     "strategic": {
-      "label": "Positioning",
-      "title": "Booking sites sort fares. FlightAgent explains itineraries.",
-      "subtitle": "Price alone is not a travel decision. FlightAgent adds risk analysis, advisor recommendations, and transparent monitoring after booking.",
+      "label": "Positionierung",
+      "title": "Buchungsseiten sortieren Preise. FlightAgent klärt Entscheidungen.",
+      "subtitle": "Preis allein ist keine Reiseentscheidung. FlightAgent verbindet Risikoanalyse, Entscheidungsunterstützung und transparente Überwachung.",
       "typical": {
         "title": "Typische Plattformen",
         "items": {
-          "price": "Price sorting and booking links",
-          "risk": "Limited connection-risk context",
-          "future": "Little visibility after booking",
-          "crisis": "No alert lifecycle or delivery history"
+          "price": "Nur Preisranking und Weiterleitung",
+          "risk": "Begrenzter Umstiegs- und Risikokontext",
+          "future": "Wenig Transparenz nach der Buchung",
+          "crisis": "Kein sichtbarer Benachrichtigungsverlauf"
         }
       },
       "agent": {
-        "title": "Flugassistent",
+        "title": "Entscheidungs- und Schutzassistent",
         "items": {
-          "ranking": "Route and connection analysis",
-          "scenario": "Advisor-style recommendations",
-          "protection": "Periodic disruption checks",
-          "compensation": "Alert history and monitoring transparency"
+          "ranking": "Routen- und Umstiegsanalyse",
+          "scenario": "Entscheidungsunterstützung mit Handlungsempfehlung",
+          "protection": "Störungsprüfungen in Intervallen",
+          "compensation": "Benachrichtigungsverlauf und Monitoring-Transparenz"
         }
       }
     },
     "features": {
       "title": "Warum FlightAgent?",
-      "subtitle": "Alles, was Sie brauchen, um die besten Flugangebote zu finden",
+      "subtitle": "Operative Klarheit für bessere Reiseentscheidungen",
       "smartAlerts": {
-        "title": "Intelligente Preisalarme",
-        "desc": "Legen Sie Ihren Wunschpreis fest und lassen Sie sich von unserer KI benachrichtigen, sobald er fällt."
+        "title": "Updates für verfolgte Routen",
+        "desc": "Geplante Monitoring-Ergebnisse für beobachtete Routen zentral einsehen."
       },
       "priceHistory": {
-        "title": "Preisverlauf",
-        "desc": "Sehen Sie sich historische Preistrends an, um die beste Reisezeit zu ermitteln."
+        "title": "Tarifkontext",
+        "desc": "Einordnen, ob ein Tarif stark, fair oder schwach wirkt."
       },
       "globalSearch": {
-        "title": "Globale Suche",
-        "desc": "Vergleichen Sie sofort Preise von Tausenden von Fluggesellschaften und Reisebüros."
+        "title": "Routenstruktur-Analyse",
+        "desc": "Umstiege, Self-Transfer-Risiko und Gesamtbelastung transparent bewerten."
       },
       "noFees": {
-        "title": "Keine versteckten Gebühren",
-        "desc": "Was Sie sehen, ist was Sie bezahlen. Wir glauben an völlige Transparenz."
+        "title": "Transparente Monitoring-Limits",
+        "desc": "Verzögerte oder stale Zustände werden eindeutig markiert."
       },
       "instantNotify": {
-        "title": "Sofortige Benachrichtigung",
-        "desc": "Erhalten Sie eine E-Mail oder SMS, sobald ein Angebot gefunden wird."
+        "title": "Benachrichtigungs-Tracking",
+        "desc": "Zustellversuche und Status bleiben für jede Warnung nachvollziehbar."
       },
       "trends": {
-        "title": "Reisetrends",
-        "desc": "Entdecken Sie beliebte Reiseziele und saisonale Preistrends."
+        "title": "Entscheidungsberichte",
+        "desc": "Berichte mit operativem Kontext statt reiner Punktzahl."
       }
     },
     "howItWorks": {
-      "title": "Wie es funktioniert",
-      "subtitle": "Einfache Schritte zu großen Einsparungen",
+      "title": "So funktioniert es",
+      "subtitle": "Entscheiden vor der Buchung, absichern nach der Buchung",
       "step1": {
-        "title": "Suchen",
-        "desc": "Geben Sie Ihr Ziel und Ihre Daten ein."
+        "title": "Flug Bewerten",
+        "desc": "Gefundene Option eintragen und operativ bewerten."
       },
       "step2": {
-        "title": "Verfolgen",
-        "desc": "Aktivieren Sie die Verfolgung für Ihre gewünschte Route."
+        "title": "Route Verfolgen",
+        "desc": "Monitoring für Kandidatenrouten aktivieren."
       },
       "step3": {
-        "title": "Sparen",
-        "desc": "Buchen Sie, wenn wir Sie über den Preisrückgang informieren."
+        "title": "Ticket Hinzufügen",
+        "desc": "Gebuchte Reise hinzufügen und Störungsprüfungen aktivieren."
       }
     },
     "faq": {
-      "label": "Operational Honesty",
-      "title": "Was FlightAgent tut und nicht verspricht",
-      "subtitle": "FlightAgent ist Decision Intelligence und periodisches Monitoring, kein Airline Operations Feed.",
+      "label": "Operative Transparenz",
+      "title": "Was FlightAgent leistet und was nicht versprochen wird",
+      "subtitle": "FlightAgent ist eine Entscheidungsunterstützung mit periodischem Monitoring, kein Live-Airline-Operations-Feed.",
       "items": {
         "checks": {
-          "q": "How often are trips checked?",
-          "a": "Booked trips and tracked itineraries are checked on scheduled monitoring cycles. The dashboard shows the latest snapshot when available."
+          "q": "Wie häufig werden Reisen geprüft?",
+          "a": "Gebuchte Reisen und verfolgte Routen werden in geplanten Monitoring-Zyklen geprüft. Der aktuelle Zustand ist im Dashboard sichtbar."
         },
         "systems": {
-          "q": "Does FlightAgent use live airline systems?",
-          "a": "FlightAgent does not claim airline-grade operational access. It uses available provider data and internal monitoring records."
+          "q": "Greift FlightAgent auf Live-Airline-Systeme zu?",
+          "a": "FlightAgent beansprucht keinen airline-grade Echtzeit-Zugriff. Es arbeitet mit verfügbaren Datenquellen und internen Monitoring-Protokollen."
         },
         "pricing": {
-          "q": "Are price signals estimated or live?",
-          "a": "Fare context may be estimated or snapshot-based depending on available data. Stale or unavailable data should be labelled."
+          "q": "Sind Preissignale live oder geschätzt?",
+          "a": "Tarifsignale können je nach Datenlage Snapshot-basiert oder geschätzt sein. Alte bzw. fehlende Daten werden klar gekennzeichnet."
         },
         "delayed": {
-          "q": "What happens if monitoring is delayed?",
-          "a": "Delayed or stale monitoring should be shown as an operational state, not hidden behind reassuring copy."
+          "q": "Was passiert bei Monitoring-Verzögerungen?",
+          "a": "Verzögerte oder stale Zustände werden als operativer Status angezeigt und nicht beschönigt."
         },
         "delivery": {
-          "q": "How does alert delivery work?",
-          "a": "Detected events and notification attempts are tracked separately. Delivery can be retried, fail, or remain pending."
+          "q": "Wie funktioniert die Zustellung von Warnungen?",
+          "a": "Ereigniserkennung und Zustellversuche werden getrennt protokolliert. Zustellungen können erfolgreich, fehlgeschlagen oder ausstehend sein."
         }
+      }
+    },
+    "primaryActions": {
+      "score": {
+        "title": "Flug Bewerten",
+        "desc": "Vor der Buchung Route, Umstiege, Tarifkontext und Empfehlungslage analysieren.",
+        "cta": "Flug Bewerten"
+      },
+      "track": {
+        "title": "Route Verfolgen",
+        "desc": "Kandidatenrouten mit geplanten Preis-Snapshots und Risikoverlauf beobachten.",
+        "cta": "Route Verfolgen"
+      },
+      "add": {
+        "title": "Ticket Hinzufügen",
+        "desc": "Gebuchte Reise hinzufügen und Störungsprüfungen, Benachrichtigungsverlauf und Zustellstatus zentral sehen.",
+        "cta": "Ticket Hinzufügen"
       }
     }
   },
@@ -375,7 +420,11 @@
     "trackedFlights": "Beobachtete Itineraries",
     "trackedFlightsDesc": "Kandidaten-Itineraries und Routen, die Sie beobachten.",
     "trackedEmptyTitle": "Noch keine beobachteten Itineraries",
-    "noTrackedFlights": "Bewerten Sie ein Itinerary, beobachten Sie eine Route oder sehen Sie Advisor Reports aus Ihrer naechsten Analyse."
+    "noTrackedFlights": "Bewerten Sie ein Itinerary, beobachten Sie eine Route oder sehen Sie Advisor Reports aus Ihrer naechsten Analyse.",
+    "lastUpdated": "Last updated: {time}",
+    "nextUpdate": "Next update: {time}",
+    "delete": "Stop Tracking",
+    "updatesDaily": "Updates Daily"
   },
   "FlightSearch": {
     "title": "Flüge Suchen & Verfolgen",
@@ -508,7 +557,13 @@
       "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
     },
     "showMore": "Mehr anzeigen ({count} Flüge verbleibend)",
-    "trackingThisFlight": "Sie verfolgen diesen Flug"
+    "trackingThisFlight": "Sie verfolgen diesen Flug",
+    "dataSources": "Data Sources",
+    "active": "Active",
+    "flightsFoundLower": "flights found",
+    "noResultsLower": "no results",
+    "totalResults": "Total Results",
+    "totalFlightsLabel": "{count} Flights"
   },
   "priceOracle": {
     "title": "Preisorakel",
@@ -540,6 +595,80 @@
       "lowSeason": "Nebensaison: Nachfrage ist gering, Preise könnten fallen.",
       "weekend": "Wochenendflug: Normalerweise teurer.",
       "tuesdayWednesday": "Dienstag/Mittwoch: Normalerweise die günstigsten Tage."
+    },
+    "oracle": {
+      "badge_rare": "💎 HIDDEN GEM",
+      "title_rare": "The Perfect Balance",
+      "desc_rare": "Top-tier airline, great price, and no wasted time. This is the unicorn of flights.",
+      "badge_smart": "🧠 SMART UPGRADE",
+      "title_smart": "Worth Every Penny",
+      "desc_smart": "Yes, it costs a bit more, but you save hours of travel time and fly in comfort. Treat yourself.",
+      "badge_hacker": "⚡ HACKER FARE",
+      "title_hacker": "For The Adventurous",
+      "desc_hacker": "Lowest price guaranteed, but requires self-transfer. Ideal if you travel light and flexible.",
+      "badge_bad": "🚫 POOR VALUE",
+      "title_bad": "Think Twice",
+      "desc_bad": "There are faster and cheaper options than this. We do not recommend this flight.",
+      "badge_standard": "⚖️ STANDARD",
+      "title_standard": "Decent Option",
+      "desc_standard": "Fair price for average duration.",
+      "pro_quality": "Top Rated Airline",
+      "pro_time": "Fastest Route",
+      "pro_comfort_win": "Huge Comfort Upgrade",
+      "pro_luxury": "Luxury Experience",
+      "pro_price_king": "Absolute Lowest Price",
+      "con_risk_high": "Self-Transfer Risk",
+      "con_bag_missing": "No Checked Bags",
+      "con_overpriced": "Overpriced",
+      "con_slow": "Too Many Layovers",
+      "badge_overpriced": "🛑 OVERPRICED",
+      "title_overpriced": "Poor Value",
+      "desc_overpriced": "This flight is significantly more expensive than the market average. Only book if necessary.",
+      "badge_best_pick": "🏆 BEST PICK",
+      "title_best_pick": "Most Balanced Choice",
+      "desc_best_pick": "Lowest risk of regret. Balanced price, comfort, and duration.",
+      "badge_hidden_gem": "💎 HIDDEN GEM",
+      "badge_acceptable": "✅ ACCEPTABLE",
+      "title_acceptable": "Solid Option",
+      "desc_acceptable": "Good standard flight, nothing fancy but gets you there safely.",
+      "badge_risky": "⚠️ RISKY",
+      "title_risky": "Trade-offs Required",
+      "desc_risky": "Likely has long layovers or self-transfer risks.",
+      "badge_avoid": "🛑 AVOID",
+      "title_avoid": "Poor Value",
+      "desc_avoid": "We generally recommend avoiding this unless budget is the only priority."
+    },
+    "verdicts": {
+      "rareFind": {
+        "title": "Rare Find",
+        "description": "Excellent price relative to the market with low risk. Hard to find this quality at this price."
+      },
+      "hacker": {
+        "title": "Hacker Deal",
+        "description": "Significantly cheaper than average but requires Self-Transfer. Book only if you are flexible and have no checked bags."
+      },
+      "overpriced": {
+        "title": "Overpriced",
+        "description": "Both expensive and risky. Not recommended unless necessary."
+      },
+      "premium": {
+        "title": "Premium Choice",
+        "description": "Higher price for maximum comfort and peace of mind. Recommended for families."
+      }
+    },
+    "pros": {
+      "excellentPrice": "Excellent Price",
+      "lowRisk": "Low Risk",
+      "dirtCheap": "Dirt Cheap",
+      "maxComfort": "Maximum Comfort",
+      "refundable": "Refundable Guarantee",
+      "priceDropping": "Price Trend: Falling"
+    },
+    "cons": {
+      "highRisk": "High Transfer Risk",
+      "noBag": "Baggage Not Included",
+      "badValue": "Poor Value for Money",
+      "priceRising": "Urgent: Price Rising!"
     }
   },
   "baggage": {
@@ -764,5 +893,126 @@
     "send": "Anspruch Senden",
     "sent": "Anspruch Gesendet!",
     "sentDesc": "Wir haben eine formelle Anfrage auf Kulanzentschädigung an {airline} gesendet. Sie sollten innerhalb von 7 Tagen eine Rückmeldung erhalten."
-  }
+  },
+  "Guardian": {
+    "back": "Back",
+    "systemStatus": "System Status",
+    "activeScanning": "Active & Scanning",
+    "lastCheck": "Last Check",
+    "justNow": "Just now",
+    "actionRequired": "Opportunities Requiring Action",
+    "activeShields": "Active Protection Shields",
+    "active": "Active",
+    "warning": "Warning",
+    "pending": "Pending",
+    "resolved": "Resolved",
+    "estimatedValue": "Estimated Value"
+  },
+  "ScheduleChange": {
+    "title": "Flight Schedule Changed",
+    "airlineUpdate": "{airline} has updated the departure time.",
+    "earlier": "Attention, flight will depart {hours}h {minutes}m EARLIER.",
+    "later": "Flight is delayed by {hours}h {minutes}m.",
+    "oldPlan": "Old Plan",
+    "newPlan": "New Plan",
+    "callAirline": "Call Airline (Free Change)",
+    "confirmNewTime": "Confirm New Time"
+  },
+  "Modules": {
+    "disruptionHunter": {
+      "title": "Disruption Hunter",
+      "desc": "Monitoring for delays and cancellations."
+    },
+    "priceArbitrage": {
+      "title": "Price Arbitrage",
+      "desc": "Waiting for price drops."
+    },
+    "seatSpy": {
+      "title": "Seat Spy",
+      "desc": "Seat alert! Take action.",
+      "descEmpty": "Side seat is occupied."
+    },
+    "scheduleGuardian": {
+      "title": "Schedule Guardian",
+      "desc": "No schedule changes.",
+      "descChange": "Schedule change detected."
+    },
+    "upgradeSniper": {
+      "title": "Upgrade Sniper",
+      "desc": "Business Class not yet available."
+    }
+  },
+  "RouteDetails": {
+    "backToDashboard": "Back to Dashboard",
+    "currentBestPrice": "Current Best Price",
+    "dealQuality": "Deal Quality",
+    "excellent": "Excellent Opportunity!",
+    "fair": "Fair Price",
+    "poor": "Wait for drop",
+    "calculating": "Calculating explanation...",
+    "duration": "Duration",
+    "nonstop": "Non-stop",
+    "stopResult": "stop",
+    "stopsResult": "stops",
+    "average30d": "30-Day Average",
+    "historicalData": "Based on historical data",
+    "recentHistory": "Recent Price History",
+    "noData": "No price data collected yet.",
+    "noInfo": "No info"
+  },
+  "badge_best_pick": "🏆 BEST PICK",
+  "badge_hidden_gem": "💎 HIDDEN GEM",
+  "badge_acceptable": "✅ ACCEPTABLE",
+  "badge_hacker": "⚡ HACKER FARE",
+  "badge_avoid": "🛑 AVOID",
+  "badge_standard": "⚖️ STANDARD",
+  "verdict_title_recommended": "Our Recommendation",
+  "verdict_title_consider": "Worth Considering",
+  "verdict_title_avoid": "We Would Avoid This",
+  "verdict_headline_best": "We'd book this without hesitation",
+  "verdict_headline_good": "Strong choice with minor trade-offs",
+  "verdict_headline_consider": "Decent option if times suit you",
+  "verdict_headline_hacker": "Cheap but risky (Experts Only)",
+  "verdict_headline_avoid": "We'd skip this one",
+  "verdict_reason_best_pick": "The winner. Best balance of quality and price in this search.",
+  "verdict_reason_value": "Great value. High quality airline for a fair price.",
+  "verdict_reason_acceptable": "Strong contender. Good balance of cost and comfort.",
+  "verdict_reason_hacker": "Warning: It's cheap, but requires compromises on comfort or transfers.",
+  "verdict_reason_avoid": "We would avoid this. The risk or fatigue is not worth the savings.",
+  "verdict_reason_standard": "An average option. Neither great nor terrible.",
+  "pro_baggage_included": "Checked baggage included",
+  "pro_meal_included": "Meal service included",
+  "pro_premium_airline": "Premium airline service",
+  "pro_fast_route": "Among the fastest options",
+  "pro_good_price": "Good price for this route",
+  "pro_nonstop": "Non-stop flight",
+  "pro_short_layover": "Comfortable layover time",
+  "con_self_transfer": "Self-transfer required",
+  "con_no_baggage": "No checked baggage included",
+  "con_no_meal": "No meal included on long flight",
+  "con_long_duration": "Significantly slower than average",
+  "con_expensive": "Price is higher than average",
+  "con_multiple_stops": "Multiple stops involved",
+  "con_lcc_longhaul": "Low-cost carrier on long route",
+  "warning_self_transfer": "Self-transfer: Missed connection is YOUR responsibility.",
+  "warning_layover_trap": "Travelers often underestimate this long layover.",
+  "warning_lcc_fatigue": "Low-cost long-haul is physically exhausting.",
+  "tradeoff_money_time": "Saves money, but costs significant time.",
+  "tradeoff_time_money": "Saves time, but costs extra money.",
+  "tradeoff_balanced": "A balanced choice between cost and comfort.",
+  "identity_smart_choice": "Smart Choice",
+  "identity_tired_saver": "Tired Saver",
+  "identity_comfort_seeker": "Comfort Seeker",
+  "identity_regret_risk": "Risk Taker",
+  "identity_standard": "Standard",
+  "identity_desc_smart": "Smart balance of price and quality.",
+  "identity_desc_tired": "Saving money, but at the cost of fatigue.",
+  "identity_desc_comfort": "Prioritizing comfort over price.",
+  "identity_desc_risk": "High risk of missed connections.",
+  "identity_desc_standard": "Standard flight option.",
+  "social_proof_self_transfer": "82% of travelers avoid self-transfers due to missed connection risk.",
+  "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
+  "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
+  "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
+  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
 }

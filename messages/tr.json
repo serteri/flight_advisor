@@ -8,7 +8,7 @@
     "to": "Nereye",
     "passengers": "Yolcular",
     "cabin_class": "Kabin Sınıfı",
-    "search_flights": "Itinerary Skorla",
+    "search_flights": "Bir Uçuşu Skorla",
     "add_date": "Tarih Ekle",
     "travel_purpose": "Seyahat Amacı",
     "purpose_budget": "Bütçe",
@@ -18,18 +18,18 @@
   },
   "Navbar": {
     "home": "Ana Sayfa",
-    "search": "Itinerary Skorla",
+    "search": "Bir Uçuşu Skorla",
     "pricing": "Fiyatlandırma",
     "features": "Özellikler",
     "blog": "Gezi Rehberi",
-    "aiMode": "INTELLIGENCE MODE",
-    "aiModeActive": "INTELLIGENCE MODE",
+    "aiMode": "KARAR DESTEK MODU",
+    "aiModeActive": "KARAR DESTEK MODU",
     "login": "Giriş Yap",
     "logout": "Çıkış Yap",
     "dashboard": "Panel",
-    "getStarted": "Itinerary Skorla",
-    "scoreItinerary": "Itinerary Skorla",
-    "intelligenceMode": "ITINERARY INTELLIGENCE"
+    "getStarted": "Bir Uçuşu Skorla",
+    "scoreItinerary": "Bir Uçuşu Skorla",
+    "intelligenceMode": "SEYAHAT ZEKASI"
   },
   "PricingPage": {
     "title": "Itinerary Intelligence Plans",
@@ -129,79 +129,83 @@
   },
   "HomePage": {
     "hero": {
-      "title": "Trip Decision",
-      "titleHighlight": "Intelligence",
-      "subtitle": "Rezervasyondan once itinerary skorlayin, advisor report inceleyin ve booked tripleri seffaf periyodik kontrollerle izleyin.",
-      "ctaPrimary": "Keşfetmeye Başla",
-      "ctaSecondary": "Daha Fazla Bilgi"
+      "title": "Karar Destek Sistemi",
+      "titleHighlight": "Seyahat Zekası",
+      "subtitle": "Rezervasyon yapmadan önce uçuşunu değerlendir, öneri raporlarını incele, kayıtlı uçuşlarını şeffaf periyodik kontrollerle izle.",
+      "ctaPrimary": "Bir Uçuşu Skorla",
+      "ctaSecondary": "Nasıl Çalışır"
     },
     "badge": {
-      "engineActive": "Itinerary Intelligence Platform",
-      "aiMode": "Trip Decision Intelligence"
+      "engineActive": "Seyahat Zekası Platformu",
+      "aiMode": "Karar Destek Sistemi"
     },
     "trust": {
-      "airlines": "Itinerary scoring",
-      "secure": "Advisor reports",
-      "realtime": "Monitoring snapshots"
+      "airlines": "Seyahat Zekası",
+      "secure": "Karar Destek Sistemi",
+      "realtime": "Aksaklık Taramaları",
+      "monitoring": "İzleme Şeffaflığı",
+      "decision": "Karar Destek Sistemi",
+      "disruption": "Aksaklık / Rötar Taraması"
     },
     "system": {
-      "label": "FlightAgent Platform",
-      "title": "Rezervasyon oncesi ve sonrasi trip intelligence",
-      "subtitle": "FlightAgent OTA veya airfare search engine degildir. Itinerary riskini, fare contextini, monitoring durumunu ve alert historyyi anlamaniza yardim eder.",
+      "label": "FlightAgent Platformu",
+      "title": "Rezervasyon öncesi ve sonrası karar desteği",
+      "subtitle": "FlightAgent bir OTA veya biletleme sitesi değildir. Seyahat kalitesi, risk seviyesi, ücret bağlamı ve izleme durumunu anlamana yardımcı olur.",
       "cards": {
         "hybrid": {
-          "title": "Itinerary Scoring",
-          "desc": "Analyze route structure, connection quality, fare context, and risk signals."
+          "title": "Seyahat Zekası Skoru",
+          "desc": "Rota yapısını, aktarma kalitesini, ücret bağlamını ve risk sinyallerini birlikte analiz eder."
         },
         "scoring": {
-          "title": "Advisor Reports",
-          "desc": "Premium reports explain recommendations with practical itinerary context."
+          "title": "Karar Destek Raporları",
+          "desc": "Öneri gerekçelerini rota, ücret, bagaj, konfor ve aksaklık riski boyutlarıyla açıklar."
         },
         "disruption": {
-          "title": "Tracked Itineraries",
-          "desc": "Watch candidate routes using scheduled monitoring snapshots and estimated pricing context."
+          "title": "Takip Edilen Rotalar",
+          "desc": "Aday rotaları planlı izleme anlık görüntüleri ve tahmini ücret bağlamıyla takip edersin."
         },
         "guardian": {
-          "title": "Booked Trip Monitoring",
-          "desc": "Confirmed trips can receive periodic disruption checks for schedule, status, and connection-risk signals."
+          "title": "Kayıtlı Uçuş İzleme",
+          "desc": "Rezerve edilmiş seyahatler için planlı aksaklık / rötar taramaları yapılır."
         },
         "notifications": {
-          "title": "Alert History",
-          "desc": "Detected events, notification attempts, retries, and status are recorded for visibility."
+          "title": "Uyarı Geçmişi",
+          "desc": "Tespit edilen olaylar, bildirim denemeleri ve sonuç durumları kayıt altına alınır."
         },
         "inbox": {
-          "title": "Monitoring Transparency",
-          "desc": "Latest check status, stale states, and delayed monitoring signals are surfaced honestly."
+          "title": "İzleme Şeffaflığı",
+          "desc": "Son kontrol zamanı, bekleyen durumlar ve gecikmiş kontroller açık şekilde gösterilir."
         }
       }
     },
     "scoring": {
-      "label": "Decision Engine",
-      "title": "Itinerary Scoring Engine",
-      "subtitle": "A practical advisory layer for comparing flight options by risk, route quality, fare context, and traveler burden.",
+      "label": "Karar Motoru",
+      "title": "Seyahat Zekası Puanlama Motoru",
+      "subtitle": "Uçuş alternatiflerini risk, rota kalitesi, ücret bağlamı ve yolcu yükü açısından karşılaştıran pratik bir karar katmanı.",
       "formula": {
-        "title": "Geliştirilmiş Skorlama Formülü",
-        "intro": "Toplam: 100 puan, sonra 10 puanlık skora normalize edilir.",
+        "title": "Gelişmiş Puanlama Formülü",
+        "intro": "Toplam 100 puan, ardından 10 puanlık ölçeğe normalize edilir.",
         "items": {
+          "pricing": "Fiyatlandırma",
           "price": {
             "title": "1. Fiyat-Değer Skoru (20)",
-            "desc": "medyan rota fiyatı, %20 ucuz = bonus, %30 pahalı = ağır ceza."
+            "desc": "Rota medyanına göre değerlendirme; %20 ucuzsa bonus, %30 pahalıysa yüksek ceza."
           },
           "duration": {
             "title": "2. Süre Verimliliği (15)",
-            "desc": "en hızlı rota referans, %25 uzun = -5, %40 = -8."
+            "desc": "En hızlı rota referanstır; %25 daha uzunsa -5, %40 daha uzunsa -8."
           },
           "stops": {
             "title": "3. Aktarma Sayısı (10)",
-            "desc": "direkt = tam puan, 1 aktarma = -2, 2+ aktarma = -6."
+            "desc": "Direkt uçuş tam puan; 1 aktarma -2, 2+ aktarma -6."
           },
           "connection": {
-            "title": "4. Bağlantı Kalitesi (10)",
-            "desc": "<45dk risk, 1-2.5 saat ideal, 5+ saat yıpratıcı."
+            "title": "4. Aktarma Kalitesi (10)",
+            "desc": "45 dakikanın altı riskli; 1-2,5 saat ideal; 5+ saat yıpratıcıdır."
           },
           "selfTransfer": {
             "title": "5. Kendi Aktarma Riski (10)",
-            "desc": "farklı PNR, düşük maliyetli kombinasyon, terminal değişimi = ağır ceza."
+            "desc": "Farklı PNR, düşük maliyetli kombinasyon ve terminal değişimi yüksek risk puanı üretir."
           }
         }
       },
@@ -210,133 +214,150 @@
         "items": {
           "baggage": {
             "title": "6. Bagaj Hakkı (10)",
-            "desc": "23kg dahil = +10, sadece kabin bagajı = -5, yok = -10."
+            "desc": "23 kg dahilse +10, yalnız kabin bagajıysa -5, bagaj yoksa -10."
           },
           "reliability": {
             "title": "7. Havayolu Güvenilirliği (10)",
-            "desc": "zamanında kalkış, güvenlik geçmişi, itibar."
+            "desc": "Dakiklik, emniyet geçmişi ve operasyonel istikrar dikkate alınır."
           },
           "aircraft": {
             "title": "8. Uçak Kalitesi (5)",
-            "desc": "A350/787 +3, 20 yıllık uçak = -2."
+            "desc": "Yeni nesil gövde + puan, yaşlı filo ve düşük kabin konforu - puan."
           },
           "amenity": {
             "title": "9. Olanak Skoru (5)",
-            "desc": "WiFi, IFE, koltuk aralığı, yemek kalitesi."
+            "desc": "Wi-Fi, koltuk aralığı, IFE ve yemek kalitesi değerlendirilir."
           },
           "airport": {
             "title": "10. Havalimanı Zorluk Endeksi (5)",
-            "desc": "terminal karmaşıklığı, aktarma kolaylığı, güvenlik yoğunluğu."
+            "desc": "Terminal karmaşıklığı, aktarma kolaylığı ve güvenlik yoğunluğu ölçülür."
           }
         }
       },
       "final": {
         "score": {
-          "title": "Final Skor Mantığı",
-          "desc": "72/100 -> 7.2/10. Her skor risk ve konfor notlarıyla gelir."
+          "title": "Nihai Skor Mantığı",
+          "desc": "72/100 skoru, 7.2/10 olarak gösterilir ve her skor risk notuyla birlikte sunulur."
         },
         "risk": {
           "title": "Risk Bayrakları",
-          "desc": "Kısa bağlantılar, kendi aktarma riskleri veya rötar eğilimli taşıyıcılar için kırmızı uyarılar."
+          "desc": "Kısa aktarma, kendi aktarma ve gecikmeye açık taşıyıcılar için kırmızı uyarı verilir."
         },
         "value": {
           "title": "Değer Etiketleri",
-          "desc": "Yeşil değer etiketleri ve konfor notları, uçuşun neden değerli olduğunu açıklar."
+          "desc": "Uçuşun neden güçlü olduğunu açıklayan değer ve konfor etiketleri sunulur."
         }
       }
     },
     "strategic": {
-      "label": "Positioning",
-      "title": "Booking sites sort fares. FlightAgent explains itineraries.",
-      "subtitle": "Price alone is not a travel decision. FlightAgent adds risk analysis, advisor recommendations, and transparent monitoring after booking.",
+      "label": "Konumlandırma",
+      "title": "Rezervasyon siteleri fiyat sıralar. FlightAgent kararı netleştirir.",
+      "subtitle": "Tek başına fiyat bir seyahat kararı değildir. FlightAgent risk analizi, karar desteği ve şeffaf izleme sunar.",
       "typical": {
-        "title": "Tipik Platformlar",
+        "title": "Klasik Platformlar",
         "items": {
-          "price": "Price sorting and booking links",
-          "risk": "Limited connection-risk context",
-          "future": "Little visibility after booking",
-          "crisis": "No alert lifecycle or delivery history"
+          "price": "Sadece fiyat sıralaması ve yönlendirme",
+          "risk": "Sınırlı aktarma-risk bağlamı",
+          "future": "Rezervasyon sonrası düşük görünürlük",
+          "crisis": "Uyarı yaşam döngüsü görünürlüğü yok"
         }
       },
       "agent": {
-        "title": "Uçuş Asistanı",
+        "title": "Karar ve Koruma Asistanı",
         "items": {
-          "ranking": "Route and connection analysis",
-          "scenario": "Advisor-style recommendations",
-          "protection": "Periodic disruption checks",
-          "compensation": "Alert history and monitoring transparency"
+          "ranking": "Rota ve aktarma kalitesi analizi",
+          "scenario": "Karar destek önerileri",
+          "protection": "Aksaklık / rötar taramaları",
+          "compensation": "Uyarı Geçmişi ve izleme şeffaflığı"
         }
       }
     },
     "features": {
       "title": "Neden FlightAgent?",
-      "subtitle": "En iyi uçuş fırsatlarını bulmanız için gereken her şey",
+      "subtitle": "Seyahat kararlarını netleştiren operasyonel ve şeffaf bir karar katmanı",
       "smartAlerts": {
-        "title": "Akıllı Fiyat Alarmları",
-        "desc": "Hedef fiyatınızı belirleyin, yapay zekamız düştüğü an size haber versin."
+        "title": "Takip Edilen Rota Güncellemeleri",
+        "desc": "Takip ettiğin rota için planlı izleme sonuçlarını tek ekranda gör."
       },
       "priceHistory": {
-        "title": "Fiyat Geçmişi",
-        "desc": "Uçmak için en iyi zamanı anlamak adına geçmiş fiyat trendlerini inceleyin."
+        "title": "Ücret Bağlamı",
+        "desc": "Mevcut ücretin güçlü, dengeli veya zayıf olup olmadığını bağlam içinde değerlendir."
       },
       "globalSearch": {
-        "title": "Küresel Arama",
-        "desc": "Binlerce havayolu ve seyahat acentesindeki fiyatları anında karşılaştırın."
+        "title": "Rota Yapısı Analizi",
+        "desc": "Aktarma yükü, self-transfer riski ve toplam seyahat yorgunluğunu gör."
       },
       "noFees": {
-        "title": "Gizli Ücret Yok",
-        "desc": "Ne görüyorsanız onu ödersiniz. Tam şeffaflığa inanıyoruz."
+        "title": "Şeffaf İzleme Durumu",
+        "desc": "Gecikmiş veya stale izleme durumları açıkça etiketlenir."
       },
       "instantNotify": {
-        "title": "Anında Bildirim",
-        "desc": "Bir fırsat bulunduğunda E-posta veya SMS ile anında haberdar olun."
+        "title": "Bildirim Takibi",
+        "desc": "Uyarıların gönderim denemeleri ve sonuçları görünür şekilde kaydedilir."
       },
       "trends": {
-        "title": "Seyahat Trendleri",
-        "desc": "Popüler destinasyonları ve mevsimsel fiyatlandırma trendlerini keşfedin."
+        "title": "Karar Destek Raporları",
+        "desc": "Skorun ötesine geçen detaylı karar raporlarını indirebilirsin."
       }
     },
     "howItWorks": {
       "title": "Nasıl Çalışır?",
-      "subtitle": "Büyük tasarruf için basit adımlar",
+      "subtitle": "Rezervasyon öncesi karar, rezervasyon sonrası koruma",
       "step1": {
-        "title": "Ara",
-        "desc": "Destinasyonunuzu ve tarihlerinizi girin."
+        "title": "Bir Uçuşu Skorla",
+        "desc": "Bulduğun uçuşu sisteme gir ve karar puanını çıkar."
       },
       "step2": {
-        "title": "Takip Et",
-        "desc": "İstediğiniz rota için takibi etkinleştirin."
+        "title": "Bir Rotayı Takip Et",
+        "desc": "Aday rotalar için planlı izleme döngüsünü başlat."
       },
       "step3": {
-        "title": "Tasarruf Et",
-        "desc": "Fiyat düşüşünü size bildirdiğimizde rezervasyon yapın."
+        "title": "Biletini Sisteme Ekle",
+        "desc": "Kayıtlı uçuşunu ekleyerek aksaklık / rötar taramasını etkinleştir."
       }
     },
     "faq": {
-      "label": "Operational Honesty",
+      "label": "Operasyonel Şeffaflık",
       "title": "FlightAgent neyi yapar, neyi vaat etmez?",
-      "subtitle": "FlightAgent decision intelligence ve periodic monitoring urunudur; airline operations feed degildir.",
+      "subtitle": "FlightAgent bir Karar Destek Sistemi ve periyodik izleme ürünüdür; canlı havayolu operasyon paneli değildir.",
       "items": {
         "checks": {
-          "q": "How often are trips checked?",
-          "a": "Booked trips and tracked itineraries are checked on scheduled monitoring cycles. The dashboard shows the latest snapshot when available."
+          "q": "Seyahatler ne sıklıkla kontrol edilir?",
+          "a": "Kayıtlı uçuşlar ve takip edilen rotalar planlı izleme döngülerinde kontrol edilir. Son durum panelde görünür."
         },
         "systems": {
-          "q": "Does FlightAgent use live airline systems?",
-          "a": "FlightAgent does not claim airline-grade operational access. It uses available provider data and internal monitoring records."
+          "q": "FlightAgent canlı havayolu sistemlerine bağlı mı?",
+          "a": "FlightAgent, airline-grade gerçek zamanlı operasyon iddiası taşımaz. Erişilebilir veri kaynakları ve iç izleme kayıtlarıyla risk sinyali üretir."
         },
         "pricing": {
-          "q": "Are price signals estimated or live?",
-          "a": "Fare context may be estimated or snapshot-based depending on available data. Stale or unavailable data should be labelled."
+          "q": "Fiyat sinyalleri canlı mı, tahmini mi?",
+          "a": "Ücret bağlamı, veri erişimine bağlı olarak anlık görüntü veya tahmini olabilir. Eski/verisiz durumlar açıkça etiketlenir."
         },
         "delayed": {
-          "q": "What happens if monitoring is delayed?",
-          "a": "Delayed or stale monitoring should be shown as an operational state, not hidden behind reassuring copy."
+          "q": "İzleme gecikirse ne olur?",
+          "a": "Gecikmiş veya stale izleme, olumlu metinlerle gizlenmeden operasyonel durum olarak gösterilir."
         },
         "delivery": {
-          "q": "How does alert delivery work?",
-          "a": "Detected events and notification attempts are tracked separately. Delivery can be retried, fail, or remain pending."
+          "q": "Uyarı teslimatı nasıl çalışır?",
+          "a": "Olay tespiti ve bildirim teslim denemeleri ayrı takip edilir. Duruma göre yeniden denenebilir, başarısız olabilir veya beklemede kalabilir."
         }
+      }
+    },
+    "primaryActions": {
+      "score": {
+        "title": "Bir Uçuşu Skorla",
+        "desc": "Rezervasyon öncesinde rota yapısı, aktarma riski, ücret bağlamı ve öneri notlarını değerlendir.",
+        "cta": "Bir Uçuşu Skorla"
+      },
+      "track": {
+        "title": "Bir Rotayı Takip Et",
+        "desc": "Aday rotaları planlı fiyat anlık görüntüleri, risk sinyalleri ve izleme geçmişiyle takip et.",
+        "cta": "Bir Rotayı Takip Et"
+      },
+      "add": {
+        "title": "Biletini Sisteme Ekle",
+        "desc": "Rezerve edilmiş seyahatini ekle; aksaklık / rötar taramaları, uyarı geçmişi ve bildirim durumunu tek yerden izle.",
+        "cta": "Biletini Sisteme Ekle"
       }
     }
   },
@@ -668,7 +689,20 @@
       "con_slow": "Çok Fazla Durak",
       "badge_overpriced": "🛑 KAZIK FİYAT",
       "title_overpriced": "Fiyat/Performans Kötü",
-      "desc_overpriced": "Bu uçuş piyasa ortalamasının çok üzerinde. Sadece zorunluysanız alın."
+      "desc_overpriced": "Bu uçuş piyasa ortalamasının çok üzerinde. Sadece zorunluysanız alın.",
+      "badge_best_pick": "🏆 BEST PICK",
+      "title_best_pick": "Most Balanced Choice",
+      "desc_best_pick": "Lowest risk of regret. Balanced price, comfort, and duration.",
+      "badge_hidden_gem": "💎 HIDDEN GEM",
+      "badge_acceptable": "✅ ACCEPTABLE",
+      "title_acceptable": "Solid Option",
+      "desc_acceptable": "Good standard flight, nothing fancy but gets you there safely.",
+      "badge_risky": "⚠️ RISKY",
+      "title_risky": "Trade-offs Required",
+      "desc_risky": "Likely has long layovers or self-transfer risks.",
+      "badge_avoid": "🛑 AVOID",
+      "title_avoid": "Poor Value",
+      "desc_avoid": "We generally recommend avoiding this unless budget is the only priority."
     },
     "verdicts": {
       "rareFind": {
@@ -925,5 +959,60 @@
     "send": "Tazminat Talebini Gönder",
     "sent": "Şikayet İletildi!",
     "sentDesc": "{airline} Müşteri İlişkileri'ne resmi bir 'Goodwill Compensation' (İyi Niyet Tazminatı) talebi gönderdik. Genellikle 7 gün içinde mil veya hediye çeki tanımlarlar."
-  }
+  },
+  "badge_best_pick": "🏆 BEST PICK",
+  "badge_hidden_gem": "💎 HIDDEN GEM",
+  "badge_acceptable": "✅ ACCEPTABLE",
+  "badge_hacker": "⚡ HACKER FARE",
+  "badge_avoid": "🛑 AVOID",
+  "badge_standard": "⚖️ STANDARD",
+  "verdict_title_recommended": "Our Recommendation",
+  "verdict_title_consider": "Worth Considering",
+  "verdict_title_avoid": "We Would Avoid This",
+  "verdict_headline_best": "We'd book this without hesitation",
+  "verdict_headline_good": "Strong choice with minor trade-offs",
+  "verdict_headline_consider": "Decent option if times suit you",
+  "verdict_headline_hacker": "Cheap but risky (Experts Only)",
+  "verdict_headline_avoid": "We'd skip this one",
+  "verdict_reason_best_pick": "The winner. Best balance of quality and price in this search.",
+  "verdict_reason_value": "Great value. High quality airline for a fair price.",
+  "verdict_reason_acceptable": "Strong contender. Good balance of cost and comfort.",
+  "verdict_reason_hacker": "Warning: It's cheap, but requires compromises on comfort or transfers.",
+  "verdict_reason_avoid": "We would avoid this. The risk or fatigue is not worth the savings.",
+  "verdict_reason_standard": "An average option. Neither great nor terrible.",
+  "pro_baggage_included": "Checked baggage included",
+  "pro_meal_included": "Meal service included",
+  "pro_premium_airline": "Premium airline service",
+  "pro_fast_route": "Among the fastest options",
+  "pro_good_price": "Good price for this route",
+  "pro_nonstop": "Non-stop flight",
+  "pro_short_layover": "Comfortable layover time",
+  "con_self_transfer": "Self-transfer required",
+  "con_no_baggage": "No checked baggage included",
+  "con_no_meal": "No meal included on long flight",
+  "con_long_duration": "Significantly slower than average",
+  "con_expensive": "Price is higher than average",
+  "con_multiple_stops": "Multiple stops involved",
+  "con_lcc_longhaul": "Low-cost carrier on long route",
+  "warning_self_transfer": "Self-transfer: Missed connection is YOUR responsibility.",
+  "warning_layover_trap": "Travelers often underestimate this long layover.",
+  "warning_lcc_fatigue": "Low-cost long-haul is physically exhausting.",
+  "tradeoff_money_time": "Saves money, but costs significant time.",
+  "tradeoff_time_money": "Saves time, but costs extra money.",
+  "tradeoff_balanced": "A balanced choice between cost and comfort.",
+  "identity_smart_choice": "Smart Choice",
+  "identity_tired_saver": "Tired Saver",
+  "identity_comfort_seeker": "Comfort Seeker",
+  "identity_regret_risk": "Risk Taker",
+  "identity_standard": "Standard",
+  "identity_desc_smart": "Smart balance of price and quality.",
+  "identity_desc_tired": "Saving money, but at the cost of fatigue.",
+  "identity_desc_comfort": "Prioritizing comfort over price.",
+  "identity_desc_risk": "High risk of missed connections.",
+  "identity_desc_standard": "Standard flight option.",
+  "social_proof_self_transfer": "82% of travelers avoid self-transfers due to missed connection risk.",
+  "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
+  "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
+  "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
+  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
 }
