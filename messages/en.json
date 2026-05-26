@@ -113,7 +113,27 @@
     "trust": {
       "airlines": "Itinerary scoring",
       "secure": "Advisor reports",
-      "realtime": "Monitoring snapshots"
+      "realtime": "Monitoring snapshots",
+      "monitoring": "Monitoring Transparency",
+      "decision": "Trip Decision Intelligence",
+      "disruption": "Periodic Disruption Checks"
+    },
+    "primaryActions": {
+      "score": {
+        "title": "Score an Itinerary",
+        "desc": "Analyze route structure, transfer risk, fare context, and advisor recommendations before you book.",
+        "cta": "Score Itinerary"
+      },
+      "track": {
+        "title": "Track an Itinerary",
+        "desc": "Watch candidate itineraries with scheduled price snapshots and transparent monitoring history.",
+        "cta": "Track Itinerary"
+      },
+      "add": {
+        "title": "Add Booked Trip",
+        "desc": "Add a confirmed trip for periodic disruption checks, alert history, and notification delivery tracking.",
+        "cta": "Add Booked Trip"
+      }
     },
     "system": {
       "label": "FlightAgent Platform",
