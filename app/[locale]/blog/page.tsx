@@ -1,7 +1,6 @@
 
 import { getBlogPosts, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 export default async function BlogIndex({
@@ -25,10 +24,6 @@ export default async function BlogIndex({
             </div>
 
             <div className="max-w-6xl mx-auto px-6 -mt-10">
-                <Link href="/" locale={locale} className="inline-flex items-center text-white mb-6 hover:text-blue-200 transition-colors">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('backToHome')}
-                </Link>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {posts.map((post) => (
                         <Link href={`/blog/${post.slug}`} locale={locale} key={post.slug} className="group">

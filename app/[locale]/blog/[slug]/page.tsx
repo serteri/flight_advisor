@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { getBlogPostBySlug, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { ChevronRight, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -113,9 +113,13 @@ export default async function BlogPost({
 
                 <div className="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-black/80 to-transparent pt-32 pb-10 px-6">
                     <div className="max-w-3xl mx-auto">
-                        <Link href="/blog" locale={locale} className="inline-flex items-center text-white/80 hover:text-white mb-6 text-sm transition-colors">
-                            <ArrowLeft className="w-4 h-4 mr-2" /> {t('backToGuides')}
-                        </Link>
+                        <div className="mb-6 flex items-center gap-2 text-xs text-white/80">
+                            <Link href="/" locale={locale} className="hover:text-white transition-colors">Home</Link>
+                            <ChevronRight className="w-3 h-3" />
+                            <Link href="/blog" locale={locale} className="hover:text-white transition-colors">Blog</Link>
+                            <ChevronRight className="w-3 h-3" />
+                            <span className="text-white truncate max-w-[280px] sm:max-w-[420px]">{post.title}</span>
+                        </div>
                         <h1 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
                             {post.title}
                         </h1>
