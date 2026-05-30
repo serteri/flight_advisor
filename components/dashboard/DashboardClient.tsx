@@ -1,14 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Plane, Sparkles } from 'lucide-react';
+import { FileText, Plus, Plane } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
-import { FlightInspector } from './FlightInspector';
-import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
-import { WelcomeBanner } from '@/components/onboarding/WelcomeBanner';
 import { useSession } from 'next-auth/react';
 
 interface DashboardClientProps {
@@ -22,7 +19,6 @@ interface DashboardClientProps {
         status?: string;
         [key: string]: unknown;
     }>;
-    showFirstTimeOnboarding: boolean;
     user: {
         id?: string;
         subscriptionPlan?: string;
@@ -33,9 +29,8 @@ interface DashboardClientProps {
     };
 }
 
-export function DashboardClient({ trips, showFirstTimeOnboarding, user }: DashboardClientProps) {
+export function DashboardClient({ trips, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [showFlightInspector, setShowFlightInspector] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [autoCheckoutError, setAutoCheckoutError] = useState<string | null>(null);
@@ -330,9 +325,6 @@ export function DashboardClient({ trips, showFirstTimeOnboarding, user }: Dashbo
 
     return (
         <div className="space-y-12">
-            <WelcomeBanner enabled={showFirstTimeOnboarding} />
-            <OnboardingModal enabled={showFirstTimeOnboarding} />
-
             {isTrialing && daysLeft !== null && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-4 text-amber-900">
                     <div className="text-sm font-bold">
@@ -399,41 +391,8 @@ export function DashboardClient({ trips, showFirstTimeOnboarding, user }: Dashbo
                         Welcome to {plan === 'ELITE' ? 'ELITE' : 'PRO'}! Your 7-day free trial has started.
                     </div>
                     <div className="text-sm text-emerald-800">
-                        Flight Inspector is now unlocked.
+                        Guardian monitoring is now unlocked.
                     </div>
-                </div>
-            )}
-
-            {/* --- SECTION 0: FLIGHT INSPECTOR (PRE-BOOKING) --- */}
-            {hasPremium && (
-                <div>
-                    <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-5 h-5 text-blue-500" />
-                            <h2 className="text-2xl font-bold text-slate-900">Flight Inspector</h2>
-                        </div>
-                        <p className="text-slate-500">Analyze an itinerary before booking. Review route structure, connection risk, fare context, and advisor recommendations.</p>
-                    </div>
-
-                    {!showFlightInspector ? (
-                        <button
-                            onClick={() => setShowFlightInspector(true)}
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg"
-                        >
-                            <Sparkles className="w-5 h-5" />
-                            Score an Itinerary
-                        </button>
-                    ) : (
-                        <div className="space-y-4">
-                            <FlightInspector locale={locale} />
-                            <button
-                                onClick={() => setShowFlightInspector(false)}
-                                className="w-full text-slate-600 hover:text-slate-900 font-medium text-sm"
-                            >
-                                ← Close Inspector
-                            </button>
-                        </div>
-                    )}
                 </div>
             )}
 

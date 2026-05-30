@@ -3,13 +3,6 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 
-const getCurrentMonth = (): string => {
-    const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
-};
-
 export default async function DashboardPage({
     searchParams,
 }: {
@@ -59,25 +52,9 @@ export default async function DashboardPage({
         include: { alerts: true }
     });
 
-    const itineraryUsage = session.user.id
-        ? await prisma.usageRecord.findUnique({
-            where: {
-                userId_feature_month: {
-                    userId: session.user.id,
-                    feature: 'itinerary_analysis',
-                    month: getCurrentMonth(),
-                },
-            },
-            select: { count: true },
-        })
-        : null;
-
-    const showFirstTimeOnboarding = (itineraryUsage?.count ?? 0) === 0;
-
     return (
         <DashboardClient
             trips={monitoredTrips}
-            showFirstTimeOnboarding={showFirstTimeOnboarding}
             user={{
                 ...session.user,
                 subscriptionPlan: dbUser?.subscriptionPlan || 'FREE',

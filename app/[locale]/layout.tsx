@@ -10,8 +10,11 @@ import "../globals.css";
 const GA_ID = "G-04HJXKRJFE";
 
 export const metadata: Metadata = {
-    title: "Flight Advisor",
-    description: "Personal Flight Price Advisor",
+    title: {
+        default: "FlightAgent — Flight Monitoring & EU261 Compensation",
+        template: "%s | FlightAgent",
+    },
+    description: "Monitor your flights, get disruption alerts, and generate EU261 compensation claims automatically.",
 };
 
 export default async function RootLayout({

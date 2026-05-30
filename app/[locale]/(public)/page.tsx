@@ -1,6 +1,12 @@
 import { ShieldCheck, Bell, Clock, FileText, ArrowRight, PlaneTakeoff, AlertTriangle } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "FlightAgent — Flight Monitoring & EU261 Compensation",
+    description: "Monitor your flights, get disruption alerts, and generate EU261 compensation claims automatically.",
+};
 
 export default function HomePage() {
     return (
