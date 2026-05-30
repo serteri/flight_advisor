@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { ShieldCheck, Plane, PlusCircle } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 
 export default async function GuardianDashboard() {
     const t = await getTranslations("Guardian");
@@ -13,7 +14,7 @@ export default async function GuardianDashboard() {
         redirect('/login');
     }
 
-    let trips: Awaited<ReturnType<typeof prisma.monitoredTrip.findMany>> = [];
+    let trips: Prisma.MonitoredTripGetPayload<{ include: { alerts: true } }>[] = [];
     try {
         // Fetch only current user's Monitored Trips
         trips = await prisma.monitoredTrip.findMany({
