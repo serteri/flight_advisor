@@ -12,6 +12,12 @@ type AddTripUser = {
     subscriptionPlan?: string;
 };
 
+type AddTripModalProps = {
+    onClose: () => void;
+    user: AddTripUser;
+    onSuccess?: () => void;
+};
+
 type VerifiedFlight = {
     airlineCode?: string;
     flightNumber?: string;
@@ -22,7 +28,7 @@ type VerifiedFlight = {
     arrivalTime?: string;
 };
 
-export function AddTripModal({ onClose, user }: { onClose: () => void, user: AddTripUser }) {
+export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
     const t = useTranslations('addTrip');
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -84,6 +90,13 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: Add
     const handleSave = async () => {
         // 3. SAVE VERIFIED DATA
         try {
+            console.info('[ADD_TRIP_MODAL] Saving monitored trip', {
+                flightNo,
+                date,
+                pnr,
+                verifiedFlight,
+            });
+
             const res = await fetch('/api/trips/monitor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,12 +118,21 @@ export function AddTripModal({ onClose, user }: { onClose: () => void, user: Add
             }
 
             if (res.ok) {
+                const data = await res.json().catch(() => null);
+                console.info('[ADD_TRIP_MODAL] Trip saved successfully', data);
                 setStep(3); // Success
+                onSuccess?.();
                 router.refresh();
             } else {
+                const errorData = await res.json().catch(() => null);
+                console.error('[ADD_TRIP_MODAL] Failed to save trip', {
+                    status: res.status,
+                    errorData,
+                });
                 alert("Failed to save trip.");
             }
-        } catch {
+        } catch (error) {
+            console.error('[ADD_TRIP_MODAL] Connection error while saving trip', error);
             alert("Connection error");
         }
     };

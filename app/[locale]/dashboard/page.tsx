@@ -59,14 +59,6 @@ export default async function DashboardPage({
         include: { alerts: true }
     });
 
-    // 3. TAKİP EDİLEN UÇUŞLAR (WatchedFlight - V1 Tracking)
-    // Sadece "benim" eklediklerimi göster
-    const trackedFlights = await prisma.watchedFlight.findMany({
-        where: { userId: session.user.id, status: 'ACTIVE' },
-        orderBy: { createdAt: 'desc' },
-        take: 20
-    });
-
     const itineraryUsage = session.user.id
         ? await prisma.usageRecord.findUnique({
             where: {
@@ -85,7 +77,6 @@ export default async function DashboardPage({
     return (
         <DashboardClient
             trips={monitoredTrips}
-            trackedFlights={trackedFlights}
             showFirstTimeOnboarding={showFirstTimeOnboarding}
             user={{
                 ...session.user,

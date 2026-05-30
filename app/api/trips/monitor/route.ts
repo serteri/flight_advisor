@@ -12,38 +12,104 @@ type MonitoredSegmentInput = {
     aircraft?: { code?: string };
 };
 
+type ManualAddTripPayload = {
+    airlineCode?: string;
+    flightNumber?: string;
+    date?: string;
+    origin?: string;
+    departureTime?: string;
+    destination?: string;
+    arrivalTime?: string;
+    pnr?: string;
+};
+
+const toDateTime = (date?: string, time?: string, fallback?: Date) => {
+    if (date && time) {
+        const parsed = new Date(`${date}T${time}:00`);
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed;
+        }
+    }
+    return fallback || new Date();
+};
+
 export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { pnr, flightData } = await req.json();
+        const body = await req.json();
+        const { pnr, flightData } = body as { pnr?: string; flightData?: any };
+        const manualPayload = body as ManualAddTripPayload;
 
-        // Basic validation
-        if (!pnr || !flightData) {
+        const normalizedFlightData = flightData || (manualPayload.origin && manualPayload.destination
+            ? {
+                origin: manualPayload.origin,
+                destination: manualPayload.destination,
+                travelClass: 'ECONOMY',
+                price: null,
+                segments: [
+                    {
+                        carrierCode: manualPayload.airlineCode,
+                        number: manualPayload.flightNumber,
+                        departure: {
+                            iataCode: manualPayload.origin,
+                            at: toDateTime(manualPayload.date, manualPayload.departureTime).toISOString(),
+                        },
+                        arrival: {
+                            iataCode: manualPayload.destination,
+                            at: toDateTime(
+                                manualPayload.date,
+                                manualPayload.arrivalTime,
+                                toDateTime(manualPayload.date, manualPayload.departureTime, new Date(Date.now() + 2 * 60 * 60 * 1000))
+                            ).toISOString(),
+                        },
+                        aircraft: { code: '738' },
+                    },
+                ],
+            }
+            : null);
+
+        console.info('[TRIPS_MONITOR] Received monitor request', {
+            userId: session.user.id,
+            pnr,
+            hasFlightData: Boolean(flightData),
+            hasManualPayload: Boolean(manualPayload.origin && manualPayload.destination),
+        });
+
+        if (!pnr || !normalizedFlightData) {
+            console.warn('[TRIPS_MONITOR] Missing required fields', { pnr, normalizedFlightData });
             return NextResponse.json({ error: 'PNR ve uçuş verisi gereklidir.' }, { status: 400 });
         }
 
         return withFreemiumGate(session.user.id!, 'monitored_trip', async () => {
-            // 1. Önce Ana Yolculuğu Yarat
+            const segments = Array.isArray(normalizedFlightData.segments) ? normalizedFlightData.segments : [];
             const trip = await prisma.monitoredTrip.create({
                 data: {
                     userId: session.user.id!,
                     pnr: pnr,
-                    routeLabel: `${flightData.origin} ➝ ${flightData.destination}`, // BNE -> IST
-                    originalPrice: flightData.price?.total || 0, // Fallback if not provided
-                    currency: flightData.price?.currency || "AUD",
-                    ticketClass: flightData.travelClass || "ECONOMY",
+                    routeLabel: `${normalizedFlightData.origin} ➝ ${normalizedFlightData.destination}`,
+                    originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
+                    currency: normalizedFlightData.price?.currency || "AUD",
+                    ticketClass: normalizedFlightData.travelClass || "ECONOMY",
                     nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // Check in 1 hour
+                    snapshot: {
+                        create: {
+                            delayMinutes: 0,
+                            status: 'scheduled',
+                            dataQuality: 'UNKNOWN',
+                            eu261Eligible: false,
+                        }
+                    },
 
                     // 2. Segmentleri İçine Göm (Nested Write)
                     segments: {
-                        create: (flightData.segments as MonitoredSegmentInput[]).map((seg, index) => ({
+                        create: (segments as MonitoredSegmentInput[]).map((seg, index) => ({
                             segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
                             airlineCode: seg.carrierCode || 'XX',   // SQ
                             flightNumber: seg.number || `SEG${index + 1}`,       // 236
-                            origin: seg.departure?.iataCode || flightData.origin, // BNE
-                            destination: seg.arrival?.iataCode || flightData.destination, // SIN
+                            origin: seg.departure?.iataCode || normalizedFlightData.origin,
+                            destination: seg.arrival?.iataCode || normalizedFlightData.destination,
                             departureDate: seg.departure?.at ? new Date(seg.departure.at) : new Date(),
                             arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : new Date(),
                             aircraftType: seg.aircraft?.code || '738' // Default
@@ -52,10 +118,17 @@ export async function POST(req: Request) {
                 }
             });
 
+            console.info('[TRIPS_MONITOR] Monitored trip created', {
+                tripId: trip.id,
+                userId: session.user.id,
+                pnr,
+                routeLabel: trip.routeLabel,
+            });
+
             return NextResponse.json({ success: true, tripId: trip.id });
         });
     } catch (error) {
-        console.error("Trip creation error:", error);
+        console.error('[TRIPS_MONITOR] Trip creation error', error);
         return NextResponse.json({ error: 'Uçuş takibi başlatılamadı.' }, { status: 500 });
     }
 }

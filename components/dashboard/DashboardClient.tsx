@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Plane, Route, Sparkles } from 'lucide-react';
+import { FileText, Plus, Plane, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 import { FlightInspector } from './FlightInspector';
-import { WatchedFlightCard } from '@/components/WatchedFlightCard';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { WelcomeBanner } from '@/components/onboarding/WelcomeBanner';
 import { useSession } from 'next-auth/react';
@@ -23,10 +22,6 @@ interface DashboardClientProps {
         status?: string;
         [key: string]: unknown;
     }>;
-    trackedFlights: Array<{
-        id: string | number;
-        [key: string]: unknown;
-    }>;
     showFirstTimeOnboarding: boolean;
     user: {
         id?: string;
@@ -38,7 +33,7 @@ interface DashboardClientProps {
     };
 }
 
-export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding, user }: DashboardClientProps) {
+export function DashboardClient({ trips, showFirstTimeOnboarding, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFlightInspector, setShowFlightInspector] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
@@ -487,7 +482,7 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                 ) : (
                     <div className="grid gap-6">
                         {trips.map((trip) => (
-                            <Link href={`/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
+                            <Link href={`/${locale}/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div className="p-3 bg-slate-100 rounded-lg text-slate-600 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
@@ -512,64 +507,6 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                                     </div>
                                 </div>
                             </Link>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* --- SECTION 2: TAKİP EDİLEN UÇUŞLAR (TRACKED FLIGHTS) --- */}
-            <div>
-                <div className="mb-6 border-t pt-8">
-                    <h2 className="text-2xl font-bold text-slate-900">{t('trackedFlights')}</h2>
-                    <p className="text-slate-500">{t('trackedFlightsDesc')}</p>
-                </div>
-
-                {!hasPremium ? (
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
-                        <h3 className="text-lg font-bold text-slate-900">Premium Feature</h3>
-                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to monitor disruptions with richer guardian insights.</p>
-                        <Link
-                            href={`/${locale}/pricing`}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
-                        >
-                            Upgrade Now
-                        </Link>
-                    </div>
-                ) : trackedFlights.length === 0 ? (
-                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center flex flex-col items-center">
-                        <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-slate-400">
-                            <Route className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-sm font-bold text-slate-900">{t('trackedEmptyTitle')}</h3>
-                        <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">{t('noTrackedFlights')}</p>
-                        <div className="flex flex-col sm:flex-row items-center gap-2">
-                            <Link
-                                href={`/${locale}/dashboard/guardian`}
-                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
-                            >
-                                <FileText className="w-4 h-4" />
-                                Open Guardian
-                            </Link>
-                            <Link
-                                href={`/${locale}/dashboard/guardian`}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                            >
-                                <FileText className="w-4 h-4" />
-                                View monitored trips
-                            </Link>
-                            <Link
-                                href={`/${locale}/dashboard`}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                            >
-                                <Route className="w-4 h-4" />
-                                Add a trip
-                            </Link>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-                        {trackedFlights.map((flight) => (
-                            <WatchedFlightCard key={String(flight.id)} flight={flight} />
                         ))}
                     </div>
                 )}

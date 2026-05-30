@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
-import { ShieldCheck, Plane, PlusCircle } from "lucide-react";
+import { ShieldCheck, Plane } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
+import { GuardianOverviewActions } from "@/components/guardian/GuardianOverviewActions";
 
 export default async function GuardianDashboard() {
     const t = await getTranslations("Guardian");
@@ -14,13 +15,18 @@ export default async function GuardianDashboard() {
         redirect('/login');
     }
 
-    let trips: Prisma.MonitoredTripGetPayload<{ include: { alerts: true } }>[] = [];
+    let trips: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>[] = [];
     try {
         // Fetch only current user's Monitored Trips
         trips = await prisma.monitoredTrip.findMany({
             where: { userId: session.user.id },
             orderBy: { createdAt: 'desc' },
-            include: { alerts: true }
+            include: {
+                alerts: true,
+                segments: { orderBy: { segmentOrder: 'asc' } },
+                snapshot: true,
+                alertEvents: true,
+            }
         });
     } catch (error) {
         console.error('[GUARDIAN_DASHBOARD] Failed to load trips:', error);
@@ -50,9 +56,12 @@ export default async function GuardianDashboard() {
                     <p className="text-slate-500 mt-1">Periodic disruption monitoring enabled.</p>
                 </div>
                 <div className="flex gap-4">
-                    <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors">
-                        <PlusCircle size={18} /> Add Trip
-                    </button>
+                    <GuardianOverviewActions
+                        user={{
+                            id: session.user.id,
+                            subscriptionPlan: session.user.subscriptionPlan || 'FREE',
+                        }}
+                    />
                 </div>
             </div>
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateClaimPDF } from '@/services/legal/pdfGenerator';
-// import { sendEmailWithAttachment } from '@/services/notifications/sender'; // (Varsayımsal sender fonksiyonu)
+import { sendEmail } from '@/services/notifications/sender';
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             include: {
                 segments: { orderBy: { segmentOrder: 'asc' } },
                 snapshot: true,
-                user: { select: { name: true } }
+                user: { select: { name: true, email: true } }
             }
         });
 
@@ -97,9 +97,47 @@ export async function POST(req: Request) {
         // Gerçek hayatta burası: claims@turkishairlines.com olur.
         // Şimdilik test için konsola basıyoruz veya kullanıcıya CC atıyoruz.
         console.log(`[ACTION] PDF Dilekçe Oluşturuldu (${pdfBuffer.byteLength} bytes).`);
-        console.log(`[ACTION] Sending email to airline for PNR: ${tripData.pnr}...`);
+        const claimRecipient = process.env.CLAIM_DESTINATION_EMAIL
+            || process.env.CLAIMS_DESTINATION_EMAIL
+            || session.user.email
+            || trip.user?.email
+            || null;
 
-        // await sendEmailWithAttachment(...) 
+        if (!claimRecipient) {
+            console.error('[CLAIM_ACTION] No claim email recipient configured or available');
+            return NextResponse.json(
+                { success: false, error: 'No claim email recipient is configured' },
+                { status: 422 }
+            );
+        }
+
+        const filename = `claim-${trip.id}.pdf`;
+        const subject = `EU261 claim package for ${tripData.flightNumber} / PNR ${tripData.pnr}`;
+
+        console.info('[CLAIM_ACTION] Sending claim email', {
+            tripId: trip.id,
+            recipient: claimRecipient,
+            filename,
+        });
+
+        const emailResult = await sendEmail(claimRecipient, subject, pdfBuffer, filename);
+        if (!emailResult.success) {
+            console.error('[CLAIM_ACTION] Claim email delivery failed', {
+                tripId: trip.id,
+                recipient: claimRecipient,
+                error: emailResult.message,
+            });
+            return NextResponse.json(
+                { success: false, error: `Failed to send claim email: ${emailResult.message}` },
+                { status: 502 }
+            );
+        }
+
+        console.info('[CLAIM_ACTION] Claim email delivered', {
+            tripId: trip.id,
+            recipient: claimRecipient,
+            providerMessageId: emailResult.id,
+        });
 
         // 4. Veritabanında durumu güncelle
         // await prisma.guardianAlert.update({ where: { ... }, data: { isActioned: true, status: 'SENT' }})
@@ -112,7 +150,7 @@ export async function POST(req: Request) {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="claim-${trip.id}.pdf"`,
+                'Content-Disposition': `attachment; filename="${filename}"`,
                 'Cache-Control': 'no-store',
             },
         });
