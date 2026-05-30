@@ -18,6 +18,21 @@ import {
 
 export const runtime = 'nodejs';
 
+const assertInternalAccess = (request: NextRequest): NextResponse | null => {
+  const configuredSecret = process.env.INTERNAL_API_SECRET;
+  if (!configuredSecret) {
+    console.error('[Health Diagnostics] INTERNAL_API_SECRET is not configured');
+    return NextResponse.json({ error: 'Internal API not configured' }, { status: 500 });
+  }
+
+  const headerSecret = request.headers.get('INTERNAL_API_SECRET');
+  if (!headerSecret || headerSecret !== configuredSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return null;
+};
+
 interface HealthRequest {
   period?: 'last_hour' | 'last_24h' | 'last_7d';
 }
@@ -41,6 +56,9 @@ interface HealthRequest {
  *   - alerts array
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const authError = assertInternalAccess(request);
+  if (authError) return authError;
+
   try {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -108,6 +126,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * TODO: Add authentication
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const authError = assertInternalAccess(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json().catch(() => ({}));
 
