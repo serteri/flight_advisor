@@ -1,12 +1,13 @@
-'use client';
-import { useState, useEffect } from 'react';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import {
     ArrowLeft, Clock, ShieldCheck, Plane,
     Armchair, DollarSign, AlertTriangle,
-    Activity, CheckCircle
+    Activity
 } from 'lucide-react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 // Componentler
 import { SeatAlertCard } from '@/components/alerts/SeatAlertCard';
@@ -14,37 +15,47 @@ import { ArbitrageCard } from '@/components/guardian/ArbitrageCard';
 import { DisruptionCard } from '@/components/guardian/DisruptionCard';
 import { ScheduleChangeCard } from '@/components/guardian/ScheduleChangeCard';
 
-export default function TripDetailsPage({ params }: { params: { id: string } }) {
-    const t = useTranslations('Guardian');
-    const tModules = useTranslations('Modules');
+export default async function TripDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const t = await getTranslations('Guardian');
+    const tModules = await getTranslations('Modules');
+    const { id } = await params;
 
-    // MOCK VERİ (Gerçekte veritabanından 'params.id' ile çekilecek)
-    const trip = {
-        id: params.id,
-        pnr: 'QLWZE',
-        route: 'Brisbane (BNE) ➝ Istanbul (IST)',
-        airline: 'Turkish Airlines',
-        flightNumber: 'TK1984',
-        date: '12 Şubat 2026',
-        status: 'ACTIVE',
-        lastChecked: 'Az önce',
-        originalPrice: 1500,
-        currency: 'AUD',
-        // AKTİF UYARILAR (Worker bunları bulmuş!)
-        alerts: [
-            { type: 'DISRUPTION', severity: 'MONEY', value: '600€' }, // 1. Fırsat
-            { type: 'SEAT_ALERT', severity: 'WARNING' },               // 2. Uyarı
-            {
-                type: 'SCHEDULE_CHANGE',
-                severity: 'CRITICAL',
-                timestamp: '2026-02-12T09:00:00Z',
-                metadata: {
-                    newTime: '2026-02-12T11:00:00', // 3 hours earlier
-                    oldTime: '2026-02-12T14:00:00'
+    const session = await auth();
+    if (!session?.user?.id) {
+        notFound();
+    }
+
+    let trip;
+    try {
+        trip = await prisma.monitoredTrip.findUnique({
+            where: { id },
+            include: {
+                alerts: {
+                    orderBy: { createdAt: 'desc' }
+                },
+                segments: {
+                    orderBy: { segmentOrder: 'asc' }
                 }
             }
-        ]
-    };
+        });
+    } catch (error) {
+        console.error('[GUARDIAN_TRIP_PAGE] Failed to load trip:', error);
+        notFound();
+    }
+
+    if (!trip || trip.userId !== session.user.id) {
+        notFound();
+    }
+
+    const firstSegment = trip.segments[0];
+    const airlineLabel = firstSegment?.airlineCode || 'N/A';
+    const flightNumberLabel = firstSegment?.flightNumber || 'N/A';
+    const tripDateLabel = firstSegment?.departureDate
+        ? new Date(firstSegment.departureDate).toLocaleDateString('en-US')
+        : 'Unknown';
+    const lastCheckedLabel = trip.lastCheckedAt
+        ? new Date(trip.lastCheckedAt).toLocaleString('en-US')
+        : 'Unknown';
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
@@ -62,12 +73,12 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
                             <Plane className="w-7 h-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-slate-900">{trip.route}</h1>
+                            <h1 className="text-2xl font-black text-slate-900">{trip.routeLabel}</h1>
                             <div className="flex items-center gap-3 text-slate-500 font-medium text-sm mt-1">
                                 <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold">{trip.pnr}</span>
-                                <span>{trip.airline} ({trip.flightNumber})</span>
+                                <span>{airlineLabel} ({flightNumberLabel})</span>
                                 <span>•</span>
-                                <span>{trip.date}</span>
+                                <span>{tripDateLabel}</span>
                             </div>
                         </div>
                     </div>
@@ -82,7 +93,7 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
                         <div className="h-10 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
                         <div className="text-right">
                             <div className="text-[10px] uppercase font-bold text-slate-400">{t('lastCheck')}</div>
-                            <div className="text-sm font-bold text-slate-700">{trip.lastChecked === 'Az önce' ? t('justNow') : trip.lastChecked}</div>
+                            <div className="text-sm font-bold text-slate-700">{lastCheckedLabel}</div>
                         </div>
                     </div>
                 </div>
@@ -99,13 +110,19 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
                         {trip.alerts.map((alert, idx) => (
                             <div key={idx}>
                                 {alert.type === 'DISRUPTION' && <DisruptionCard segment={trip} alerts={trip.alerts} />}
-                                {alert.type === 'PRICE_DROP' && <ArbitrageCard original={trip.originalPrice} current={1100} currency={trip.currency} />}
+                                {alert.type === 'PRICE_DROP' && (
+                                    <ArbitrageCard
+                                        original={trip.originalPrice}
+                                        current={Math.max(0, trip.originalPrice - 50)}
+                                        currency={trip.currency}
+                                    />
+                                )}
                                 {alert.type === 'SEAT_ALERT' && <SeatAlertCard />}
                                 {alert.type === 'SCHEDULE_CHANGE' && (
                                     <ScheduleChangeCard
-                                        oldTime={alert.metadata?.oldTime || ''}
-                                        newTime={alert.metadata?.newTime || ''}
-                                        airline={trip.airline}
+                                        oldTime={alert.message || ''}
+                                        newTime={alert.message || ''}
+                                        airline={airlineLabel}
                                     />
                                 )}
                             </div>

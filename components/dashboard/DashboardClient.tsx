@@ -476,11 +476,11 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                                 {t('addTripShort')}
                             </button>
                             <Link
-                                href={`/${locale}/score-flight`}
+                                href={`/${locale}/dashboard/guardian`}
                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                             >
                                 <FileText className="w-4 h-4" />
-                                View advisor reports
+                                Open Guardian dashboard
                             </Link>
                         </div>
                     </div>
@@ -527,7 +527,7 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                 {!hasPremium ? (
                     <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
                         <h3 className="text-lg font-bold text-slate-900">Premium Feature</h3>
-                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to track candidate itineraries and review advanced scoring.</p>
+                        <p className="text-slate-500 mt-1 mb-4">Upgrade to PRO or ELITE to monitor disruptions with richer guardian insights.</p>
                         <Link
                             href={`/${locale}/pricing`}
                             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
@@ -544,25 +544,25 @@ export function DashboardClient({ trips, trackedFlights, showFirstTimeOnboarding
                         <p className="text-xs text-slate-500 mt-1 mb-3 max-w-xs">{t('noTrackedFlights')}</p>
                         <div className="flex flex-col sm:flex-row items-center gap-2">
                             <Link
-                                href={`/${locale}/score-flight`}
+                                href={`/${locale}/dashboard/guardian`}
                                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
                             >
                                 <FileText className="w-4 h-4" />
-                                Score an itinerary
+                                Open Guardian
                             </Link>
                             <Link
-                                href={`/${locale}/score-flight`}
+                                href={`/${locale}/dashboard/guardian`}
                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                             >
                                 <FileText className="w-4 h-4" />
-                                View advisor reports
+                                View monitored trips
                             </Link>
                             <Link
-                                href={`/${locale}/flight-search`}
+                                href={`/${locale}/dashboard`}
                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                             >
                                 <Route className="w-4 h-4" />
-                                Track an itinerary
+                                Add a trip
                             </Link>
                         </div>
                     </div>

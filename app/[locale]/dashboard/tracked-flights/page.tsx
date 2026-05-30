@@ -1,11 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { getUserTier } from '@/lib/tierUtils';
-import { TrendingDown, TrendingUp, Minus, Bell, Plane, ArrowRight, Calendar, Search, Clock, Briefcase, Activity } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Bell, Plane, ArrowRight, Calendar, Clock, Briefcase, Activity } from 'lucide-react';
 import { computeSnapshotAgeMinutes, formatSnapshotAge, resolveMonitoringState } from '@/lib/monitoringState';
 import Link from 'next/link';
 import { RemoveWatchButton } from '@/components/RemoveWatchButton';
-import { RefreshPricesButton } from "@/components/RefreshPricesButton";
 import { BackToSearchButton } from "@/components/BackToSearchButton";
 import { formatDistanceToNow } from 'date-fns';
 import { tr, enUS, de } from 'date-fns/locale';
@@ -91,7 +90,7 @@ export default async function TrackedFlightsPage({
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
             <div className="max-w-5xl mx-auto p-6 md:p-8">
                 {/* Back Navigation */}
-                <BackToSearchButton fallbackUrl={`/${locale}/flight-search`} />
+                <BackToSearchButton fallbackUrl={`/${locale}/dashboard/guardian`} />
 
                 {/* Header */}
                 <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -105,10 +104,9 @@ export default async function TrackedFlightsPage({
                             </h1>
                         </div>
                         <p className="text-slate-500">
-                            Track prices and get notified when they drop.
+                            Track monitored itineraries and review disruption signals.
                         </p>
                     </div>
-                    <RefreshPricesButton />
                 </div>
 
                 {/* Flight List */}
@@ -119,7 +117,7 @@ export default async function TrackedFlightsPage({
                             Premium Feature
                         </h3>
                         <p className="text-slate-500 mb-6">
-                            Upgrade to PRO or ELITE to track flights and see advanced scoring in your dashboard.
+                            Upgrade to PRO or ELITE for expanded monitoring and alert visibility.
                         </p>
                         <Link
                             href={`/${locale}/pricing`}
@@ -135,14 +133,13 @@ export default async function TrackedFlightsPage({
                             No Flights Tracked Yet
                         </h3>
                         <p className="text-slate-500 mb-6">
-                            Search for flights and click &quot;Track This Flight&quot; to add them here.
+                            Add a monitored trip from your Guardian dashboard to populate this list.
                         </p>
                         <Link
-                            href={`/${locale}/flight-search`}
+                            href={`/${locale}/dashboard/guardian`}
                             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
                         >
-                            <Search className="h-4 w-4" />
-                            Search Flights
+                            Open Guardian
                         </Link>
                     </div>
                 ) : (
@@ -339,11 +336,11 @@ export default async function TrackedFlightsPage({
                                     {/* Action Bar */}
                                     <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
                                         <Link
-                                            href={`/${locale}/flight-search?from=${flight.origin}&to=${flight.destination}&date=${new Date(flight.departureDate).toISOString().split('T')[0]}`}
+                                            href={`/${locale}/dashboard/guardian`}
                                             className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                                         >
-                                            <Search className="h-4 w-4" />
-                                            Search Again
+                                            <ArrowRight className="h-4 w-4" />
+                                            View in Guardian
                                         </Link>
                                         <RemoveWatchButton flightId={flight.id} />
                                     </div>

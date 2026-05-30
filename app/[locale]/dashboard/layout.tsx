@@ -14,7 +14,7 @@ export default function DashboardLayout({
                 <div className="font-bold text-xl mb-8">FlightAgent</div>
                 <nav className="space-y-2">
                     <Link href="/dashboard" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">{t('decisionHub')}</Link>
-                    <Link href="/score-flight" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">{t('scoreItinerary')}</Link>
+                    <Link href="/dashboard/guardian" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">Guardian</Link>
                     <Link href="/dashboard/tracked-flights" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">{t('trackedItineraries')}</Link>
                     <Link href="/dashboard/settings" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">{t('settings')}</Link>
                     <Link href="/" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg mt-4 border-t pt-4">{t('home')}</Link>

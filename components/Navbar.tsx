@@ -17,9 +17,8 @@ export default function Navbar() {
 
     const navLinks = [
         { name: tNav('home'), href: "/" },
-        { name: tNav('scoreItinerary'), href: "/score-flight" },
+        { name: "Guardian", href: "/dashboard/guardian" },
         { name: tNav('pricing'), href: "/pricing" },
-        { name: tNav('blog'), href: "/blog" },
     ];
 
     return (

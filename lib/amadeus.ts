@@ -2,6 +2,8 @@ import axios, { AxiosInstance } from "axios";
 // @ts-ignore
 import Amadeus from "amadeus";
 
+// TODO(guardian-only-pivot): keep this client for Guardian monitoring and compensation flows.
+
 const AM_HOST = process.env.AMADEUS_HOST === "production"
     ? "https://api.amadeus.com"
     : "https://test.api.amadeus.com";

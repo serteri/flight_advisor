@@ -1,24 +1,37 @@
-
-import { PrismaClient } from "@prisma/client";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
-import { ShieldCheck, AlertTriangle, Plane, PlusCircle } from "lucide-react";
+import { ShieldCheck, Plane, PlusCircle } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
-
-// Initialize Prisma
-const prisma = new PrismaClient();
-
-// Mock User ID (In real app, use auth() session)
-const MOCK_USER_ID = "user_clv4123";
+import { redirect } from "next/navigation";
 
 export default async function GuardianDashboard() {
     const t = await getTranslations("Guardian");
+    const session = await auth();
 
-    // Fetch Monitored Trips (V2 Model)
-    const trips = await prisma.monitoredTrip.findMany({
-        // where: { userId: MOCK_USER_ID }, // Enable when auth is ready
-        orderBy: { createdAt: 'desc' },
-        include: { alerts: true }
-    });
+    if (!session?.user?.id) {
+        redirect('/login');
+    }
+
+    let trips: Awaited<ReturnType<typeof prisma.monitoredTrip.findMany>> = [];
+    try {
+        // Fetch only current user's Monitored Trips
+        trips = await prisma.monitoredTrip.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: 'desc' },
+            include: { alerts: true }
+        });
+    } catch (error) {
+        console.error('[GUARDIAN_DASHBOARD] Failed to load trips:', error);
+        return (
+            <div className="p-8 max-w-6xl mx-auto">
+                <div className="text-center py-12 bg-red-50 rounded-2xl border border-red-200">
+                    <h3 className="text-lg font-medium text-red-900">Unable to load monitored trips</h3>
+                    <p className="text-red-700">Please try again later.</p>
+                </div>
+            </div>
+        );
+    }
 
     const activeTrips = trips.filter(t => t.status === 'ACTIVE');
     const alertsTotal = trips.reduce((acc, t) => acc + t.alerts.length, 0);
@@ -69,7 +82,7 @@ export default async function GuardianDashboard() {
                 {trips.length === 0 ? (
                     <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
                         <Plane className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-                        <h3 className="text-lg font-medium text-slate-900">No active trips</h3>
+                        <h3 className="text-lg font-medium text-slate-900">No trips found</h3>
                         <p className="text-slate-500">Import a PNR to start monitoring.</p>
                     </div>
                 ) : (

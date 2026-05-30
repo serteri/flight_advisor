@@ -1,273 +1,91 @@
-import { useTranslations } from 'next-intl';
-import { TrendingDown, ShieldCheck, BrainCircuit, Zap, Bell, Clock, BarChart3, MapPin, Mail, ArrowRight } from "lucide-react";
+import { ShieldCheck, Bell, Clock, FileText, ArrowRight, PlaneTakeoff, AlertTriangle } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-    const t = useTranslations('HomePage');
-
     return (
         <div className="flex flex-col min-h-screen">
-            {/* Hero Section with Search Bar */}
-            <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-gradient-to-b from-blue-50 via-white to-orange-50/40">
-
-                {/* Aero decor: compass rose / altimeter rings — purely decorative */}
-                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-                    {/* Large compass ring top-right */}
-                    <div className="absolute -top-24 -right-24 w-[480px] h-[480px] rounded-full border-[1.5px] border-sky-400/8 opacity-60" />
-                    <div className="absolute -top-16 -right-16 w-[360px] h-[360px] rounded-full border-[1px] border-sky-400/6" />
-                    <div className="absolute top-0 -right-8 w-[240px] h-[240px] rounded-full border-[1px] border-orange-300/8" />
-                    {/* Altimeter rings bottom-left */}
-                    <div className="absolute -bottom-32 -left-32 w-[520px] h-[520px] rounded-full border-[1.5px] border-indigo-400/6" />
-                    <div className="absolute -bottom-20 -left-20 w-[380px] h-[380px] rounded-full border-[1px] border-sky-400/5" />
-                    {/* Heading tick lines */}
-                    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full border-[1px] border-dashed border-sky-300/5" />
-                    {/* Subtle horizon gradient band */}
-                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-sky-200/50 to-transparent" />
+            <section className="relative pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-sky-50">
+                <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                    <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-emerald-200/30 blur-3xl" />
+                    <div className="absolute -bottom-16 -left-16 h-72 w-72 rounded-full bg-sky-200/30 blur-3xl" />
                 </div>
-
                 <div className="container relative mx-auto px-4 md:px-6">
-                    <div className="max-w-5xl mx-auto text-center space-y-8 mb-16">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200/70 text-sky-700 text-sm font-semibold animate-fade-in-up shadow-sm shadow-sky-100">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-                            </span>
-                            {t('badge.engineActive')}
+                    <div className="max-w-4xl mx-auto text-center space-y-8 mb-14">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
+                            <ShieldCheck className="w-4 h-4" />
+                            Guardian mode is active
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-                            {t('hero.title')} <br className="hidden md:block" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
-                                {t('hero.titleHighlight')}
+                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+                            Monitor every booking,
+                            <br className="hidden md:block" />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-sky-600">
+                                react before disruption hits
                             </span>
                         </h1>
 
-                        <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
-                            {t('hero.subtitle')}
+                        <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                            FlightAgent now focuses on Guardian workflows: continuous monitoring, disruption alerts, and EU261 compensation guidance.
                         </p>
-                    </div>
-
-                    {/* Primary Action Cards */}
-                    <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
-
-                        {/* Card 1: Score an Itinerary */}
-                        <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 group flex flex-col">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center mb-5 shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
-                                <BarChart3 className="w-7 h-7 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.score.title')}</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.score.desc')}</p>
-                            <Link href="/score-flight">
-                                <Button className="w-full rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-semibold shadow-md shadow-blue-500/20">
-                                    {t('primaryActions.score.cta')} <ArrowRight className="ml-2 w-4 h-4" />
+                        <div className="flex flex-wrap justify-center gap-3">
+                            <Link href="/dashboard/guardian">
+                                <Button className="rounded-xl bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-semibold">
+                                    Open Guardian <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
-                        </div>
-
-                        {/* Card 2: Track an Itinerary */}
-                        <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all duration-300 group flex flex-col">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mb-5 shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform duration-300">
-                                <MapPin className="w-7 h-7 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.track.title')}</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.track.desc')}</p>
-                            <Link href="/dashboard">
-                                <Button variant="outline" className="w-full rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold">
-                                    {t('primaryActions.track.cta')} <ArrowRight className="ml-2 w-4 h-4" />
-                                </Button>
-                            </Link>
-                        </div>
-
-                        {/* Card 3: Track My Booking */}
-                        <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all duration-300 group flex flex-col">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5 shadow-md shadow-emerald-500/30 group-hover:scale-105 transition-transform duration-300">
-                                <Mail className="w-7 h-7 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('primaryActions.add.title')}</h3>
-                            <p className="text-slate-500 text-sm mb-6 flex-1">{t('primaryActions.add.desc')}</p>
-                            <Link href="/dashboard">
-                                <Button variant="outline" className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold">
-                                    {t('primaryActions.add.cta')} <ArrowRight className="ml-2 w-4 h-4" />
+                            <Link href="/pricing">
+                                <Button variant="outline" className="rounded-xl border-slate-300 text-slate-800">
+                                    See plans
                                 </Button>
                             </Link>
                         </div>
                     </div>
 
-                    {/* Trust Indicators */}
-                    <div className="flex flex-wrap justify-center gap-6 md:gap-12 opacity-50 hover:opacity-80 transition-all duration-500">
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><ShieldCheck className="w-5 h-5 text-emerald-400" /> {t('trust.monitoring')}</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><BrainCircuit className="w-5 h-5 text-sky-400" /> {t('trust.decision')}</span>
-                        <span className="flex items-center gap-2 font-semibold text-slate-500"><Bell className="w-5 h-5 text-orange-400" /> {t('trust.disruption')}</span>
-                    </div>
-                </div>
-            </section>
-
-            {/* System Overview */}
-            <section className="py-24 bg-slate-50 border-t border-slate-200">
-                <div className="container mx-auto px-4 md:px-6">
-                    <div className="max-w-4xl mx-auto text-center space-y-4 mb-12">
-                        <div className="text-xs uppercase tracking-[0.3em] font-semibold text-slate-500">{t('system.label')}</div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900">{t('system.title')}</h2>
-                        <p className="text-slate-600 text-lg">
-                            {t('system.subtitle')}
-                        </p>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-                                <BarChart3 className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.hybrid.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.hybrid.desc')}</p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
-                                <BrainCircuit className="w-6 h-6 text-indigo-600" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.scoring.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.scoring.desc')}</p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                    <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm">
                             <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                                <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                                <PlaneTakeoff className="w-6 h-6 text-emerald-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.disruption.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.disruption.desc')}</p>
+                            <h3 className="font-bold text-slate-900 mb-2">Flight Monitoring</h3>
+                            <p className="text-sm text-slate-600">Track booked trips on scheduled checks and keep a transparent history of changes.</p>
                         </div>
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm">
                             <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
-                                <Clock className="w-6 h-6 text-amber-600" />
+                                <Bell className="w-6 h-6 text-amber-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.guardian.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.guardian.desc')}</p>
+                            <h3 className="font-bold text-slate-900 mb-2">Disruption Alerts</h3>
+                            <p className="text-sm text-slate-600">Receive focused notifications for delays, cancellations, and schedule-risk drift.</p>
                         </div>
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                            <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center mb-4">
-                                <Bell className="w-6 h-6 text-rose-600" />
+                        <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm">
+                            <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center mb-4">
+                                <FileText className="w-6 h-6 text-sky-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.notifications.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.notifications.desc')}</p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
-                                <Zap className="w-6 h-6 text-purple-600" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">{t('system.cards.inbox.title')}</h3>
-                            <p className="text-slate-600 text-sm">{t('system.cards.inbox.desc')}</p>
+                            <h3 className="font-bold text-slate-900 mb-2">EU261 Compensation</h3>
+                            <p className="text-sm text-slate-600">Generate claim-ready documents and move faster when a trip is disrupted.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Master Flight Scoring Engine */}
-            <section className="py-24 bg-white border-t border-slate-200">
+            <section className="py-20 bg-slate-900 text-white border-t border-slate-800">
                 <div className="container mx-auto px-4 md:px-6">
-                    <div className="max-w-4xl mx-auto text-center space-y-4 mb-12">
-                        <div className="text-xs uppercase tracking-[0.3em] font-semibold text-slate-500">{t('scoring.label')}</div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900">{t('scoring.title')}</h2>
-                        <p className="text-slate-600 text-lg">
-                            {t('scoring.subtitle')}
-                        </p>
-                    </div>
-
-                    <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
-                        <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50">
-                            <div className="flex items-center gap-3 mb-4">
-                                <TrendingDown className="w-5 h-5 text-slate-700" />
-                                <h3 className="font-bold text-slate-900">{t('scoring.formula.title')}</h3>
-                            </div>
-                            <p className="text-sm text-slate-600 mb-4">{t('scoring.formula.intro')}</p>
-                            <div className="space-y-3 text-sm text-slate-700">
-                                <div><span className="font-bold">{t('scoring.formula.items.price.title')}</span> {t('scoring.formula.items.price.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.formula.items.duration.title')}</span> {t('scoring.formula.items.duration.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.formula.items.stops.title')}</span> {t('scoring.formula.items.stops.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.formula.items.connection.title')}</span> {t('scoring.formula.items.connection.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.formula.items.selfTransfer.title')}</span> {t('scoring.formula.items.selfTransfer.desc')}</div>
-                            </div>
+                    <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
+                        <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+                            <Clock className="w-5 h-5 text-emerald-300 mb-3" />
+                            <h3 className="font-semibold mb-1">Scheduled Transparency</h3>
+                            <p className="text-sm text-slate-300">Monitoring is periodic, and every snapshot is timestamped so expectations stay clear.</p>
                         </div>
-
-                        <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50">
-                            <div className="flex items-center gap-3 mb-4">
-                                <BrainCircuit className="w-5 h-5 text-slate-700" />
-                                <h3 className="font-bold text-slate-900">{t('scoring.quality.title')}</h3>
-                            </div>
-                            <div className="space-y-3 text-sm text-slate-700">
-                                <div><span className="font-bold">{t('scoring.quality.items.baggage.title')}</span> {t('scoring.quality.items.baggage.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.quality.items.reliability.title')}</span> {t('scoring.quality.items.reliability.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.quality.items.aircraft.title')}</span> {t('scoring.quality.items.aircraft.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.quality.items.amenity.title')}</span> {t('scoring.quality.items.amenity.desc')}</div>
-                                <div><span className="font-bold">{t('scoring.quality.items.airport.title')}</span> {t('scoring.quality.items.airport.desc')}</div>
-                            </div>
+                        <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+                            <AlertTriangle className="w-5 h-5 text-amber-300 mb-3" />
+                            <h3 className="font-semibold mb-1">Early Warnings</h3>
+                            <p className="text-sm text-slate-300">Act before problems compound by using structured disruption signals from Guardian.</p>
                         </div>
-                    </div>
-
-                    <div className="max-w-5xl mx-auto mt-8 grid gap-6 md:grid-cols-3">
-                        <div className="rounded-2xl border border-slate-200 p-5 bg-white">
-                            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t('scoring.final.score.title')}</div>
-                            <div className="text-sm text-slate-700">{t('scoring.final.score.desc')}</div>
+                        <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+                            <ShieldCheck className="w-5 h-5 text-sky-300 mb-3" />
+                            <h3 className="font-semibold mb-1">Protection Focus</h3>
+                            <p className="text-sm text-slate-300">Everything is centered on protecting completed bookings, not shopping for new ones.</p>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 p-5 bg-white">
-                            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t('scoring.final.risk.title')}</div>
-                            <div className="text-sm text-slate-700">{t('scoring.final.risk.desc')}</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 p-5 bg-white">
-                            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t('scoring.final.value.title')}</div>
-                            <div className="text-sm text-slate-700">{t('scoring.final.value.desc')}</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Strategic Difference */}
-            <section className="py-24 bg-slate-900 text-white">
-                <div className="container mx-auto px-4 md:px-6">
-                    <div className="max-w-4xl mx-auto text-center space-y-4 mb-12">
-                        <div className="text-xs uppercase tracking-[0.3em] font-semibold text-slate-300">{t('strategic.label')}</div>
-                        <h2 className="text-3xl md:text-5xl font-bold">{t('strategic.title')}</h2>
-                        <p className="text-slate-300 text-lg">{t('strategic.subtitle')}</p>
-                    </div>
-
-                    <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
-                        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
-                            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t('strategic.typical.title')}</div>
-                            <ul className="space-y-2 text-sm text-slate-200">
-                                <li>{t('strategic.typical.items.price')}</li>
-                                <li>{t('strategic.typical.items.risk')}</li>
-                                <li>{t('strategic.typical.items.future')}</li>
-                                <li>{t('strategic.typical.items.crisis')}</li>
-                            </ul>
-                        </div>
-                        <div className="rounded-2xl border border-emerald-700/40 bg-emerald-900/20 p-6">
-                            <div className="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">{t('strategic.agent.title')}</div>
-                            <ul className="space-y-2 text-sm text-emerald-100">
-                                <li>{t('strategic.agent.items.ranking')}</li>
-                                <li>{t('strategic.agent.items.scenario')}</li>
-                                <li>{t('strategic.agent.items.protection')}</li>
-                                <li>{t('strategic.agent.items.compensation')}</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Honesty FAQ */}
-            <section className="py-24 bg-white border-t border-slate-200">
-                <div className="container mx-auto px-4 md:px-6">
-                    <div className="max-w-4xl mx-auto text-center space-y-4 mb-12">
-                        <div className="text-xs uppercase tracking-[0.3em] font-semibold text-slate-500">{t('faq.label')}</div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900">{t('faq.title')}</h2>
-                        <p className="text-slate-600 text-lg">{t('faq.subtitle')}</p>
-                    </div>
-
-                    <div className="max-w-5xl mx-auto grid gap-4 md:grid-cols-2">
-                        {['checks', 'systems', 'pricing', 'delayed', 'delivery'].map((item) => (
-                            <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-                                <h3 className="font-bold text-slate-900 mb-2">{t(`faq.items.${item}.q`)}</h3>
-                                <p className="text-sm text-slate-600">{t(`faq.items.${item}.a`)}</p>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </section>
