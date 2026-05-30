@@ -11,6 +11,12 @@ export default async function PricingPage({
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#d1fae5_0%,#f8fafc_35%,#ffffff_70%)]">
             <div className="max-w-6xl mx-auto px-4 py-10 md:py-14">
+                <div className="mb-6">
+                    <Link href={`/${locale}`} className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+                        ← Back to home
+                    </Link>
+                </div>
+
                 <div className="mb-10 text-center">
                     <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900">Simple plans for flight protection</h1>
                     <p className="mt-3 text-slate-600">Monitor your trips and get compensated when things go wrong.</p>

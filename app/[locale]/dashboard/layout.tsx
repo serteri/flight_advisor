@@ -13,7 +13,7 @@ export default function DashboardLayout({
             <aside className="w-64 bg-white border-r hidden md:block p-6">
                 <div className="font-bold text-xl mb-8">FlightAgent</div>
                 <nav className="space-y-2">
-                    <Link href="/dashboard" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">{t('decisionHub')}</Link>
+                    <Link href="/dashboard" className="block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">Dashboard</Link>
                     <Link href="/dashboard/guardian" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">Guardian</Link>
                     <Link href="/dashboard/settings" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg">{t('settings')}</Link>
                     <Link href="/" className="block px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg mt-4 border-t pt-4">{t('home')}</Link>
@@ -22,7 +22,7 @@ export default function DashboardLayout({
 
             <div className="flex-1 flex flex-col">
                 <header className="h-16 bg-white border-b flex items-center px-6 justify-between">
-                    <h1 className="font-semibold text-lg">{t('decisionHub')}</h1>
+                    <h1 className="font-semibold text-lg">Guardian Dashboard</h1>
                     <div className="h-8 w-8 bg-slate-200 rounded-full"></div>
                 </header>
                 <main className="flex-1 p-6">
