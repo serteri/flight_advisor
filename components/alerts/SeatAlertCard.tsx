@@ -1,3 +1,5 @@
+'use client';
+
 import { getMockAircraftLayout } from '@/utils/mockSeatMap';
 import { SeatMapVisualizer } from '../SeatMapVisualizer';
 import { useState, useEffect } from 'react';
