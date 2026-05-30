@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { withFreemiumGate } from '@/lib/freemium/gate';
 
+// TODO: Keep this endpoint as the Guardian manual-monitoring entry point until
+// all remaining legacy callers are either migrated or deleted.
+
 type MonitoredSegmentInput = {
     carrierCode?: string;
     number?: string;

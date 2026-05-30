@@ -4,6 +4,9 @@ import { auth } from '@/lib/auth';
 import { parseBookingLikeInput } from '@/lib/parser/bookingParser';
 import { autoCreateMonitoredTripFromParsedBooking } from '@/services/guardian/inboxAutoTrack';
 
+// TODO: Keep this endpoint while inbox-driven Guardian trip creation remains
+// available alongside the webhook-based email ingest flow.
+
 export async function POST(request: NextRequest) {
     try {
         const session = await auth();

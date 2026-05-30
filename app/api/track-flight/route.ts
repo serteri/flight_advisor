@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// TODO: Remove this legacy watchlist endpoint after deleting the remaining
+// stale search/watchlist components that still call /api/track-flight.
+
 // POST: Add flight to watchlist
 export async function POST(request: NextRequest) {
     try {
