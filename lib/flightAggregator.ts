@@ -1,6 +1,5 @@
 import { searchFlights } from "@/lib/amadeus";
 import { findVirtualInterlineFlights } from "@/lib/virtualInterlining";
-import { searchAirScraperFlights } from "@/lib/airScraper";
 import { FlightForScoring } from "@/lib/flightTypes";
 
 import { getAirlineInfo } from "@/lib/airlineDB";
@@ -150,7 +149,7 @@ export async function getAllFlights(
     console.log(`🚀 Tüm Motorlar Çalıştırılıyor: ${origin} -> ${destination}`);
 
     // 1. RUN ENGINES IN PARALLEL
-    const [standardResult, hackerResult, scraperResult] = await Promise.allSettled([
+    const [standardResult, hackerResult] = await Promise.allSettled([
         searchStandardFlights({
             origin,
             destination,
@@ -158,23 +157,16 @@ export async function getAllFlights(
             adults,
             currency: currencyCode
         }),
-        findVirtualInterlineFlights(origin, destination, date, adults),
-        searchAirScraperFlights({
-            origin,
-            destination,
-            departureDate: date,
-            adults
-        })
+        findVirtualInterlineFlights(origin, destination, date, adults)
     ]);
 
     let standardFlights = standardResult.status === 'fulfilled' ? standardResult.value : [];
     let hackerFlights = hackerResult.status === 'fulfilled' ? hackerResult.value : [];
-    let scraperFlights = scraperResult.status === 'fulfilled' ? scraperResult.value : [];
 
-    console.log(`📊 Sonuçlar: Standard (${standardFlights.length}) + Hacker (${hackerFlights.length}) + Scraper (${scraperFlights.length})`);
+    console.log(`📊 Sonuçlar: Standard (${standardFlights.length}) + Hacker (${hackerFlights.length})`);
 
     // 2. MERGE LISTS
-    let allFlights = [...standardFlights, ...hackerFlights, ...scraperFlights];
+    let allFlights = [...standardFlights, ...hackerFlights];
 
     // 3. DEDUPLICATION (TEMİZLİK) 🧹
     const uniqueFlights = new Map<string, FlightForScoring>();

@@ -104,7 +104,11 @@ export async function POST(req: Request) {
         // 4. Veritabanında durumu güncelle
         // await prisma.guardianAlert.update({ where: { ... }, data: { isActioned: true, status: 'SENT' }})
 
-        return new NextResponse(pdfBuffer, {
+        const pdfBytes = new Uint8Array(pdfBuffer.byteLength);
+        pdfBytes.set(pdfBuffer);
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+        return new NextResponse(pdfBlob, {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
