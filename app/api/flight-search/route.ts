@@ -2,6 +2,8 @@
  * @deprecated
  * Public flight-search API is being retired as FlightAgent pivots to a
  * decision, protection, and tracking layer for flights users already found.
+ * TODO(cleanup): This route is still referenced by app/[locale]/results/page.tsx
+ * and scripts/run-daily-searches.ts. Remove only after those callers migrate.
  */
 import { NextResponse } from 'next/server';
 import { searchAllProvidersWithMeta } from '@/services/search/searchService';
