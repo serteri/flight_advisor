@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Loader2, Plane, Search, X, CheckCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { PricingTable } from './PricingTable';
 import UpgradePrompt from '@/components/freemium/UpgradePrompt';
 import type { FreemiumFeature } from '@/lib/freemium/limits';
 
@@ -33,8 +32,6 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
-    const plan = (user?.subscriptionPlan || '').toUpperCase();
-    const hasPremium = plan === 'PRO' || plan === 'ELITE';
 
     // Inputs
     const [flightNo, setFlightNo] = useState(''); // e.g. TK59
@@ -141,20 +138,6 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
     const handleClose = () => {
         router.refresh();
         onClose();
-    }
-
-    // Feature Gate
-    if (!hasPremium) {
-        return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="relative w-full max-w-md">
-                    <button onClick={onClose} className="absolute -top-10 right-0 text-white hover:text-slate-300 font-bold flex items-center gap-1">
-                        <X className="w-5 h-5" /> {t('close')}
-                    </button>
-                    <PricingTable />
-                </div>
-            </div>
-        );
     }
 
     return (

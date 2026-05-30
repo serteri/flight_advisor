@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import { DashboardUserMenu } from "@/components/dashboard/DashboardUserMenu";
 
 export default function DashboardLayout({
     children,
@@ -23,7 +24,7 @@ export default function DashboardLayout({
             <div className="flex-1 flex flex-col">
                 <header className="h-16 bg-white border-b flex items-center px-6 justify-between">
                     <h1 className="font-semibold text-lg">Guardian Dashboard</h1>
-                    <div className="h-8 w-8 bg-slate-200 rounded-full"></div>
+                    <DashboardUserMenu />
                 </header>
                 <main className="flex-1 p-6">
                     {children}
