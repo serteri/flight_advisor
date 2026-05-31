@@ -147,6 +147,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const router = useRouter();
     const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
+    const [isDeletingTrip, setIsDeletingTrip] = useState(false);
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
     const backLinkHref = `/${safeLocale}/dashboard/guardian`;
@@ -291,6 +292,31 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             console.error('[GUARDIAN] Failed to clear stale alerts', error);
         } finally {
             setIsClearingStale(false);
+        }
+    };
+
+    const deleteTrip = async () => {
+        if (isDeletingTrip) return;
+
+        const confirmed = window.confirm('Stop monitoring this trip?\nAll alert history will be deleted.');
+        if (!confirmed) return;
+
+        setIsDeletingTrip(true);
+        try {
+            const response = await fetch(`/api/guardian/${trip.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete trip.');
+            }
+
+            router.push(backLinkHref);
+            router.refresh();
+        } catch (error) {
+            console.error('[GUARDIAN] Failed to delete trip', error);
+        } finally {
+            setIsDeletingTrip(false);
         }
     };
 
@@ -452,6 +478,18 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             ) : (
                                 <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No recent disruption/change event has been detected yet.</div>
                             )}
+                        </div>
+
+                        <div className="rounded-3xl border border-red-200 bg-white p-6">
+                            <button
+                                type="button"
+                                onClick={deleteTrip}
+                                disabled={isDeletingTrip}
+                                className="inline-flex items-center rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isDeletingTrip ? 'Stopping monitoring...' : 'Stop monitoring this trip'}
+                            </button>
+                            <p className="mt-2 text-xs text-slate-500">This action permanently deletes this monitored trip and its alert history.</p>
                         </div>
                     </div>
 

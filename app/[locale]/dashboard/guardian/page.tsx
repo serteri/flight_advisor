@@ -6,6 +6,7 @@ import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; 
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { GuardianOverviewActions } from "@/components/guardian/GuardianOverviewActions";
+import { DeleteTripButton } from "@/components/guardian/DeleteTripButton";
 import Link from 'next/link';
 import { calculateAirportDistanceKm } from '@/lib/compensation/haversine';
 
@@ -116,13 +117,16 @@ export default async function GuardianDashboard() {
                 ) : (
                     <div className="space-y-8">
                         {trips.map(trip => (
-                            <Link key={trip.id} href={`/${locale}/dashboard/guardian/${trip.id}`}>
-                                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 cursor-pointer hover:shadow-md transition">
-                                    {/* Pass trip data to the Dashboard Component we created earlier */}
-                                    {/* Need to adapt type if necessary, but structure matches closely */}
-                                    <TravelGuardianDashboard trip={trip as any} />
-                                </div>
-                            </Link>
+                            <div key={trip.id} className="relative">
+                                <DeleteTripButton tripId={trip.id} />
+                                <Link href={`/${locale}/dashboard/guardian/${trip.id}`} className="block">
+                                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 cursor-pointer hover:shadow-md transition">
+                                        {/* Pass trip data to the Dashboard Component we created earlier */}
+                                        {/* Need to adapt type if necessary, but structure matches closely */}
+                                        <TravelGuardianDashboard trip={trip as any} />
+                                    </div>
+                                </Link>
+                            </div>
                         ))}
                     </div>
                 )}
