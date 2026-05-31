@@ -110,7 +110,7 @@ export async function POST(req: Request) {
                         create: (segments as MonitoredSegmentInput[]).map((seg, index) => ({
                             segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
                             airlineCode: seg.carrierCode || 'XX',   // SQ
-                            flightNumber: seg.number || `SEG${index + 1}`,       // 236
+                            flightNumber: String(seg.number || (seg as MonitoredSegmentInput & { flightNumber?: string | number }).flightNumber || `SEG${index + 1}`),       // 236
                             origin: seg.departure?.iataCode || normalizedFlightData.origin,
                             destination: seg.arrival?.iataCode || normalizedFlightData.destination,
                             departureDate: seg.departure?.at ? new Date(seg.departure.at) : new Date(),

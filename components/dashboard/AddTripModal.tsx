@@ -42,6 +42,7 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
         current?: number;
         limit?: number;
     } | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     // Verified Data
     const [verifiedFlight, setVerifiedFlight] = useState<VerifiedFlight | null>(null);
@@ -87,6 +88,7 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
     const handleSave = async () => {
         // 3. SAVE VERIFIED DATA
         try {
+            setSaveError(null);
             console.info('[ADD_TRIP_MODAL] Saving monitored trip', {
                 flightNo,
                 date,
@@ -126,11 +128,11 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
                     status: res.status,
                     errorData,
                 });
-                alert("Failed to save trip.");
+                setSaveError('Unable to save trip. Please try again.');
             }
         } catch (error) {
             console.error('[ADD_TRIP_MODAL] Connection error while saving trip', error);
-            alert("Connection error");
+            setSaveError('Unable to save trip. Please try again.');
         }
     };
 
@@ -239,6 +241,9 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
                         <button onClick={() => setStep(1)} className="w-full text-slate-500 py-2 font-bold hover:text-slate-800">
                             No, Edit Details
                         </button>
+                        {saveError && (
+                            <p className="mt-2 text-sm font-medium text-red-600">{saveError}</p>
+                        )}
                     </div>
                 )}
 
