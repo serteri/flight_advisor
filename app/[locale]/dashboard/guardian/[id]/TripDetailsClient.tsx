@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/routing';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
     AlertTriangle,
@@ -146,7 +146,10 @@ const parseNotificationType = (eventId?: string | null): string => {
 
 export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const router = useRouter();
+    const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
+    const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
+    const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
 
     const firstSegment = trip.segments[0] || null;
     const airlines = Array.from(new Set(trip.segments.map((segment) => segment.airlineCode))).filter(Boolean);
@@ -288,7 +291,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 space-y-6">
-                <Link href={`/${locale}/dashboard/guardian`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors">
+                <Link href={`/${safeLocale}/dashboard/guardian`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors">
                     <ArrowLeft className="w-4 h-4" /> Back to booked trip monitoring
                 </Link>
 
