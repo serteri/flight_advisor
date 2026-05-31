@@ -49,7 +49,10 @@ export default async function DashboardPage({
     const monitoredTrips = await prisma.monitoredTrip.findMany({
         where: { userId: session.user.id },
         orderBy: { createdAt: 'desc' },
-        include: { alerts: true }
+        include: {
+            alerts: true,
+            segments: { orderBy: { segmentOrder: 'asc' } },
+        }
     });
 
     return (

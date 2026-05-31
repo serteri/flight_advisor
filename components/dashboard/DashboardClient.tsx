@@ -15,7 +15,15 @@ interface DashboardClientProps {
         pnr?: string | null;
         departureDate?: string | Date;
         flightNumber?: string;
+        routeLabel?: string;
         status?: string;
+        segments?: Array<{
+            origin?: string;
+            destination?: string;
+            airlineCode?: string;
+            flightNumber?: string;
+            departureDate?: string | Date | null;
+        }>;
         [key: string]: unknown;
     }>;
     user: {
@@ -80,7 +88,18 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                     </div>
                 ) : (
                     <div className="grid gap-6">
-                        {trips.map((trip) => (
+                        {trips.map((trip) => {
+                            const firstSegment = trip.segments?.[0];
+                            const routeFromSegment = firstSegment?.origin && firstSegment?.destination
+                                ? `${firstSegment.origin} ➝ ${firstSegment.destination}`
+                                : null;
+                            const routeLabel = routeFromSegment || trip.routeLabel || `${trip.origin || '-'} ➝ ${trip.destination || '-'}`;
+                            const flightLabel = firstSegment?.airlineCode && firstSegment?.flightNumber
+                                ? `${firstSegment.airlineCode}${firstSegment.flightNumber}`
+                                : trip.flightNumber || '-';
+                            const departureForCard = trip.departureDate || firstSegment?.departureDate;
+
+                            return (
                             <Link href={`/${locale}/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer group">
                                     <div className="flex items-center gap-4">
@@ -88,13 +107,13 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                             <Plane className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-emerald-700 transition-colors">{trip.origin || '-'} ➝ {trip.destination || '-'}</h3>
+                                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-emerald-700 transition-colors">{routeLabel}</h3>
                                             <div className="flex items-center gap-2 text-sm text-slate-500">
                                                 <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{trip.pnr || '-'}</span>
                                                 <span>•</span>
-                                                <span>{trip.departureDate ? new Date(trip.departureDate).toLocaleDateString('tr-TR') : '-'}</span>
+                                                <span>{departureForCard ? new Date(departureForCard).toLocaleDateString('tr-TR') : '-'}</span>
                                                 <span>•</span>
-                                                <span>{trip.flightNumber || '-'}</span>
+                                                <span>{flightLabel}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -106,7 +125,8 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                     </div>
                                 </div>
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

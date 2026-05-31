@@ -202,7 +202,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
-    const shouldShowClaimSection = eu261State === 'ELIGIBLE' || hasDisruptionDetected;
+    const hasCompletedCheck = Boolean(trip.lastCheckedAt);
+    const shouldShowClaimSection = eu261State === 'ELIGIBLE' || hasDisruptionDetected || hasCompletedCheck;
     const claimPortal = getAirlineClaimPortal(firstSegment?.airlineCode || null);
 
     const firstDepartureMs = firstSegment ? new Date(firstSegment.departureDate).getTime() : NaN;
@@ -472,7 +473,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                             </div>
                                             <div className="text-sm text-slate-600">
                                                 <div>Dep: {formatDateTime(segment.departureDate)}</div>
-                                                <div>Arr: {formatDateTime(segment.arrivalDate)}</div>
+                                                <div>Arr: {segment.arrivalDate ? formatDateTime(segment.arrivalDate) : '—'}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -511,7 +512,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                     <h2 className="text-lg font-bold text-slate-900">Submit your claim</h2>
                                 </div>
                                 <p className="text-sm text-slate-700">
-                                    Your claim letter is ready. Submit it directly to the airline:
+                                    {hasDisruptionDetected || eu261State === 'ELIGIBLE'
+                                        ? 'Your claim letter is ready. Submit it directly to the airline:'
+                                        : 'No disruption detected yet. If your flight is delayed or cancelled, your claim letter will be ready here.'}
                                 </p>
 
                                 {claimPortal ? (
