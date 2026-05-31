@@ -1,14 +1,29 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getTranslations } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { ShieldCheck, Plane } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { GuardianOverviewActions } from "@/components/guardian/GuardianOverviewActions";
+import Link from 'next/link';
+import { calculateAirportDistanceKm } from '@/lib/compensation/haversine';
+
+const estimateEu261Value = (trip: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>) => {
+    if (!trip.snapshot?.eu261Eligible) return 0;
+
+    const firstSegment = trip.segments[0];
+    if (!firstSegment) return 0;
+
+    const distanceKm = calculateAirportDistanceKm(firstSegment.origin, firstSegment.destination);
+    if (!distanceKm) return 0;
+    if (distanceKm <= 1500) return 250;
+    if (distanceKm <= 3500) return 400;
+    return 600;
+};
 
 export default async function GuardianDashboard() {
-    const t = await getTranslations("Guardian");
+    const locale = await getLocale();
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -42,7 +57,10 @@ export default async function GuardianDashboard() {
 
     const activeTrips = trips.filter(t => t.status === 'ACTIVE');
     const alertsTotal = trips.reduce((acc, t) => acc + t.alerts.length, 0);
-    // Calculate potential value from alerts (parsing string value like "600 EUR" is hard, simplified count)
+    const estimatedValueFound = activeTrips.reduce((sum, trip) => sum + estimateEu261Value(trip), 0);
+    const estimatedValueFoundLabel = estimatedValueFound > 0
+        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(estimatedValueFound)
+        : '$0';
 
     return (
         <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -81,7 +99,7 @@ export default async function GuardianDashboard() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <p className="text-xs font-semibold text-slate-400 uppercase">Est. Value Found</p>
-                    <p className="text-2xl font-bold text-emerald-600">--</p>
+                    <p className="text-2xl font-bold text-emerald-600">{estimatedValueFoundLabel}</p>
                 </div>
             </div>
 
@@ -98,11 +116,13 @@ export default async function GuardianDashboard() {
                 ) : (
                     <div className="space-y-8">
                         {trips.map(trip => (
-                            <div key={trip.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-                                {/* Pass trip data to the Dashboard Component we created earlier */}
-                                {/* Need to adapt type if necessary, but structure matches closely */}
-                                <TravelGuardianDashboard trip={trip as any} />
-                            </div>
+                            <Link key={trip.id} href={`/${locale}/dashboard/guardian/${trip.id}`}>
+                                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 cursor-pointer hover:shadow-md transition">
+                                    {/* Pass trip data to the Dashboard Component we created earlier */}
+                                    {/* Need to adapt type if necessary, but structure matches closely */}
+                                    <TravelGuardianDashboard trip={trip as any} />
+                                </div>
+                            </Link>
                         ))}
                     </div>
                 )}

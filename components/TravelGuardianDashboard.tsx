@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { ShieldCheck, Clock, Armchair, Plane, DollarSign } from "lucide-react";
+import { ShieldCheck, Clock, Armchair, Plane } from "lucide-react";
 import type { AlertEvent, FlightSegment, GuardianAlert, MonitoredTrip, TripSnapshot } from "@prisma/client";
-import { useTranslations } from 'next-intl';
 
 import { calculateAirportDistanceKm } from '@/lib/compensation/haversine';
 
@@ -52,7 +51,6 @@ const formatValue = (amount: number, currency: string) => {
 };
 
 export function TravelGuardianDashboard({ trip }: DashboardProps) {
-    const t = useTranslations('Guardian');
     const legacyAlerts = trip.alerts || [];
     const lifecycleAlerts = trip.alertEvents || [];
     const snapshot = trip.snapshot;
@@ -60,8 +58,6 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
     const hasCancellation = lifecycleAlerts.some((event) => event.eventType === 'CANCELLATION_DETECTED');
     const hasScheduleChange = lifecycleAlerts.some((event) => event.eventType === 'GATE_CHANGE' || event.eventType === 'TERMINAL_CHANGE')
         || legacyAlerts.some((alert) => alert.type === 'SCHEDULE_CHANGE');
-    const hasPriceDrop = lifecycleAlerts.some((event) => event.eventType === 'PRICE_DROP' || event.eventType === 'TARGET_PRICE_REACHED')
-        || legacyAlerts.some((alert) => alert.type === 'PRICE_DROP');
     const hasUpgradeOpportunity = legacyAlerts.some((alert) => alert.type === 'UPGRADE' || alert.type === 'UPGRADE_OPPORTUNITY');
 
     const explicitProtection = legacyAlerts.reduce((sum, alert) => sum + parsePotentialValue(alert.potentialValue).amount, 0);
@@ -110,15 +106,6 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
             ? 'Schedule data is not yet reliable for this trip.'
             : 'No schedule or gate change is currently recorded.';
 
-    const priceStatus = hasPriceDrop
-        ? 'Price drop detected'
-        : trip.lastCheckedAt
-            ? 'Monitoring active'
-            : 'Pending first check';
-    const priceDesc = hasPriceDrop
-        ? 'A price-related alert exists for this trip.'
-        : 'No price protection opportunity is currently recorded.';
-
     // Renk ve İkon Yardımcıları
     const getSeverityStyle = (severity: string) => {
         switch (severity) {
@@ -140,7 +127,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                         Travel Guardian Active
                     </h2>
                     <p className="text-slate-400 text-sm mt-1">
-                        PNR: <span className="font-mono text-white">{trip.pnr}</span> • {trip.routeLabel} izleniyor.
+                        PNR: <span className="font-mono text-white">{trip.pnr}</span> • {trip.routeLabel} monitored.
                     </p>
                 </div>
                 <div className="text-right">
@@ -172,20 +159,13 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                     desc={scheduleDesc}
                     active={trip.watchSchedule}
                 />
-                <StatusCard
-                    icon={<DollarSign />}
-                    title="Price Protection"
-                    status={priceStatus}
-                    desc={priceDesc}
-                    active={trip.watchPrice}
-                />
                 {/* Diğer modüller... */}
             </div>
 
             {/* ALERTS: AKSİYON MERKEZİ */}
             {legacyAlerts.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-slate-800">🚨 Aksiyon Gerektiren Durumlar</h3>
+                    <h3 className="text-lg font-bold text-slate-800">⚠️ Action Required</h3>
 
                     {legacyAlerts.map((alert, idx) => (
                         <div key={idx} className={`p-4 rounded-xl border-l-4 shadow-sm flex items-start justify-between ${getSeverityStyle(alert.severity)}`}>
@@ -198,7 +178,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                                 <p className="text-sm mt-1 opacity-90">{alert.message}</p>
                                 {alert.potentialValue && (
                                     <div className="mt-2 inline-block bg-white/50 px-2 py-1 rounded text-xs font-bold">
-                                        {t('estimatedValue')}: {alert.potentialValue}
+                                        Estimated Value: {alert.potentialValue}
                                     </div>
                                 )}
                             </div>
