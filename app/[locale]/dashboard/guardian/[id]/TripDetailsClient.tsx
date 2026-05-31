@@ -172,7 +172,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             ? 'EUR 250 - 600 (estimate)'
             : 'EUR 250 (possible minimum, estimate)'
         : eu261State === 'NOT_ELIGIBLE'
-            ? 'No current payout signal'
+            ? 'Protected — no disruption detected'
             : 'Unknown (needs more disruption data)';
 
     const eu261Explanation = eu261State === 'ELIGIBLE'
@@ -280,7 +280,21 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 min-w-full lg:min-w-[280px]">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Current flight status</div>
                             <div className="text-2xl font-black text-slate-900">{currentFlightStatus}</div>
-                            <div className="text-sm text-slate-500 mt-1">Last checked: {formatDateTime(latestRunAt)}</div>
+                            {snapshot && (
+                                <div className="flex flex-wrap gap-3 mt-2">
+                                    {snapshot.departureGate && (
+                                        <span className="text-sm text-slate-700">Dep. gate: <span className="font-bold">{snapshot.departureGate}</span></span>
+                                    )}
+                                    {snapshot.arrivalGate && (
+                                        <span className="text-sm text-slate-700">Arr. gate: <span className="font-bold">{snapshot.arrivalGate}</span></span>
+                                    )}
+                                </div>
+                            )}
+                            {snapshot?.statusDetail && (
+                                <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
+                            )}
+                            <div className="text-sm text-slate-500 mt-2">Last checked: {formatDateTime(latestRunAt)}</div>
+                            <div className="text-sm text-slate-500">Snapshot at: {snapshot ? formatDateTime(snapshot.snapshotAt) : 'N/A'}</div>
                             <div className="text-sm text-slate-500">Next check: {formatDateTime(trip.nextCheckAt)}</div>
                         </div>
                     </div>
@@ -356,7 +370,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                     <div className="text-lg font-black text-slate-900">{eu261State}</div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Estimated compensation</div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Estimated Protection Value</div>
                                     <div className="text-lg font-black text-slate-900">{compensationRange}</div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
