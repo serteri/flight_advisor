@@ -29,6 +29,7 @@ model User {
   isPremium              Boolean   @default(false) // Hızlı kontrol için
   
   // 🔔 NOTIFICATION PREFERENCES
+  plan                  String    @default("FREE")
   subscriptionPlan      String    @default("FREE") // FREE, PRO, ELITE
   notificationTone      String    @default("STANDARD") // STANDARD, JUNIOR_GUARDIAN
   phoneNumber           String?   // +90... for SMS

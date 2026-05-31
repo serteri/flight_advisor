@@ -124,6 +124,7 @@ const syncSubscriptionToUser = async (
             toDateFromUnixSeconds(currentPeriodEnd) ||
             new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         isPremium: true,
+        plan,
         subscriptionPlan: plan,
         subscriptionStatus: subscription.status || 'active',
         trialEndsAt: toDateFromUnixSeconds(trialEnd),
@@ -158,18 +159,24 @@ const syncSubscriptionToUser = async (
             if (existingUser) {
                 // Update existing user
                 console.log('[SYNC] ✏️ Updating existing user:', existingUser.id);
-                const updatedUser = await prisma.user.update({
-                    where: { id: existingUser.id },
-                    data: {
-                        ...updateData,
-                        name: customerProfile?.name || existingUser.name,
-                    },
-                });
-                console.log('[SYNC] ✅ User UPDATED successfully:', {
-                    id: updatedUser.id,
-                    plan: updatedUser.subscriptionPlan,
-                    isPremium: updatedUser.isPremium,
-                });
+                try {
+                    const updatedUser = await prisma.user.update({
+                        where: { id: existingUser.id },
+                        data: {
+                            ...updateData,
+                            name: customerProfile?.name || existingUser.name,
+                        },
+                    });
+                    console.log('[WEBHOOK] User updated successfully');
+                    console.log('[SYNC] ✅ User UPDATED successfully:', {
+                        id: updatedUser.id,
+                        plan: updatedUser.subscriptionPlan,
+                        isPremium: updatedUser.isPremium,
+                    });
+                } catch (err) {
+                    console.error('[WEBHOOK] DB update failed:', err);
+                    throw err;
+                }
             } else {
                 // Create new user
                 console.log('[SYNC] 🆕 Creating new user');
@@ -208,15 +215,21 @@ const syncSubscriptionToUser = async (
 
     try {
         console.log('[SYNC] ✏️ Updating user by ID:', resolvedUserId);
-        const updatedUser = await prisma.user.update({
-            where: { id: resolvedUserId },
-            data: updateData,
-        });
-        console.log('[SYNC] ✅ User updated by ID successfully:', {
-            id: updatedUser.id,
-            plan: updatedUser.subscriptionPlan,
-            isPremium: updatedUser.isPremium,
-        });
+        try {
+            const updatedUser = await prisma.user.update({
+                where: { id: resolvedUserId },
+                data: updateData,
+            });
+            console.log('[WEBHOOK] User updated successfully');
+            console.log('[SYNC] ✅ User updated by ID successfully:', {
+                id: updatedUser.id,
+                plan: updatedUser.subscriptionPlan,
+                isPremium: updatedUser.isPremium,
+            });
+        } catch (err) {
+            console.error('[WEBHOOK] DB update failed:', err);
+            throw err;
+        }
     } catch (dbError: any) {
         console.error('[SYNC] ❌ DATABASE ERROR - User update failed:', {
             userId: resolvedUserId,
@@ -274,6 +287,7 @@ export async function POST(req: Request) {
             console.log('[STRIPE_WEBHOOK] ✅ Signature verified successfully');
             console.log('[STRIPE_WEBHOOK] 📌 Event type:', event.type);
             console.log('[STRIPE_WEBHOOK] 📅 Event ID:', event.id);
+            console.log('[WEBHOOK] Event type:', event.type);
         } catch (error: any) {
             console.error('[STRIPE_WEBHOOK] ❌ Signature verification FAILED:', {
                 message: error.message,
@@ -292,6 +306,9 @@ export async function POST(req: Request) {
             customerEmail: session.customer_email,
             metadata: session.metadata,
         });
+        console.log('[WEBHOOK] Session metadata:', session.metadata);
+        console.log('[WEBHOOK] userId:', session.metadata?.userId);
+        console.log('[WEBHOOK] plan:', session.metadata?.plan);
 
         if (!subscriptionId) {
             console.error('[STRIPE_WEBHOOK] ❌ Subscription ID is missing');
@@ -392,6 +409,7 @@ export async function POST(req: Request) {
             where: { stripeSubscriptionId: subscription.id },
             data: {
                 isPremium: false,
+                plan: 'FREE',
                 subscriptionPlan: 'FREE',
                 stripeCurrentPeriodEnd: null,
                 subscriptionStatus: 'canceled',
