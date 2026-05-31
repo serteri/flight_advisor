@@ -478,6 +478,13 @@ export async function processFlightMonitoring() {
                 let newDepGate = previousState.departureGate;
                 let newArrGate = previousState.arrivalGate;
 
+                const buildStatusDetail = (fields: Record<string, string | number | boolean | undefined | null>) => {
+                    return Object.entries(fields)
+                        .filter(([, value]) => value !== undefined && value !== null && String(value).length > 0)
+                        .map(([key, value]) => `${key}=${String(value)}`)
+                        .join('|');
+                };
+
                 if (currentStatus) {
                     const safeParseMs = (isoStr: string | undefined): number => {
                         if (!isoStr) return 0;
@@ -534,7 +541,12 @@ export async function processFlightMonitoring() {
                     }
                     newSnapshot.dataQuality = currentDataQuality;
                     newSnapshot.status = computedStatus;
-                    newSnapshot.statusDetail = `status=${computedStatus}|raw=unreliable`;
+                    newSnapshot.statusDetail = buildStatusDetail({
+                        status: computedStatus,
+                        raw: 'unreliable',
+                        schedDep: currentStatus?.scheduledDeparture,
+                        schedArr: currentStatus?.scheduledArrival,
+                    });
                 } else if (computedStatus === 'CANCELLED' && previousState.status !== 'CANCELLED') {
                     const departureCountryCode = getAirportCountryCode(String(segment.origin || ''));
                     const departsFromScope = departureCountryCode ? isEu261Country(departureCountryCode) : undefined;
@@ -571,12 +583,22 @@ export async function processFlightMonitoring() {
                     newSnapshot.status = 'CANCELLED';
                     newSnapshot.delayMinutes = 0;
                     newSnapshot.dataQuality = currentDataQuality;
-                    newSnapshot.statusDetail = `status=CANCELLED|eligibleEU261=${eligibleEU261}`;
+                    newSnapshot.statusDetail = buildStatusDetail({
+                        status: 'CANCELLED',
+                        eligibleEU261,
+                        schedDep: currentStatus?.scheduledDeparture,
+                        schedArr: currentStatus?.scheduledArrival,
+                    });
                     newSnapshot.eu261Eligible = eligibleEU261;
                 } else {
                     newSnapshot.status = computedStatus;
                     newSnapshot.dataQuality = currentDataQuality;
-                    newSnapshot.statusDetail = `status=${computedStatus}|delay=${explicitDelayMinutes}`;
+                    newSnapshot.statusDetail = buildStatusDetail({
+                        status: computedStatus,
+                        delay: explicitDelayMinutes,
+                        schedDep: currentStatus?.scheduledDeparture,
+                        schedArr: currentStatus?.scheduledArrival,
+                    });
                 }
 
                 if (computedStatus !== 'CANCELLED' && computedStatus !== 'UNKNOWN') {

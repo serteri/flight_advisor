@@ -1,6 +1,8 @@
 'use client';
 
 import { Link } from '@/i18n/routing';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -142,7 +144,21 @@ const parseNotificationType = (eventId?: string | null): string => {
     return (parts[1] || 'UNKNOWN').toUpperCase();
 };
 
+const parseSnapshotDetail = (detail?: string | null): Record<string, string> => {
+    if (!detail) return {};
+    return detail.split('|').reduce<Record<string, string>>((acc, part) => {
+        const [rawKey, ...rawValueParts] = part.split('=');
+        const key = (rawKey || '').trim();
+        if (!key) return acc;
+        acc[key] = rawValueParts.join('=').trim();
+        return acc;
+    }, {});
+};
+
 export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
+    const router = useRouter();
+    const [isClearingStale, setIsClearingStale] = useState(false);
+
     const firstSegment = trip.segments[0] || null;
     const airlines = Array.from(new Set(trip.segments.map((segment) => segment.airlineCode))).filter(Boolean);
 
@@ -180,6 +196,10 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         : eu261State === 'NOT_ELIGIBLE'
             ? 'No qualifying cancellation or long-delay pattern is currently confirmed.'
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
+
+    const snapshotDetail = parseSnapshotDetail(snapshot?.statusDetail);
+    const snapshotScheduledDeparture = snapshotDetail.schedDep || snapshotDetail.scheduledDeparture || null;
+    const snapshotScheduledArrival = snapshotDetail.schedArr || snapshotDetail.scheduledArrival || null;
 
     const recentChanges = [
         ...trip.alertEvents.slice(0, 5).map((alert) => ({
@@ -219,7 +239,6 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const checks = [
         { label: 'Disruption Hunter', enabled: trip.watchDelay },
         { label: 'Schedule Guardian', enabled: trip.watchSchedule },
-        { label: 'Price Protection', enabled: trip.watchPrice },
         { label: 'Seat Watch', enabled: trip.watchSeat },
         { label: 'Upgrade Watch', enabled: trip.watchUpgrade },
     ];
@@ -257,6 +276,24 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         : 'No alert summary is available yet for the latest notification.';
     const latestLifecycleAlert = trip.alertEvents[0] || null;
 
+    const clearStaleAlerts = async () => {
+        if (isClearingStale) return;
+        setIsClearingStale(true);
+        try {
+            const response = await fetch(`/api/guardian/${trip.id}/alerts/stale`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                throw new Error('Failed to clear stale alerts.');
+            }
+            router.refresh();
+        } catch (error) {
+            console.error('[GUARDIAN] Failed to clear stale alerts', error);
+        } finally {
+            setIsClearingStale(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 space-y-6">
@@ -272,7 +309,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <div className="flex flex-wrap gap-3 text-sm text-slate-500 mt-2">
                                 <span>PNR: {trip.pnr || 'Unknown (unconfirmed)'}</span>
                                 <span className="text-slate-300">•</span>
-                                <span>Departure: {formatDate(firstSegment?.departureDate)}</span>
+                                <span>Departure: {formatDate(snapshotScheduledDeparture || firstSegment?.departureDate)}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>Airline: {airlines.length > 0 ? airlines.join(', ') : 'Unknown'}</span>
                             </div>
@@ -322,7 +359,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         </div>
                         <div className="rounded-2xl border border-slate-200 p-4">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Guardian loop</div>
-                            <div className="text-lg font-black text-slate-900">Every {trip.checkFrequency} min</div>
+                            <div className="text-lg font-black text-slate-900">Every 6 hours</div>
                             <div className="text-sm text-slate-500 mt-1">Alerts triggered: {alertsTriggered}</div>
                         </div>
                     </div>
@@ -336,7 +373,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 <h2 className="text-lg font-bold text-slate-900">Trip summary</h2>
                             </div>
                             <div className="space-y-3">
-                                {trip.segments.length > 0 ? trip.segments.map((segment) => (
+                                {trip.segments.length > 0 ? trip.segments.map((segment, index) => (
                                     <div key={segment.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                             <div>
@@ -348,8 +385,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                                 </div>
                                             </div>
                                             <div className="text-sm text-slate-600">
-                                                <div>Dep: {formatDateTime(segment.departureDate)}</div>
-                                                <div>Arr: {formatDateTime(segment.arrivalDate)}</div>
+                                                <div>Dep: {formatDateTime(index === 0 ? (snapshotScheduledDeparture || segment.departureDate) : segment.departureDate)}</div>
+                                                <div>Arr: {formatDateTime(index === 0 ? (snapshotScheduledArrival || segment.arrivalDate) : segment.arrivalDate)}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -382,9 +419,19 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         </div>
 
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
-                            <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                    <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={clearStaleAlerts}
+                                    disabled={isClearingStale}
+                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isClearingStale ? 'Clearing...' : 'Clear'}
+                                </button>
                             </div>
                             {recentChanges.length > 0 ? (
                                 <div className="space-y-3">

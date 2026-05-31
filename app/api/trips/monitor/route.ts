@@ -95,7 +95,8 @@ export async function POST(req: Request) {
                     originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
                     currency: normalizedFlightData.price?.currency || "AUD",
                     ticketClass: normalizedFlightData.travelClass || "ECONOMY",
-                    nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // Check in 1 hour
+                    checkFrequency: 360,
+                    nextCheckAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // Check in 6 hours
                     snapshot: {
                         create: {
                             delayMinutes: 0,

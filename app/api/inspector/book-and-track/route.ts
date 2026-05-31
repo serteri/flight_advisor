@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
           watchSeat: false,
           watchSchedule: true,
           status: 'ACTIVE',
-          checkFrequency: 60, // Check every 60 minutes
-          nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+          checkFrequency: 360, // Check every 6 hours
+          nextCheckAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now
 
           // Create nested flight segment
           segments: {

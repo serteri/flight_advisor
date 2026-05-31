@@ -35,7 +35,7 @@ model MonitoredTrip {
   status          TripStatus @default(ACTIVE)
   lastCheckedAt   DateTime?  // En son ne zaman taradık?
   nextCheckAt     DateTime   // Bir sonraki tarama ne zaman? (Kuyruk buna bakar)
-  checkFrequency  Int        @default(60) // Dakika cinsinden tarama sıklığı
+  checkFrequency  Int        @default(360) // Dakika cinsinden tarama sıklığı (6 saat)
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -541,7 +541,7 @@ model MonitoredTrip {
   status          TripStatus @default(ACTIVE)
   lastCheckedAt   DateTime?
   nextCheckAt     DateTime
-  checkFrequency  Int        @default(60)
+  checkFrequency  Int        @default(360)
   processingLeaseId        String?
   processingLeaseExpiresAt DateTime?
 

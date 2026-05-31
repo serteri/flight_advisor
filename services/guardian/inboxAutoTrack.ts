@@ -70,8 +70,8 @@ export async function autoCreateMonitoredTripFromParsedBooking(params: {
                     watchSeat: false,
                     watchSchedule: true,
                     status: 'ACTIVE',
-                    checkFrequency: 60,
-                    nextCheckAt: new Date(),
+                    checkFrequency: 360,
+                    nextCheckAt: new Date(Date.now() + 6 * 60 * 60 * 1000),
                     snapshot: {
                         create: {
                             delayMinutes: 0,

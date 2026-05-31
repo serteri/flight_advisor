@@ -77,7 +77,7 @@ export default async function GuardianDashboard() {
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <p className="text-xs font-semibold text-slate-400 uppercase">Check Interval</p>
-                    <p className="text-2xl font-bold text-blue-600">~60 min</p>
+                    <p className="text-2xl font-bold text-blue-600">Every 6 hours</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <p className="text-xs font-semibold text-slate-400 uppercase">Est. Value Found</p>
