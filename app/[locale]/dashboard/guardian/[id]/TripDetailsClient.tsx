@@ -144,17 +144,6 @@ const parseNotificationType = (eventId?: string | null): string => {
     return (parts[1] || 'UNKNOWN').toUpperCase();
 };
 
-const parseSnapshotDetail = (detail?: string | null): Record<string, string> => {
-    if (!detail) return {};
-    return detail.split('|').reduce<Record<string, string>>((acc, part) => {
-        const [rawKey, ...rawValueParts] = part.split('=');
-        const key = (rawKey || '').trim();
-        if (!key) return acc;
-        acc[key] = rawValueParts.join('=').trim();
-        return acc;
-    }, {});
-};
-
 export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const router = useRouter();
     const [isClearingStale, setIsClearingStale] = useState(false);
@@ -197,9 +186,11 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             ? 'No qualifying cancellation or long-delay pattern is currently confirmed.'
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
 
-    const snapshotDetail = parseSnapshotDetail(snapshot?.statusDetail);
-    const snapshotScheduledDeparture = snapshotDetail.schedDep || snapshotDetail.scheduledDeparture || null;
-    const snapshotScheduledArrival = snapshotDetail.schedArr || snapshotDetail.scheduledArrival || null;
+    const firstDepartureMs = firstSegment ? new Date(firstSegment.departureDate).getTime() : NaN;
+    const hoursUntilDeparture = Number.isNaN(firstDepartureMs)
+        ? null
+        : (firstDepartureMs - Date.now()) / (1000 * 60 * 60);
+    const canShowGateNumbers = hoursUntilDeparture === null || hoursUntilDeparture <= 24;
 
     const recentChanges = [
         ...trip.alertEvents.slice(0, 5).map((alert) => ({
@@ -309,7 +300,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <div className="flex flex-wrap gap-3 text-sm text-slate-500 mt-2">
                                 <span>PNR: {trip.pnr || 'Unknown (unconfirmed)'}</span>
                                 <span className="text-slate-300">•</span>
-                                <span>Departure: {formatDate(snapshotScheduledDeparture || firstSegment?.departureDate)}</span>
+                                <span>Departure: {formatDate(firstSegment?.departureDate)}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>Airline: {airlines.length > 0 ? airlines.join(', ') : 'Unknown'}</span>
                             </div>
@@ -317,7 +308,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 min-w-full lg:min-w-[280px]">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Current flight status</div>
                             <div className="text-2xl font-black text-slate-900">{currentFlightStatus}</div>
-                            {snapshot && (
+                            {snapshot && canShowGateNumbers && (
                                 <div className="flex flex-wrap gap-3 mt-2">
                                     {snapshot.departureGate && (
                                         <span className="text-sm text-slate-700">Dep. gate: <span className="font-bold">{snapshot.departureGate}</span></span>
@@ -326,6 +317,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         <span className="text-sm text-slate-700">Arr. gate: <span className="font-bold">{snapshot.arrivalGate}</span></span>
                                     )}
                                 </div>
+                            )}
+                            {snapshot && !canShowGateNumbers && (
+                                <div className="text-sm text-slate-600 mt-2">Gate assigned closer to departure</div>
                             )}
                             {snapshot?.statusDetail && (
                                 <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
@@ -373,7 +367,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 <h2 className="text-lg font-bold text-slate-900">Trip summary</h2>
                             </div>
                             <div className="space-y-3">
-                                {trip.segments.length > 0 ? trip.segments.map((segment, index) => (
+                                {trip.segments.length > 0 ? trip.segments.map((segment) => (
                                     <div key={segment.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                             <div>
@@ -385,8 +379,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                                 </div>
                                             </div>
                                             <div className="text-sm text-slate-600">
-                                                <div>Dep: {formatDateTime(index === 0 ? (snapshotScheduledDeparture || segment.departureDate) : segment.departureDate)}</div>
-                                                <div>Arr: {formatDateTime(index === 0 ? (snapshotScheduledArrival || segment.arrivalDate) : segment.arrivalDate)}</div>
+                                                <div>Dep: {formatDateTime(segment.departureDate)}</div>
+                                                <div>Arr: {formatDateTime(segment.arrivalDate)}</div>
                                             </div>
                                         </div>
                                     </div>

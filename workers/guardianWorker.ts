@@ -298,7 +298,14 @@ export async function processFlightMonitoring() {
                     continue;
                 }
 
-                const dateStr = new Date(segment.departureDate).toISOString().split('T')[0];
+                const flightDate = new Date(segment.departureDate);
+                if (Number.isNaN(flightDate.getTime())) {
+                    console.warn(`   ⚠️ Invalid segment departureDate for trip ${trip.id}; skipping status fetch.`);
+                    const nextCheck = new Date(now.getTime() + trip.checkFrequency * 60000);
+                    await finalizeTripCycle(trip.id, trip.processingLeaseId!, now, nextCheck, newSnapshot);
+                    continue;
+                }
+                const dateStr = flightDate.toISOString().split('T')[0];
                 // Build full IATA flight number (e.g. "QF" + "51" -> "QF51")
                 const fullFlightNumber = `${String(segment.airlineCode || '').toUpperCase()}${String(segment.flightNumber || '').toUpperCase()}`;
                 let currentStatus = null;
