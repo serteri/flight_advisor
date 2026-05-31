@@ -306,6 +306,7 @@ export async function processFlightMonitoring() {
                     continue;
                 }
                 const dateStr = flightDate.toISOString().split('T')[0];
+                console.log('Checking flight for date:', dateStr);
                 // Build full IATA flight number (e.g. "QF" + "51" -> "QF51")
                 const fullFlightNumber = `${String(segment.airlineCode || '').toUpperCase()}${String(segment.flightNumber || '').toUpperCase()}`;
                 let currentStatus = null;

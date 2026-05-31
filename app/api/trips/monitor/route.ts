@@ -44,6 +44,11 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { pnr, flightData } = body as { pnr?: string; flightData?: any };
         const manualPayload = body as ManualAddTripPayload;
+        const receivedDateRaw = manualPayload.date || flightData?.date;
+        const receivedDate = receivedDateRaw ? new Date(receivedDateRaw) : null;
+        const safeReceivedDate = receivedDate && !Number.isNaN(receivedDate.getTime()) ? receivedDate : null;
+
+        console.log('Received date:', body.date);
 
         const normalizedFlightData = flightData || (manualPayload.origin && manualPayload.destination
             ? {
@@ -57,14 +62,14 @@ export async function POST(req: Request) {
                         number: manualPayload.flightNumber,
                         departure: {
                             iataCode: manualPayload.origin,
-                            at: toDateTime(manualPayload.date, manualPayload.departureTime).toISOString(),
+                            at: toDateTime(manualPayload.date, manualPayload.departureTime, safeReceivedDate || undefined).toISOString(),
                         },
                         arrival: {
                             iataCode: manualPayload.destination,
                             at: toDateTime(
                                 manualPayload.date,
                                 manualPayload.arrivalTime,
-                                toDateTime(manualPayload.date, manualPayload.departureTime, new Date(Date.now() + 2 * 60 * 60 * 1000))
+                                toDateTime(manualPayload.date, manualPayload.departureTime, safeReceivedDate || undefined)
                             ).toISOString(),
                         },
                         aircraft: { code: '738' },
@@ -87,6 +92,8 @@ export async function POST(req: Request) {
 
         return withFreemiumGate(session.user.id!, 'monitored_trip', async () => {
             const segments = Array.isArray(normalizedFlightData.segments) ? normalizedFlightData.segments : [];
+            const fallbackDepartureDate = safeReceivedDate || new Date(body.date || body.flightData?.date || Date.now());
+            const fallbackArrivalDate = new Date(fallbackDepartureDate.getTime() + 2 * 60 * 60 * 1000);
             const trip = await prisma.monitoredTrip.create({
                 data: {
                     userId: session.user.id!,
@@ -114,8 +121,8 @@ export async function POST(req: Request) {
                             flightNumber: String(seg.number || (seg as MonitoredSegmentInput & { flightNumber?: string | number }).flightNumber || `SEG${index + 1}`),       // 236
                             origin: seg.departure?.iataCode || normalizedFlightData.origin,
                             destination: seg.arrival?.iataCode || normalizedFlightData.destination,
-                            departureDate: seg.departure?.at ? new Date(seg.departure.at) : new Date(),
-                            arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : new Date(),
+                            departureDate: seg.departure?.at ? new Date(seg.departure.at) : fallbackDepartureDate,
+                            arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : fallbackArrivalDate,
                             aircraftType: seg.aircraft?.code || '738' // Default
                         }))
                     }

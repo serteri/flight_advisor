@@ -89,9 +89,12 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
         // 3. SAVE VERIFIED DATA
         try {
             setSaveError(null);
+            console.log('Trip date being sent:', date);
+            const dateIso = date ? new Date(`${date}T00:00:00.000Z`).toISOString() : undefined;
             console.info('[ADD_TRIP_MODAL] Saving monitored trip', {
                 flightNo,
                 date,
+                dateIso,
                 pnr,
                 verifiedFlight,
             });
@@ -101,6 +104,7 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...verifiedFlight, // Includes Origin, Dest, Times
+                    date: dateIso,
                     pnr: pnr.toUpperCase(), // User provided (optional logic in UI, but sent to backend)
                     userId: user.id || 'mock_user'
                 })
