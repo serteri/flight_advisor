@@ -121,18 +121,12 @@ export function AddTripModal({ onClose, user, onSuccess }: AddTripModalProps) {
                 onSuccess?.();
                 router.refresh();
             } else {
-                const responseText = await res.text();
-                console.error('Save failed:', res.status, responseText);
-
-                let errorReason = responseText;
-                try {
-                    const parsed = JSON.parse(responseText) as { error?: string; message?: string };
-                    errorReason = parsed.error || parsed.message || responseText;
-                } catch {
-                    // Keep raw response text when payload is not JSON.
-                }
-
-                alert(errorReason || `Failed to save trip (HTTP ${res.status}).`);
+                const errorData = await res.json().catch(() => null);
+                console.error('[ADD_TRIP_MODAL] Failed to save trip', {
+                    status: res.status,
+                    errorData,
+                });
+                alert("Failed to save trip.");
             }
         } catch (error) {
             console.error('[ADD_TRIP_MODAL] Connection error while saving trip', error);

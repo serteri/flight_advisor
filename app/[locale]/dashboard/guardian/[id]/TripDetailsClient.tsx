@@ -17,7 +17,7 @@ type TripDetailsClientProps = {
     locale: string;
     trip: {
         id: string;
-        pnr: string;
+        pnr: string | null;
         routeLabel: string;
         status: string;
         lastCheckedAt: Date | string | null;

@@ -518,7 +518,7 @@ model MonitoredTrip {
   userId          String
   
   // Trip Identity
-  pnr             String
+  pnr             String?
   routeLabel      String   // "BNE ➝ IST"
   
   // Finansal Veriler (Bilet Bazlı)

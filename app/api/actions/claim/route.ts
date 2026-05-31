@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
         const tripData = {
             userName: trip.user?.name || session.user.name || 'Passenger',
-            pnr: trip.pnr,
+            pnr: trip.pnr || 'UNKNOWN',
             flightNumber: `${firstSegment.airlineCode}${firstSegment.flightNumber}`,
             date: firstSegment.departureDate.toLocaleDateString('en-GB'),
             route: `${firstSegment.origin} -> ${firstSegment.destination}`,

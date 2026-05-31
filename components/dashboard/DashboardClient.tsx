@@ -12,7 +12,7 @@ interface DashboardClientProps {
         id: string | number;
         origin?: string;
         destination?: string;
-        pnr?: string;
+        pnr?: string | null;
         departureDate?: string | Date;
         flightNumber?: string;
         status?: string;

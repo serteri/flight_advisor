@@ -29,7 +29,7 @@ export default async function AmenityPage({ params }: { params: Promise<{ id: st
 
             <AmenityClaimForm
                 airline={airlineCode}
-                pnr={trip.pnr}
+                pnr={trip.pnr ?? ''}
             />
         </div>
     );
