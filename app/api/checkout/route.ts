@@ -3,35 +3,27 @@ import { auth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 
-type PlanType = 'PRO' | 'ELITE';
+type PlanType = 'PRO';
 type BillingCycle = 'monthly' | 'yearly';
 
-// Detect Stripe test/live mode from secret key
-const isStripeTestMode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_');
-const priceIdSuffix = isStripeTestMode ? 'TEST_' : '';
+const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
+const PRO_YEARLY_PRICE_ID = process.env.STRIPE_PRO_YEARLY_PRICE_ID;
 
 console.log('🔧 [STRIPE CONFIG]', {
-    mode: isStripeTestMode ? 'TEST' : 'LIVE',
-    suffix: priceIdSuffix,
+    mode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
     secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
 });
 
-const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
-    PRO: {
-        monthly: process.env[`STRIPE_PRO_${priceIdSuffix}MONTHLY_PRICE_ID`],
-        yearly: process.env[`STRIPE_PRO_${priceIdSuffix}YEARLY_PRICE_ID`],
-    },
-    ELITE: {
-        monthly: process.env[`STRIPE_ELITE_${priceIdSuffix}MONTHLY_PRICE_ID`],
-        yearly: process.env[`STRIPE_ELITE_${priceIdSuffix}YEARLY_PRICE_ID`],
-    },
+console.log('Make sure STRIPE_PRO_MONTHLY_PRICE_ID and STRIPE_PRO_YEARLY_PRICE_ID are set in Vercel');
+
+const PRICE_MAP: Record<BillingCycle, string | undefined> = {
+    monthly: PRO_MONTHLY_PRICE_ID,
+    yearly: PRO_YEARLY_PRICE_ID,
 };
 
 console.log('💰 [PRICE MAP]', {
-    PRO_monthly: PRICE_MAP.PRO.monthly || 'MISSING',
-    PRO_yearly: PRICE_MAP.PRO.yearly || 'MISSING',
-    ELITE_monthly: PRICE_MAP.ELITE.monthly || 'MISSING',
-    ELITE_yearly: PRICE_MAP.ELITE.yearly || 'MISSING',
+    PRO_monthly: PRICE_MAP.monthly || 'MISSING',
+    PRO_yearly: PRICE_MAP.yearly || 'MISSING',
 });
 
 function resolveBaseUrl() {
@@ -77,7 +69,7 @@ export async function POST(req: Request) {
         }
 
         const { plan, billingCycle, trial } = (await req.json()) as {
-            plan?: PlanType;
+            plan?: string;
             billingCycle?: BillingCycle;
             trial?: boolean;
         };
@@ -86,15 +78,23 @@ export async function POST(req: Request) {
             return new NextResponse('Missing plan or billing cycle', { status: 400 });
         }
 
-        const envVarName = `STRIPE_${plan}_${priceIdSuffix}${billingCycle.toUpperCase()}_PRICE_ID`;
-        const priceId = PRICE_MAP[plan]?.[billingCycle];
+        if (plan !== 'PRO') {
+            return NextResponse.json({ error: 'Unsupported plan. Only PRO is available.' }, { status: 400 });
+        }
+
+        const normalizedPlan: PlanType = 'PRO';
+
+        const envVarName = billingCycle === 'monthly'
+            ? 'STRIPE_PRO_MONTHLY_PRICE_ID'
+            : 'STRIPE_PRO_YEARLY_PRICE_ID';
+        const priceId = PRICE_MAP[billingCycle];
 
         console.log('🚀 [CHECKOUT_POST]', {
             userId: user.id,
-            plan,
+            plan: normalizedPlan,
             billingCycle,
             trial: trial !== false,
-            stripeMode: isStripeTestMode ? 'TEST' : 'LIVE',
+            stripeMode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
             envVarName,
             priceId: priceId || '❌ MISSING',
             priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
             return NextResponse.json(
                 { 
                     error: 'Stripe Configuration Error',
-                    details: `Missing price ID for ${plan} ${billingCycle}`,
+                    details: `Missing price ID for PRO ${billingCycle}`,
                     expectedEnvVar: envVarName,
                 }, 
                 { status: 500 }
@@ -247,7 +247,7 @@ export async function POST(req: Request) {
         } = {
             metadata: {
                 userId: effectiveUserId,
-                plan,
+                plan: normalizedPlan,
                 billingCycle,
                 trial: shouldTrial ? 'true' : 'false',
             },
@@ -260,7 +260,7 @@ export async function POST(req: Request) {
         console.log('💳 [STRIPE_SESSION_CREATE] About to create checkout session', {
             customer: stripeCustomerId,
             priceId,
-            plan,
+            plan: normalizedPlan,
             billingCycle,
             trial: shouldTrial,
             baseUrl,
@@ -282,7 +282,7 @@ export async function POST(req: Request) {
                 subscription_data: subscriptionData,
                 metadata: {
                     userId: effectiveUserId,
-                    plan,
+                    plan: normalizedPlan,
                     billingCycle,
                     trial: shouldTrial ? 'true' : 'false',
                 },

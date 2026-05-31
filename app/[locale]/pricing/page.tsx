@@ -1,12 +1,43 @@
+"use client";
+
 import { ShieldCheck, Bell, FileText, Mail, History } from 'lucide-react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
-export default async function PricingPage({
-    params,
-}: {
-    params: Promise<{ locale: string }>;
-}) {
-    const { locale } = await params;
+export default function PricingPage() {
+    const params = useParams<{ locale?: string | string[] }>();
+    const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
+    const locale = localeParam || 'en';
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+    async function handleCheckout(plan: string) {
+        if (isCheckingOut) return;
+
+        setIsCheckingOut(true);
+        try {
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plan,
+                    billingCycle: 'monthly',
+                }),
+            });
+
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+                return;
+            }
+
+            throw new Error(data?.error || 'Checkout URL was not returned.');
+        } catch (error) {
+            console.error('[PRICING] Checkout start failed:', error);
+        } finally {
+            setIsCheckingOut(false);
+        }
+    }
 
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#d1fae5_0%,#f8fafc_35%,#ffffff_70%)]">
@@ -58,12 +89,14 @@ export default async function PricingPage({
                             <li className="flex items-center gap-2 text-slate-700"><History className="w-4 h-4 text-emerald-600" /> Alert history</li>
                         </ul>
 
-                        <a
-                            href="/api/checkout?plan=PRO&billingCycle=monthly&trial=false"
+                        <button
+                            type="button"
+                            onClick={() => handleCheckout('PRO')}
+                            disabled={isCheckingOut}
                             className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3"
                         >
-                            Start Pro
-                        </a>
+                            {isCheckingOut ? 'Starting checkout...' : 'Start Pro'}
+                        </button>
                     </div>
                 </div>
             </div>
