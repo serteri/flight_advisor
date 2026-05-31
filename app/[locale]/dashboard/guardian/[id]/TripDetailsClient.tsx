@@ -148,6 +148,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
     const [isDeletingTrip, setIsDeletingTrip] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
+    const [deleteTripSuccess, setDeleteTripSuccess] = useState<string | null>(null);
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
     const backLinkHref = `/${safeLocale}/dashboard/guardian`;
@@ -298,10 +301,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const deleteTrip = async () => {
         if (isDeletingTrip) return;
 
-        const confirmed = window.confirm('Stop monitoring this trip?\nAll alert history will be deleted.');
-        if (!confirmed) return;
-
         setIsDeletingTrip(true);
+        setDeleteTripError(null);
         try {
             const response = await fetch(`/api/guardian/${trip.id}`, {
                 method: 'DELETE',
@@ -311,10 +312,14 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                 throw new Error('Failed to delete trip.');
             }
 
-            router.push(backLinkHref);
-            router.refresh();
+            setDeleteTripSuccess('Trip removed successfully');
+            setTimeout(() => {
+                router.push(backLinkHref);
+                router.refresh();
+            }, 900);
         } catch (error) {
             console.error('[GUARDIAN] Failed to delete trip', error);
+            setDeleteTripError('Unable to stop monitoring right now. Please try again.');
         } finally {
             setIsDeletingTrip(false);
         }
@@ -483,11 +488,15 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="rounded-3xl border border-red-200 bg-white p-6">
                             <button
                                 type="button"
-                                onClick={deleteTrip}
+                                onClick={() => {
+                                    setDeleteTripError(null);
+                                    setDeleteTripSuccess(null);
+                                    setIsDeleteModalOpen(true);
+                                }}
                                 disabled={isDeletingTrip}
                                 className="inline-flex items-center rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {isDeletingTrip ? 'Stopping monitoring...' : 'Stop monitoring this trip'}
+                                Stop monitoring this trip
                             </button>
                             <p className="mt-2 text-xs text-slate-500">This action permanently deletes this monitored trip and its alert history.</p>
                         </div>
@@ -554,6 +563,49 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     </div>
                 </div>
             </div>
+
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+                        <h3 className="text-lg font-bold text-slate-900">Stop monitoring this trip?</h3>
+                        <p className="mt-2 text-sm text-slate-600">
+                            All alert history for {trip.routeLabel} will be permanently deleted.
+                        </p>
+
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (isDeletingTrip) return;
+                                    setDeleteTripError(null);
+                                    setDeleteTripSuccess(null);
+                                    setIsDeleteModalOpen(false);
+                                }}
+                                disabled={isDeletingTrip}
+                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={deleteTrip}
+                                disabled={isDeletingTrip}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isDeletingTrip ? 'Stopping monitoring...' : 'Stop monitoring'}
+                            </button>
+                        </div>
+
+                        {deleteTripError && (
+                            <p className="mt-3 text-sm font-medium text-red-600">{deleteTripError}</p>
+                        )}
+
+                        {deleteTripSuccess && (
+                            <p className="mt-3 text-sm font-medium text-emerald-600">{deleteTripSuccess}</p>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
