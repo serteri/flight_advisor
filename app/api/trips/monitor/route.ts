@@ -37,7 +37,9 @@ const toDateTime = (date?: string, time?: string, fallback?: Date) => {
 };
 
 export async function POST(req: Request) {
+    console.log('[TRIPS_MONITOR] Received save request');
     const session = await auth();
+    console.log(`[TRIPS_MONITOR] Session user: ${session?.user?.id || 'none'}`);
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
@@ -73,6 +75,13 @@ export async function POST(req: Request) {
             }
             : null);
 
+        const tripData = {
+            pnr,
+            normalizedFlightData,
+            userId: session.user.id,
+        };
+        console.log(`[TRIPS_MONITOR] Trip data: ${JSON.stringify(tripData)}`);
+
         console.info('[TRIPS_MONITOR] Received monitor request', {
             userId: session.user.id,
             pnr,
@@ -87,51 +96,58 @@ export async function POST(req: Request) {
 
         return withFreemiumGate(session.user.id!, 'monitored_trip', async () => {
             const segments = Array.isArray(normalizedFlightData.segments) ? normalizedFlightData.segments : [];
-            const trip = await prisma.monitoredTrip.create({
-                data: {
-                    userId: session.user.id!,
-                    pnr: pnr,
-                    routeLabel: `${normalizedFlightData.origin} ➝ ${normalizedFlightData.destination}`,
-                    originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
-                    currency: normalizedFlightData.price?.currency || "AUD",
-                    ticketClass: normalizedFlightData.travelClass || "ECONOMY",
-                    nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // Check in 1 hour
-                    snapshot: {
-                        create: {
-                            delayMinutes: 0,
-                            status: 'scheduled',
-                            dataQuality: 'UNKNOWN',
-                            eu261Eligible: false,
+            try {
+                console.log('[TRIPS_MONITOR] Prisma create attempt');
+                const trip = await prisma.monitoredTrip.create({
+                    data: {
+                        userId: session.user.id!,
+                        pnr: pnr,
+                        routeLabel: `${normalizedFlightData.origin} ➝ ${normalizedFlightData.destination}`,
+                        originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
+                        currency: normalizedFlightData.price?.currency || "AUD",
+                        ticketClass: normalizedFlightData.travelClass || "ECONOMY",
+                        nextCheckAt: new Date(Date.now() + 60 * 60 * 1000), // Check in 1 hour
+                        snapshot: {
+                            create: {
+                                delayMinutes: 0,
+                                status: 'scheduled',
+                                dataQuality: 'UNKNOWN',
+                                eu261Eligible: false,
+                            }
+                        },
+
+                        // 2. Segmentleri İçine Göm (Nested Write)
+                        segments: {
+                            create: (segments as MonitoredSegmentInput[]).map((seg, index) => ({
+                                segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
+                                airlineCode: seg.carrierCode || 'XX',   // SQ
+                                flightNumber: seg.number || `SEG${index + 1}`,       // 236
+                                origin: seg.departure?.iataCode || normalizedFlightData.origin,
+                                destination: seg.arrival?.iataCode || normalizedFlightData.destination,
+                                departureDate: seg.departure?.at ? new Date(seg.departure.at) : new Date(),
+                                arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : new Date(),
+                                aircraftType: seg.aircraft?.code || '738' // Default
+                            }))
                         }
-                    },
-
-                    // 2. Segmentleri İçine Göm (Nested Write)
-                    segments: {
-                        create: (segments as MonitoredSegmentInput[]).map((seg, index) => ({
-                            segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
-                            airlineCode: seg.carrierCode || 'XX',   // SQ
-                            flightNumber: seg.number || `SEG${index + 1}`,       // 236
-                            origin: seg.departure?.iataCode || normalizedFlightData.origin,
-                            destination: seg.arrival?.iataCode || normalizedFlightData.destination,
-                            departureDate: seg.departure?.at ? new Date(seg.departure.at) : new Date(),
-                            arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : new Date(),
-                            aircraftType: seg.aircraft?.code || '738' // Default
-                        }))
                     }
-                }
-            });
+                });
 
-            console.info('[TRIPS_MONITOR] Monitored trip created', {
-                tripId: trip.id,
-                userId: session.user.id,
-                pnr,
-                routeLabel: trip.routeLabel,
-            });
+                console.log('[TRIPS_MONITOR] Prisma create success');
+                console.info('[TRIPS_MONITOR] Monitored trip created', {
+                    tripId: trip.id,
+                    userId: session.user.id,
+                    pnr,
+                    routeLabel: trip.routeLabel,
+                });
 
-            return NextResponse.json({ success: true, tripId: trip.id });
+                return NextResponse.json({ success: true, tripId: trip.id });
+            } catch (prismaError) {
+                console.error('[TRIPS_MONITOR] Prisma create error', prismaError);
+                throw prismaError;
+            }
         });
     } catch (error) {
-        console.error('[TRIPS_MONITOR] Trip creation error', error);
+        console.error('[TRIPS_MONITOR] Trip creation error (full)', error);
         return NextResponse.json({ error: 'Uçuş takibi başlatılamadı.' }, { status: 500 });
     }
 }
