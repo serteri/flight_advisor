@@ -4,26 +4,23 @@ import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 
 type PlanType = 'PRO';
-type BillingCycle = 'monthly' | 'yearly';
+type BillingCycle = 'monthly';
 
 const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
-const PRO_YEARLY_PRICE_ID = process.env.STRIPE_PRO_YEARLY_PRICE_ID;
 
 console.log('🔧 [STRIPE CONFIG]', {
     mode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
     secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
 });
 
-console.log('Make sure STRIPE_PRO_MONTHLY_PRICE_ID and STRIPE_PRO_YEARLY_PRICE_ID are set in Vercel');
+console.log('Make sure STRIPE_PRO_MONTHLY_PRICE_ID is set in Vercel');
 
-const PRICE_MAP: Record<BillingCycle, string | undefined> = {
-    monthly: PRO_MONTHLY_PRICE_ID,
-    yearly: PRO_YEARLY_PRICE_ID,
+const PRICE_MAP = {
+    PRO_monthly: PRO_MONTHLY_PRICE_ID,
 };
 
 console.log('💰 [PRICE MAP]', {
-    PRO_monthly: PRICE_MAP.monthly || 'MISSING',
-    PRO_yearly: PRICE_MAP.yearly || 'MISSING',
+    PRO_monthly: PRICE_MAP.PRO_monthly || 'MISSING',
 });
 
 function resolveBaseUrl() {
@@ -70,11 +67,11 @@ export async function POST(req: Request) {
 
         const { plan, billingCycle, trial } = (await req.json()) as {
             plan?: string;
-            billingCycle?: BillingCycle;
+            billingCycle?: string;
             trial?: boolean;
         };
 
-        if (!plan || !billingCycle) {
+        if (!plan) {
             return new NextResponse('Missing plan or billing cycle', { status: 400 });
         }
 
@@ -82,17 +79,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unsupported plan. Only PRO is available.' }, { status: 400 });
         }
 
-        const normalizedPlan: PlanType = 'PRO';
+        if (billingCycle && billingCycle !== 'monthly') {
+            return NextResponse.json({ error: 'Unsupported billing cycle. Only monthly is available.' }, { status: 400 });
+        }
 
-        const envVarName = billingCycle === 'monthly'
-            ? 'STRIPE_PRO_MONTHLY_PRICE_ID'
-            : 'STRIPE_PRO_YEARLY_PRICE_ID';
-        const priceId = PRICE_MAP[billingCycle];
+        const normalizedPlan: PlanType = 'PRO';
+        const normalizedBillingCycle: BillingCycle = 'monthly';
+
+        const envVarName = 'STRIPE_PRO_MONTHLY_PRICE_ID';
+        const priceId = PRICE_MAP.PRO_monthly;
 
         console.log('🚀 [CHECKOUT_POST]', {
             userId: user.id,
             plan: normalizedPlan,
-            billingCycle,
+            billingCycle: normalizedBillingCycle,
             trial: trial !== false,
             stripeMode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
             envVarName,
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
             return NextResponse.json(
                 { 
                     error: 'Stripe Configuration Error',
-                    details: `Missing price ID for PRO ${billingCycle}`,
+                    details: `Missing price ID for PRO ${normalizedBillingCycle}`,
                     expectedEnvVar: envVarName,
                 }, 
                 { status: 500 }
@@ -248,7 +248,7 @@ export async function POST(req: Request) {
             metadata: {
                 userId: effectiveUserId,
                 plan: normalizedPlan,
-                billingCycle,
+                billingCycle: normalizedBillingCycle,
                 trial: shouldTrial ? 'true' : 'false',
             },
         };
@@ -261,7 +261,7 @@ export async function POST(req: Request) {
             customer: stripeCustomerId,
             priceId,
             plan: normalizedPlan,
-            billingCycle,
+            billingCycle: normalizedBillingCycle,
             trial: shouldTrial,
             baseUrl,
         });
@@ -283,7 +283,7 @@ export async function POST(req: Request) {
                 metadata: {
                     userId: effectiveUserId,
                     plan: normalizedPlan,
-                    billingCycle,
+                    billingCycle: normalizedBillingCycle,
                     trial: shouldTrial ? 'true' : 'false',
                 },
                 success_url: `${baseUrl}/en/dashboard?success=true`,

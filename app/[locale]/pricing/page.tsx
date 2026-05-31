@@ -11,7 +11,7 @@ export default function PricingPage() {
     const locale = localeParam || 'en';
     const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-    async function handleCheckout(plan: string) {
+    async function handleCheckout() {
         if (isCheckingOut) return;
 
         setIsCheckingOut(true);
@@ -20,7 +20,7 @@ export default function PricingPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    plan,
+                    plan: 'PRO',
                     billingCycle: 'monthly',
                 }),
             });
@@ -91,7 +91,7 @@ export default function PricingPage() {
 
                         <button
                             type="button"
-                            onClick={() => handleCheckout('PRO')}
+                            onClick={handleCheckout}
                             disabled={isCheckingOut}
                             className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3"
                         >
