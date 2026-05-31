@@ -10,7 +10,7 @@ export const FREE_TIER_LIMITS = {
 export const PRO_TIER = {
   itineraryAnalyses: -1,
   trackedItineraries: 10,
-  monitoredTrips: 5,
+  monitoredTrips: -1,
   advisorReports: -1,
   playbookAccess: true,
   compensationLetters: true,

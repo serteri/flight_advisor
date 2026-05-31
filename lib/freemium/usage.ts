@@ -6,6 +6,12 @@ import {
   type FreemiumFeature,
 } from '@/lib/freemium/limits';
 
+export type PlanHint = {
+  isPremium?: boolean;
+  plan?: string | null;
+  subscriptionPlan?: string | null;
+};
+
 const getCurrentMonthKey = (date = new Date()): string => {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -30,12 +36,35 @@ const toLimitNumber = (limit: FeatureLimit): number => {
   return limit;
 };
 
+const isPaidPlan = (value?: string | null): boolean => {
+  if (!value) return false;
+  const normalized = value.toUpperCase();
+  return normalized === 'PRO' || normalized === 'ELITE';
+};
+
 export const isMeteredFeature = (feature: FreemiumFeature): boolean => {
   const limit = FREE_TIER_LIMITS[FEATURE_TO_LIMIT_KEY[feature]];
   return typeof limit === 'number';
 };
 
-export async function getUserPlan(userId: string): Promise<'free' | 'pro'> {
+export async function getUserPlan(userId: string, planHint?: PlanHint): Promise<'free' | 'pro'> {
+  if (planHint?.isPremium || isPaidPlan(planHint?.plan) || isPaidPlan(planHint?.subscriptionPlan)) {
+    return 'pro';
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      isPremium: true,
+      plan: true,
+      subscriptionPlan: true,
+    },
+  });
+
+  if (user?.isPremium || isPaidPlan(user?.plan) || isPaidPlan(user?.subscriptionPlan)) {
+    return 'pro';
+  }
+
   const record = await prisma.userPlan.findUnique({
     where: { userId },
     select: {
@@ -94,13 +123,17 @@ export async function incrementUsage(userId: string, feature: FreemiumFeature): 
   return updated.count;
 }
 
-export async function checkLimit(userId: string, feature: FreemiumFeature): Promise<{
+export async function checkLimit(
+  userId: string,
+  feature: FreemiumFeature,
+  planHint?: PlanHint,
+): Promise<{
   allowed: boolean;
   current: number;
   limit: number;
   isPro: boolean;
 }> {
-  const plan = await getUserPlan(userId);
+  const plan = await getUserPlan(userId, planHint);
   const isPro = plan === 'pro';
 
   if (isPro) {

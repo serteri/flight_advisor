@@ -39,6 +39,12 @@ const toDateTime = (date?: string, time?: string, fallback?: Date) => {
 export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const sessionUser = session.user as {
+        id?: string;
+        isPremium?: boolean;
+        plan?: string;
+        subscriptionPlan?: string;
+    };
 
     try {
         const body = await req.json();
@@ -137,6 +143,12 @@ export async function POST(req: Request) {
             });
 
             return NextResponse.json({ success: true, tripId: trip.id });
+        }, {
+            planHint: {
+                isPremium: sessionUser.isPremium,
+                plan: sessionUser.plan,
+                subscriptionPlan: sessionUser.subscriptionPlan,
+            },
         });
     } catch (error) {
         console.error('[TRIPS_MONITOR] Trip creation error', error);

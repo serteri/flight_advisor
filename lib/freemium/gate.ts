@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 
 import type { FreemiumFeature } from '@/lib/freemium/limits';
-import { checkLimit, incrementUsage, isMeteredFeature } from '@/lib/freemium/usage';
+import { checkLimit, incrementUsage, isMeteredFeature, type PlanHint } from '@/lib/freemium/usage';
+
+type FreemiumGateOptions = {
+  planHint?: PlanHint;
+};
 
 export async function withFreemiumGate(
   userId: string,
   feature: FreemiumFeature,
   handler: () => Promise<Response>,
+  options?: FreemiumGateOptions,
 ): Promise<Response> {
-  const access = await checkLimit(userId, feature);
+  const access = await checkLimit(userId, feature, options?.planHint);
 
   if (!access.allowed) {
     return NextResponse.json(
