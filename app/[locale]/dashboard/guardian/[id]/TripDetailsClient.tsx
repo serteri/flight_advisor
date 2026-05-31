@@ -13,6 +13,7 @@ import {
     Plane,
     ShieldCheck,
 } from 'lucide-react';
+import { getAirlineClaimPortal } from '@/lib/airlineClaimPortals';
 
 type TripDetailsClientProps = {
     locale: string;
@@ -151,6 +152,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteTripError, setDeleteTripError] = useState<string | null>(null);
     const [deleteTripSuccess, setDeleteTripSuccess] = useState<string | null>(null);
+    const [claimCopyState, setClaimCopyState] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
     const backLinkHref = `/${safeLocale}/dashboard/guardian`;
@@ -198,6 +200,10 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         : eu261State === 'NOT_ELIGIBLE'
             ? 'No qualifying cancellation or long-delay pattern is currently confirmed.'
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
+
+    const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
+    const shouldShowClaimSection = eu261State === 'ELIGIBLE' || hasDisruptionDetected;
+    const claimPortal = getAirlineClaimPortal(firstSegment?.airlineCode || null);
 
     const firstDepartureMs = firstSegment ? new Date(firstSegment.departureDate).getTime() : NaN;
     const hoursUntilDeparture = Number.isNaN(firstDepartureMs)
@@ -322,6 +328,48 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             setDeleteTripError('Unable to stop monitoring right now. Please try again.');
         } finally {
             setIsDeletingTrip(false);
+        }
+    };
+
+    const copyClaimLetter = async () => {
+        if (claimCopyState === 'copying') return;
+
+        const segmentForClaim = firstSegment;
+        if (!segmentForClaim) {
+            setClaimCopyState('failed');
+            return;
+        }
+
+        setClaimCopyState('copying');
+        try {
+            const delayHours = delayMinutes > 0 ? Math.round((delayMinutes / 60) * 10) / 10 : undefined;
+            const response = await fetch('/api/compensation/generate-letter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    passengerName: 'Passenger',
+                    flightDetails: {
+                        flightNumber: `${segmentForClaim.airlineCode}${segmentForClaim.flightNumber}`,
+                        origin: segmentForClaim.origin,
+                        destination: segmentForClaim.destination,
+                        scheduledDate: formatDate(segmentForClaim.departureDate),
+                        delayHours,
+                        regulation: 'EU261',
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                setClaimCopyState('failed');
+                return;
+            }
+
+            const letter = await response.text();
+            await navigator.clipboard.writeText(letter);
+            setClaimCopyState('copied');
+        } catch (error) {
+            console.error('[GUARDIAN] Failed to copy claim letter', error);
+            setClaimCopyState('failed');
         }
     };
 
@@ -455,6 +503,55 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             </div>
                             <p className="text-sm text-slate-700">{eu261Explanation}</p>
                         </div>
+
+                        {shouldShowClaimSection && (
+                            <div className="bg-white rounded-3xl border border-emerald-200 shadow-sm p-6 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                                    <h2 className="text-lg font-bold text-slate-900">Submit your claim</h2>
+                                </div>
+                                <p className="text-sm text-slate-700">
+                                    Your claim letter is ready. Submit it directly to the airline:
+                                </p>
+
+                                {claimPortal ? (
+                                    <a
+                                        href={claimPortal.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+                                    >
+                                        Open {claimPortal.name} claim portal →
+                                    </a>
+                                ) : (
+                                    <p className="text-sm text-slate-700">
+                                        Contact your airline directly to submit your EU261 claim.
+                                    </p>
+                                )}
+
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={copyClaimLetter}
+                                        disabled={claimCopyState === 'copying'}
+                                        className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {claimCopyState === 'copying' ? 'Copying...' : 'Copy claim letter'}
+                                    </button>
+                                    <span className="text-xs text-slate-500">
+                                        {claimCopyState === 'copied'
+                                            ? 'Claim letter copied.'
+                                            : claimCopyState === 'failed'
+                                                ? 'Could not generate letter.'
+                                                : ''}
+                                    </span>
+                                </div>
+
+                                <p className="text-xs text-slate-500">
+                                    Paste your claim letter into the airline's form.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center justify-between gap-3">
