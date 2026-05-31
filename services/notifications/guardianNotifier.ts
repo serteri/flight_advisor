@@ -623,9 +623,18 @@ async function shouldThrottleLowSeverity(tripId: string, channel: DeliveryChanne
 
 // ── CORE NOTIFICATION DISPATCHER ──
 
+// Event types that are internal-only and must never result in user emails/SMS/push.
+const INTERNAL_ONLY_TYPES: ReadonlySet<string> = new Set(['DATA_ISSUE']);
+
 export async function notifyGuardianEvent(event: GuardianEvent, user: User | null): Promise<void> {
     if (!user) {
         console.warn(`[NOTIFIER] Validation fault: User missing from Trip boundary. Skipping dispatch.`);
+        return;
+    }
+
+    // DATA_ISSUE events are internal monitoring quality signals — never email users.
+    if (INTERNAL_ONLY_TYPES.has(event.type)) {
+        console.log(`[NOTIFIER] Suppressing user notification for internal event type ${event.type} (trip ${event.tripId}).`);
         return;
     }
 

@@ -299,10 +299,12 @@ export async function processFlightMonitoring() {
                 }
 
                 const dateStr = new Date(segment.departureDate).toISOString().split('T')[0];
+                // Build full IATA flight number (e.g. "QF" + "51" -> "QF51")
+                const fullFlightNumber = `${String(segment.airlineCode || '').toUpperCase()}${String(segment.flightNumber || '').toUpperCase()}`;
                 let currentStatus = null;
                 
                 try {
-                    const result = await getFlightStatus(segment.flightNumber, dateStr);
+                    const result = await getFlightStatus(fullFlightNumber, dateStr);
                     if ('error' in result) {
                         console.warn(`   ⚠️ Could not fetch status: ${result.message}`);
                     } else {

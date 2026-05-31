@@ -162,15 +162,38 @@ export async function getFlightStatus(
             arrivalDelayMinutes = Math.floor(diffMs / 60000);
         }
         
-        // Determine status
+        // Determine status — map all known AeroDataBox status strings
         let status: FlightStatus['status'] = 'unknown';
         if (flight.status) {
-            const s = flight.status.toLowerCase();
-            if (s.includes('cancelled')) status = 'cancelled';
-            else if (s.includes('landed') || s.includes('arrived')) status = 'landed';
-            else if (s.includes('active') || s.includes('en-route')) status = 'active';
-            else if (s.includes('scheduled')) status = 'scheduled';
-            else if (s.includes('diverted')) status = 'diverted';
+            const s = flight.status.toLowerCase().trim();
+            if (s === 'cancelled' || s.includes('cancel')) {
+                status = 'cancelled';
+            } else if (s === 'landed' || s === 'arrived' || s.includes('landed') || s.includes('arrived')) {
+                status = 'landed';
+            } else if (s === 'departed' || s.includes('departed')) {
+                status = 'active';
+            } else if (s === 'active' || s.includes('active') || s.includes('en-route') || s.includes('enroute')) {
+                status = 'active';
+            } else if (s === 'diverted' || s.includes('diverted')) {
+                status = 'diverted';
+            } else if (s === 'delayed' || s.includes('delayed')) {
+                status = 'scheduled'; // normalizeFlightStatus in worker will reclassify via delay minutes
+            } else if (
+                s === 'checkin' ||
+                s === 'check-in' ||
+                s === 'check_in' ||
+                s === 'gateclosed' ||
+                s === 'gate-closed' ||
+                s === 'gate_closed' ||
+                s === 'expected' ||
+                s === 'scheduled' ||
+                s.includes('scheduled') ||
+                s.includes('expect') ||
+                s.includes('checkin') ||
+                s.includes('gate')
+            ) {
+                status = 'scheduled';
+            }
         }
         
         // EU261 Eligibility Check
