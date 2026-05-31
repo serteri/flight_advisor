@@ -1,8 +1,7 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -150,6 +149,13 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const [isClearingStale, setIsClearingStale] = useState(false);
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
+    const backLinkHref = `/${safeLocale}/dashboard/guardian`;
+
+    useEffect(() => {
+        console.log('locale value:', locale);
+        console.log('locale param value:', localeParam);
+        console.log('back link href:', backLinkHref);
+    }, [locale, localeParam, backLinkHref]);
 
     const firstSegment = trip.segments[0] || null;
     const airlines = Array.from(new Set(trip.segments.map((segment) => segment.airlineCode))).filter(Boolean);
@@ -291,9 +297,13 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 space-y-6">
-                <Link href={`/${safeLocale}/dashboard/guardian`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors">
+                <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors"
+                >
                     <ArrowLeft className="w-4 h-4" /> Back to booked trip monitoring
-                </Link>
+                </button>
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-5">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
