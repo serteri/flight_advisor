@@ -13,7 +13,7 @@ import {
     Plane,
     ShieldCheck,
 } from 'lucide-react';
-import { getAirlineClaimPortal } from '@/lib/airlineClaimPortals';
+import { AIRLINE_CLAIM_PORTALS, getAirlineClaimUrl } from '@/lib/airlineClaimPortals';
 
 type TripDetailsClientProps = {
     locale: string;
@@ -218,7 +218,13 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         hasDisruptionDetected ||
         (trip.lastCheckedAt !== null &&
             trip.lastCheckedAt !== undefined);
-    const claimPortal = getAirlineClaimPortal(firstSegment?.airlineCode || null);
+    const airlineCodeForClaim = (firstSegment?.airlineCode || '').trim().toUpperCase();
+    const airlineNameForClaim =
+        AIRLINE_CLAIM_PORTALS[airlineCodeForClaim]?.name ||
+        (airlineCodeForClaim ? `Airline ${airlineCodeForClaim}` : 'Airline');
+    const claimUrl = airlineCodeForClaim
+        ? getAirlineClaimUrl(airlineCodeForClaim, airlineNameForClaim)
+        : null;
 
     const routeHero = firstSegment && trip.segments.length > 0
         ? `${firstSegment.origin} → ${trip.segments[trip.segments.length - 1].destination}`
@@ -607,14 +613,16 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         : 'No disruption detected yet. If your flight is delayed or cancelled, your claim letter will be ready here.'}
                                 </p>
 
-                                {claimPortal ? (
+                                {claimUrl ? (
                                     <a
-                                        href={claimPortal.url}
+                                        href={claimUrl.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
                                     >
-                                        Open {claimPortal.name} claim portal →
+                                        {claimUrl.isKnown
+                                            ? `Open ${airlineNameForClaim} claim portal →`
+                                            : `Search ${airlineNameForClaim} claim process →`}
                                     </a>
                                 ) : (
                                     <p className="text-sm text-slate-700">
