@@ -121,6 +121,17 @@ const formatDate = (value?: Date | string | null) => {
     });
 };
 
+const formatTime = (value?: Date | string | null) => {
+    if (!value) return 'Unknown';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Unknown';
+    return parsed.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+};
+
 const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
     const normalized = (snapshotStatus || '').toLowerCase();
     if (normalized.includes('cancel')) return 'Cancelled';
@@ -202,13 +213,47 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
-    const hasCompletedCheck = Boolean(trip.lastCheckedAt);
     const shouldShowClaimSection =
         eu261State === 'ELIGIBLE' ||
         hasDisruptionDetected ||
         (trip.lastCheckedAt !== null &&
             trip.lastCheckedAt !== undefined);
     const claimPortal = getAirlineClaimPortal(firstSegment?.airlineCode || null);
+
+    const routeHero = firstSegment && trip.segments.length > 0
+        ? `${firstSegment.origin} → ${trip.segments[trip.segments.length - 1].destination}`
+        : trip.routeLabel;
+
+    const statusBadge = cancellationFlag
+        ? {
+            label: 'Cancelled',
+            classes: 'bg-red-100 text-red-700 border-red-200',
+        }
+        : delayMinutes > 0
+            ? {
+                label: 'Delayed',
+                classes: 'bg-amber-100 text-amber-700 border-amber-200',
+            }
+            : {
+                label: 'On Time',
+                classes: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+            };
+
+    const delayRiskClasses = delayRisk === 'HIGH'
+        ? 'bg-red-50 border-red-200 text-red-700'
+        : delayRisk === 'MEDIUM'
+            ? 'bg-amber-50 border-amber-200 text-amber-700'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+
+    const cancellationRiskClasses = cancellationFlag
+        ? 'bg-red-50 border-red-200 text-red-700'
+        : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+
+    const eu261BadgeClasses = eu261State === 'ELIGIBLE'
+        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+        : eu261State === 'NOT_ELIGIBLE'
+            ? 'bg-slate-100 text-slate-700 border-slate-200'
+            : 'bg-amber-100 text-amber-700 border-amber-200';
 
 
 
@@ -391,22 +436,33 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     <ArrowLeft className="w-4 h-4" /> Back to booked trip monitoring
                 </button>
 
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-5">
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-                        <div>
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Booked trip monitoring</div>
-                            <h1 className="text-2xl md:text-3xl font-black text-slate-900">{trip.routeLabel}</h1>
-                            <div className="flex flex-wrap gap-3 text-sm text-slate-500 mt-2">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                        <div className="space-y-4">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Booked trip monitoring</div>
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">{routeHero}</h1>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5">
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                                        {firstSegment?.airlineCode || 'QF'}
+                                    </span>
+                                    <span className="text-sm font-semibold text-slate-700">Airline badge</span>
+                                </div>
+                                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${statusBadge.classes}`}>
+                                    {statusBadge.label}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                                 <span>PNR: {trip.pnr || 'Unknown (unconfirmed)'}</span>
-                                <span className="text-slate-300">•</span>
-                                <span>Departure: {formatDate(firstSegment?.departureDate)}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>Airline: {airlines.length > 0 ? airlines.join(', ') : 'Unknown'}</span>
                             </div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 min-w-full lg:min-w-[280px]">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Current flight status</div>
-                            <div className="text-2xl font-black text-slate-900">{currentFlightStatus}</div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 min-w-full lg:min-w-[320px] shadow-sm">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Departure</div>
+                            <div className="text-2xl md:text-3xl font-black text-slate-900">{formatDate(firstSegment?.departureDate)}</div>
+                            <div className="text-sm text-slate-600 mt-2">Flight status: <span className="font-semibold text-slate-800">{currentFlightStatus}</span></div>
                             {snapshot && canShowGateNumbers && (
                                 <div className="flex flex-wrap gap-3 mt-2">
                                     {snapshot.departureGate && (
@@ -423,8 +479,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             {snapshot?.statusDetail && (
                                 <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
                             )}
-                            <div className="text-sm text-slate-500 mt-2">Last checked: {formatDateTime(latestRunAt)}</div>
-                            <div className="text-sm text-slate-500">Snapshot at: {snapshot ? formatDateTime(snapshot.snapshotAt) : 'N/A'}</div>
+                            <div className="text-sm text-slate-500 mt-3">Last checked: {formatDateTime(latestRunAt)}</div>
                             <div className="text-sm text-slate-500">Next check: {formatDateTime(trip.nextCheckAt)}</div>
                         </div>
                     </div>
@@ -435,25 +490,32 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        <div className="rounded-2xl border border-slate-200 p-4">
+                        <div className={`rounded-2xl border p-4 ${delayRiskClasses}`}>
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Delay risk</div>
-                            <div className="text-lg font-black text-slate-900">{delayRisk}</div>
+                            <div className="text-lg font-black">{delayRisk}</div>
                             <div className="text-sm text-slate-500 mt-1">Current delay: {snapshot ? `${delayMinutes} min` : 'Unknown'}</div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 p-4">
+                        <div className={`rounded-2xl border p-4 ${cancellationRiskClasses}`}>
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Cancellation risk</div>
-                            <div className="text-lg font-black text-slate-900">{cancellationFlag ? 'HIGH' : 'LOW'}</div>
+                            <div className="text-lg font-black">{cancellationFlag ? 'HIGH' : 'LOW'}</div>
                             <div className="text-sm text-slate-500 mt-1">Signal: {cancellationFlag ? 'Cancellation indicators found' : 'No cancellation indicator yet'}</div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 p-4">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Disruption flags</div>
-                            <div className="text-lg font-black text-slate-900">{overallRisk}</div>
-                            <div className="text-sm text-slate-500 mt-1">{delayFlag ? 'Delay flag' : 'No delay flag'} • {scheduleFlag ? 'Schedule/gate change flag' : 'No schedule flag'}</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 p-4">
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Guardian loop</div>
-                            <div className="text-lg font-black text-slate-900">Every 6 hours</div>
-                            <div className="text-sm text-slate-500 mt-1">Alerts triggered: {alertsTriggered}</div>
+                            <div className="flex items-center gap-2 text-lg font-black text-slate-900">
+                                <Clock className="w-5 h-5 text-sky-600" /> Every 6 hours
+                            </div>
+                            <div className="text-sm text-slate-500 mt-1">Current disruption level: {overallRisk}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Alerts</div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg font-black text-slate-900">{alertsTriggered}</span>
+                                <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700">
+                                    Active
+                                </span>
+                            </div>
+                            <div className="text-sm text-slate-500 mt-1">Unread legacy alerts: {unreadAlerts}</div>
                         </div>
                     </div>
                 </div>
@@ -468,18 +530,32 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <div className="space-y-3">
                                 {trip.segments.length > 0 ? trip.segments.map((segment) => (
                                     <div key={segment.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                            <div>
-                                                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                                    {segment.origin} <ArrowRight className="w-4 h-4 text-slate-400" /> {segment.destination}
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex items-center justify-between text-xs uppercase tracking-wider text-slate-500 font-bold">
+                                                <span>{segment.origin}</span>
+                                                <span>{segment.destination}</span>
+                                            </div>
+                                            <div className="relative">
+                                                <div className="h-0.5 w-full bg-slate-200" />
+                                                <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-sky-600" />
+                                                <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-emerald-600" />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Dep time</div>
+                                                    <div className="text-base font-bold text-slate-900">{formatTime(segment.departureDate)}</div>
                                                 </div>
-                                                <div className="text-sm text-slate-500 mt-1">
-                                                    {segment.airlineCode}{segment.flightNumber} • Cabin: {segment.cabinClass || 'Unknown'}
+                                                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Flight</div>
+                                                    <div className="text-base font-bold text-slate-900">{segment.airlineCode}{segment.flightNumber}</div>
+                                                </div>
+                                                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Arr time</div>
+                                                    <div className="text-base font-bold text-slate-900">{segment.arrivalDate ? formatTime(segment.arrivalDate) : '—'}</div>
                                                 </div>
                                             </div>
-                                            <div className="text-sm text-slate-600">
-                                                <div>Dep: {formatDateTime(segment.departureDate)}</div>
-                                                <div>Arr: {segment.arrivalDate ? formatDateTime(segment.arrivalDate) : '—'}</div>
+                                            <div className="text-xs text-slate-500">
+                                                Cabin: {segment.cabinClass || 'Unknown'}
                                             </div>
                                         </div>
                                     </div>
@@ -495,17 +571,25 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 <h2 className="text-lg font-bold text-slate-900">EU261 status</h2>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Eligibility</div>
-                                    <div className="text-lg font-black text-slate-900">{eu261State}</div>
+                                <div className="rounded-2xl border border-slate-200 p-4 bg-emerald-50">
+                                    <div className="flex items-center gap-2 text-emerald-700">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                        <div className="text-xs uppercase tracking-wider font-bold">Protection</div>
+                                    </div>
+                                    <div className="text-lg font-black text-slate-900 mt-2">{eu261State === 'ELIGIBLE' ? 'Protected' : 'Not Protected Yet'}</div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Estimated Protection Value</div>
-                                    <div className="text-lg font-black text-slate-900">{compensationRange}</div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Compensation</div>
+                                    <div className={`font-black text-slate-900 ${eu261State === 'ELIGIBLE' ? 'text-3xl leading-tight' : 'text-lg'}`}>
+                                        {compensationRange}
+                                    </div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Data quality</div>
-                                    <div className="text-lg font-black text-slate-900">{snapshot?.dataQuality || 'UNKNOWN'}</div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Eligibility</div>
+                                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${eu261BadgeClasses}`}>
+                                        {eu261State}
+                                    </span>
+                                    <div className="text-xs text-slate-500 mt-2">Data quality: {snapshot?.dataQuality || 'UNKNOWN'}</div>
                                 </div>
                             </div>
                             <p className="text-sm text-slate-700">{eu261Explanation}</p>
@@ -569,16 +653,30 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             </div>
                             <div className="space-y-3">
                                 {recentChanges.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-0">
                                         {recentChanges.map((item) => (
-                                            <div key={item.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{item.type} • {item.when}</div>
-                                                <p className="text-sm text-slate-800 mt-1">{item.text}</p>
+                                            <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
+                                                <span className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                                    {item.severity === 'CRITICAL' || item.severity === 'HIGH' ? (
+                                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                                    ) : (
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    )}
+                                                </span>
+                                                <span className="absolute left-2 top-6 h-[calc(100%-18px)] w-px bg-slate-200 last:hidden" />
+                                                <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{item.type}</div>
+                                                    <div className="text-xs text-slate-500 mt-1">{item.when}</div>
+                                                    <p className="text-sm text-slate-800 mt-2">{item.text}</p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No recent disruption/change event has been detected yet.</div>
+                                    <div className="rounded-2xl border border-slate-200 p-6 text-sm text-slate-500 bg-slate-50 flex items-center gap-3">
+                                        <Clock className="w-5 h-5 text-slate-400" />
+                                        <span>No recent disruption/change event has been detected yet.</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -592,7 +690,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                     setIsDeleteModalOpen(true);
                                 }}
                                 disabled={isDeletingTrip}
-                                className="inline-flex items-center rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex items-center text-sm font-semibold text-red-600 hover:text-red-700 underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 Stop monitoring this trip
                             </button>
