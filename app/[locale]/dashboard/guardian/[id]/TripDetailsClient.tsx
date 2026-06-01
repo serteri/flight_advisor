@@ -222,9 +222,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const airlineNameForClaim =
         AIRLINE_CLAIM_PORTALS[airlineCodeForClaim]?.name ||
         (airlineCodeForClaim ? `Airline ${airlineCodeForClaim}` : 'Airline');
-    const claimUrl = airlineCodeForClaim
-        ? getAirlineClaimUrl(airlineCodeForClaim, airlineNameForClaim)
-        : null;
+    const claimUrl = getAirlineClaimUrl(airlineCodeForClaim, airlineNameForClaim);
 
     const routeHero = firstSegment && trip.segments.length > 0
         ? `${firstSegment.origin} → ${trip.segments[trip.segments.length - 1].destination}`
@@ -613,22 +611,16 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         : 'No disruption detected yet. If your flight is delayed or cancelled, your claim letter will be ready here.'}
                                 </p>
 
-                                {claimUrl ? (
-                                    <a
-                                        href={claimUrl.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
-                                    >
-                                        {claimUrl.isKnown
-                                            ? `Open ${airlineNameForClaim} claim portal →`
-                                            : `Search ${airlineNameForClaim} claim process →`}
-                                    </a>
-                                ) : (
-                                    <p className="text-sm text-slate-700">
-                                        Contact your airline directly to submit your EU261 claim.
-                                    </p>
-                                )}
+                                <a
+                                    href={claimUrl.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+                                >
+                                    {claimUrl.isKnown
+                                        ? `Open ${airlineNameForClaim} claim portal →`
+                                        : `Search ${airlineNameForClaim} claim process →`}
+                                </a>
 
                                 <div className="flex flex-wrap items-center gap-3">
                                     <button
