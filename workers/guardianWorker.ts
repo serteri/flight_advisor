@@ -741,6 +741,17 @@ export async function processFlightMonitoring() {
                 }
             } catch (error) {
                 console.error(`[GUARDIAN] Failed processing trip ${trip.id}:`, error);
+                const fallbackNow = new Date();
+                const fallbackNextCheck = new Date(fallbackNow.getTime() + trip.checkFrequency * 60 * 1000);
+                await prisma.monitoredTrip.updateMany({
+                    where: { id: trip.id, processingLeaseId: trip.processingLeaseId },
+                    data: {
+                        lastCheckedAt: fallbackNow,
+                        nextCheckAt: fallbackNextCheck,
+                        processingLeaseId: null,
+                        processingLeaseExpiresAt: null,
+                    },
+                });
             }
         }
 

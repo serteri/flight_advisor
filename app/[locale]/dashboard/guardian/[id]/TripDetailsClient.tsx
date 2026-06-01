@@ -595,11 +595,6 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <p className="text-sm text-slate-700">{eu261Explanation}</p>
                         </div>
 
-                        <div className="p-4 bg-yellow-100 text-black">
-                            DEBUG: lastCheckedAt = {String(trip.lastCheckedAt)}
-                            | shouldShow = {String(shouldShowClaimSection)}
-                        </div>
-
                         {shouldShowClaimSection && (
                             <div className="bg-white rounded-3xl border border-emerald-200 shadow-sm p-6 space-y-4">
                                 <div className="flex items-center gap-2">

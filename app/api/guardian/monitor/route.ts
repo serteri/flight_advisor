@@ -48,6 +48,15 @@ export async function POST(req: Request) {
         // 2. Add to Queue
         await addFlightCheckJob(trip.id, 1);
 
+        // 3. Stamp manual trigger time so UI and monitoring metadata stay fresh.
+        await prisma.monitoredTrip.update({
+            where: { id: trip.id },
+            data: {
+                lastCheckedAt: new Date(),
+                nextCheckAt: new Date(Date.now() + trip.checkFrequency * 60 * 1000),
+            },
+        });
+
         return NextResponse.json({
             success: true,
             message: `Monitoring started for PNR: ${pnr}`,
