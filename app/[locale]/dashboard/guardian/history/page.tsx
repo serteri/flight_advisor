@@ -3,26 +3,20 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from 'next-intl/server';
-import { ArrowLeft, CheckCircle2, Clock3, Euro, Plane, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Clock3, Plane, ShieldAlert } from 'lucide-react';
 
 const toStatusLabel = (status?: string | null, delayMinutes?: number) => {
     const normalized = (status || '').toLowerCase();
     if (normalized.includes('cancel')) return 'CANCELLED';
     if ((delayMinutes || 0) > 0 || normalized.includes('delay')) return 'DELAYED';
-    if (!status || normalized.includes('unknown')) return 'ON_TIME';
+    if (!status || normalized.includes('unknown')) return 'UNKNOWN';
     return 'ON_TIME';
 };
 
 const statusBadgeClass = (status: string) => {
     if (status === 'CANCELLED') return 'bg-red-100 text-red-700 border-red-200';
     if (status === 'DELAYED') return 'bg-amber-100 text-amber-700 border-amber-200';
-    return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-};
-
-const severityBadgeClass = (severity: string) => {
-    const normalized = (severity || '').toUpperCase();
-    if (normalized === 'HIGH' || normalized === 'CRITICAL') return 'bg-red-100 text-red-700 border-red-200';
-    if (normalized === 'MEDIUM') return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (status === 'ON_TIME') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
 };
 
@@ -31,7 +25,14 @@ const normalizeAlertType = (eventType: string) => {
     if (normalized.includes('DELAY')) return 'DELAY';
     if (normalized.includes('CANCEL')) return 'CANCELLATION';
     if (normalized.includes('GATE')) return 'GATE_CHANGE';
-    return normalized;
+    return 'STATUS_UPDATE';
+};
+
+const alertTypeBadgeClass = (alertType: string) => {
+    if (alertType === 'DELAY') return 'border-amber-200 bg-amber-100 text-amber-700';
+    if (alertType === 'CANCELLATION') return 'border-red-200 bg-red-100 text-red-700';
+    if (alertType === 'GATE_CHANGE') return 'border-sky-200 bg-sky-100 text-sky-700';
+    return 'border-slate-200 bg-slate-100 text-slate-700';
 };
 
 const formatDateTime = (value?: Date | string | null) => {
@@ -114,6 +115,7 @@ export default async function GuardianHistoryPage() {
             })),
         )
         .sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime());
+    const recentEvents = allEvents.slice(0, 20);
 
     const summary = {
         totalTripsMonitored: trips.length,
@@ -144,7 +146,7 @@ export default async function GuardianHistoryPage() {
                         <div className="mt-2 text-3xl font-black text-slate-900">{summary.totalTripsMonitored}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Total delays detected</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Total delay events detected</div>
                         <div className="mt-2 text-3xl font-black text-amber-600">{summary.totalDelaysDetected}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
@@ -152,7 +154,7 @@ export default async function GuardianHistoryPage() {
                         <div className="mt-2 text-3xl font-black text-sky-600">{summary.totalHoursDelayed.toFixed(1)}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">EU261 claims generated</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">EU261 eligible trips</div>
                         <div className="mt-2 text-3xl font-black text-emerald-600">{summary.eu261ClaimsGenerated}</div>
                     </div>
                 </div>
@@ -173,10 +175,10 @@ export default async function GuardianHistoryPage() {
                                     <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
                                         <th className="py-3 pr-4">Route</th>
                                         <th className="py-3 pr-4">Flight</th>
-                                        <th className="py-3 pr-4">Date</th>
+                                        <th className="py-3 pr-4">Departure date</th>
                                         <th className="py-3 pr-4">Status</th>
-                                        <th className="py-3 pr-4">Delay</th>
-                                        <th className="py-3 pr-4">EU261 Eligible</th>
+                                        <th className="py-3 pr-4">Max delay (minutes)</th>
+                                        <th className="py-3 pr-4">EU261</th>
                                         <th className="py-3 pr-4">Actions</th>
                                     </tr>
                                 </thead>
@@ -207,12 +209,10 @@ export default async function GuardianHistoryPage() {
                                                 <td className="py-3 pr-4">
                                                     {trip.snapshot?.eu261Eligible ? (
                                                         <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                                                            Yes
+                                                            Eligible
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                                                            No
-                                                        </span>
+                                                        <span className="text-slate-500">-</span>
                                                     )}
                                                 </td>
                                                 <td className="py-3 pr-4">
@@ -220,7 +220,7 @@ export default async function GuardianHistoryPage() {
                                                         href={`/${locale}/dashboard/guardian/${trip.id}`}
                                                         className="text-sky-700 hover:text-sky-800 font-semibold"
                                                     >
-                                                        View trip
+                                                        View
                                                     </Link>
                                                 </td>
                                             </tr>
@@ -237,13 +237,15 @@ export default async function GuardianHistoryPage() {
                         <ShieldAlert className="w-5 h-5 text-amber-600" />
                         <h2 className="text-lg font-bold text-slate-900">Disruption Timeline</h2>
                     </div>
-                    {allEvents.length === 0 ? (
+                    {recentEvents.length === 0 ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
                             No alert events have been recorded yet.
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {allEvents.map((event) => (
+                            {recentEvents.map((event) => {
+                                const alertType = normalizeAlertType(event.eventType);
+                                return (
                                 <div key={event.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
@@ -252,16 +254,13 @@ export default async function GuardianHistoryPage() {
                                         <span className="text-slate-300">•</span>
                                         <span className="text-sm font-semibold text-slate-900">{event.routeLabel}</span>
                                         <span className="text-slate-300">•</span>
-                                        <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-700">
-                                            {normalizeAlertType(event.eventType)}
-                                        </span>
-                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${severityBadgeClass(event.severity)}`}>
-                                            {event.severity}
+                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${alertTypeBadgeClass(alertType)}`}>
+                                            {alertType}
                                         </span>
                                     </div>
                                     <div className="mt-2 text-sm text-slate-700">{event.title}: {event.message}</div>
                                 </div>
-                            ))}
+                            );})}
                         </div>
                     )}
                 </section>
