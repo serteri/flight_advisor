@@ -203,8 +203,14 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
     const hasCompletedCheck = Boolean(trip.lastCheckedAt);
-    const shouldShowClaimSection = eu261State === 'ELIGIBLE' || hasDisruptionDetected || hasCompletedCheck;
+    const shouldShowClaimSection =
+        eu261State === 'ELIGIBLE' ||
+        hasDisruptionDetected ||
+        (trip.lastCheckedAt !== null &&
+            trip.lastCheckedAt !== undefined);
     const claimPortal = getAirlineClaimPortal(firstSegment?.airlineCode || null);
+
+
 
     const firstDepartureMs = firstSegment ? new Date(firstSegment.departureDate).getTime() : NaN;
     const hoursUntilDeparture = Number.isNaN(firstDepartureMs)
@@ -557,32 +563,24 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         )}
 
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                    <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={clearStaleAlerts}
-                                    disabled={isClearingStale}
-                                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    {isClearingStale ? 'Clearing...' : 'Clear'}
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
                             </div>
-                            {recentChanges.length > 0 ? (
-                                <div className="space-y-3">
-                                    {recentChanges.map((item) => (
-                                        <div key={item.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{item.type} • {item.when}</div>
-                                            <p className="text-sm text-slate-800 mt-1">{item.text}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No recent disruption/change event has been detected yet.</div>
-                            )}
+                            <div className="space-y-3">
+                                {recentChanges.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {recentChanges.map((item) => (
+                                            <div key={item.id} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{item.type} • {item.when}</div>
+                                                <p className="text-sm text-slate-800 mt-1">{item.text}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No recent disruption/change event has been detected yet.</div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="rounded-3xl border border-red-200 bg-white p-6">
