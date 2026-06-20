@@ -76,23 +76,6 @@
     "totalResults": "Total Results",
     "totalFlightsLabel": "{count} Flights"
   },
-  "SearchForm": {
-    "multi_city": "Multi-city",
-    "origin_placeholder": "Where from?",
-    "destination_placeholder": "Where to?",
-    "origin_label": "From",
-    "destination_label": "To",
-    "date_label": "Departure",
-    "return_label": "Return",
-    "passengers_label": "Passengers",
-    "search_button": "Score This Flight",
-    "one_way": "One Way",
-    "round_trip": "Round Trip",
-    "purpose_label": "Purpose",
-    "invalid_selection": "Please select valid airports and date",
-    "search_error": "An error occurred. Please try again.",
-    "multicity_notice": "Multi-city search is currently optimized for desktop. Please use our concierge service for complex itineraries."
-  },
   "DatePicker": {
     "placeholder": "Select date",
     "today": "Go to Today",
@@ -117,23 +100,6 @@
       "monitoring": "Monitoring Transparency",
       "decision": "Trip Decision Intelligence",
       "disruption": "Periodic Disruption Checks"
-    },
-    "primaryActions": {
-      "score": {
-        "title": "Score an Itinerary",
-        "desc": "Analyze route structure, transfer risk, fare context, and advisor recommendations before you book.",
-        "cta": "Score Itinerary"
-      },
-      "track": {
-        "title": "Track an Itinerary",
-        "desc": "Watch candidate itineraries with scheduled price snapshots and transparent monitoring history.",
-        "cta": "Track Itinerary"
-      },
-      "add": {
-        "title": "Add Booked Trip",
-        "desc": "Add a confirmed trip for periodic disruption checks, alert history, and notification delivery tracking.",
-        "cta": "Add Booked Trip"
-      }
     },
     "system": {
       "label": "FlightAgent Platform",
@@ -546,6 +512,145 @@
       "accountDeleted": "Account deleted successfully."
     }
   },
+  "GuardianTripDetails": {
+    "back": "Back to booked trip monitoring",
+    "unknown": "Unknown",
+    "header": {
+      "label": "Booked trip monitoring",
+      "airlineBadge": "Airline badge",
+      "pnr": "PNR: {pnr}",
+      "pnrUnknown": "Unknown (unconfirmed)",
+      "airline": "Airline: {airlines}"
+    },
+    "departureCard": {
+      "label": "Departure",
+      "flightStatus": "Flight status:",
+      "depGate": "Dep. gate:",
+      "arrGate": "Arr. gate:",
+      "gateCloser": "Gate assigned closer to departure",
+      "lastChecked": "Last checked:",
+      "nextCheck": "Next check:"
+    },
+    "honesty": {
+      "title": "Data honesty",
+      "text": "Guardian reports periodic monitoring results. Unknown fields, delayed checks, and retried notification delivery are shown explicitly instead of being treated as confirmed facts."
+    },
+    "kpi": {
+      "delayRisk": "Delay risk",
+      "currentDelay": "Current delay:",
+      "delayMinutes": "{minutes} min",
+      "cancellationRisk": "Cancellation risk",
+      "signal": "Signal:",
+      "cancellationFound": "Cancellation indicators found",
+      "cancellationNone": "No cancellation indicator yet",
+      "guardianLoop": "Guardian loop",
+      "every6Hours": "Every 6 hours",
+      "currentDisruptionLevel": "Current disruption level:",
+      "alerts": "Alerts",
+      "active": "Active",
+      "unreadLegacy": "Unread legacy alerts:"
+    },
+    "summary": {
+      "title": "Trip summary",
+      "depTime": "Dep time",
+      "flight": "Flight",
+      "arrTime": "Arr time",
+      "cabin": "Cabin:",
+      "noSegments": "No segment data available."
+    },
+    "eu261": {
+      "title": "EU261 status",
+      "protectionLabel": "Protection",
+      "protected": "Protected",
+      "notProtected": "Not Protected Yet",
+      "compensation": "Compensation",
+      "eligibility": "Eligibility",
+      "dataQuality": "Data quality:"
+    },
+    "claim": {
+      "title": "Submit your claim",
+      "readyText": "Your claim letter is ready. Submit it directly to the airline:",
+      "notReadyText": "No disruption detected yet. If your flight is delayed or cancelled, your claim letter will be ready here.",
+      "openPortal": "Open {airline} claim portal →",
+      "searchPortal": "Search {airline} claim process →",
+      "copying": "Copying...",
+      "copyLetter": "Copy claim letter",
+      "copied": "Claim letter copied.",
+      "failed": "Could not generate letter.",
+      "pasteHint": "Paste your claim letter into the airline's form."
+    },
+    "changes": {
+      "title": "Recent changes",
+      "empty": "No recent disruption/change event has been detected yet."
+    },
+    "stopMonitoring": {
+      "button": "Stop monitoring this trip",
+      "desc": "This action permanently deletes this monitored trip and its alert history."
+    },
+    "activity": {
+      "title": "Guardian activity",
+      "lastRun": "Last monitoring run:",
+      "checked": "What was checked:",
+      "noChecks": "No active checks configured",
+      "eventsDetected": "{count} monitoring events detected ({unread} legacy unread).",
+      "noEvents": "No monitoring events detected yet."
+    },
+    "notifications": {
+      "title": "Notification status",
+      "state": "State:",
+      "lastSent": "Last sent:",
+      "attempts": "Attempts:",
+      "noRecords": "No notification delivery records yet.",
+      "lastNotificationSent": "Last notification sent:",
+      "detailTitle": "Latest notification detail",
+      "type": "Type:",
+      "summary": "Summary:",
+      "lifecycle": "Lifecycle:",
+      "noSummary": "No alert summary is available yet for the latest notification."
+    },
+    "nextStep": {
+      "title": "What happens next",
+      "text": "Guardian will run the next monitoring cycle at {time}. If disruption risk increases or eligibility changes, an alert and notification record will be created."
+    },
+    "modal": {
+      "title": "Stop monitoring this trip?",
+      "desc": "All alert history for {route} will be permanently deleted.",
+      "cancel": "Cancel",
+      "stopping": "Stopping monitoring...",
+      "stop": "Stop monitoring",
+      "tripRemoved": "Trip removed successfully",
+      "deleteFailed": "Unable to stop monitoring right now. Please try again."
+    },
+    "checks": {
+      "disruptionHunter": "Disruption Hunter",
+      "scheduleGuardian": "Schedule Guardian",
+      "seatWatch": "Seat Watch",
+      "upgradeWatch": "Upgrade Watch"
+    },
+    "status": {
+      "cancelled": "Cancelled",
+      "delayed": "Delayed ({minutes}m)",
+      "unknown": "Unknown",
+      "onTime": "On time"
+    },
+    "statusBadge": {
+      "cancelled": "Cancelled",
+      "delayed": "Delayed",
+      "onTime": "On Time"
+    },
+    "compensation": {
+      "eligibleHigh": "EUR 250 - 600 (estimate)",
+      "eligibleLow": "EUR 250 (possible minimum, estimate)",
+      "notEligible": "Protected — no disruption detected",
+      "unknown": "Unknown (needs more disruption data)"
+    },
+    "explanation": {
+      "eligible": "Guardian detected a disruption pattern that may satisfy EU261 criteria.",
+      "notEligible": "No qualifying cancellation or long-delay pattern is currently confirmed.",
+      "unknown": "Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet."
+    },
+    "airlineFallback": "Airline {code}"
+  },
   "GuardianHistory": {
     "backToGuardian": "Back to Guardian dashboard",
     "title": "Flight History",
@@ -653,145 +758,6 @@
     "recentHistory": "Recent Price History",
     "noData": "No price data collected yet.",
     "noInfo": "No info"
-  },
-  "FlightSearch": {
-    "showMore": "Show More ({count} flights remaining)",
-    "title": "Score & Track Your Flights",
-    "subtitle": "Paste a flight link or enter details. We'll score it, predict risks, and alert you if things change.",
-    "heroTitle": "What flight are you deciding on?",
-    "heroSubtitle": "Know before you book",
-    "mottoLabel": "FlightAgent Motto",
-    "oneWay": "One Way",
-    "roundTrip": "Round Trip",
-    "from": "From",
-    "to": "To",
-    "placeholder": "Search city or airport...",
-    "departureDate": "Departure Date",
-    "returnDate": "Return Date",
-    "selectDate": "Select a date",
-    "optional": "optional",
-    "cabin": "Cabin Class",
-    "economy": "Economy",
-    "premiumEconomy": "Premium Economy",
-    "business": "Business",
-    "firstClass": "First Class",
-    "adults": "Adults",
-    "passengers": "Passengers",
-    "children": "Children",
-    "infants": "Infants",
-    "adultLabel": "Adult",
-    "childLabel": "Child (2-11)",
-    "infantLabel": "Infant (0-2)",
-    "travelers_label": "Travelers & Cabin",
-    "passengers_short": "Guest",
-    "totalPassengers": "Total: {count} passengers",
-    "adultRequired": "At least 1 adult is required",
-    "infantsRequireAdults": "Infants cannot exceed adults",
-    "passengerLimit": "A maximum of 9 passengers is supported per search",
-    "invalidAirports": "Please select valid airports (3-letter IATA codes)",
-    "searching": "Searching Flights...",
-    "searchingDesc": "Analyzing your flight across 10 criteria...",
-    "popularDestinations": "Popular destinations",
-    "topFlightsToBookNow": "Top Flights to Watch Now",
-    "topFlightsSummary": "{count, plural, one {# flight is currently flagged as a strong fare opportunity.} other {# flights are currently flagged as strong fare opportunities.}}",
-    "proactiveTip": "Proactive Tip",
-    "upgradePlans": "Upgrade Plans",
-    "monthlyProTitle": "Monthly Pro ($19)",
-    "monthlyProDesc": "Don't risk overpaying. Unlock the best decision before you book.",
-    "unlockClearRecommendation": "Unlock Clear Recommendation",
-    "oneTimeReportTitle": "One-time Flight Report ($4.99)",
-    "oneTimeReportDesc": "Deep risk and pricing analysis only for this route.",
-    "oneTimeReportButton": "One-time Report ($4.99)",
-    "searchButton": "Score This Flight",
-    "success": "Flight Found!",
-    "error": "Search Failed",
-    "resultsFound": "Flights Found",
-    "dataSources": "Data Sources",
-    "active": "Active",
-    "flightsFoundLower": "flights found",
-    "noResultsLower": "no results",
-    "totalResults": "Total Results",
-    "totalFlightsLabel": "{count} Flights",
-    "currentPrice": "Current Price",
-    "carrier": "Airline",
-    "score": "Score",
-    "duration": "Duration",
-    "stops": "Stops",
-    "airlines": "Airlines",
-    "direct": "Direct",
-    "stop": "stop",
-    "layover": {
-      "risk": {
-        "critical": "CRITICAL - Risky Transfer!",
-        "high": "Risky - Be Fast",
-        "medium": "Medium - Relaxed but careful",
-        "low": "Relaxed - Enjoy your time"
-      },
-      "advice": {
-        "default_short": "Short layover. Rush to the gate immediately.",
-        "default_medium": "Reasonable time. Grab a coffee but locate your gate first.",
-        "default_long": "Plenty of time. Enjoy the lounge or restaurants.",
-        "DXB_short": "Dubai is massive. Run to your gate immediately!",
-        "DXB_medium": "Terminal 3 train might be needed. You have time but don't linger.",
-        "DXB_long": "Plenty of time in Dubai. Try Sleep Pods or Marhaba Lounge.",
-        "DOH_short": "Doha is compact but <60m is risky. Run to gate.",
-        "DOH_medium": "Time for a quick coffee at the Orchard, but check your gate distance.",
-        "DOH_long": "World's best airport. Check out 'Orchard' garden and lounges.",
-        "IST_short": "Istanbul Airport is huge. 20min walking distance possible. Hurry!",
-        "IST_medium": "Distances are long. Locate your gate first, then relax.",
-        "IST_long": "Turkish Airlines Business Lounge is legendary. Worth paying for entry.",
-        "SIN_short": "Changi is compact but security is tight. Skip Jewel.",
-        "SIN_medium": "Jewel is tempting but Security is at the gate. Don't risk it.",
-        "SIN_long": "Changi is world famous. Must see the Jewel waterfall and butterfly garden."
-      }
-    },
-    "transferAt": "Transfer at",
-    "cheapest": "Cheapest",
-    "fastest": "Fastest",
-    "bestScore": "Best Score",
-    "price": "Price",
-    "trackFlight": "Track & Protect This Flight",
-    "trackingThisFlight": "This flight is protected",
-    "flightDetails": "Flight Details",
-    "hideDetails": "Hide details",
-    "excellentDeal": "Excellent Deal",
-    "goodDeal": "Good Deal",
-    "fair": "Fair",
-    "poor": "Poor",
-    "veryPoor": "Very Poor",
-    "noFlights": "No flights found",
-    "fillAllFields": "Please fill in all fields",
-    "trackingStarted": "We've started tracking this route for you. We'll send alerts when we detect price drops.",
-    "viewDashboard": "View Dashboard",
-    "flightTime": "flight",
-    "waitTime": "layover",
-    "estimatedBaggage": "Est. Baggage",
-    "otherOptions": "Other Price/Package Options",
-    "select": "Select",
-    "refundable": "Refundable",
-    "noRefund": "No Refund",
-    "baggage": "Baggage",
-    "lowBaggage": "Low Baggage",
-    "whyBuy": "Why Buy?",
-    "watchOut": "Watch Out",
-    "decision": "DECISION",
-    "baggageExtras": {
-      "noBaggage": "No Baggage",
-      "excluded": "No Bag (Extra fees apply)",
-      "restricted": "(Restricted)",
-      "generous": "(Generous)",
-      "warningTitle": "Warning: No baggage included!",
-      "warningDesc": "You may need to purchase extra baggage from the airline. Avg cost: ~2,500 TRY"
-    },
-    "errors": {
-      "originRequired": "Please select a valid city or airport",
-      "destinationRequired": "Please select a valid city or airport",
-      "departureDateRequired": "Please select a departure date",
-      "departureDatePast": "Departure date cannot be in the past",
-      "returnDateRequired": "Return date is required for round trips",
-      "returnDateBeforeDeparture": "Return date must be after departure date",
-      "generic": "An error occurred. Please try again."
-    }
   },
   "priceOracle": {
     "title": "Price Oracle",

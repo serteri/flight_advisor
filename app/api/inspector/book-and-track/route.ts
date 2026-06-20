@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validatedClass = offer?.cabinClass || 'ECONOMY';
+
     const response = await withFreemiumGate(user.id, 'monitored_trip', async () => {
       const trip = await prisma.monitoredTrip.create({
         data: {
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
           routeLabel: `${origin} → ${destination}`,
           originalPrice: price || 0,
           currency: offer?.currency || 'USD',
-          ticketClass: offer?.cabinClass || 'economy',
+          ticketClass: validatedClass,
           fareBasis: offer?.fareType || 'standard',
           isRefundable: false,
           watchPrice: true,

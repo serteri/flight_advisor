@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -97,11 +98,17 @@ type TripDetailsClientProps = {
     };
 };
 
-const formatDateTime = (value?: Date | string | null) => {
-    if (!value) return 'Unknown';
+const LOCALE_MAP: Record<string, string> = {
+    en: 'en-US',
+    tr: 'tr-TR',
+    de: 'de-DE',
+};
+
+const formatDateTime = (value: Date | string | null | undefined, intlLocale: string, unknownLabel: string) => {
+    if (!value) return unknownLabel;
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'Unknown';
-    return parsed.toLocaleString('en-US', {
+    if (Number.isNaN(parsed.getTime())) return unknownLabel;
+    return parsed.toLocaleString(intlLocale, {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -110,35 +117,26 @@ const formatDateTime = (value?: Date | string | null) => {
     });
 };
 
-const formatDate = (value?: Date | string | null) => {
-    if (!value) return 'Unknown';
+const formatDate = (value: Date | string | null | undefined, intlLocale: string, unknownLabel: string) => {
+    if (!value) return unknownLabel;
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'Unknown';
-    return parsed.toLocaleDateString('en-US', {
+    if (Number.isNaN(parsed.getTime())) return unknownLabel;
+    return parsed.toLocaleDateString(intlLocale, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
     });
 };
 
-const formatTime = (value?: Date | string | null) => {
-    if (!value) return 'Unknown';
+const formatTime = (value: Date | string | null | undefined, intlLocale: string, unknownLabel: string) => {
+    if (!value) return unknownLabel;
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'Unknown';
-    return parsed.toLocaleTimeString('en-US', {
+    if (Number.isNaN(parsed.getTime())) return unknownLabel;
+    return parsed.toLocaleTimeString(intlLocale, {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
     });
-};
-
-const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
-    const normalized = (snapshotStatus || '').toLowerCase();
-    if (normalized.includes('cancel')) return 'Cancelled';
-    if (delayMinutes && delayMinutes > 0) return `Delayed (${delayMinutes}m)`;
-    if (!snapshotStatus) return 'Unknown';
-    if (normalized.includes('scheduled')) return 'On time';
-    return snapshotStatus;
 };
 
 const toRiskLevel = (delayMinutes: number, cancellationRisk: number) => {
@@ -156,6 +154,7 @@ const parseNotificationType = (eventId?: string | null): string => {
 };
 
 export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
+    const t = useTranslations('GuardianTripDetails');
     const router = useRouter();
     const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
@@ -166,7 +165,22 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const [claimCopyState, setClaimCopyState] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
+    const intlLocale = LOCALE_MAP[safeLocale] || 'en-US';
     const backLinkHref = `/${safeLocale}/dashboard/guardian`;
+
+    const unknownLabel = t('unknown');
+    const dt = (value: Date | string | null | undefined) => formatDateTime(value, intlLocale, unknownLabel);
+    const d = (value: Date | string | null | undefined) => formatDate(value, intlLocale, unknownLabel);
+    const tm = (value: Date | string | null | undefined) => formatTime(value, intlLocale, unknownLabel);
+
+    const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
+        const normalized = (snapshotStatus || '').toLowerCase();
+        if (normalized.includes('cancel')) return t('status.cancelled');
+        if (delayMinutes && delayMinutes > 0) return t('status.delayed', { minutes: delayMinutes });
+        if (!snapshotStatus) return t('status.unknown');
+        if (normalized.includes('scheduled')) return t('status.onTime');
+        return snapshotStatus;
+    };
 
     useEffect(() => {
         console.log('locale value:', locale);
@@ -200,17 +214,17 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
     const compensationRange = eu261State === 'ELIGIBLE'
         ? delayMinutes >= 180 || cancellationFlag
-            ? 'EUR 250 - 600 (estimate)'
-            : 'EUR 250 (possible minimum, estimate)'
+            ? t('compensation.eligibleHigh')
+            : t('compensation.eligibleLow')
         : eu261State === 'NOT_ELIGIBLE'
-            ? 'Protected — no disruption detected'
-            : 'Unknown (needs more disruption data)';
+            ? t('compensation.notEligible')
+            : t('compensation.unknown');
 
     const eu261Explanation = eu261State === 'ELIGIBLE'
-        ? 'Guardian detected a disruption pattern that may satisfy EU261 criteria.'
+        ? t('explanation.eligible')
         : eu261State === 'NOT_ELIGIBLE'
-            ? 'No qualifying cancellation or long-delay pattern is currently confirmed.'
-            : 'Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet.';
+            ? t('explanation.notEligible')
+            : t('explanation.unknown');
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
     const shouldShowClaimSection =
@@ -221,7 +235,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const airlineCodeForClaim = (firstSegment?.airlineCode || '').trim().toUpperCase();
     const airlineNameForClaim =
         AIRLINE_CLAIM_PORTALS[airlineCodeForClaim]?.name ||
-        (airlineCodeForClaim ? `Airline ${airlineCodeForClaim}` : 'Airline');
+        (airlineCodeForClaim ? t('airlineFallback', { code: airlineCodeForClaim }) : t('airlineFallback', { code: '' }));
     const claimUrl = getAirlineClaimUrl(airlineCodeForClaim, airlineNameForClaim);
 
     const routeHero = firstSegment && trip.segments.length > 0
@@ -230,16 +244,16 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
     const statusBadge = cancellationFlag
         ? {
-            label: 'Cancelled',
+            label: t('statusBadge.cancelled'),
             classes: 'bg-red-100 text-red-700 border-red-200',
         }
         : delayMinutes > 0
             ? {
-                label: 'Delayed',
+                label: t('statusBadge.delayed'),
                 classes: 'bg-amber-100 text-amber-700 border-amber-200',
             }
             : {
-                label: 'On Time',
+                label: t('statusBadge.onTime'),
                 classes: 'bg-emerald-100 text-emerald-700 border-emerald-200',
             };
 
@@ -270,14 +284,14 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const recentChanges = [
         ...trip.alertEvents.slice(0, 5).map((alert) => ({
             id: alert.id,
-            when: formatDateTime(alert.detectedAt),
+            when: dt(alert.detectedAt),
             type: alert.eventType,
             text: `${alert.title}: ${alert.message} State: ${alert.state}.`,
             severity: alert.severity,
         })),
         ...trip.alerts.slice(0, 5).map((alert) => ({
             id: alert.id,
-            when: formatDateTime(alert.createdAt),
+            when: dt(alert.createdAt),
             type: alert.type,
             text: `${alert.title}: ${alert.message}`,
             severity: alert.severity,
@@ -285,7 +299,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         ...(snapshot?.gateDetail
             ? [{
                 id: 'gate-detail',
-                when: formatDateTime(snapshot.snapshotAt),
+                when: dt(snapshot.snapshotAt),
                 type: 'GATE_UPDATE',
                 text: snapshot.gateDetail,
                 severity: 'INFO',
@@ -294,7 +308,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         ...(snapshot?.statusDetail
             ? [{
                 id: 'status-detail',
-                when: formatDateTime(snapshot.snapshotAt),
+                when: dt(snapshot.snapshotAt),
                 type: 'STATUS_UPDATE',
                 text: snapshot.statusDetail,
                 severity: 'INFO',
@@ -303,10 +317,10 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     ].slice(0, 6);
 
     const checks = [
-        { label: 'Disruption Hunter', enabled: trip.watchDelay },
-        { label: 'Schedule Guardian', enabled: trip.watchSchedule },
-        { label: 'Seat Watch', enabled: trip.watchSeat },
-        { label: 'Upgrade Watch', enabled: trip.watchUpgrade },
+        { label: t('checks.disruptionHunter'), enabled: trip.watchDelay },
+        { label: t('checks.scheduleGuardian'), enabled: trip.watchSchedule },
+        { label: t('checks.seatWatch'), enabled: trip.watchSeat },
+        { label: t('checks.upgradeWatch'), enabled: trip.watchUpgrade },
     ];
 
     const alertsTriggered = trip.alertEvents.filter((alert) => alert.state !== 'SUPPRESSED').length || trip.alerts.length;
@@ -339,7 +353,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const latestNotificationType = parseNotificationType(latestNotification?.eventId);
     const latestAlertSummary = trip.alerts[0]
         ? `${trip.alerts[0].title}: ${trip.alerts[0].message}`
-        : 'No alert summary is available yet for the latest notification.';
+        : t('notifications.noSummary');
     const latestLifecycleAlert = trip.alertEvents[0] || null;
 
     const clearStaleAlerts = async () => {
@@ -374,14 +388,14 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                 throw new Error('Failed to delete trip.');
             }
 
-            setDeleteTripSuccess('Trip removed successfully');
+            setDeleteTripSuccess(t('modal.tripRemoved'));
             setTimeout(() => {
                 router.push(backLinkHref);
                 router.refresh();
             }, 900);
         } catch (error) {
             console.error('[GUARDIAN] Failed to delete trip', error);
-            setDeleteTripError('Unable to stop monitoring right now. Please try again.');
+            setDeleteTripError(t('modal.deleteFailed'));
         } finally {
             setIsDeletingTrip(false);
         }
@@ -408,7 +422,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         flightNumber: `${segmentForClaim.airlineCode}${segmentForClaim.flightNumber}`,
                         origin: segmentForClaim.origin,
                         destination: segmentForClaim.destination,
-                        scheduledDate: formatDate(segmentForClaim.departureDate),
+                        scheduledDate: d(segmentForClaim.departureDate),
                         delayHours,
                         regulation: 'EU261',
                     },
@@ -437,89 +451,89 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     onClick={() => router.back()}
                     className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors"
                 >
-                    <ArrowLeft className="w-4 h-4" /> Back to booked trip monitoring
+                    <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                         <div className="space-y-4">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Booked trip monitoring</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('header.label')}</div>
                             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">{routeHero}</h1>
                             <div className="flex flex-wrap items-center gap-3">
                                 <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5">
                                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
                                         {firstSegment?.airlineCode || 'QF'}
                                     </span>
-                                    <span className="text-sm font-semibold text-slate-700">Airline badge</span>
+                                    <span className="text-sm font-semibold text-slate-700">{t('header.airlineBadge')}</span>
                                 </div>
                                 <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${statusBadge.classes}`}>
                                     {statusBadge.label}
                                 </span>
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                <span>PNR: {trip.pnr || 'Unknown (unconfirmed)'}</span>
+                                <span>{t('header.pnr', { pnr: trip.pnr || t('header.pnrUnknown') })}</span>
                                 <span className="text-slate-300">•</span>
-                                <span>Airline: {airlines.length > 0 ? airlines.join(', ') : 'Unknown'}</span>
+                                <span>{t('header.airline', { airlines: airlines.length > 0 ? airlines.join(', ') : t('unknown') })}</span>
                             </div>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 min-w-full lg:min-w-[320px] shadow-sm">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Departure</div>
-                            <div className="text-2xl md:text-3xl font-black text-slate-900">{formatDate(firstSegment?.departureDate)}</div>
-                            <div className="text-sm text-slate-600 mt-2">Flight status: <span className="font-semibold text-slate-800">{currentFlightStatus}</span></div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('departureCard.label')}</div>
+                            <div className="text-2xl md:text-3xl font-black text-slate-900">{d(firstSegment?.departureDate)}</div>
+                            <div className="text-sm text-slate-600 mt-2">{t('departureCard.flightStatus')} <span className="font-semibold text-slate-800">{currentFlightStatus}</span></div>
                             {snapshot && canShowGateNumbers && (
                                 <div className="flex flex-wrap gap-3 mt-2">
                                     {snapshot.departureGate && (
-                                        <span className="text-sm text-slate-700">Dep. gate: <span className="font-bold">{snapshot.departureGate}</span></span>
+                                        <span className="text-sm text-slate-700">{t('departureCard.depGate')} <span className="font-bold">{snapshot.departureGate}</span></span>
                                     )}
                                     {snapshot.arrivalGate && (
-                                        <span className="text-sm text-slate-700">Arr. gate: <span className="font-bold">{snapshot.arrivalGate}</span></span>
+                                        <span className="text-sm text-slate-700">{t('departureCard.arrGate')} <span className="font-bold">{snapshot.arrivalGate}</span></span>
                                     )}
                                 </div>
                             )}
                             {snapshot && !canShowGateNumbers && (
-                                <div className="text-sm text-slate-600 mt-2">Gate assigned closer to departure</div>
+                                <div className="text-sm text-slate-600 mt-2">{t('departureCard.gateCloser')}</div>
                             )}
                             {snapshot?.statusDetail && (
                                 <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
                             )}
-                            <div className="text-sm text-slate-500 mt-3">Last checked: {formatDateTime(latestRunAt)}</div>
-                            <div className="text-sm text-slate-500">Next check: {formatDateTime(trip.nextCheckAt)}</div>
+                            <div className="text-sm text-slate-500 mt-3">{t('departureCard.lastChecked')} {dt(latestRunAt)}</div>
+                            <div className="text-sm text-slate-500">{t('departureCard.nextCheck')} {dt(trip.nextCheckAt)}</div>
                         </div>
                     </div>
 
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        <div className="font-semibold mb-1">Data honesty</div>
-                        <p>Guardian reports periodic monitoring results. Unknown fields, delayed checks, and retried notification delivery are shown explicitly instead of being treated as confirmed facts.</p>
+                        <div className="font-semibold mb-1">{t('honesty.title')}</div>
+                        <p>{t('honesty.text')}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         <div className={`rounded-2xl border p-4 ${delayRiskClasses}`}>
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Delay risk</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.delayRisk')}</div>
                             <div className="text-lg font-black">{delayRisk}</div>
-                            <div className="text-sm text-slate-500 mt-1">Current delay: {snapshot ? `${delayMinutes} min` : 'Unknown'}</div>
+                            <div className="text-sm text-slate-500 mt-1">{t('kpi.currentDelay')} {snapshot ? t('kpi.delayMinutes', { minutes: delayMinutes }) : t('unknown')}</div>
                         </div>
                         <div className={`rounded-2xl border p-4 ${cancellationRiskClasses}`}>
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Cancellation risk</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.cancellationRisk')}</div>
                             <div className="text-lg font-black">{cancellationFlag ? 'HIGH' : 'LOW'}</div>
-                            <div className="text-sm text-slate-500 mt-1">Signal: {cancellationFlag ? 'Cancellation indicators found' : 'No cancellation indicator yet'}</div>
+                            <div className="text-sm text-slate-500 mt-1">{t('kpi.signal')} {cancellationFlag ? t('kpi.cancellationFound') : t('kpi.cancellationNone')}</div>
                         </div>
                         <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Guardian loop</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.guardianLoop')}</div>
                             <div className="flex items-center gap-2 text-lg font-black text-slate-900">
-                                <Clock className="w-5 h-5 text-sky-600" /> Every 6 hours
+                                <Clock className="w-5 h-5 text-sky-600" /> {t('kpi.every6Hours')}
                             </div>
-                            <div className="text-sm text-slate-500 mt-1">Current disruption level: {overallRisk}</div>
+                            <div className="text-sm text-slate-500 mt-1">{t('kpi.currentDisruptionLevel')} {overallRisk}</div>
                         </div>
                         <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Alerts</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.alerts')}</div>
                             <div className="flex items-center gap-2">
                                 <span className="text-lg font-black text-slate-900">{alertsTriggered}</span>
                                 <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700">
-                                    Active
+                                    {t('kpi.active')}
                                 </span>
                             </div>
-                            <div className="text-sm text-slate-500 mt-1">Unread legacy alerts: {unreadAlerts}</div>
+                            <div className="text-sm text-slate-500 mt-1">{t('kpi.unreadLegacy')} {unreadAlerts}</div>
                         </div>
                     </div>
                 </div>
@@ -529,7 +543,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <Plane className="w-5 h-5 text-sky-600" />
-                                <h2 className="text-lg font-bold text-slate-900">Trip summary</h2>
+                                <h2 className="text-lg font-bold text-slate-900">{t('summary.title')}</h2>
                             </div>
                             <div className="space-y-3">
                                 {trip.segments.length > 0 ? trip.segments.map((segment) => (
@@ -546,25 +560,25 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Dep time</div>
-                                                    <div className="text-base font-bold text-slate-900">{formatTime(segment.departureDate)}</div>
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.depTime')}</div>
+                                                    <div className="text-base font-bold text-slate-900">{tm(segment.departureDate)}</div>
                                                 </div>
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Flight</div>
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.flight')}</div>
                                                     <div className="text-base font-bold text-slate-900">{segment.airlineCode}{segment.flightNumber}</div>
                                                 </div>
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Arr time</div>
-                                                    <div className="text-base font-bold text-slate-900">{segment.arrivalDate ? formatTime(segment.arrivalDate) : '—'}</div>
+                                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.arrTime')}</div>
+                                                    <div className="text-base font-bold text-slate-900">{segment.arrivalDate ? tm(segment.arrivalDate) : '—'}</div>
                                                 </div>
                                             </div>
                                             <div className="text-xs text-slate-500">
-                                                Cabin: {segment.cabinClass || 'Unknown'}
+                                                {t('summary.cabin')} {segment.cabinClass || t('unknown')}
                                             </div>
                                         </div>
                                     </div>
                                 )) : (
-                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No segment data available.</div>
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">{t('summary.noSegments')}</div>
                                 )}
                             </div>
                         </div>
@@ -572,28 +586,28 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <Euro className="w-5 h-5 text-emerald-600" />
-                                <h2 className="text-lg font-bold text-slate-900">EU261 status</h2>
+                                <h2 className="text-lg font-bold text-slate-900">{t('eu261.title')}</h2>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="rounded-2xl border border-slate-200 p-4 bg-emerald-50">
                                     <div className="flex items-center gap-2 text-emerald-700">
                                         <CheckCircle2 className="w-5 h-5" />
-                                        <div className="text-xs uppercase tracking-wider font-bold">Protection</div>
+                                        <div className="text-xs uppercase tracking-wider font-bold">{t('eu261.protectionLabel')}</div>
                                     </div>
-                                    <div className="text-lg font-black text-slate-900 mt-2">{eu261State === 'ELIGIBLE' ? 'Protected' : 'Not Protected Yet'}</div>
+                                    <div className="text-lg font-black text-slate-900 mt-2">{eu261State === 'ELIGIBLE' ? t('eu261.protected') : t('eu261.notProtected')}</div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Compensation</div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('eu261.compensation')}</div>
                                     <div className={`font-black text-slate-900 ${eu261State === 'ELIGIBLE' ? 'text-3xl leading-tight' : 'text-lg'}`}>
                                         {compensationRange}
                                     </div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
-                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Eligibility</div>
+                                    <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">{t('eu261.eligibility')}</div>
                                     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${eu261BadgeClasses}`}>
                                         {eu261State}
                                     </span>
-                                    <div className="text-xs text-slate-500 mt-2">Data quality: {snapshot?.dataQuality || 'UNKNOWN'}</div>
+                                    <div className="text-xs text-slate-500 mt-2">{t('eu261.dataQuality')} {snapshot?.dataQuality || 'UNKNOWN'}</div>
                                 </div>
                             </div>
                             <p className="text-sm text-slate-700">{eu261Explanation}</p>
@@ -603,12 +617,12 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                             <div className="bg-white rounded-3xl border border-emerald-200 shadow-sm p-6 space-y-4">
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                                    <h2 className="text-lg font-bold text-slate-900">Submit your claim</h2>
+                                    <h2 className="text-lg font-bold text-slate-900">{t('claim.title')}</h2>
                                 </div>
                                 <p className="text-sm text-slate-700">
                                     {hasDisruptionDetected || eu261State === 'ELIGIBLE'
-                                        ? 'Your claim letter is ready. Submit it directly to the airline:'
-                                        : 'No disruption detected yet. If your flight is delayed or cancelled, your claim letter will be ready here.'}
+                                        ? t('claim.readyText')
+                                        : t('claim.notReadyText')}
                                 </p>
 
                                 <a
@@ -618,8 +632,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                     className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
                                 >
                                     {claimUrl.isKnown
-                                        ? `Open ${airlineNameForClaim} claim portal →`
-                                        : `Search ${airlineNameForClaim} claim process →`}
+                                        ? t('claim.openPortal', { airline: airlineNameForClaim })
+                                        : t('claim.searchPortal', { airline: airlineNameForClaim })}
                                 </a>
 
                                 <div className="flex flex-wrap items-center gap-3">
@@ -629,19 +643,19 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         disabled={claimCopyState === 'copying'}
                                         className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
-                                        {claimCopyState === 'copying' ? 'Copying...' : 'Copy claim letter'}
+                                        {claimCopyState === 'copying' ? t('claim.copying') : t('claim.copyLetter')}
                                     </button>
                                     <span className="text-xs text-slate-500">
                                         {claimCopyState === 'copied'
-                                            ? 'Claim letter copied.'
+                                            ? t('claim.copied')
                                             : claimCopyState === 'failed'
-                                                ? 'Could not generate letter.'
+                                                ? t('claim.failed')
                                                 : ''}
                                     </span>
                                 </div>
 
                                 <p className="text-xs text-slate-500">
-                                    Paste your claim letter into the airline's form.
+                                    {t('claim.pasteHint')}
                                 </p>
                             </div>
                         )}
@@ -649,7 +663,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                <h2 className="text-lg font-bold text-slate-900">Recent changes</h2>
+                                <h2 className="text-lg font-bold text-slate-900">{t('changes.title')}</h2>
                             </div>
                             <div className="space-y-3">
                                 {recentChanges.length > 0 ? (
@@ -675,7 +689,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 ) : (
                                     <div className="rounded-2xl border border-slate-200 p-6 text-sm text-slate-500 bg-slate-50 flex items-center gap-3">
                                         <Clock className="w-5 h-5 text-slate-400" />
-                                        <span>No recent disruption/change event has been detected yet.</span>
+                                        <span>{t('changes.empty')}</span>
                                     </div>
                                 )}
                             </div>
@@ -692,9 +706,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 disabled={isDeletingTrip}
                                 className="inline-flex items-center text-sm font-semibold text-red-600 hover:text-red-700 underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                Stop monitoring this trip
+                                {t('stopMonitoring.button')}
                             </button>
-                            <p className="mt-2 text-xs text-slate-500">This action permanently deletes this monitored trip and its alert history.</p>
+                            <p className="mt-2 text-xs text-slate-500">{t('stopMonitoring.desc')}</p>
                         </div>
                     </div>
 
@@ -702,20 +716,20 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                                <h2 className="text-lg font-bold text-slate-900">Guardian activity</h2>
+                                <h2 className="text-lg font-bold text-slate-900">{t('activity.title')}</h2>
                             </div>
                             <ul className="space-y-3 text-sm text-slate-700">
                                 <li className="flex items-start gap-2">
                                     <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>Last monitoring run: {formatDateTime(latestRunAt)}</span>
+                                    <span>{t('activity.lastRun')} {dt(latestRunAt)}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>What was checked: {checks.filter((item) => item.enabled).map((item) => item.label).join(', ') || 'No active checks configured'}</span>
+                                    <span>{t('activity.checked')} {checks.filter((item) => item.enabled).map((item) => item.label).join(', ') || t('activity.noChecks')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{alertsTriggered > 0 ? `${alertsTriggered} monitoring events detected (${unreadAlerts} legacy unread).` : 'No monitoring events detected yet.'}</span>
+                                    <span>{alertsTriggered > 0 ? t('activity.eventsDetected', { count: alertsTriggered, unread: unreadAlerts }) : t('activity.noEvents')}</span>
                                 </li>
                             </ul>
                         </div>
@@ -723,37 +737,37 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <Bell className="w-5 h-5 text-sky-600" />
-                                <h2 className="text-lg font-bold text-slate-900">Notification status</h2>
+                                <h2 className="text-lg font-bold text-slate-900">{t('notifications.title')}</h2>
                             </div>
                             <div className="space-y-3">
                                 {channelState.length > 0 ? channelState.map((channel) => (
                                     <div key={channel.channel} className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                                         <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{channel.channel}</div>
-                                        <div className="text-sm text-slate-800 mt-1">State: {channel.status || 'Unknown'}</div>
-                                        <div className="text-xs text-slate-500 mt-1">Last sent: {formatDateTime(channel.lastSent)}</div>
+                                        <div className="text-sm text-slate-800 mt-1">{t('notifications.state')} {channel.status || t('unknown')}</div>
+                                        <div className="text-xs text-slate-500 mt-1">{t('notifications.lastSent')} {dt(channel.lastSent)}</div>
                                         {channel.attempt !== undefined && channel.maxAttempts !== undefined && (
-                                            <div className="text-xs text-slate-500 mt-1">Attempts: {channel.attempt}/{channel.maxAttempts}</div>
+                                            <div className="text-xs text-slate-500 mt-1">{t('notifications.attempts')} {channel.attempt}/{channel.maxAttempts}</div>
                                         )}
                                     </div>
                                 )) : (
-                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">No notification delivery records yet.</div>
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">{t('notifications.noRecords')}</div>
                                 )}
                             </div>
                             <div className="text-sm text-slate-600">
-                                Last notification sent: {latestNotification ? formatDateTime(latestNotification.sentAt) : 'Unknown'}
+                                {t('notifications.lastNotificationSent')} {latestNotification ? dt(latestNotification.sentAt) : t('unknown')}
                             </div>
                             <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Latest notification detail</div>
-                                <div className="text-sm text-slate-800 mt-1">Type: {latestNotification ? latestNotificationType : 'UNKNOWN'}</div>
-                                <div className="text-sm text-slate-800 mt-1">Summary: {latestLifecycleAlert ? `${latestLifecycleAlert.title}: ${latestLifecycleAlert.message}` : latestNotification ? latestAlertSummary : 'Unknown'}</div>
-                                <div className="text-sm text-slate-800 mt-1">Lifecycle: {latestLifecycleAlert?.state || 'UNKNOWN'}</div>
+                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('notifications.detailTitle')}</div>
+                                <div className="text-sm text-slate-800 mt-1">{t('notifications.type')} {latestNotification ? latestNotificationType : 'UNKNOWN'}</div>
+                                <div className="text-sm text-slate-800 mt-1">{t('notifications.summary')} {latestLifecycleAlert ? `${latestLifecycleAlert.title}: ${latestLifecycleAlert.message}` : latestNotification ? latestAlertSummary : t('unknown')}</div>
+                                <div className="text-sm text-slate-800 mt-1">{t('notifications.lifecycle')} {latestLifecycleAlert?.state || 'UNKNOWN'}</div>
                             </div>
                         </div>
 
                         <div className="bg-slate-900 rounded-3xl p-6 text-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">What happens next</div>
+                            <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">{t('nextStep.title')}</div>
                             <p className="text-sm text-slate-200 leading-relaxed">
-                                Guardian will run the next monitoring cycle at {formatDateTime(trip.nextCheckAt)}. If disruption risk increases or eligibility changes, an alert and notification record will be created.
+                                {t('nextStep.text', { time: dt(trip.nextCheckAt) })}
                             </p>
                         </div>
                     </div>
@@ -763,9 +777,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             {isDeleteModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4">
                     <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-                        <h3 className="text-lg font-bold text-slate-900">Stop monitoring this trip?</h3>
+                        <h3 className="text-lg font-bold text-slate-900">{t('modal.title')}</h3>
                         <p className="mt-2 text-sm text-slate-600">
-                            All alert history for {trip.routeLabel} will be permanently deleted.
+                            {t('modal.desc', { route: trip.routeLabel })}
                         </p>
 
                         <div className="mt-5 flex items-center justify-end gap-3">
@@ -780,7 +794,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 disabled={isDeletingTrip}
                                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                Cancel
+                                {t('modal.cancel')}
                             </button>
                             <button
                                 type="button"
@@ -788,7 +802,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 disabled={isDeletingTrip}
                                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {isDeletingTrip ? 'Stopping monitoring...' : 'Stop monitoring'}
+                                {isDeletingTrip ? t('modal.stopping') : t('modal.stop')}
                             </button>
                         </div>
 

@@ -81,23 +81,6 @@
     "ctaDesc": "Bewerten Sie Ihr Itinerary mit FlightAgent und treffen Sie eine klarere Buchungsentscheidung.",
     "ctaButton": "Itinerary bewerten"
   },
-  "SearchForm": {
-    "origin_placeholder": "Von wo?",
-    "destination_placeholder": "Wohin?",
-    "origin_label": "Von",
-    "destination_label": "Nach",
-    "date_label": "Hinflug",
-    "return_label": "Rückflug",
-    "passengers_label": "Reisende",
-    "search_button": "Suchen",
-    "one_way": "Hinflug",
-    "round_trip": "Hin- und Rückflug",
-    "multi_city": "Multi-City",
-    "purpose_label": "Reisezweck",
-    "invalid_selection": "Bitte wählen Sie gültige Flughäfen und ein Datum",
-    "search_error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
-    "multicity_notice": "Die Multi-City-Suche ist derzeit für Desktop optimiert. Für komplexe Routen nutzen Sie bitte unseren Concierge-Service."
-  },
   "DatePicker": {
     "placeholder": "Datum wählen",
     "today": "Zu Heute",
@@ -364,23 +347,6 @@
         }
       }
     },
-    "primaryActions": {
-      "score": {
-        "title": "Flug Bewerten",
-        "desc": "Vor der Buchung Route, Umstiege, Tarifkontext und Empfehlungslage analysieren.",
-        "cta": "Flug Bewerten"
-      },
-      "track": {
-        "title": "Route Verfolgen",
-        "desc": "Kandidatenrouten mit geplanten Preis-Snapshots und Risikoverlauf beobachten.",
-        "cta": "Route Verfolgen"
-      },
-      "add": {
-        "title": "Ticket Hinzufügen",
-        "desc": "Gebuchte Reise hinzufügen und Störungsprüfungen, Benachrichtigungsverlauf und Zustellstatus zentral sehen.",
-        "cta": "Ticket Hinzufügen"
-      }
-    },
     "guardian": {
       "badge": "Guardian-Modus aktiv",
       "hero": {
@@ -487,145 +453,6 @@
     "nextUpdate": "Next update: {time}",
     "delete": "Stop Tracking",
     "updatesDaily": "Updates Daily"
-  },
-  "FlightSearch": {
-    "title": "Flüge Suchen & Verfolgen",
-    "subtitle": "Geben Sie Ihre Flugdetails ein. Wir verfolgen die Preise und benachrichtigen Sie, wenn es Zeit zum Buchen ist.",
-    "heroTitle": "Wohin fliegen wir?",
-    "heroSubtitle": "Entdecken Sie die besten Flugangebote",
-    "mottoLabel": "FlightAgent Leitsatz",
-    "oneWay": "Nur Hinflug",
-    "roundTrip": "Hin- und Rückflug",
-    "from": "Von",
-    "to": "Nach",
-    "placeholder": "Stadt oder Flughafen suchen...",
-    "departureDate": "Abflugdatum",
-    "returnDate": "Rückflugdatum",
-    "selectDate": "Datum auswählen",
-    "optional": "optional (freiwillig)",
-    "cabin": "Kabinenklasse",
-    "economy": "Touristenklasse",
-    "premiumEconomy": "Premium-Economy",
-    "business": "Business-Klasse",
-    "firstClass": "Erste Klasse",
-    "adults": "Erwachsene",
-    "passengers": "Passagiere",
-    "children": "Kinder",
-    "infants": "Kleinkinder",
-    "adultLabel": "Erwachsener",
-    "childLabel": "Kind (2-11)",
-    "infantLabel": "Kleinkind (0-2)",
-    "travelers_label": "Reisende & Kabine",
-    "passengers_short": "Gast",
-    "totalPassengers": "Gesamt: {count} Passagiere",
-    "adultRequired": "Mindestens 1 Erwachsener ist erforderlich",
-    "infantsRequireAdults": "Kleinkinder dürfen Erwachsene nicht übersteigen",
-    "passengerLimit": "Maximal 9 Passagiere pro Suche werden unterstützt",
-    "invalidAirports": "Bitte wählen Sie gültige Flughäfen mit 3-stelligem IATA-Code",
-    "searching": "Flüge werden gesucht...",
-    "searchingDesc": "Wir durchsuchen 54+ Fluggesellschaften, um die besten Angebote zu finden",
-    "popularDestinations": "Beliebte Reiseziele",
-    "topFlightsToBookNow": "Top-Flüge zum aktuellen Beobachten",
-    "topFlightsSummary": "{count, plural, one {# Flug ist aktuell als starke Preisgelegenheit markiert.} other {# Flüge sind aktuell als starke Preisgelegenheiten markiert.}}",
-    "proactiveTip": "Proaktiver Tipp",
-    "upgradePlans": "Upgrade-Pläne",
-    "monthlyProTitle": "Monatlich Pro ($19)",
-    "monthlyProDesc": "Nicht zu viel zahlen. Schalten Sie die beste Entscheidung vor der Buchung frei.",
-    "unlockClearRecommendation": "Klare Empfehlung freischalten",
-    "oneTimeReportTitle": "Einmaliger Flugbericht ($4.99)",
-    "oneTimeReportDesc": "Tiefe Risiko- und Preisanalyse nur für diese Route.",
-    "oneTimeReportButton": "Einmalbericht ($4.99)",
-    "searchButton": "Flüge Finden",
-    "success": "Flug Gefunden!",
-    "error": "Suche Fehlgeschlagen",
-    "resultsFound": "Flüge gefunden",
-    "currentPrice": "Aktueller Preis",
-    "carrier": "Fluggesellschaft",
-    "score": "Bewertung",
-    "duration": "Dauer",
-    "stops": "Zwischenstopps",
-    "direct": "Direktflug",
-    "stop": "Stopp",
-    "airlines": "Fluggesellschaften",
-    "layover": {
-      "risk": {
-        "critical": "KRITISCH - Riskanter Umstieg!",
-        "high": "Riskant - Bitte beeilen",
-        "medium": "Mittel - Entspannt, aber aufmerksam",
-        "low": "Entspannt - Genießen Sie Ihre Zeit"
-      },
-      "advice": {
-        "default_short": "Kurzer Aufenthalt. Gehen Sie sofort zum Gate.",
-        "default_medium": "Ausreichend Zeit. Holen Sie sich kurz einen Kaffee, aber finden Sie zuerst Ihr Gate.",
-        "default_long": "Viel Zeit. Genießen Sie Lounge oder Restaurants.",
-        "DXB_short": "Dubai ist riesig. Gehen Sie sofort zügig zum Gate!",
-        "DXB_medium": "Möglicherweise ist der Terminal-3-Zug nötig. Sie haben Zeit, aber bummeln Sie nicht.",
-        "DXB_long": "Viel Zeit in Dubai. Probieren Sie Sleep Pods oder die Marhaba Lounge.",
-        "DOH_short": "Doha ist kompakt, aber unter 60 Minuten riskant. Direkt zum Gate.",
-        "DOH_medium": "Zeit für einen kurzen Kaffee im Orchard, aber prüfen Sie die Gate-Entfernung.",
-        "DOH_long": "Einer der besten Flughäfen der Welt. Schauen Sie sich den Orchard-Garten und Lounges an.",
-        "IST_short": "Der Flughafen Istanbul ist groß. 20 Minuten Fußweg sind möglich. Beeilen Sie sich!",
-        "IST_medium": "Die Wege sind lang. Erst das Gate finden, dann entspannen.",
-        "IST_long": "Die Turkish-Airlines-Business-Lounge ist legendär. Ein Besuch lohnt sich.",
-        "SIN_short": "Changi ist kompakt, aber die Sicherheitskontrolle ist streng. Lassen Sie Jewel aus.",
-        "SIN_medium": "Jewel ist verlockend, aber die Sicherheitskontrolle ist am Gate. Gehen Sie kein Risiko ein.",
-        "SIN_long": "Changi ist weltberühmt. Unbedingt den Jewel-Wasserfall und den Schmetterlingsgarten ansehen."
-      }
-    },
-    "transferAt": "Umsteigen in",
-    "cheapest": "Günstigste",
-    "fastest": "Schnellste",
-    "bestScore": "Beste Bewertung",
-    "price": "Preis",
-    "trackFlight": "Diesen Flug Verfolgen",
-    "flightDetails": "Flugdetails",
-    "excellentDeal": "Ausgezeichnetes Angebot",
-    "goodDeal": "Gutes Angebot",
-    "fair": "Mittelmäßig",
-    "poor": "Schlecht",
-    "veryPoor": "Sehr Schlecht",
-    "noFlights": "Keine Flüge gefunden",
-    "fillAllFields": "Bitte füllen Sie alle Felder aus",
-    "trackingStarted": "Wir haben begonnen, diese Route für Sie zu verfolgen. Wir senden Benachrichtigungen, wenn wir Preissenkungen erkennen.",
-    "viewDashboard": "Dashboard Ansehen",
-    "flightTime": "Flugdauer",
-    "waitTime": "Aufenthalt",
-    "estimatedBaggage": "Geschätztes Gepäck",
-    "otherOptions": "Andere Preis-/Paketoptionen",
-    "select": "Auswählen",
-    "refundable": "Erstattungsfähig",
-    "noRefund": "Nicht erstattungsfähig",
-    "baggage": "Gepäck",
-    "lowBaggage": "Wenig Gepäck",
-    "whyBuy": "Warum Buchen?",
-    "watchOut": "Achtung",
-    "decision": "ENTSCHEIDUNG",
-    "baggageExtras": {
-      "noBaggage": "Kein Gepäck",
-      "excluded": "Ohne Gepäck (+~2500 TL)",
-      "restricted": "(Begrenzt)",
-      "generous": "(Großzügiges Gepäck)",
-      "warningTitle": "Achtung: Kein Gepäck enthalten!",
-      "warningDesc": "Sie müssen möglicherweise zusätzliches Gepäck bei der Fluggesellschaft kaufen. Durchschnittskosten: ~2.500 TL"
-    },
-    "hideDetails": "Details ausblenden",
-    "errors": {
-      "originRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
-      "destinationRequired": "Bitte wählen Sie eine gültige Stadt oder einen Flughafen",
-      "departureDateRequired": "Bitte wählen Sie ein Abflugdatum",
-      "departureDatePast": "Das Abflugdatum darf nicht in der Vergangenheit liegen",
-      "returnDateRequired": "Für Hin- und Rückflüge ist ein Rückflugdatum erforderlich",
-      "returnDateBeforeDeparture": "Das Rückflugdatum muss nach dem Abflugdatum liegen",
-      "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
-    },
-    "showMore": "Mehr anzeigen ({count} Flüge verbleibend)",
-    "trackingThisFlight": "Sie verfolgen diesen Flug",
-    "dataSources": "Data Sources",
-    "active": "Active",
-    "flightsFoundLower": "flights found",
-    "noResultsLower": "no results",
-    "totalResults": "Total Results",
-    "totalFlightsLabel": "{count} Flights"
   },
   "priceOracle": {
     "title": "Preisorakel",
@@ -1013,6 +840,145 @@
       "deleteAccountFailed": "Konto konnte nicht gelöscht werden",
       "accountDeleted": "Konto erfolgreich gelöscht."
     }
+  },
+  "GuardianTripDetails": {
+    "back": "Zurück zur Überwachung der gebuchten Reise",
+    "unknown": "Unbekannt",
+    "header": {
+      "label": "Überwachung der gebuchten Reise",
+      "airlineBadge": "Airline-Badge",
+      "pnr": "PNR: {pnr}",
+      "pnrUnknown": "Unbekannt (unbestätigt)",
+      "airline": "Airline: {airlines}"
+    },
+    "departureCard": {
+      "label": "Abflug",
+      "flightStatus": "Flugstatus:",
+      "depGate": "Abflug-Gate:",
+      "arrGate": "Ankunfts-Gate:",
+      "gateCloser": "Gate wird näher am Abflug zugewiesen",
+      "lastChecked": "Zuletzt geprüft:",
+      "nextCheck": "Nächste Prüfung:"
+    },
+    "honesty": {
+      "title": "Datenehrlichkeit",
+      "text": "Guardian meldet periodische Überwachungsergebnisse. Unbekannte Felder, verzögerte Prüfungen und wiederholte Zustellversuche werden explizit angezeigt, statt als gesicherte Fakten behandelt zu werden."
+    },
+    "kpi": {
+      "delayRisk": "Verspätungsrisiko",
+      "currentDelay": "Aktuelle Verspätung:",
+      "delayMinutes": "{minutes} Min.",
+      "cancellationRisk": "Stornierungsrisiko",
+      "signal": "Signal:",
+      "cancellationFound": "Stornierungsindikatoren gefunden",
+      "cancellationNone": "Noch kein Stornierungsindikator",
+      "guardianLoop": "Guardian-Zyklus",
+      "every6Hours": "Alle 6 Stunden",
+      "currentDisruptionLevel": "Aktuelles Störungsniveau:",
+      "alerts": "Warnungen",
+      "active": "Aktiv",
+      "unreadLegacy": "Ungelesene Alt-Warnungen:"
+    },
+    "summary": {
+      "title": "Reiseübersicht",
+      "depTime": "Abflugzeit",
+      "flight": "Flug",
+      "arrTime": "Ankunftszeit",
+      "cabin": "Kabine:",
+      "noSegments": "Keine Segmentdaten verfügbar."
+    },
+    "eu261": {
+      "title": "EU261-Status",
+      "protectionLabel": "Schutz",
+      "protected": "Geschützt",
+      "notProtected": "Noch nicht geschützt",
+      "compensation": "Entschädigung",
+      "eligibility": "Anspruchsberechtigung",
+      "dataQuality": "Datenqualität:"
+    },
+    "claim": {
+      "title": "Anspruch einreichen",
+      "readyText": "Dein Anspruchsschreiben ist bereit. Reiche es direkt bei der Airline ein:",
+      "notReadyText": "Noch keine Störung erkannt. Wenn dein Flug verspätet oder gestrichen wird, ist dein Anspruchsschreiben hier bereit.",
+      "openPortal": "{airline}-Anspruchsportal öffnen →",
+      "searchPortal": "{airline}-Anspruchsverfahren suchen →",
+      "copying": "Wird kopiert...",
+      "copyLetter": "Anspruchsschreiben kopieren",
+      "copied": "Anspruchsschreiben kopiert.",
+      "failed": "Schreiben konnte nicht erstellt werden.",
+      "pasteHint": "Füge dein Anspruchsschreiben in das Formular der Airline ein."
+    },
+    "changes": {
+      "title": "Letzte Änderungen",
+      "empty": "Noch kein Störungs-/Änderungsereignis erkannt."
+    },
+    "stopMonitoring": {
+      "button": "Überwachung dieser Reise beenden",
+      "desc": "Diese Aktion löscht diese überwachte Reise und ihren Warnverlauf endgültig."
+    },
+    "activity": {
+      "title": "Guardian-Aktivität",
+      "lastRun": "Letzter Überwachungslauf:",
+      "checked": "Was geprüft wurde:",
+      "noChecks": "Keine aktiven Prüfungen konfiguriert",
+      "eventsDetected": "{count} Überwachungsereignisse erkannt ({unread} ungelesene Alt-Einträge).",
+      "noEvents": "Noch keine Überwachungsereignisse erkannt."
+    },
+    "notifications": {
+      "title": "Benachrichtigungsstatus",
+      "state": "Status:",
+      "lastSent": "Zuletzt gesendet:",
+      "attempts": "Versuche:",
+      "noRecords": "Noch keine Zustellprotokolle.",
+      "lastNotificationSent": "Zuletzt gesendete Benachrichtigung:",
+      "detailTitle": "Details zur letzten Benachrichtigung",
+      "type": "Typ:",
+      "summary": "Zusammenfassung:",
+      "lifecycle": "Lebenszyklus:",
+      "noSummary": "Für die letzte Benachrichtigung liegt noch keine Warnzusammenfassung vor."
+    },
+    "nextStep": {
+      "title": "Was als Nächstes passiert",
+      "text": "Guardian führt den nächsten Überwachungszyklus am {time} aus. Wenn das Störungsrisiko steigt oder sich die Anspruchsberechtigung ändert, wird ein Warn- und Benachrichtigungseintrag erstellt."
+    },
+    "modal": {
+      "title": "Überwachung dieser Reise beenden?",
+      "desc": "Der gesamte Warnverlauf für {route} wird endgültig gelöscht.",
+      "cancel": "Abbrechen",
+      "stopping": "Überwachung wird beendet...",
+      "stop": "Überwachung beenden",
+      "tripRemoved": "Reise erfolgreich entfernt",
+      "deleteFailed": "Überwachung kann momentan nicht beendet werden. Bitte versuche es erneut."
+    },
+    "checks": {
+      "disruptionHunter": "Störungsjäger",
+      "scheduleGuardian": "Zeitplan-Wächter",
+      "seatWatch": "Sitzplatzüberwachung",
+      "upgradeWatch": "Upgrade-Überwachung"
+    },
+    "status": {
+      "cancelled": "Gestrichen",
+      "delayed": "Verspätet ({minutes}m)",
+      "unknown": "Unbekannt",
+      "onTime": "Pünktlich"
+    },
+    "statusBadge": {
+      "cancelled": "Gestrichen",
+      "delayed": "Verspätet",
+      "onTime": "Pünktlich"
+    },
+    "compensation": {
+      "eligibleHigh": "250 - 600 EUR (geschätzt)",
+      "eligibleLow": "250 EUR (mögliches Minimum, geschätzt)",
+      "notEligible": "Geschützt — keine Störung erkannt",
+      "unknown": "Unbekannt (mehr Störungsdaten erforderlich)"
+    },
+    "explanation": {
+      "eligible": "Guardian hat ein Störungsmuster erkannt, das die EU261-Kriterien erfüllen könnte.",
+      "notEligible": "Es liegt derzeit kein bestätigtes qualifizierendes Stornierungs- oder Langverspätungsmuster vor.",
+      "unknown": "Die Anspruchsberechtigung ist unbekannt, da Guardian noch nicht genug verifizierte Störungsnachweise gesammelt hat."
+    },
+    "airlineFallback": "Airline {code}"
   },
   "GuardianHistory": {
     "backToGuardian": "Zurück zum Guardian-Dashboard",

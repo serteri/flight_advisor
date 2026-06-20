@@ -126,23 +126,6 @@
     "totalResults": "Toplam Sonuç",
     "totalFlightsLabel": "{count} Uçuş"
   },
-  "SearchForm": {
-    "origin_placeholder": "Nereden?",
-    "destination_placeholder": "Nereye?",
-    "origin_label": "Nereden",
-    "destination_label": "Nereye",
-    "date_label": "Gidiş Tarihi",
-    "return_label": "Dönüş",
-    "passengers_label": "Yolcular",
-    "search_button": "Uçuş Ara",
-    "one_way": "Tek Yön",
-    "round_trip": "Gidiş-Dönüş",
-    "multi_city": "Çoklu Uçuş",
-    "purpose_label": "Amaç",
-    "invalid_selection": "Lütfen geçerli havalimanları ve tarih seçin",
-    "search_error": "Bir hata oluştu. Lütfen tekrar deneyin.",
-    "multicity_notice": "Çoklu uçuş araması şu anda masaüstü için optimize edilmiştir. Karmaşık rotalar için concierge hizmetimizi kullanın."
-  },
   "DatePicker": {
     "placeholder": "Tarih seçin",
     "today": "Bugüne Git",
@@ -364,23 +347,6 @@
         }
       }
     },
-    "primaryActions": {
-      "score": {
-        "title": "Bir Uçuşu Skorla",
-        "desc": "Rezervasyon öncesinde rota yapısı, aktarma riski, ücret bağlamı ve öneri notlarını değerlendir.",
-        "cta": "Bir Uçuşu Skorla"
-      },
-      "track": {
-        "title": "Bir Rotayı Takip Et",
-        "desc": "Aday rotaları planlı fiyat anlık görüntüleri, risk sinyalleri ve izleme geçmişiyle takip et.",
-        "cta": "Bir Rotayı Takip Et"
-      },
-      "add": {
-        "title": "Biletini Sisteme Ekle",
-        "desc": "Rezerve edilmiş seyahatini ekle; aksaklık / rötar taramaları, uyarı geçmişi ve bildirim durumunu tek yerden izle.",
-        "cta": "Biletini Sisteme Ekle"
-      }
-    },
     "guardian": {
       "badge": "Guardian modu aktif",
       "hero": {
@@ -546,6 +512,145 @@
       "accountDeleted": "Hesap başarıyla silindi."
     }
   },
+  "GuardianTripDetails": {
+    "back": "Rezerve edilmiş uçuş izlemeye dön",
+    "unknown": "Bilinmiyor",
+    "header": {
+      "label": "Rezerve edilmiş uçuş izleme",
+      "airlineBadge": "Havayolu rozeti",
+      "pnr": "PNR: {pnr}",
+      "pnrUnknown": "Bilinmiyor (onaylanmamış)",
+      "airline": "Havayolu: {airlines}"
+    },
+    "departureCard": {
+      "label": "Kalkış",
+      "flightStatus": "Uçuş durumu:",
+      "depGate": "Kalkış kapısı:",
+      "arrGate": "Varış kapısı:",
+      "gateCloser": "Kapı, kalkışa yaklaşınca atanacak",
+      "lastChecked": "Son kontrol:",
+      "nextCheck": "Sonraki kontrol:"
+    },
+    "honesty": {
+      "title": "Veri dürüstlüğü",
+      "text": "Guardian periyodik izleme sonuçlarını raporlar. Bilinmeyen alanlar, geciken kontroller ve yeniden denenen bildirim teslimatları kesin gerçek gibi gösterilmek yerine açıkça belirtilir."
+    },
+    "kpi": {
+      "delayRisk": "Rötar riski",
+      "currentDelay": "Mevcut rötar:",
+      "delayMinutes": "{minutes} dk",
+      "cancellationRisk": "İptal riski",
+      "signal": "Sinyal:",
+      "cancellationFound": "İptal göstergeleri bulundu",
+      "cancellationNone": "Henüz iptal göstergesi yok",
+      "guardianLoop": "Guardian döngüsü",
+      "every6Hours": "Her 6 saatte bir",
+      "currentDisruptionLevel": "Mevcut aksaklık seviyesi:",
+      "alerts": "Uyarılar",
+      "active": "Aktif",
+      "unreadLegacy": "Okunmamış eski uyarılar:"
+    },
+    "summary": {
+      "title": "Uçuş özeti",
+      "depTime": "Kalkış saati",
+      "flight": "Uçuş",
+      "arrTime": "Varış saati",
+      "cabin": "Kabin:",
+      "noSegments": "Segment verisi mevcut değil."
+    },
+    "eu261": {
+      "title": "AB261 durumu",
+      "protectionLabel": "Koruma",
+      "protected": "Korunuyor",
+      "notProtected": "Henüz Korunmuyor",
+      "compensation": "Tazminat",
+      "eligibility": "Uygunluk",
+      "dataQuality": "Veri kalitesi:"
+    },
+    "claim": {
+      "title": "Talebini gönder",
+      "readyText": "Talep mektubun hazır. Doğrudan havayoluna gönder:",
+      "notReadyText": "Henüz aksaklık tespit edilmedi. Uçuşun rötarlı veya iptal olursa talep mektubun burada hazır olacak.",
+      "openPortal": "{airline} talep portalını aç →",
+      "searchPortal": "{airline} talep sürecini ara →",
+      "copying": "Kopyalanıyor...",
+      "copyLetter": "Talep mektubunu kopyala",
+      "copied": "Talep mektubu kopyalandı.",
+      "failed": "Mektup oluşturulamadı.",
+      "pasteHint": "Talep mektubunu havayolunun formuna yapıştır."
+    },
+    "changes": {
+      "title": "Son değişiklikler",
+      "empty": "Henüz aksaklık/değişiklik olayı tespit edilmedi."
+    },
+    "stopMonitoring": {
+      "button": "Bu uçuşu izlemeyi durdur",
+      "desc": "Bu işlem, izlenen bu uçuşu ve uyarı geçmişini kalıcı olarak siler."
+    },
+    "activity": {
+      "title": "Guardian etkinliği",
+      "lastRun": "Son izleme çalışması:",
+      "checked": "Neler kontrol edildi:",
+      "noChecks": "Aktif kontrol yapılandırılmadı",
+      "eventsDetected": "{count} izleme olayı tespit edildi ({unread} eski okunmamış).",
+      "noEvents": "Henüz izleme olayı tespit edilmedi."
+    },
+    "notifications": {
+      "title": "Bildirim durumu",
+      "state": "Durum:",
+      "lastSent": "Son gönderim:",
+      "attempts": "Denemeler:",
+      "noRecords": "Henüz bildirim teslimat kaydı yok.",
+      "lastNotificationSent": "Son gönderilen bildirim:",
+      "detailTitle": "Son bildirim detayı",
+      "type": "Tür:",
+      "summary": "Özet:",
+      "lifecycle": "Yaşam döngüsü:",
+      "noSummary": "Son bildirim için henüz uyarı özeti yok."
+    },
+    "nextStep": {
+      "title": "Şimdi ne olacak",
+      "text": "Guardian sonraki izleme döngüsünü {time} tarihinde çalıştıracak. Aksaklık riski artarsa veya uygunluk değişirse bir uyarı ve bildirim kaydı oluşturulacak."
+    },
+    "modal": {
+      "title": "Bu uçuşu izlemeyi durdur?",
+      "desc": "{route} için tüm uyarı geçmişi kalıcı olarak silinecek.",
+      "cancel": "Vazgeç",
+      "stopping": "İzleme durduruluyor...",
+      "stop": "İzlemeyi durdur",
+      "tripRemoved": "Uçuş başarıyla kaldırıldı",
+      "deleteFailed": "İzleme şu anda durdurulamıyor. Lütfen tekrar deneyin."
+    },
+    "checks": {
+      "disruptionHunter": "Aksaklık Avcısı",
+      "scheduleGuardian": "Program Bekçisi",
+      "seatWatch": "Koltuk Gözlemi",
+      "upgradeWatch": "Yükseltme Gözlemi"
+    },
+    "status": {
+      "cancelled": "İptal Edildi",
+      "delayed": "Rötarlı ({minutes}dk)",
+      "unknown": "Bilinmiyor",
+      "onTime": "Zamanında"
+    },
+    "statusBadge": {
+      "cancelled": "İptal Edildi",
+      "delayed": "Rötarlı",
+      "onTime": "Zamanında"
+    },
+    "compensation": {
+      "eligibleHigh": "250 - 600 EUR (tahmini)",
+      "eligibleLow": "250 EUR (olası minimum, tahmini)",
+      "notEligible": "Korunuyor — aksaklık tespit edilmedi",
+      "unknown": "Bilinmiyor (daha fazla aksaklık verisi gerekli)"
+    },
+    "explanation": {
+      "eligible": "Guardian, AB261 kriterlerini karşılayabilecek bir aksaklık örüntüsü tespit etti.",
+      "notEligible": "Şu anda nitelikli bir iptal veya uzun rötar örüntüsü doğrulanmadı.",
+      "unknown": "Guardian henüz yeterli doğrulanmış aksaklık verisi toplamadığı için uygunluk bilinmiyor."
+    },
+    "airlineFallback": "Havayolu {code}"
+  },
   "GuardianHistory": {
     "backToGuardian": "Guardian paneline dön",
     "title": "Uçuş Geçmişi",
@@ -653,145 +758,6 @@
     "recentHistory": "Son Fiyat Geçmişi",
     "noData": "Henüz fiyat verisi toplanmadı.",
     "noInfo": "Bilgi yok"
-  },
-  "FlightSearch": {
-    "showMore": "Daha Fazla Göster ({count} uçuş kaldı)",
-    "title": "Uçuş Ara & Takip Et",
-    "subtitle": "Uçuş bilgilerinizi girin. Fiyatları takip edip en uygun zamanda satın almanız için sizi uyaracağız.",
-    "heroTitle": "Nereye Uçuyoruz?",
-    "heroSubtitle": "En iyi uçuş fırsatlarını keşfedin",
-    "mottoLabel": "FlightAgent Mottosu",
-    "oneWay": "Tek Yön",
-    "roundTrip": "Gidiş-Dönüş",
-    "from": "Nereden",
-    "to": "Nereye",
-    "placeholder": "Şehir veya havalimanı ara...",
-    "departureDate": "Gidiş Tarihi",
-    "returnDate": "Dönüş Tarihi",
-    "selectDate": "Tarih seçin",
-    "optional": "isteğe bağlı",
-    "cabin": "Kabin Sınıfı",
-    "economy": "Ekonomi",
-    "premiumEconomy": "Premium Economy",
-    "business": "Business",
-    "firstClass": "First Class",
-    "adults": "Yetişkin",
-    "passengers": "Yolcu Sayısı",
-    "children": "Çocuk",
-    "infants": "Bebek",
-    "adultLabel": "Yetişkin",
-    "childLabel": "Çocuk (2-11)",
-    "infantLabel": "Bebek (0-2)",
-    "travelers_label": "Yolcular & Kabin",
-    "passengers_short": "Misafir",
-    "totalPassengers": "Toplam: {count} yolcu",
-    "adultRequired": "En az 1 yetişkin seçmelisiniz",
-    "infantsRequireAdults": "Bebek sayısı yetişkin sayısını aşamaz",
-    "passengerLimit": "Bir aramada en fazla 9 yolcu desteklenir",
-    "invalidAirports": "Lütfen geçerli 3 harfli IATA havaalanları seçin",
-    "searching": "Uçuşlar Aranıyor...",
-    "searchingDesc": "En iyi fırsatları bulmak için yüzlerce havayolunu tarıyoruz",
-    "popularDestinations": "Popüler destinasyonlar",
-    "topFlightsToBookNow": "Şu Anda İzlenecek En İyi Uçuşlar",
-    "topFlightsSummary": "{count, plural, one {# uçuş şu anda güçlü bir fiyat fırsatı olarak işaretli.} other {# uçuş şu anda güçlü fiyat fırsatları olarak işaretli.}}",
-    "proactiveTip": "Proaktif Öneri",
-    "upgradePlans": "Yükseltme Planları",
-    "monthlyProTitle": "Aylık Pro ($19)",
-    "monthlyProDesc": "Fazla ödemeyin. Rezervasyon yapmadan önce en doğru kararı açın.",
-    "unlockClearRecommendation": "Net Öneriyi Aç",
-    "oneTimeReportTitle": "Tek Seferlik Uçuş Raporu ($4.99)",
-    "oneTimeReportDesc": "Sadece bu rota için derin risk ve fiyat analizi.",
-    "oneTimeReportButton": "Tek Seferlik Rapor ($4.99)",
-    "searchButton": "Uçuşları Bul",
-    "success": "Uçuş Bulundu!",
-    "error": "Arama Başarısız",
-    "resultsFound": "Uçuş Bulundu",
-    "dataSources": "Veri Kaynakları",
-    "active": "Aktif",
-    "flightsFoundLower": "uçuş bulundu",
-    "noResultsLower": "sonuç yok",
-    "totalResults": "Toplam Sonuç",
-    "totalFlightsLabel": "{count} Uçuş",
-    "currentPrice": "Güncel Fiyat",
-    "carrier": "Havayolu",
-    "score": "Skor",
-    "duration": "Süre",
-    "stops": "Aktarma",
-    "direct": "Direkt",
-    "stop": "Aktarma",
-    "airlines": "Havayolları",
-    "layover": {
-      "risk": {
-        "critical": "KRİTİK - Riskli Aktarma!",
-        "high": "Riskli - Hızlı Ol",
-        "medium": "Orta - Rahat ama dikkatli",
-        "low": "Rahat - Zamanın keyfini çıkar"
-      },
-      "advice": {
-        "default_short": "Kısa bekleme. Hemen kapına yönel.",
-        "default_medium": "Süre makul. Hızlı bir kahve al ama önce kapını bul.",
-        "default_long": "Bol zamanınız var. Lounge, restoran veya dinlenme alanlarını değerlendirebilirsiniz.",
-        "DXB_short": "Dubai çok büyük. Uçaktan iner inmez koşar adım kapıya!",
-        "DXB_medium": "Terminal 3 tren kullanmayı gerektirebilir. Vaktiniz var ama oyalanmayın.",
-        "DXB_long": "Dubai'de zaman bol. Ücretsiz 'Sleep Pod'ları veya Marhaba Lounge'ı deneyebilirsiniz.",
-        "DOH_short": "Doha kompakt ama 60dk altı çok riskli. Koşmalısın.",
-        "DOH_medium": "Orchard bahçesinde kısa bir kahve molası verebilirsin ama kapı mesafesini kontrol et.",
-        "DOH_long": "Doha dünyanın en iyi havalimanı. 'Orchard' tropik bahçesini mutlaka gör.",
-        "IST_short": "İstanbul Havalimanı çok büyük. Kapılar arası 20dk yürüyüş sürebilir. Acele et!",
-        "IST_medium": "Mesafeler uzun. Önce kapını bul, sonra dinlen.",
-        "IST_long": "Türk Hava Yolları Business Lounge efsanevi. Economy bile olsanız ücretli giriş yapılabilir.",
-        "SIN_short": "Changi harika ama güvenlik kapı girişinde. Jewel'a gitme.",
-        "SIN_medium": "Jewel çok cazip ama Güvenlik kapıda. Riske atma.",
-        "SIN_long": "Changi dünyaca ünlü. Jewel'daki şelaleyi ve kelebek bahçesini mutlaka görün."
-      }
-    },
-    "transferAt": "Aktarma",
-    "cheapest": "En Ucuz",
-    "fastest": "En Hızlı",
-    "bestScore": "En İyi Skor",
-    "price": "Fiyat",
-    "trackFlight": "Bu Uçuşu Takip Et",
-    "trackingThisFlight": "Bu uçuşu takip ediyorsunuz",
-    "flightDetails": "Uçuş Detayları",
-    "hideDetails": "Detayları gizle",
-    "excellentDeal": "Mükemmel Fırsat",
-    "goodDeal": "İyi Fırsat",
-    "fair": "Orta",
-    "poor": "Kötü",
-    "veryPoor": "Çok Kötü",
-    "noFlights": "Uçuş bulunamadı",
-    "fillAllFields": "Lütfen tüm alanları doldurun",
-    "trackingStarted": "Bu rotayı sizin için takip etmeye başladık. Fiyat düşüşlerini tespit ettiğimizde size haber vereceğiz.",
-    "viewDashboard": "Paneli Görüntüle",
-    "flightTime": "uçuş",
-    "waitTime": "bekleme",
-    "estimatedBaggage": "Tahmini Bagaj",
-    "otherOptions": "Diğer Fiyat/Paket Seçenekleri",
-    "select": "Seç",
-    "refundable": "İade",
-    "noRefund": "İade Yok",
-    "baggage": "Bagaj",
-    "lowBaggage": "Az Bagaj",
-    "whyBuy": "Neden Almalısın?",
-    "watchOut": "Dikkat Et",
-    "decision": "KARAR",
-    "baggageExtras": {
-      "noBaggage": "Bagajsız",
-      "excluded": "Bagaj Hariç (+~2500 TL)",
-      "restricted": "(Kısıtlı)",
-      "generous": "(Bol Bagaj)",
-      "warningTitle": "Dikkat: Bu bilet bagajsız!",
-      "warningDesc": "Eğer yolculuğunuzda bagaj gerekiyorsa, havayolundan ekstra bagaj satın almanız gerekecek. Ortalama maliyet: ~2.500 TL"
-    },
-    "errors": {
-      "originRequired": "Lütfen geçerli bir şehir veya havalimanı seçin",
-      "destinationRequired": "Lütfen geçerli bir şehir veya havalimanı seçin",
-      "departureDateRequired": "Lütfen bir gidiş tarihi seçin",
-      "departureDatePast": "Gidiş tarihi geçmişte olamaz",
-      "returnDateRequired": "Gidiş-dönüş için dönüş tarihi zorunludur",
-      "returnDateBeforeDeparture": "Dönüş tarihi, gidiş tarihinden sonra olmalıdır",
-      "generic": "Bir hata oluştu. Lütfen tekrar deneyin."
-    }
   },
   "priceOracle": {
     "title": "Fiyat Kahini",
