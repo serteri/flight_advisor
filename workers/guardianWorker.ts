@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
 import { getFlightStatus } from "@/services/flightStatusService";
+import { getAircraftEquipment } from "@/lib/api/aviationstack";
 import { assessEu261ForDisruption, isEu261Carrier, isEu261Country } from "@/services/guardian/eu261Rules";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
 import { recordGuardianMetric } from "@/services/healthMetrics";
@@ -706,9 +707,19 @@ export async function processFlightMonitoring() {
                     newSnapshot.gateDetail = `dep:${previousState.departureGate || 'N/A'}>${newDepGate || 'N/A'}|arr:${previousState.arrivalGate || 'N/A'}>${newArrGate || 'N/A'}`;
                 }
 
-                const incomingAircraftType = currentStatus?.aircraft?.model?.trim() || null;
+                const aircraftEquipment = await getAircraftEquipment(fullFlightNumber, dateStr);
+                const incomingAircraftType = 'error' in aircraftEquipment
+                    ? null
+                    : aircraftEquipment.aircraftType?.trim() || null;
                 const previousAircraftType = segment.aircraftType?.trim() || null;
-                if (incomingAircraftType && previousAircraftType && incomingAircraftType !== previousAircraftType) {
+
+                if (incomingAircraftType && !previousAircraftType) {
+                    // First-ever check for this segment: record the baseline, no alert.
+                    await prisma.flightSegment.update({
+                        where: { id: segment.id },
+                        data: { aircraftType: incomingAircraftType },
+                    });
+                } else if (incomingAircraftType && previousAircraftType && incomingAircraftType !== previousAircraftType) {
                     await prisma.flightSegment.update({
                         where: { id: segment.id },
                         data: { aircraftType: incomingAircraftType },
