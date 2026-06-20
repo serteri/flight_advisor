@@ -19,6 +19,7 @@ export default function Navbar() {
         { name: tNav('home'), href: "/" },
         { name: "Guardian", href: "/dashboard/guardian" },
         { name: tNav('pricing'), href: "/pricing" },
+        { name: tNav('blog'), href: "/blog" },
     ];
 
     return (

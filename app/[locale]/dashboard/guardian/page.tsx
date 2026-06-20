@@ -3,11 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ShieldCheck, Plane } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
-import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { GuardianOverviewActions } from "@/components/guardian/GuardianOverviewActions";
 import { DeleteTripButton } from "@/components/guardian/DeleteTripButton";
-import Link from 'next/link';
+import { Link, redirect } from '@/i18n/routing';
 import { calculateAirportDistanceKm } from '@/lib/compensation/haversine';
 
 const estimateEu261Value = (trip: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>) => {
@@ -28,15 +27,17 @@ export default async function GuardianDashboard() {
     const t = await getTranslations("GuardianDashboard");
     const session = await auth();
 
-    if (!session?.user?.id) {
-        redirect('/login');
+    if (!session || !session.user?.id) {
+        redirect({ href: '/login', locale });
     }
+    const userId = session!.user!.id;
+    const subscriptionPlan = session!.user!.subscriptionPlan || 'FREE';
 
     let trips: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>[] = [];
     try {
         // Fetch only current user's Monitored Trips
         trips = await prisma.monitoredTrip.findMany({
-            where: { userId: session.user.id },
+            where: { userId },
             orderBy: { createdAt: 'desc' },
             include: {
                 alerts: true,
@@ -77,15 +78,15 @@ export default async function GuardianDashboard() {
                 </div>
                 <div className="flex gap-4">
                     <Link
-                        href={`/${locale}/dashboard/guardian/history`}
+                        href="/dashboard/guardian/history"
                         className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                     >
                         {t('viewHistory')} →
                     </Link>
                     <GuardianOverviewActions
                         user={{
-                            id: session.user.id,
-                            subscriptionPlan: session.user.subscriptionPlan || 'FREE',
+                            id: userId,
+                            subscriptionPlan,
                         }}
                     />
                 </div>
@@ -126,7 +127,7 @@ export default async function GuardianDashboard() {
                         {trips.map(trip => (
                             <div key={trip.id} className="relative">
                                 <DeleteTripButton tripId={trip.id} />
-                                <Link href={`/${locale}/dashboard/guardian/${trip.id}`} className="block">
+                                <Link href={`/dashboard/guardian/${trip.id}`} className="block">
                                     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 cursor-pointer hover:shadow-md transition">
                                         {/* Pass trip data to the Dashboard Component we created earlier */}
                                         {/* Need to adapt type if necessary, but structure matches closely */}

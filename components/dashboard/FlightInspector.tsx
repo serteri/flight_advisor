@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -91,7 +91,7 @@ export function FlightInspector({ locale }: FlightInspectorProps) {
       });
 
       if (response.status === 403) {
-        router.push(`/${locale}/pricing`);
+        router.push('/pricing');
         return;
       }
 
@@ -249,7 +249,7 @@ function FlightInspectionResult({
 
     try {
       const response = await fetch(
-        `/${locale}/api/inspector/book-and-track`,
+        '/api/inspector/book-and-track',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -286,7 +286,7 @@ function FlightInspectionResult({
 
       // Success - redirect to dashboard
       router.push(
-        `/${locale}/dashboard?tripId=${data.tripId}&newTracking=true`
+        `/dashboard?tripId=${data.tripId}&newTracking=true`
       );
     } catch (err) {
       setTrackingError('Connection error. Please try again.');

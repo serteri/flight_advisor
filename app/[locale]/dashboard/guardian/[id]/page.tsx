@@ -1,13 +1,13 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { TripDetailsClient } from './TripDetailsClient';
 
 export default async function TripDetailsPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
-    const session = await auth();
-    if (!session?.user) redirect('/login');
-
     const { id, locale } = await params;
+
+    const session = await auth();
+    if (!session?.user) redirect({ href: '/login', locale });
 
     // 1. VERİ ÇEKME (JOIN İŞLEMİ)
     // Trip'i çekerken, içindeki 'segments'leri de çekiyoruz.

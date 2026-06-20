@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { Link, redirect } from '@/i18n/routing';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -64,12 +63,13 @@ export default async function GuardianHistoryPage() {
     const locale = await getLocale();
     const t = await getTranslations('GuardianHistory');
     const session = await auth();
-    if (!session?.user?.id) {
-        redirect('/login');
+    if (!session || !session.user?.id) {
+        redirect({ href: '/login', locale });
     }
+    const userId = session!.user!.id;
 
     const trips = await prisma.monitoredTrip.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         orderBy: { createdAt: 'desc' },
         include: {
             segments: {
@@ -131,7 +131,7 @@ export default async function GuardianHistoryPage() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <Link
-                            href={`/${locale}/dashboard/guardian`}
+                            href="/dashboard/guardian"
                             className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" /> {t('backToGuardian')}
@@ -218,7 +218,7 @@ export default async function GuardianHistoryPage() {
                                                 </td>
                                                 <td className="py-3 pr-4">
                                                     <Link
-                                                        href={`/${locale}/dashboard/guardian/${trip.id}`}
+                                                        href={`/dashboard/guardian/${trip.id}`}
                                                         className="text-sky-700 hover:text-sky-800 font-semibold"
                                                     >
                                                         {t('view')}

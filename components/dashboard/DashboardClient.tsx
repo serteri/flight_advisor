@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { FileText, Plus, Plane } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
 import { AddTripModal } from './AddTripModal';
 
 interface DashboardClientProps {
@@ -38,8 +37,6 @@ interface DashboardClientProps {
 
 export function DashboardClient({ trips, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const pathname = usePathname();
-    const locale = pathname?.split('/')[1] || 'en';
 
     const t = useTranslations('Dashboard');
 
@@ -78,7 +75,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                 {t('addTripShort')}
                             </button>
                             <Link
-                                href={`/${locale}/dashboard/guardian`}
+                                href="/dashboard/guardian"
                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                             >
                                 <FileText className="w-4 h-4" />
@@ -100,7 +97,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                             const departureForCard = trip.departureDate || firstSegment?.departureDate;
 
                             return (
-                            <Link href={`/${locale}/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
+                            <Link href={`/dashboard/guardian/${String(trip.id)}`} key={String(trip.id)}>
                                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div className="p-3 bg-slate-100 rounded-lg text-slate-600 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">

@@ -1,8 +1,9 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -166,7 +167,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const safeLocale = (localeParam || locale || 'en').replace(/^\/+/, '');
     const intlLocale = LOCALE_MAP[safeLocale] || 'en-US';
-    const backLinkHref = `/${safeLocale}/dashboard/guardian`;
+    const backLinkHref = '/dashboard/guardian';
 
     const unknownLabel = t('unknown');
     const dt = (value: Date | string | null | undefined) => formatDateTime(value, intlLocale, unknownLabel);

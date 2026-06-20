@@ -1,6 +1,6 @@
 import { signIn } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/i18n/routing";
+import { Link, routing } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { use } from "react";
 
@@ -9,8 +9,12 @@ type LoginPageProps = {
     searchParams?: { callbackUrl?: string };
 };
 
+function withLocalePrefix(path: string, locale: string) {
+    return locale === routing.defaultLocale ? path : `/${locale}${path}`;
+}
+
 function resolveCallbackUrl(raw: string | undefined, locale: string) {
-    const defaultDashboard = `/${locale}/dashboard`;
+    const defaultDashboard = withLocalePrefix("/dashboard", locale);
 
     if (!raw) return defaultDashboard;
     if (!raw.startsWith("/")) return defaultDashboard;
@@ -20,7 +24,7 @@ function resolveCallbackUrl(raw: string | undefined, locale: string) {
     }
 
     if (raw === "/dashboard" || raw.startsWith("/dashboard?")) {
-        return `/${locale}${raw}`;
+        return withLocalePrefix(raw, locale);
     }
 
     return raw;

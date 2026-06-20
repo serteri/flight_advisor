@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Shield, Crown } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { useSession } from 'next-auth/react';
 
 export function PricingTable() {
     const t = useTranslations('Pricing');
     const router = useRouter();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
-    const locale = pathname?.split('/')[1] || 'en';
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [checkoutLoading, setCheckoutLoading] = useState<null | 'PRO' | 'ELITE'>(null);
     const autoCheckoutRef = useRef(false);
@@ -31,9 +30,9 @@ export function PricingTable() {
                 trial,
             }));
         }
-        const callbackUrl = `/${locale}/dashboard?plan=${plan}&billingCycle=${cycle}&trial=${trial ? 'true' : 'false'}`;
+        const callbackUrl = `/dashboard?plan=${plan}&billingCycle=${cycle}&trial=${trial ? 'true' : 'false'}`;
         const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-        router.push(`/${locale}/login?callbackUrl=${encodedCallbackUrl}`);
+        router.push(`/login?callbackUrl=${encodedCallbackUrl}`);
     };
 
     const handleCheckout = async (

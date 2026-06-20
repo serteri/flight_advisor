@@ -1,15 +1,11 @@
 "use client";
 
 import { ShieldCheck, Bell, FileText, Mail, History } from 'lucide-react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { Link } from '@/i18n/routing';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 export default function PricingPage() {
-    const params = useParams<{ locale?: string | string[] }>();
-    const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
-    const locale = localeParam || 'en';
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const t = useTranslations('PricingPage.guardian');
 
@@ -45,7 +41,7 @@ export default function PricingPage() {
         <div className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,#d1fae5_0%,#f8fafc_35%,#ffffff_70%)]">
             <div className="max-w-6xl mx-auto px-4 py-10 md:py-14">
                 <div className="mb-6">
-                    <Link href={`/${locale}`} className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+                    <Link href="/" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
                         ← {t('backToHome')}
                     </Link>
                 </div>
@@ -70,7 +66,7 @@ export default function PricingPage() {
                         </ul>
 
                         <Link
-                            href={`/${locale}/register`}
+                            href="/register"
                             className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white hover:border-slate-400 text-slate-800 font-bold py-3"
                         >
                             {t('free.cta')}
