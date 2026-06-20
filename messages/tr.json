@@ -48,7 +48,28 @@
     "reportItem1": "Route structure and connection-risk review",
     "reportItem2": "Fare context against available route signals",
     "reportItem3": "Advisor recommendation with key trade-offs",
-    "buyOneTime": "Get Advisor Report - $4.99"
+    "buyOneTime": "Get Advisor Report - $4.99",
+    "guardian": {
+      "backToHome": "Anasayfaya dön",
+      "title": "Uçuş koruması için basit planlar",
+      "subtitle": "Seyahatlerini izle, bir şeyler ters giderse tazminat al.",
+      "free": {
+        "item1": "1 uçuşu izle",
+        "item2": "Aksaklık uyarıları (e-posta)",
+        "item3": "AB261 uygunluk kontrolü",
+        "item4": "Temel talep mektubu",
+        "cta": "Ücretsiz başla"
+      },
+      "pro": {
+        "item1": "Sınırsız uçuş izle",
+        "item2": "Öncelikli aksaklık uyarıları",
+        "item3": "AB261 talep mektubu + PDF",
+        "item4": "Havayoluna e-posta (otomatik)",
+        "item5": "Uyarı geçmişi",
+        "checkingOut": "Ödeme başlatılıyor...",
+        "cta": "Pro'yu Başlat"
+      }
+    }
   },
   "BlogPage": {
     "title": "Seyahat Rehberleri ve İpuçları",
@@ -359,6 +380,46 @@
         "desc": "Rezerve edilmiş seyahatini ekle; aksaklık / rötar taramaları, uyarı geçmişi ve bildirim durumunu tek yerden izle.",
         "cta": "Biletini Sisteme Ekle"
       }
+    },
+    "guardian": {
+      "badge": "Guardian modu aktif",
+      "hero": {
+        "title": "Her rezervasyonu izle,",
+        "titleHighlight": "aksaklık gelmeden önce harekete geç",
+        "subtitle": "FlightAgent artık Guardian iş akışlarına odaklanıyor: sürekli izleme, uçuş aksaklık uyarıları ve AB261 tazminat rehberliği."
+      },
+      "cta": {
+        "openGuardian": "Guardian'ı Aç",
+        "seePlans": "Planları Gör"
+      },
+      "features": {
+        "monitoring": {
+          "title": "Uçuş İzleme",
+          "desc": "Kayıtlı uçuşları planlı kontroller ile takip et, değişikliklerin şeffaf geçmişini tut."
+        },
+        "alerts": {
+          "title": "Aksaklık Uyarıları",
+          "desc": "Gecikmeler, iptaller ve program riski kaymaları için odaklı bildirimler al."
+        },
+        "compensation": {
+          "title": "AB261 Tazminatı",
+          "desc": "Talep hazır belgeler oluştur ve bir uçuş aksadığında daha hızlı hareket et."
+        }
+      },
+      "trust": {
+        "transparency": {
+          "title": "Planlı Şeffaflık",
+          "desc": "İzleme periyodiktir ve her anlık görüntü zaman damgalıdır, böylece beklentiler net kalır."
+        },
+        "warnings": {
+          "title": "Erken Uyarılar",
+          "desc": "Guardian'dan gelen yapılandırılmış aksaklık sinyallerini kullanarak sorunlar büyümeden harekete geç."
+        },
+        "protection": {
+          "title": "Koruma Odağı",
+          "desc": "Her şey tamamlanmış rezervasyonları korumaya odaklanmıştır, yeni rezervasyon araştırmasına değil."
+        }
+      }
     }
   },
   "AboutPage": {
@@ -410,6 +471,7 @@
     "emptyTitle": "Henuz booked trip yok",
     "emptyDesc": "Periyodik monitoring ve alert history icin booked trip ekleyin.",
     "addTripShort": "Booked trip ekle",
+    "openGuardianDashboard": "Guardian panelini aç",
     "protected": "MONITORING",
     "trackedFlights": "Tracked Itineraries",
     "trackedFlightsDesc": "Izlediginiz aday itinerary ve rotalar.",
@@ -425,6 +487,106 @@
     "trackedItineraries": "Takip Edilen Itineraryler",
     "monitored": "MONITORING",
     "trackedEmptyTitle": "Henuz tracked itinerary yok"
+  },
+  "Settings": {
+    "subtitle": "Hesabını, üyeliğini ve uyarılarını yönet.",
+    "loading": "Ayarlar yükleniyor...",
+    "profile": {
+      "title": "Profil",
+      "desc": "Görünen adını güncelle ve hesap e-postanı gözden geçir.",
+      "name": "Ad",
+      "namePlaceholder": "Adınız",
+      "email": "E-posta",
+      "save": "Profili kaydet"
+    },
+    "subscription": {
+      "title": "Üyelik",
+      "desc": "Mevcut planını ve fatura durumunu gözden geçir.",
+      "plan": "Plan",
+      "status": "Durum",
+      "nextBilling": "Sonraki fatura",
+      "manageBilling": "Faturalandırmayı yönet",
+      "upgrade": "Yükselt"
+    },
+    "notifications": {
+      "title": "Bildirimler",
+      "desc": "Hangi e-posta uyarılarını alacağını kontrol et.",
+      "priceDrop": {
+        "title": "Fiyat düşüşü için e-posta uyarıları",
+        "desc": "Takip ettiğin rotalar ucuzladığında bildirim al."
+      },
+      "disruption": {
+        "title": "Uçuş aksaklıkları için e-posta uyarıları",
+        "desc": "Rötarlar ve büyük değişiklikler hakkında güncellemeler al."
+      },
+      "weeklySummary": {
+        "title": "Haftalık fiyat özeti e-postası",
+        "desc": "Takip ettiğin rotaların haftalık özeti."
+      },
+      "save": "Tercihleri kaydet"
+    },
+    "account": {
+      "title": "Hesap",
+      "desc": "Hesabını ve ilişkili tüm verileri sil.",
+      "delete": "Hesabı sil",
+      "deleteConfirmTitle": "Hesap silinsin mi?",
+      "deleteConfirmDesc": "Bu işlem kalıcıdır. Hesabın, üyelik erişimin ve ilgili veriler kaldırılacak.",
+      "cancel": "Vazgeç",
+      "confirmDelete": "Evet, hesabı sil"
+    },
+    "toast": {
+      "loadFailed": "Ayarlar yüklenemedi. Lütfen sayfayı yenileyip tekrar dene.",
+      "nameEmpty": "Ad boş olamaz.",
+      "saveProfileFailed": "Profil kaydedilemedi",
+      "profileUpdated": "Profil başarıyla güncellendi.",
+      "savePreferencesFailed": "Bildirim tercihleri kaydedilemedi",
+      "preferencesSaved": "Bildirim tercihleri kaydedildi.",
+      "billingPortalFailed": "Faturalandırma portalı açılamadı",
+      "deleteAccountFailed": "Hesap silinemedi",
+      "accountDeleted": "Hesap başarıyla silindi."
+    }
+  },
+  "GuardianHistory": {
+    "backToGuardian": "Guardian paneline dön",
+    "title": "Uçuş Geçmişi",
+    "subtitle": "Tüm izlenen uçuşlar için geçmiş analizler.",
+    "totalTripsMonitored": "İzlenen toplam uçuş",
+    "totalDelaysDetected": "Tespit edilen toplam rötar olayı",
+    "totalHoursDelayed": "Toplam rötar saati",
+    "eu261EligibleTrips": "AB261'e uygun uçuşlar",
+    "tripHistory": "Uçuş Geçmişi",
+    "noTripHistory": "Henüz izlenen uçuş geçmişi yok.",
+    "table": {
+      "route": "Rota",
+      "flight": "Uçuş",
+      "departureDate": "Kalkış tarihi",
+      "status": "Durum",
+      "maxDelay": "Maks. rötar (dakika)",
+      "eu261": "AB261",
+      "actions": "İşlemler"
+    },
+    "unknown": "Bilinmiyor",
+    "eligible": "Uygun",
+    "view": "Görüntüle",
+    "disruptionTimeline": "Aksaklık Zaman Çizelgesi",
+    "noAlertEvents": "Henüz uyarı olayı kaydedilmedi."
+  },
+  "GuardianDashboard": {
+    "loadError": "İzlenen uçuşlar yüklenemedi",
+    "tryAgain": "Lütfen daha sonra tekrar deneyin.",
+    "title": "Travel Guardian",
+    "subtitle": "Periyodik aksaklık izleme etkin.",
+    "viewHistory": "Uçuş geçmişini görüntüle",
+    "kpi": {
+      "monitoredTrips": "İzlenen Uçuşlar",
+      "activeAlerts": "Aktif Uyarılar",
+      "checkInterval": "Kontrol Aralığı",
+      "every6Hours": "Her 6 saatte bir",
+      "valueFound": "Tahmini Bulunan Değer"
+    },
+    "yourTrips": "İzlenen Uçuşların",
+    "noTrips": "Uçuş bulunamadı",
+    "noTripsDesc": "İzlemeye başlamak için bir PNR içe aktar."
   },
   "Guardian": {
     "back": "Geri Dön",

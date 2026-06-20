@@ -61,6 +61,7 @@ const toStatusLabel = (status?: string | null): 'Active' | 'Cancelled' | 'Trial'
 
 export default function SettingsPage() {
     const t = useTranslations('Dashboard');
+    const ts = useTranslations('Settings');
     const { data: session, status } = useSession();
 
     const [name, setName] = useState('');
@@ -120,7 +121,7 @@ export default function SettingsPage() {
                 }
             } catch (error) {
                 console.error('[SETTINGS] Failed to load settings:', error);
-                toast.error('Failed to load settings. Please refresh and try again.');
+                toast.error(ts('toast.loadFailed'));
             } finally {
                 if (mounted) setLoadingPage(false);
             }
@@ -138,7 +139,7 @@ export default function SettingsPage() {
 
     const onSaveProfile = async () => {
         if (!name.trim()) {
-            toast.error('Name cannot be empty.');
+            toast.error(ts('toast.nameEmpty'));
             return;
         }
 
@@ -152,12 +153,12 @@ export default function SettingsPage() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'Failed to save profile');
+                throw new Error(data?.error || ts('toast.saveProfileFailed'));
             }
 
-            toast.success('Profile updated successfully.');
+            toast.success(ts('toast.profileUpdated'));
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to save profile';
+            const message = error instanceof Error ? error.message : ts('toast.saveProfileFailed');
             toast.error(message);
         } finally {
             setSavingProfile(false);
@@ -179,12 +180,12 @@ export default function SettingsPage() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'Failed to save notification preferences');
+                throw new Error(data?.error || ts('toast.savePreferencesFailed'));
             }
 
-            toast.success('Notification preferences saved.');
+            toast.success(ts('toast.preferencesSaved'));
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to save notification preferences';
+            const message = error instanceof Error ? error.message : ts('toast.savePreferencesFailed');
             toast.error(message);
         } finally {
             setSavingPreferences(false);
@@ -201,12 +202,12 @@ export default function SettingsPage() {
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok || !data?.url) {
-                throw new Error(data?.error || 'Unable to open billing portal');
+                throw new Error(data?.error || ts('toast.billingPortalFailed'));
             }
 
             window.location.assign(data.url as string);
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to open billing portal';
+            const message = error instanceof Error ? error.message : ts('toast.billingPortalFailed');
             toast.error(message);
             setManagingBilling(false);
         }
@@ -222,13 +223,13 @@ export default function SettingsPage() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error(data?.error || 'Failed to delete account');
+                throw new Error(data?.error || ts('toast.deleteAccountFailed'));
             }
 
-            toast.success('Account deleted successfully.');
+            toast.success(ts('toast.accountDeleted'));
             await signOut({ callbackUrl: '/login' });
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete account';
+            const message = error instanceof Error ? error.message : ts('toast.deleteAccountFailed');
             toast.error(message);
         } finally {
             setDeletingAccount(false);
@@ -241,7 +242,7 @@ export default function SettingsPage() {
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-slate-900">{t('settings')}</h1>
-                    <p className="text-sm text-slate-500">Manage your account, subscription, and alerts.</p>
+                    <p className="text-sm text-slate-500">{ts('subtitle')}</p>
                 </div>
 
                 {loadingPage ? (
@@ -249,7 +250,7 @@ export default function SettingsPage() {
                         <CardContent className="pt-6">
                             <div className="flex items-center gap-2 text-slate-500">
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                Loading settings...
+                                {ts('loading')}
                             </div>
                         </CardContent>
                     </Card>
@@ -257,49 +258,49 @@ export default function SettingsPage() {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Profile</CardTitle>
-                                <CardDescription>Update your display name and review your account email.</CardDescription>
+                                <CardTitle>{ts('profile.title')}</CardTitle>
+                                <CardDescription>{ts('profile.desc')}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Name</Label>
+                                        <Label htmlFor="name">{ts('profile.name')}</Label>
                                         <Input
                                             id="name"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            placeholder="Your name"
+                                            placeholder={ts('profile.namePlaceholder')}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
+                                        <Label htmlFor="email">{ts('profile.email')}</Label>
                                         <Input id="email" value={email} disabled readOnly />
                                     </div>
                                 </div>
                                 <Button onClick={onSaveProfile} disabled={savingProfile}>
                                     {savingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save profile
+                                    {ts('profile.save')}
                                 </Button>
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Subscription</CardTitle>
-                                <CardDescription>Review your current plan and billing status.</CardDescription>
+                                <CardTitle>{ts('subscription.title')}</CardTitle>
+                                <CardDescription>{ts('subscription.desc')}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="rounded-lg border border-slate-200 p-4 bg-slate-50">
-                                        <p className="text-xs uppercase text-slate-500 font-semibold">Plan</p>
+                                        <p className="text-xs uppercase text-slate-500 font-semibold">{ts('subscription.plan')}</p>
                                         <p className="text-lg font-semibold text-slate-900">{planLabel}</p>
                                     </div>
                                     <div className="rounded-lg border border-slate-200 p-4 bg-slate-50">
-                                        <p className="text-xs uppercase text-slate-500 font-semibold">Status</p>
+                                        <p className="text-xs uppercase text-slate-500 font-semibold">{ts('subscription.status')}</p>
                                         <p className="text-lg font-semibold text-slate-900">{statusLabel}</p>
                                     </div>
                                     <div className="rounded-lg border border-slate-200 p-4 bg-slate-50">
-                                        <p className="text-xs uppercase text-slate-500 font-semibold">Next billing</p>
+                                        <p className="text-xs uppercase text-slate-500 font-semibold">{ts('subscription.nextBilling')}</p>
                                         <p className="text-lg font-semibold text-slate-900">
                                             {statusLabel === 'Active' && nextBillingDate
                                                 ? new Date(nextBillingDate).toLocaleDateString('en-US')
@@ -311,12 +312,12 @@ export default function SettingsPage() {
                                 <div className="flex flex-wrap gap-3">
                                     <Button onClick={onManageBilling} disabled={managingBilling} variant="outline">
                                         {managingBilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Manage billing
+                                        {ts('subscription.manageBilling')}
                                     </Button>
 
                                     {planLabel === 'Free' && (
                                         <Button asChild>
-                                            <Link href="/pricing">Upgrade</Link>
+                                            <Link href="/pricing">{ts('subscription.upgrade')}</Link>
                                         </Button>
                                     )}
                                 </div>
@@ -325,63 +326,63 @@ export default function SettingsPage() {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Notifications</CardTitle>
-                                <CardDescription>Control which email alerts you receive.</CardDescription>
+                                <CardTitle>{ts('notifications.title')}</CardTitle>
+                                <CardDescription>{ts('notifications.desc')}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-5">
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <p className="font-medium text-slate-900">Email alerts for price drops</p>
-                                        <p className="text-sm text-slate-500">Get notified when tracked routes get cheaper.</p>
+                                        <p className="font-medium text-slate-900">{ts('notifications.priceDrop.title')}</p>
+                                        <p className="text-sm text-slate-500">{ts('notifications.priceDrop.desc')}</p>
                                     </div>
                                     <Switch checked={priceDropAlerts} onChange={(e) => setPriceDropAlerts(e.target.checked)} />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <p className="font-medium text-slate-900">Email alerts for flight disruptions</p>
-                                        <p className="text-sm text-slate-500">Receive updates about delays and major changes.</p>
+                                        <p className="font-medium text-slate-900">{ts('notifications.disruption.title')}</p>
+                                        <p className="text-sm text-slate-500">{ts('notifications.disruption.desc')}</p>
                                     </div>
                                     <Switch checked={disruptionAlerts} onChange={(e) => setDisruptionAlerts(e.target.checked)} />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <p className="font-medium text-slate-900">Weekly price summary email</p>
-                                        <p className="text-sm text-slate-500">A weekly digest of your tracked routes.</p>
+                                        <p className="font-medium text-slate-900">{ts('notifications.weeklySummary.title')}</p>
+                                        <p className="text-sm text-slate-500">{ts('notifications.weeklySummary.desc')}</p>
                                     </div>
                                     <Switch checked={weeklySummary} onChange={(e) => setWeeklySummary(e.target.checked)} />
                                 </div>
 
                                 <Button onClick={onSavePreferences} disabled={savingPreferences}>
                                     {savingPreferences && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save preferences
+                                    {ts('notifications.save')}
                                 </Button>
                             </CardContent>
                         </Card>
 
                         <Card className="border-red-200">
                             <CardHeader>
-                                <CardTitle className="text-red-700">Account</CardTitle>
-                                <CardDescription>Delete your account and all associated data.</CardDescription>
+                                <CardTitle className="text-red-700">{ts('account.title')}</CardTitle>
+                                <CardDescription>{ts('account.desc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive" disabled={deletingAccount}>
                                             {deletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Delete account
+                                            {ts('account.delete')}
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete account?</AlertDialogTitle>
+                                            <AlertDialogTitle>{ts('account.deleteConfirmTitle')}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This action is permanent. Your account, subscription access, and related data will be removed.
+                                                {ts('account.deleteConfirmDesc')}
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogCancel>{ts('account.cancel')}</AlertDialogCancel>
                                             <AlertDialogAction
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -390,7 +391,7 @@ export default function SettingsPage() {
                                                 className="bg-red-600 hover:bg-red-700"
                                             >
                                                 {deletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                Yes, delete account
+                                                {ts('account.confirmDelete')}
                                             </AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>

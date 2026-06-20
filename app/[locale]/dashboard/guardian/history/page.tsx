@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Clock3, Plane, ShieldAlert } from 'lucide-react';
 
 const toStatusLabel = (status?: string | null, delayMinutes?: number) => {
@@ -62,6 +62,7 @@ const formatDate = (value?: Date | string | null) => {
 
 export default async function GuardianHistoryPage() {
     const locale = await getLocale();
+    const t = await getTranslations('GuardianHistory');
     const session = await auth();
     if (!session?.user?.id) {
         redirect('/login');
@@ -133,28 +134,28 @@ export default async function GuardianHistoryPage() {
                             href={`/${locale}/dashboard/guardian`}
                             className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-sky-600 transition-colors"
                         >
-                            <ArrowLeft className="w-4 h-4" /> Back to Guardian dashboard
+                            <ArrowLeft className="w-4 h-4" /> {t('backToGuardian')}
                         </Link>
-                        <h1 className="mt-3 text-3xl md:text-4xl font-black text-slate-900">Flight History</h1>
-                        <p className="text-slate-500 mt-1">Historical analytics across all monitored trips.</p>
+                        <h1 className="mt-3 text-3xl md:text-4xl font-black text-slate-900">{t('title')}</h1>
+                        <p className="text-slate-500 mt-1">{t('subtitle')}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Total trips monitored</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('totalTripsMonitored')}</div>
                         <div className="mt-2 text-3xl font-black text-slate-900">{summary.totalTripsMonitored}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Total delay events detected</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('totalDelaysDetected')}</div>
                         <div className="mt-2 text-3xl font-black text-amber-600">{summary.totalDelaysDetected}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">Total hours delayed</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('totalHoursDelayed')}</div>
                         <div className="mt-2 text-3xl font-black text-sky-600">{summary.totalHoursDelayed.toFixed(1)}</div>
                     </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">EU261 eligible trips</div>
+                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('eu261EligibleTrips')}</div>
                         <div className="mt-2 text-3xl font-black text-emerald-600">{summary.eu261ClaimsGenerated}</div>
                     </div>
                 </div>
@@ -162,24 +163,24 @@ export default async function GuardianHistoryPage() {
                 <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                     <div className="flex items-center gap-2">
                         <Plane className="w-5 h-5 text-sky-600" />
-                        <h2 className="text-lg font-bold text-slate-900">Trip History</h2>
+                        <h2 className="text-lg font-bold text-slate-900">{t('tripHistory')}</h2>
                     </div>
                     {trips.length === 0 ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                            No monitored trip history yet.
+                            {t('noTripHistory')}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
-                                        <th className="py-3 pr-4">Route</th>
-                                        <th className="py-3 pr-4">Flight</th>
-                                        <th className="py-3 pr-4">Departure date</th>
-                                        <th className="py-3 pr-4">Status</th>
-                                        <th className="py-3 pr-4">Max delay (minutes)</th>
-                                        <th className="py-3 pr-4">EU261</th>
-                                        <th className="py-3 pr-4">Actions</th>
+                                        <th className="py-3 pr-4">{t('table.route')}</th>
+                                        <th className="py-3 pr-4">{t('table.flight')}</th>
+                                        <th className="py-3 pr-4">{t('table.departureDate')}</th>
+                                        <th className="py-3 pr-4">{t('table.status')}</th>
+                                        <th className="py-3 pr-4">{t('table.maxDelay')}</th>
+                                        <th className="py-3 pr-4">{t('table.eu261')}</th>
+                                        <th className="py-3 pr-4">{t('table.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -197,7 +198,7 @@ export default async function GuardianHistoryPage() {
                                                 <td className="py-3 pr-4 text-slate-700">
                                                     {firstSegment
                                                         ? `${firstSegment.airlineCode}${firstSegment.flightNumber}`
-                                                        : 'Unknown'}
+                                                        : t('unknown')}
                                                 </td>
                                                 <td className="py-3 pr-4 text-slate-700">{formatDate(firstSegment?.departureDate)}</td>
                                                 <td className="py-3 pr-4">
@@ -209,7 +210,7 @@ export default async function GuardianHistoryPage() {
                                                 <td className="py-3 pr-4">
                                                     {trip.snapshot?.eu261Eligible ? (
                                                         <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                                                            Eligible
+                                                            {t('eligible')}
                                                         </span>
                                                     ) : (
                                                         <span className="text-slate-500">-</span>
@@ -220,7 +221,7 @@ export default async function GuardianHistoryPage() {
                                                         href={`/${locale}/dashboard/guardian/${trip.id}`}
                                                         className="text-sky-700 hover:text-sky-800 font-semibold"
                                                     >
-                                                        View
+                                                        {t('view')}
                                                     </Link>
                                                 </td>
                                             </tr>
@@ -235,11 +236,11 @@ export default async function GuardianHistoryPage() {
                 <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                     <div className="flex items-center gap-2">
                         <ShieldAlert className="w-5 h-5 text-amber-600" />
-                        <h2 className="text-lg font-bold text-slate-900">Disruption Timeline</h2>
+                        <h2 className="text-lg font-bold text-slate-900">{t('disruptionTimeline')}</h2>
                     </div>
                     {recentEvents.length === 0 ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                            No alert events have been recorded yet.
+                            {t('noAlertEvents')}
                         </div>
                     ) : (
                         <div className="space-y-3">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { PlusCircle } from 'lucide-react';
 
 import { AddTripModal } from '@/components/dashboard/AddTripModal';
@@ -16,6 +17,7 @@ type GuardianOverviewActionsProps = {
 export function GuardianOverviewActions({ user }: GuardianOverviewActionsProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const router = useRouter();
+    const t = useTranslations('Dashboard');
 
     return (
         <>
@@ -24,7 +26,7 @@ export function GuardianOverviewActions({ user }: GuardianOverviewActionsProps) 
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors"
             >
-                <PlusCircle size={18} /> Add Trip
+                <PlusCircle size={18} /> {t('addTripShort')}
             </button>
 
             {isModalOpen && (

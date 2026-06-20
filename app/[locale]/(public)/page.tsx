@@ -1,6 +1,7 @@
 import { ShieldCheck, Bell, Clock, FileText, ArrowRight, PlaneTakeoff, AlertTriangle } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,7 +9,9 @@ export const metadata: Metadata = {
     description: "Monitor your flights, get disruption alerts, and generate EU261 compensation claims automatically.",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+    const t = await getTranslations("HomePage.guardian");
+
     return (
         <div className="flex flex-col min-h-screen">
             <section className="relative pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-sky-50">
@@ -20,29 +23,29 @@ export default function HomePage() {
                     <div className="max-w-4xl mx-auto text-center space-y-8 mb-14">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
                             <ShieldCheck className="w-4 h-4" />
-                            Guardian mode is active
+                            {t("badge")}
                         </div>
 
                         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-                            Monitor every booking,
+                            {t("hero.title")}
                             <br className="hidden md:block" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-sky-600">
-                                react before disruption hits
+                                {t("hero.titleHighlight")}
                             </span>
                         </h1>
 
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                            FlightAgent now focuses on Guardian workflows: continuous monitoring, disruption alerts, and EU261 compensation guidance.
+                            {t("hero.subtitle")}
                         </p>
                         <div className="flex flex-wrap justify-center gap-3">
                             <Link href="/dashboard/guardian">
                                 <Button className="rounded-xl bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-semibold">
-                                    Open Guardian <ArrowRight className="ml-2 w-4 h-4" />
+                                    {t("cta.openGuardian")} <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                             <Link href="/pricing">
                                 <Button variant="outline" className="rounded-xl border-slate-300 text-slate-800">
-                                    See plans
+                                    {t("cta.seePlans")}
                                 </Button>
                             </Link>
                         </div>
@@ -53,22 +56,22 @@ export default function HomePage() {
                             <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
                                 <PlaneTakeoff className="w-6 h-6 text-emerald-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">Flight Monitoring</h3>
-                            <p className="text-sm text-slate-600">Track booked trips on scheduled checks and keep a transparent history of changes.</p>
+                            <h3 className="font-bold text-slate-900 mb-2">{t("features.monitoring.title")}</h3>
+                            <p className="text-sm text-slate-600">{t("features.monitoring.desc")}</p>
                         </div>
                         <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm">
                             <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
                                 <Bell className="w-6 h-6 text-amber-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">Disruption Alerts</h3>
-                            <p className="text-sm text-slate-600">Receive focused notifications for delays, cancellations, and schedule-risk drift.</p>
+                            <h3 className="font-bold text-slate-900 mb-2">{t("features.alerts.title")}</h3>
+                            <p className="text-sm text-slate-600">{t("features.alerts.desc")}</p>
                         </div>
                         <div className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm">
                             <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center mb-4">
                                 <FileText className="w-6 h-6 text-sky-600" />
                             </div>
-                            <h3 className="font-bold text-slate-900 mb-2">EU261 Compensation</h3>
-                            <p className="text-sm text-slate-600">Generate claim-ready documents and move faster when a trip is disrupted.</p>
+                            <h3 className="font-bold text-slate-900 mb-2">{t("features.compensation.title")}</h3>
+                            <p className="text-sm text-slate-600">{t("features.compensation.desc")}</p>
                         </div>
                     </div>
                 </div>
@@ -79,18 +82,18 @@ export default function HomePage() {
                     <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
                         <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
                             <Clock className="w-5 h-5 text-emerald-300 mb-3" />
-                            <h3 className="font-semibold mb-1">Scheduled Transparency</h3>
-                            <p className="text-sm text-slate-300">Monitoring is periodic, and every snapshot is timestamped so expectations stay clear.</p>
+                            <h3 className="font-semibold mb-1">{t("trust.transparency.title")}</h3>
+                            <p className="text-sm text-slate-300">{t("trust.transparency.desc")}</p>
                         </div>
                         <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
                             <AlertTriangle className="w-5 h-5 text-amber-300 mb-3" />
-                            <h3 className="font-semibold mb-1">Early Warnings</h3>
-                            <p className="text-sm text-slate-300">Act before problems compound by using structured disruption signals from Guardian.</p>
+                            <h3 className="font-semibold mb-1">{t("trust.warnings.title")}</h3>
+                            <p className="text-sm text-slate-300">{t("trust.warnings.desc")}</p>
                         </div>
                         <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
                             <ShieldCheck className="w-5 h-5 text-sky-300 mb-3" />
-                            <h3 className="font-semibold mb-1">Protection Focus</h3>
-                            <p className="text-sm text-slate-300">Everything is centered on protecting completed bookings, not shopping for new ones.</p>
+                            <h3 className="font-semibold mb-1">{t("trust.protection.title")}</h3>
+                            <p className="text-sm text-slate-300">{t("trust.protection.desc")}</p>
                         </div>
                     </div>
                 </div>

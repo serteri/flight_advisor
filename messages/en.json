@@ -330,6 +330,46 @@
           "a": "Detected events and notification attempts are tracked separately. Delivery can be retried, fail, or remain pending depending on provider response."
         }
       }
+    },
+    "guardian": {
+      "badge": "Guardian mode is active",
+      "hero": {
+        "title": "Monitor every booking,",
+        "titleHighlight": "react before disruption hits",
+        "subtitle": "FlightAgent now focuses on Guardian workflows: continuous monitoring, disruption alerts, and EU261 compensation guidance."
+      },
+      "cta": {
+        "openGuardian": "Open Guardian",
+        "seePlans": "See plans"
+      },
+      "features": {
+        "monitoring": {
+          "title": "Flight Monitoring",
+          "desc": "Track booked trips on scheduled checks and keep a transparent history of changes."
+        },
+        "alerts": {
+          "title": "Disruption Alerts",
+          "desc": "Receive focused notifications for delays, cancellations, and schedule-risk drift."
+        },
+        "compensation": {
+          "title": "EU261 Compensation",
+          "desc": "Generate claim-ready documents and move faster when a trip is disrupted."
+        }
+      },
+      "trust": {
+        "transparency": {
+          "title": "Scheduled Transparency",
+          "desc": "Monitoring is periodic, and every snapshot is timestamped so expectations stay clear."
+        },
+        "warnings": {
+          "title": "Early Warnings",
+          "desc": "Act before problems compound by using structured disruption signals from Guardian."
+        },
+        "protection": {
+          "title": "Protection Focus",
+          "desc": "Everything is centered on protecting completed bookings, not shopping for new ones."
+        }
+      }
     }
   },
   "PricingPage": {
@@ -349,7 +389,28 @@
     "reportItem1": "Route structure and connection-risk review",
     "reportItem2": "Fare context against available route signals",
     "reportItem3": "Advisor recommendation with key trade-offs",
-    "buyOneTime": "Get Advisor Report - $4.99"
+    "buyOneTime": "Get Advisor Report - $4.99",
+    "guardian": {
+      "backToHome": "Back to home",
+      "title": "Simple plans for flight protection",
+      "subtitle": "Monitor your trips and get compensated when things go wrong.",
+      "free": {
+        "item1": "Monitor 1 flight",
+        "item2": "Disruption alerts (email)",
+        "item3": "EU261 eligibility check",
+        "item4": "Basic claim letter",
+        "cta": "Get started free"
+      },
+      "pro": {
+        "item1": "Monitor unlimited flights",
+        "item2": "Priority disruption alerts",
+        "item3": "EU261 claim letter + PDF",
+        "item4": "Email to airline (automated)",
+        "item5": "Alert history",
+        "checkingOut": "Starting checkout...",
+        "cta": "Start Pro"
+      }
+    }
   },
   "BlogPage": {
     "title": "Travel Guides & Tips",
@@ -413,6 +474,7 @@
     "emptyTitle": "No booked trips yet",
     "emptyDesc": "Add a booked trip to enable periodic monitoring and alert history.",
     "addTripShort": "Add booked trip",
+    "openGuardianDashboard": "Open Guardian dashboard",
     "protected": "MONITORED",
     "monitored": "MONITORED",
     "trackedFlights": "Tracked Itineraries",
@@ -425,6 +487,106 @@
     "updatesDaily": "Updates Daily",
     "paymentSuccessTitle": "Payment confirmed — welcome aboard!",
     "paymentSuccessBody": "Your plan is now active. You can start using itinerary scoring and scheduled monitoring tools."
+  },
+  "Settings": {
+    "subtitle": "Manage your account, subscription, and alerts.",
+    "loading": "Loading settings...",
+    "profile": {
+      "title": "Profile",
+      "desc": "Update your display name and review your account email.",
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "save": "Save profile"
+    },
+    "subscription": {
+      "title": "Subscription",
+      "desc": "Review your current plan and billing status.",
+      "plan": "Plan",
+      "status": "Status",
+      "nextBilling": "Next billing",
+      "manageBilling": "Manage billing",
+      "upgrade": "Upgrade"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "desc": "Control which email alerts you receive.",
+      "priceDrop": {
+        "title": "Email alerts for price drops",
+        "desc": "Get notified when tracked routes get cheaper."
+      },
+      "disruption": {
+        "title": "Email alerts for flight disruptions",
+        "desc": "Receive updates about delays and major changes."
+      },
+      "weeklySummary": {
+        "title": "Weekly price summary email",
+        "desc": "A weekly digest of your tracked routes."
+      },
+      "save": "Save preferences"
+    },
+    "account": {
+      "title": "Account",
+      "desc": "Delete your account and all associated data.",
+      "delete": "Delete account",
+      "deleteConfirmTitle": "Delete account?",
+      "deleteConfirmDesc": "This action is permanent. Your account, subscription access, and related data will be removed.",
+      "cancel": "Cancel",
+      "confirmDelete": "Yes, delete account"
+    },
+    "toast": {
+      "loadFailed": "Failed to load settings. Please refresh and try again.",
+      "nameEmpty": "Name cannot be empty.",
+      "saveProfileFailed": "Failed to save profile",
+      "profileUpdated": "Profile updated successfully.",
+      "savePreferencesFailed": "Failed to save notification preferences",
+      "preferencesSaved": "Notification preferences saved.",
+      "billingPortalFailed": "Unable to open billing portal",
+      "deleteAccountFailed": "Failed to delete account",
+      "accountDeleted": "Account deleted successfully."
+    }
+  },
+  "GuardianHistory": {
+    "backToGuardian": "Back to Guardian dashboard",
+    "title": "Flight History",
+    "subtitle": "Historical analytics across all monitored trips.",
+    "totalTripsMonitored": "Total trips monitored",
+    "totalDelaysDetected": "Total delay events detected",
+    "totalHoursDelayed": "Total hours delayed",
+    "eu261EligibleTrips": "EU261 eligible trips",
+    "tripHistory": "Trip History",
+    "noTripHistory": "No monitored trip history yet.",
+    "table": {
+      "route": "Route",
+      "flight": "Flight",
+      "departureDate": "Departure date",
+      "status": "Status",
+      "maxDelay": "Max delay (minutes)",
+      "eu261": "EU261",
+      "actions": "Actions"
+    },
+    "unknown": "Unknown",
+    "eligible": "Eligible",
+    "view": "View",
+    "disruptionTimeline": "Disruption Timeline",
+    "noAlertEvents": "No alert events have been recorded yet."
+  },
+  "GuardianDashboard": {
+    "loadError": "Unable to load monitored trips",
+    "tryAgain": "Please try again later.",
+    "title": "Travel Guardian",
+    "subtitle": "Periodic disruption monitoring enabled.",
+    "viewHistory": "View flight history",
+    "kpi": {
+      "monitoredTrips": "Monitored Trips",
+      "activeAlerts": "Active Alerts",
+      "checkInterval": "Check Interval",
+      "every6Hours": "Every 6 hours",
+      "valueFound": "Est. Value Found"
+    },
+    "yourTrips": "Your Monitored Trips",
+    "noTrips": "No trips found",
+    "noTripsDesc": "Import a PNR to start monitoring."
   },
   "Guardian": {
     "back": "Back",

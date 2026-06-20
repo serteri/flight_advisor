@@ -4,12 +4,14 @@ import { ShieldCheck, Bell, FileText, Mail, History } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function PricingPage() {
     const params = useParams<{ locale?: string | string[] }>();
     const localeParam = Array.isArray(params?.locale) ? params.locale[0] : params?.locale;
     const locale = localeParam || 'en';
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const t = useTranslations('PricingPage.guardian');
 
     async function handleCheckout() {
         if (isCheckingOut) return;
@@ -44,13 +46,13 @@ export default function PricingPage() {
             <div className="max-w-6xl mx-auto px-4 py-10 md:py-14">
                 <div className="mb-6">
                     <Link href={`/${locale}`} className="text-sm font-semibold text-slate-700 hover:text-slate-900">
-                        ← Back to home
+                        ← {t('backToHome')}
                     </Link>
                 </div>
 
                 <div className="mb-10 text-center">
-                    <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900">Simple plans for flight protection</h1>
-                    <p className="mt-3 text-slate-600">Monitor your trips and get compensated when things go wrong.</p>
+                    <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900">{t('title')}</h1>
+                    <p className="mt-3 text-slate-600">{t('subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -61,17 +63,17 @@ export default function PricingPage() {
                         <div className="text-4xl font-black text-slate-900">$0<span className="text-base font-semibold text-slate-500">/month</span></div>
 
                         <ul className="mt-5 space-y-2.5 text-sm">
-                            <li className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-emerald-600" /> Monitor 1 flight</li>
-                            <li className="flex items-center gap-2 text-slate-700"><Bell className="w-4 h-4 text-emerald-600" /> Disruption alerts (email)</li>
-                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> EU261 eligibility check</li>
-                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> Basic claim letter</li>
+                            <li className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-emerald-600" /> {t('free.item1')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><Bell className="w-4 h-4 text-emerald-600" /> {t('free.item2')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> {t('free.item3')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> {t('free.item4')}</li>
                         </ul>
 
                         <Link
                             href={`/${locale}/register`}
                             className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white hover:border-slate-400 text-slate-800 font-bold py-3"
                         >
-                            Get started free
+                            {t('free.cta')}
                         </Link>
                     </div>
 
@@ -82,11 +84,11 @@ export default function PricingPage() {
                         <div className="text-4xl font-black text-slate-900">$19<span className="text-base font-semibold text-slate-500">/month</span></div>
 
                         <ul className="mt-5 space-y-2.5 text-sm">
-                            <li className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-emerald-600" /> Monitor unlimited flights</li>
-                            <li className="flex items-center gap-2 text-slate-700"><Bell className="w-4 h-4 text-emerald-600" /> Priority disruption alerts</li>
-                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> EU261 claim letter + PDF</li>
-                            <li className="flex items-center gap-2 text-slate-700"><Mail className="w-4 h-4 text-emerald-600" /> Email to airline (automated)</li>
-                            <li className="flex items-center gap-2 text-slate-700"><History className="w-4 h-4 text-emerald-600" /> Alert history</li>
+                            <li className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-emerald-600" /> {t('pro.item1')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><Bell className="w-4 h-4 text-emerald-600" /> {t('pro.item2')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> {t('pro.item3')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><Mail className="w-4 h-4 text-emerald-600" /> {t('pro.item4')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><History className="w-4 h-4 text-emerald-600" /> {t('pro.item5')}</li>
                         </ul>
 
                         <button
@@ -95,7 +97,7 @@ export default function PricingPage() {
                             disabled={isCheckingOut}
                             className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3"
                         >
-                            {isCheckingOut ? 'Starting checkout...' : 'Start Pro'}
+                            {isCheckingOut ? t('pro.checkingOut') : t('pro.cta')}
                         </button>
                     </div>
                 </div>

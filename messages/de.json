@@ -48,7 +48,28 @@
     "reportItem1": "Route structure and connection-risk review",
     "reportItem2": "Fare context against available route signals",
     "reportItem3": "Advisor recommendation with key trade-offs",
-    "buyOneTime": "Get Advisor Report - $4.99"
+    "buyOneTime": "Get Advisor Report - $4.99",
+    "guardian": {
+      "backToHome": "Zurück zur Startseite",
+      "title": "Einfache Tarife für Flugschutz",
+      "subtitle": "Überwache deine Reisen und erhalte eine Entschädigung, wenn etwas schiefgeht.",
+      "free": {
+        "item1": "1 Flug überwachen",
+        "item2": "Störungswarnungen (E-Mail)",
+        "item3": "EU261-Anspruchsprüfung",
+        "item4": "Einfaches Anspruchsschreiben",
+        "cta": "Kostenlos starten"
+      },
+      "pro": {
+        "item1": "Unbegrenzte Flüge überwachen",
+        "item2": "Priorisierte Störungswarnungen",
+        "item3": "EU261-Anspruchsschreiben + PDF",
+        "item4": "E-Mail an Airline (automatisiert)",
+        "item5": "Warnverlauf",
+        "checkingOut": "Bezahlvorgang wird gestartet...",
+        "cta": "Pro starten"
+      }
+    }
   },
   "BlogPage": {
     "title": "Reiseführer & Tipps",
@@ -359,6 +380,46 @@
         "desc": "Gebuchte Reise hinzufügen und Störungsprüfungen, Benachrichtigungsverlauf und Zustellstatus zentral sehen.",
         "cta": "Ticket Hinzufügen"
       }
+    },
+    "guardian": {
+      "badge": "Guardian-Modus aktiv",
+      "hero": {
+        "title": "Jede Buchung überwachen,",
+        "titleHighlight": "vor Störungen reagieren",
+        "subtitle": "FlightAgent konzentriert sich jetzt auf Guardian-Workflows: kontinuierliche Überwachung, Störungswarnungen und EU261-Entschädigungsführung."
+      },
+      "cta": {
+        "openGuardian": "Guardian öffnen",
+        "seePlans": "Pläne ansehen"
+      },
+      "features": {
+        "monitoring": {
+          "title": "Flugüberwachung",
+          "desc": "Verfolge gebuchte Reisen mit geplanten Checks und führe eine transparente Änderungshistorie."
+        },
+        "alerts": {
+          "title": "Störungswarnungen",
+          "desc": "Erhalte gezielte Benachrichtigungen für Verspätungen, Stornierungen und Planabweichungen."
+        },
+        "compensation": {
+          "title": "EU261-Entschädigung",
+          "desc": "Erstelle antragsfertige Dokumente und handle schneller, wenn eine Reise gestört ist."
+        }
+      },
+      "trust": {
+        "transparency": {
+          "title": "Geplante Transparenz",
+          "desc": "Überwachung ist periodisch, und jeder Snapshot ist zeitgestempelt, damit die Erwartungen klar bleiben."
+        },
+        "warnings": {
+          "title": "Frühwarnungen",
+          "desc": "Handle, bevor Probleme sich häufen, indem du strukturierte Störungssignale von Guardian verwendest."
+        },
+        "protection": {
+          "title": "Schutzfokus",
+          "desc": "Alles dreht sich um den Schutz abgeschlossener Buchungen, nicht um die Suche nach neuen."
+        }
+      }
     }
   },
   "AboutPage": {
@@ -415,6 +476,7 @@
     "emptyTitle": "Noch keine gebuchten Reisen",
     "emptyDesc": "Fuegen Sie eine gebuchte Reise hinzu, um periodisches Monitoring und Alert-Historie zu aktivieren.",
     "addTripShort": "Gebuchte Reise hinzufuegen",
+    "openGuardianDashboard": "Guardian-Dashboard öffnen",
     "protected": "MONITORED",
     "monitored": "MONITORED",
     "trackedFlights": "Beobachtete Itineraries",
@@ -893,6 +955,106 @@
     "send": "Anspruch Senden",
     "sent": "Anspruch Gesendet!",
     "sentDesc": "Wir haben eine formelle Anfrage auf Kulanzentschädigung an {airline} gesendet. Sie sollten innerhalb von 7 Tagen eine Rückmeldung erhalten."
+  },
+  "Settings": {
+    "subtitle": "Verwalte dein Konto, Abonnement und Benachrichtigungen.",
+    "loading": "Einstellungen werden geladen...",
+    "profile": {
+      "title": "Profil",
+      "desc": "Aktualisiere deinen Anzeigenamen und überprüfe deine Konto-E-Mail.",
+      "name": "Name",
+      "namePlaceholder": "Dein Name",
+      "email": "E-Mail",
+      "save": "Profil speichern"
+    },
+    "subscription": {
+      "title": "Abonnement",
+      "desc": "Überprüfe deinen aktuellen Plan und Zahlungsstatus.",
+      "plan": "Plan",
+      "status": "Status",
+      "nextBilling": "Nächste Abrechnung",
+      "manageBilling": "Abrechnung verwalten",
+      "upgrade": "Upgrade"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "desc": "Lege fest, welche E-Mail-Benachrichtigungen du erhältst.",
+      "priceDrop": {
+        "title": "E-Mail-Benachrichtigungen bei Preisrückgang",
+        "desc": "Werde benachrichtigt, wenn verfolgte Strecken günstiger werden."
+      },
+      "disruption": {
+        "title": "E-Mail-Benachrichtigungen bei Flugstörungen",
+        "desc": "Erhalte Updates zu Verspätungen und größeren Änderungen."
+      },
+      "weeklySummary": {
+        "title": "Wöchentliche Preiszusammenfassung per E-Mail",
+        "desc": "Eine wöchentliche Übersicht deiner verfolgten Strecken."
+      },
+      "save": "Einstellungen speichern"
+    },
+    "account": {
+      "title": "Konto",
+      "desc": "Lösche dein Konto und alle zugehörigen Daten.",
+      "delete": "Konto löschen",
+      "deleteConfirmTitle": "Konto löschen?",
+      "deleteConfirmDesc": "Diese Aktion ist endgültig. Dein Konto, Abonnementzugriff und zugehörige Daten werden entfernt.",
+      "cancel": "Abbrechen",
+      "confirmDelete": "Ja, Konto löschen"
+    },
+    "toast": {
+      "loadFailed": "Einstellungen konnten nicht geladen werden. Bitte aktualisiere die Seite und versuche es erneut.",
+      "nameEmpty": "Name darf nicht leer sein.",
+      "saveProfileFailed": "Profil konnte nicht gespeichert werden",
+      "profileUpdated": "Profil erfolgreich aktualisiert.",
+      "savePreferencesFailed": "Benachrichtigungseinstellungen konnten nicht gespeichert werden",
+      "preferencesSaved": "Benachrichtigungseinstellungen gespeichert.",
+      "billingPortalFailed": "Abrechnungsportal konnte nicht geöffnet werden",
+      "deleteAccountFailed": "Konto konnte nicht gelöscht werden",
+      "accountDeleted": "Konto erfolgreich gelöscht."
+    }
+  },
+  "GuardianHistory": {
+    "backToGuardian": "Zurück zum Guardian-Dashboard",
+    "title": "Flugverlauf",
+    "subtitle": "Historische Analysen für alle überwachten Reisen.",
+    "totalTripsMonitored": "Überwachte Reisen insgesamt",
+    "totalDelaysDetected": "Erkannte Verspätungsereignisse insgesamt",
+    "totalHoursDelayed": "Verspätungsstunden insgesamt",
+    "eu261EligibleTrips": "EU261-berechtigte Reisen",
+    "tripHistory": "Reiseverlauf",
+    "noTripHistory": "Noch kein überwachter Reiseverlauf vorhanden.",
+    "table": {
+      "route": "Strecke",
+      "flight": "Flug",
+      "departureDate": "Abflugdatum",
+      "status": "Status",
+      "maxDelay": "Max. Verspätung (Minuten)",
+      "eu261": "EU261",
+      "actions": "Aktionen"
+    },
+    "unknown": "Unbekannt",
+    "eligible": "Berechtigt",
+    "view": "Ansehen",
+    "disruptionTimeline": "Störungs-Zeitleiste",
+    "noAlertEvents": "Noch keine Warnereignisse aufgezeichnet."
+  },
+  "GuardianDashboard": {
+    "loadError": "Überwachte Reisen konnten nicht geladen werden",
+    "tryAgain": "Bitte versuche es später erneut.",
+    "title": "Travel Guardian",
+    "subtitle": "Periodische Störungsüberwachung aktiviert.",
+    "viewHistory": "Flugverlauf ansehen",
+    "kpi": {
+      "monitoredTrips": "Überwachte Reisen",
+      "activeAlerts": "Aktive Warnungen",
+      "checkInterval": "Prüfintervall",
+      "every6Hours": "Alle 6 Stunden",
+      "valueFound": "Geschätzter gefundener Wert"
+    },
+    "yourTrips": "Deine überwachten Reisen",
+    "noTrips": "Keine Reisen gefunden",
+    "noTripsDesc": "Importiere ein PNR, um die Überwachung zu starten."
   },
   "Guardian": {
     "back": "Back",
