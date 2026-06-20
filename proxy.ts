@@ -3,13 +3,11 @@ import authConfig from "@/auth.config";
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { routing } from '@/i18n/routing';
 
 const { auth } = NextAuth(authConfig);
 
-const intlMiddleware = createMiddleware({
-    locales: ['en', 'tr', 'de'],
-    defaultLocale: 'en'
-});
+const intlMiddleware = createMiddleware(routing);
 
 function apiBypass(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
@@ -52,6 +50,12 @@ export default auth((req) => {
 
     const pathname = req.nextUrl.pathname;
 
+    // Non-default locales (tr, de) keep their URL prefix; the default
+    // locale (en) has none, so preserve whatever prefix is present when
+    // building redirect targets below.
+    const localePrefixMatch = pathname.match(/^\/(tr|de)(?=\/|$)/);
+    const localePrefix = localePrefixMatch ? localePrefixMatch[0] : '';
+
     const isLoggedIn = !!req.auth;
     const isDashboard = pathname.includes('/dashboard');
     const isLogin = pathname === '/login' || /^\/(en|tr|de)\/login$/.test(pathname);
@@ -60,7 +64,7 @@ export default auth((req) => {
     const protocol = req.nextUrl.protocol;
 
     if (isDashboard && !isLoggedIn) {
-        const loginUrl = new URL('/login', `${protocol}//${host}`);
+        const loginUrl = new URL(`${localePrefix}/login`, `${protocol}//${host}`);
         if (req.nextUrl.search) loginUrl.search = req.nextUrl.search;
         return NextResponse.redirect(loginUrl);
     }
@@ -71,7 +75,7 @@ export default auth((req) => {
             return NextResponse.redirect(new URL(callbackUrl, `${protocol}//${host}`));
         }
 
-        const dashboardUrl = new URL('/dashboard', `${protocol}//${host}`);
+        const dashboardUrl = new URL(`${localePrefix}/dashboard`, `${protocol}//${host}`);
         return NextResponse.redirect(dashboardUrl);
     }
 
