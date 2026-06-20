@@ -10,7 +10,7 @@ import type { GuardianMetricEvent } from "@/types/operatorHealth";
 import { MonitoringEventType, recordMonitoringEvent } from "@/lib/alertLifecycle";
 import airports from 'airports';
 
-export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE';
+export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
 
 export interface GuardianEvent {
@@ -336,16 +336,20 @@ export async function processFlightMonitoring() {
                             ? 'Latest check identified a possible cancellation'
                             : lifecycleEventType === 'GATE_CHANGE'
                                 ? 'Latest check identified a gate change'
-                                : lifecycleEventType === 'MONITORING_STALE'
-                                    ? 'Monitoring currently delayed'
-                                    : lifecycleEventType === 'MONITORING_RECOVERED'
-                                        ? 'Monitoring recovered'
-                                        : 'Monitoring status currently unavailable';
+                                : lifecycleEventType === 'EQUIPMENT_CHANGE'
+                                    ? 'Aircraft type changed'
+                                    : lifecycleEventType === 'MONITORING_STALE'
+                                        ? 'Monitoring currently delayed'
+                                        : lifecycleEventType === 'MONITORING_RECOVERED'
+                                            ? 'Monitoring recovered'
+                                            : 'Monitoring status currently unavailable';
                     const message = lifecycleEventType === 'MONITORING_STALE'
                         ? 'The latest scheduled monitoring check was delayed. Notification delivery will resume when checks recover.'
                         : lifecycleEventType === 'MONITORING_RECOVERED'
                             ? 'Monitoring recovered after a delayed check window.'
-                            : lifecycleEventType === 'STATUS_UNAVAILABLE'
+                            : lifecycleEventType === 'EQUIPMENT_CHANGE'
+                                ? `Aircraft changed from ${event.previous ?? 'Unknown'} to ${(event.current as any)?.aircraftType ?? 'Unknown'}.`
+                                : lifecycleEventType === 'STATUS_UNAVAILABLE'
                         ? 'Monitoring is currently working with delayed or unavailable provider status data.'
                         : 'A periodic monitoring check detected a change on this booked trip.';
                     const lifecycleAlert = await recordMonitoringEvent({
@@ -702,6 +706,31 @@ export async function processFlightMonitoring() {
                     newSnapshot.gateDetail = `dep:${previousState.departureGate || 'N/A'}>${newDepGate || 'N/A'}|arr:${previousState.arrivalGate || 'N/A'}>${newArrGate || 'N/A'}`;
                 }
 
+                const incomingAircraftType = currentStatus?.aircraft?.model?.trim() || null;
+                const previousAircraftType = segment.aircraftType?.trim() || null;
+                if (incomingAircraftType && previousAircraftType && incomingAircraftType !== previousAircraftType) {
+                    await prisma.flightSegment.update({
+                        where: { id: segment.id },
+                        data: { aircraftType: incomingAircraftType },
+                    });
+
+                    await queueDispatch({
+                        type: 'EQUIPMENT_CHANGE',
+                        lifecycleEventType: 'EQUIPMENT_CHANGE',
+                        subType: 'aircraft_type_change',
+                        severity: 'medium',
+                        previous: previousAircraftType,
+                        current: {
+                            aircraftType: incomingAircraftType,
+                            ...flightContext,
+                        },
+                    }, {
+                        transition: transitionMarker,
+                        previousAircraftType,
+                        currentAircraftType: incomingAircraftType,
+                    });
+                }
+
                 if (wasMonitoringStale && currentStatus) {
                     await queueDispatch({
                         type: 'DATA_ISSUE',
@@ -763,6 +792,7 @@ export async function processFlightMonitoring() {
                     'DELAY': `Delay detected: Escalated severity mapped`,
                     'CANCELLED': `Flight cancelled!`,
                     'GATE_CHANGE': `Gate change detected.`,
+                    'EQUIPMENT_CHANGE': `Aircraft type change detected.`,
                     'DATA_ISSUE': `Unreliable data stream detected.`
                 };
                 

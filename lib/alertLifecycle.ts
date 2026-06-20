@@ -39,6 +39,7 @@ export const MONITORING_EVENT_TAXONOMY = {
     'CONNECTION_RISK',
     'STATUS_UNAVAILABLE',
     'MONITORING_STALE',
+    'EQUIPMENT_CHANGE',
   ],
   system: ['PROVIDER_UNAVAILABLE', 'CHECK_DELAYED', 'MONITORING_RECOVERED'],
 } satisfies Record<string, MonitoringEventType[]>;

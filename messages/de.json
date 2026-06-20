@@ -982,7 +982,8 @@
     "auditLog": {
       "title": "Überwachungsverlauf",
       "empty": "Noch keine Überwachungsereignisse.",
-      "checkCompleted": "Regelmäßige Prüfung abgeschlossen: keine Probleme festgestellt."
+      "checkCompleted": "Regelmäßige Prüfung abgeschlossen: keine Probleme festgestellt.",
+      "equipmentChangeNotice": "Achtung: Flugzeugtyp/Ausstattung wurde geändert. Ihre Sitzplatzzuweisung könnte betroffen sein."
     }
   },
   "GuardianHistory": {

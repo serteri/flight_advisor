@@ -698,6 +698,7 @@ enum MonitoringEventType {
   PROVIDER_UNAVAILABLE
   CHECK_DELAYED
   MONITORING_RECOVERED
+  EQUIPMENT_CHANGE
 }
 
 enum AlertSourceType {

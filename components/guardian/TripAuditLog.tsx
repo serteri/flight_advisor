@@ -22,6 +22,7 @@ const DISRUPTION_TYPES = new Set([
     'GATE_CHANGE',
     'TERMINAL_CHANGE',
     'CONNECTION_RISK',
+    'EQUIPMENT_CHANGE',
 ]);
 
 type EventTone = 'disruption-high' | 'disruption-medium' | 'recovered' | 'system';
@@ -106,6 +107,11 @@ export function TripAuditLog({ events }: TripAuditLogProps) {
                                         <span className="text-xs text-slate-500">{event.when}</span>
                                     </div>
                                     <p className="mt-2 text-sm text-slate-700">{message}</p>
+                                    {event.eventType === 'EQUIPMENT_CHANGE' && (
+                                        <p className="mt-2 text-sm font-semibold text-amber-700">
+                                            {t('equipmentChangeNotice')}
+                                        </p>
+                                    )}
                                 </div>
                             </li>
                         );

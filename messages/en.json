@@ -653,7 +653,8 @@
     "auditLog": {
       "title": "Monitoring history",
       "empty": "No monitoring events yet.",
-      "checkCompleted": "Periodic check completed: no issues found."
+      "checkCompleted": "Periodic check completed: no issues found.",
+      "equipmentChangeNotice": "Heads up: the aircraft type/equipment changed. Your seat assignment may be affected."
     }
   },
   "GuardianHistory": {

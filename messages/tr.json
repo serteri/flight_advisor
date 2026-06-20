@@ -653,7 +653,8 @@
     "auditLog": {
       "title": "İzleme geçmişi",
       "empty": "Henüz izleme olayı yok.",
-      "checkCompleted": "Periyodik kontrol tamamlandı: sorun bulunmadı."
+      "checkCompleted": "Periyodik kontrol tamamlandı: sorun bulunmadı.",
+      "equipmentChangeNotice": "Dikkat: Uçak tipi/ekipman değişti. Koltuk yerleşiminiz etkilenmiş olabilir."
     }
   },
   "GuardianHistory": {
