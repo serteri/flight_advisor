@@ -649,7 +649,12 @@
       "notEligible": "Şu anda nitelikli bir iptal veya uzun rötar örüntüsü doğrulanmadı.",
       "unknown": "Guardian henüz yeterli doğrulanmış aksaklık verisi toplamadığı için uygunluk bilinmiyor."
     },
-    "airlineFallback": "Havayolu {code}"
+    "airlineFallback": "Havayolu {code}",
+    "auditLog": {
+      "title": "İzleme geçmişi",
+      "empty": "Henüz izleme olayı yok.",
+      "checkCompleted": "Periyodik kontrol tamamlandı: sorun bulunmadı."
+    }
   },
   "GuardianHistory": {
     "backToGuardian": "Guardian paneline dön",

@@ -978,7 +978,12 @@
       "notEligible": "Es liegt derzeit kein bestätigtes qualifizierendes Stornierungs- oder Langverspätungsmuster vor.",
       "unknown": "Die Anspruchsberechtigung ist unbekannt, da Guardian noch nicht genug verifizierte Störungsnachweise gesammelt hat."
     },
-    "airlineFallback": "Airline {code}"
+    "airlineFallback": "Airline {code}",
+    "auditLog": {
+      "title": "Überwachungsverlauf",
+      "empty": "Noch keine Überwachungsereignisse.",
+      "checkCompleted": "Regelmäßige Prüfung abgeschlossen: keine Probleme festgestellt."
+    }
   },
   "GuardianHistory": {
     "backToGuardian": "Zurück zum Guardian-Dashboard",

@@ -649,7 +649,12 @@
       "notEligible": "No qualifying cancellation or long-delay pattern is currently confirmed.",
       "unknown": "Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet."
     },
-    "airlineFallback": "Airline {code}"
+    "airlineFallback": "Airline {code}",
+    "auditLog": {
+      "title": "Monitoring history",
+      "empty": "No monitoring events yet.",
+      "checkCompleted": "Periodic check completed: no issues found."
+    }
   },
   "GuardianHistory": {
     "backToGuardian": "Back to Guardian dashboard",

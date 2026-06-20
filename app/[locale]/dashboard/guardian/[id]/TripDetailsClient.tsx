@@ -16,6 +16,7 @@ import {
     ShieldCheck,
 } from 'lucide-react';
 import { AIRLINE_CLAIM_PORTALS, getAirlineClaimUrl } from '@/lib/airlineClaimPortals';
+import { TripAuditLog } from '@/components/guardian/TripAuditLog';
 
 type TripDetailsClientProps = {
     locale: string;
@@ -773,6 +774,19 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div className="mt-6">
+                <TripAuditLog
+                    events={trip.alertEvents.map((event) => ({
+                        id: event.id,
+                        eventType: event.eventType,
+                        severity: event.severity,
+                        title: event.title,
+                        message: event.message,
+                        when: dt(event.detectedAt),
+                    }))}
+                />
             </div>
 
             {isDeleteModalOpen && (
