@@ -5,6 +5,7 @@ import { getMessages } from 'next-intl/server';
 import SessionProvider from "@/components/SessionProvider";
 import BuyNowVariantBootstrap from '@/components/experiment/BuyNowVariantBootstrap';
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import Footer from "@/components/Footer";
 import "../globals.css";
 
 const GA_ID = "G-04HJXKRJFE";
@@ -60,7 +61,10 @@ export default async function RootLayout({
                 <SessionProvider>
                     <NextIntlClientProvider messages={messages}>
                         <BuyNowVariantBootstrap />
-                        {children}
+                        <div className="flex min-h-screen flex-col">
+                            <div className="flex-1">{children}</div>
+                            <Footer />
+                        </div>
                     </NextIntlClientProvider>
                 </SessionProvider>
 

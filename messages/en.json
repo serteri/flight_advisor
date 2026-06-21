@@ -31,6 +31,17 @@
     "scoreItinerary": "Score Itinerary",
     "intelligenceMode": "ITINERARY INTELLIGENCE"
   },
+  "Footer": {
+    "tagline": "Trip decision intelligence and transparent monitoring for booked flights.",
+    "links": {
+      "home": "Home",
+      "guardian": "Guardian",
+      "pricing": "Pricing",
+      "blog": "Blog",
+      "about": "About"
+    },
+    "copyright": "© {year} FlightAgent. All rights reserved."
+  },
   "Results": {
     "noFlights": "No flights found",
     "agentScore": "Flight Intelligence Score",

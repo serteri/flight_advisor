@@ -31,6 +31,17 @@
     "scoreItinerary": "Flug Bewerten",
     "intelligenceMode": "REISEINTELLIGENZ"
   },
+  "Footer": {
+    "tagline": "Reiseentscheidungsintelligenz und transparente Überwachung für gebuchte Flüge.",
+    "links": {
+      "home": "Startseite",
+      "guardian": "Guardian",
+      "pricing": "Preise",
+      "blog": "Blog",
+      "about": "Über uns"
+    },
+    "copyright": "© {year} FlightAgent. Alle Rechte vorbehalten."
+  },
   "PricingPage": {
     "title": "Itinerary Intelligence Plans",
     "subtitle": "Scoring, Advisor Reports, scheduled Monitoring und Alert History ohne Real-time oder Airline-grade Versprechen.",

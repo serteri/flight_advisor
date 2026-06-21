@@ -31,6 +31,17 @@
     "scoreItinerary": "Bir Uçuşu Skorla",
     "intelligenceMode": "SEYAHAT ZEKASI"
   },
+  "Footer": {
+    "tagline": "Rezervasyon edilen uçuşlar için yolculuk karar zekası ve şeffaf izleme.",
+    "links": {
+      "home": "Ana Sayfa",
+      "guardian": "Guardian",
+      "pricing": "Fiyatlandırma",
+      "blog": "Blog",
+      "about": "Hakkımızda"
+    },
+    "copyright": "© {year} FlightAgent. Tüm hakları saklıdır."
+  },
   "PricingPage": {
     "title": "Itinerary Intelligence Plans",
     "subtitle": "Scoring, advisor reports, scheduled monitoring ve alert history; real-time veya airline-grade vaat olmadan.",
