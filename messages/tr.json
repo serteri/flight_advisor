@@ -386,6 +386,23 @@
           "desc": "Her şey tamamlanmış rezervasyonları korumaya odaklanmıştır, yeni rezervasyon araştırmasına değil."
         }
       }
+    },
+    "heroForm": {
+      "flightNumberLabel": "Uçuş numarası",
+      "flightNumberPlaceholder": "örn. TK1999",
+      "dateLabel": "Uçuş tarihi",
+      "emailLabel": "E-posta",
+      "emailPlaceholder": "Uyarılar için e-posta",
+      "consentText": "Bu yolculukla ilgili uçuş uyarılarını e-posta ile almayı kabul ediyorum.",
+      "submit": "Uçuşumu takip et",
+      "submitting": "İzleme başlatılıyor...",
+      "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+      "confirmation": {
+        "title": "Uçuşunuzu takip ediyoruz",
+        "subtitle": "Bu yolculukla ilgili bir değişiklik olursa e-posta ile uyarı alacaksınız.",
+        "nextSteps": "Bu yolculuğun tam izleme panelini görmek için istediğiniz zaman ücretsiz bir hesap oluşturabilirsiniz.",
+        "backHome": "Ana sayfaya dön"
+      }
     }
   },
   "AboutPage": {

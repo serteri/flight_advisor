@@ -336,6 +336,23 @@
           "desc": "Everything is centered on protecting completed bookings, not shopping for new ones."
         }
       }
+    },
+    "heroForm": {
+      "flightNumberLabel": "Flight number",
+      "flightNumberPlaceholder": "e.g. TK1999",
+      "dateLabel": "Flight date",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Email for alerts",
+      "consentText": "I agree to receive flight alerts for this trip by email.",
+      "submit": "Track my flight",
+      "submitting": "Starting monitoring...",
+      "genericError": "Something went wrong. Please try again.",
+      "confirmation": {
+        "title": "We're tracking your flight",
+        "subtitle": "You'll get an email alert if anything changes with this trip.",
+        "nextSteps": "Create a free account any time to see the full monitoring dashboard for this trip.",
+        "backHome": "Back to home"
+      }
     }
   },
   "PricingPage": {

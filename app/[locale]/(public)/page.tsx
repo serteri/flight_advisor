@@ -1,6 +1,7 @@
 import { ShieldCheck, Bell, Clock, FileText, ArrowRight, PlaneTakeoff, AlertTriangle } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
+import { HeroSearchForm } from "@/components/home/HeroSearchForm";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 
@@ -49,6 +50,10 @@ export default async function HomePage() {
                                 </Button>
                             </Link>
                         </div>
+                    </div>
+
+                    <div className="mb-14">
+                        <HeroSearchForm />
                     </div>
 
                     <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">

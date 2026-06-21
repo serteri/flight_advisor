@@ -521,7 +521,11 @@ model MonitoredTrip {
   // Trip Identity
   pnr             String?
   routeLabel      String   // "BNE ➝ IST"
-  
+
+  // Lead capture (anonymous "track my flight" form)
+  subscriberEmail String?
+  consentGiven    Boolean  @default(false)
+
   // Finansal Veriler (Bilet Bazlı)
   originalPrice   Float
   currency        String   @default("AUD")
