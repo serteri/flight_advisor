@@ -685,7 +685,10 @@
       "eligibleHigh": "250 - 600 EUR (tahmini)",
       "eligibleLow": "250 EUR (olası minimum, tahmini)",
       "notEligible": "Korunuyor — aksaklık tespit edilmedi",
-      "unknown": "Bilinmiyor (daha fazla aksaklık verisi gerekli)"
+      "unknown": "Bilinmiyor (daha fazla aksaklık verisi gerekli)",
+      "title": "Tazminat hakkınız olabilir",
+      "description": "Uçuşunuzdaki aksaklık nedeniyle AB261 kapsamında 600€'ya kadar tazminat hakkınız olabilir.",
+      "buttonText": "Tazminat talebi başlat"
     },
     "explanation": {
       "eligible": "Guardian, AB261 kriterlerini karşılayabilecek bir aksaklık örüntüsü tespit etti.",

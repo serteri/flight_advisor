@@ -1014,7 +1014,10 @@
       "eligibleHigh": "250 - 600 EUR (geschätzt)",
       "eligibleLow": "250 EUR (mögliches Minimum, geschätzt)",
       "notEligible": "Geschützt — keine Störung erkannt",
-      "unknown": "Unbekannt (mehr Störungsdaten erforderlich)"
+      "unknown": "Unbekannt (mehr Störungsdaten erforderlich)",
+      "title": "Du hast möglicherweise Anspruch auf Entschädigung",
+      "description": "Aufgrund der Störung bei deinem Flug hast du möglicherweise Anspruch auf bis zu 600 € Entschädigung nach EU261.",
+      "buttonText": "Entschädigung beantragen"
     },
     "explanation": {
       "eligible": "Guardian hat ein Störungsmuster erkannt, das die EU261-Kriterien erfüllen könnte.",

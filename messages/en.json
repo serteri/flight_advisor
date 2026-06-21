@@ -685,7 +685,10 @@
       "eligibleHigh": "EUR 250 - 600 (estimate)",
       "eligibleLow": "EUR 250 (possible minimum, estimate)",
       "notEligible": "Protected — no disruption detected",
-      "unknown": "Unknown (needs more disruption data)"
+      "unknown": "Unknown (needs more disruption data)",
+      "title": "You may be eligible for compensation",
+      "description": "Due to the disruption on your flight, you may be entitled to up to €600 in compensation under EU261.",
+      "buttonText": "Start my claim"
     },
     "explanation": {
       "eligible": "Guardian detected a disruption pattern that may satisfy EU261 criteria.",

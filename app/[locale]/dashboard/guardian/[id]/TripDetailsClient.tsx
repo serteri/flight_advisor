@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { AIRLINE_CLAIM_PORTALS, getAirlineClaimUrl } from '@/lib/airlineClaimPortals';
 import { TripAuditLog } from '@/components/guardian/TripAuditLog';
+import { CompensationCard } from '@/components/guardian/CompensationCard';
 
 type TripDetailsClientProps = {
     locale: string;
@@ -229,6 +230,10 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
             : t('explanation.unknown');
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
+    const hasSevereDisruption =
+        cancellationFlag ||
+        trip.status === 'CANCELLED' ||
+        trip.alertEvents.some((event) => event.severity === 'HIGH');
     const shouldShowClaimSection =
         eu261State === 'ELIGIBLE' ||
         hasDisruptionDetected ||
@@ -455,6 +460,8 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
+
+                {hasSevereDisruption && <CompensationCard />}
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
