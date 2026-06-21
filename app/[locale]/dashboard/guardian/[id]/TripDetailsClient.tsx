@@ -461,7 +461,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
 
-                {hasSevereDisruption && <CompensationCard />}
+                {hasSevereDisruption && <CompensationCard tripId={trip.id} />}
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">

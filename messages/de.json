@@ -46,6 +46,37 @@
     "title": "Deine verfolgten Reisen",
     "empty": "Du hast noch keine verfolgten Reisen."
   },
+  "ClaimProcess": {
+    "title": "Starte deinen Entschädigungsantrag",
+    "subtitle": "Ein paar kurze Schritte, den Rest übernehmen wir.",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Antrag absenden",
+    "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "submittedTitle": "Antrag eingereicht",
+    "submittedSubtitle": "Wir haben deinen Antrag erhalten und melden uns per E-Mail mit den nächsten Schritten.",
+    "backToTrip": "Zurück zu meiner Reise",
+    "step1": {
+      "title": "Bestätige deine Flugdaten",
+      "route": "Strecke",
+      "flightNumber": "Flugnummer",
+      "date": "Datum",
+      "fullNameLabel": "Vollständiger Name",
+      "emailLabel": "E-Mail"
+    },
+    "step2": {
+      "title": "Lade deinen Pass oder dein Ticket hoch",
+      "description": "Wir benötigen eine Kopie deines Passes oder Tickets, um den Antrag bei der Fluggesellschaft zu bearbeiten.",
+      "uploadPrompt": "Klicken, um eine PDF-Datei oder ein Bild hochzuladen"
+    },
+    "step3": {
+      "title": "Unterschreiben und bevollmächtigen",
+      "description": "Mit deiner Unterschrift und Bestätigung bevollmächtigst du FlightAgent, diesen Entschädigungsantrag im deinem Namen einzureichen.",
+      "signatureHint": "Zeichne deine Unterschrift oben (optional)",
+      "clearSignature": "Löschen",
+      "consentText": "Ich bestätige, dass die obigen Angaben korrekt sind, und bevollmächtige FlightAgent, diesen Entschädigungsantrag in meinem Namen einzureichen."
+    }
+  },
   "Footer": {
     "tagline": "Reiseentscheidungsintelligenz und transparente Überwachung für gebuchte Flüge.",
     "links": {

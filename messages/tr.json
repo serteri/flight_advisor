@@ -46,6 +46,37 @@
     "title": "Takip ettiğiniz yolculuklar",
     "empty": "Henüz takip ettiğiniz bir yolculuk yok."
   },
+  "ClaimProcess": {
+    "title": "Tazminat talebinizi başlatın",
+    "subtitle": "Birkaç hızlı adım, gerisini biz hallederiz.",
+    "back": "Geri",
+    "next": "İleri",
+    "submit": "Talebi gönder",
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "submittedTitle": "Talebiniz gönderildi",
+    "submittedSubtitle": "Talebinizi aldık, sonraki adımlar için e-posta ile sizinle iletişime geçeceğiz.",
+    "backToTrip": "Yolculuğuma dön",
+    "step1": {
+      "title": "Uçuş bilgilerinizi onaylayın",
+      "route": "Rota",
+      "flightNumber": "Uçuş numarası",
+      "date": "Tarih",
+      "fullNameLabel": "Ad Soyad",
+      "emailLabel": "E-posta"
+    },
+    "step2": {
+      "title": "Pasaportunuzu veya biletinizi yükleyin",
+      "description": "Talebi havayoluyla işleme almak için pasaport veya bilet kopyanıza ihtiyacımız var.",
+      "uploadPrompt": "PDF veya görsel yüklemek için tıklayın"
+    },
+    "step3": {
+      "title": "İmzalayın ve yetkilendirin",
+      "description": "Aşağıyı imzalayıp onaylayarak, FlightAgent'ı bu tazminat talebini sizin adınıza sunmaya yetkilendiriyorsunuz.",
+      "signatureHint": "İmzanızı yukarıya çizin (isteğe bağlı)",
+      "clearSignature": "Temizle",
+      "consentText": "Yukarıdaki bilgilerin doğru olduğunu onaylıyorum ve FlightAgent'ı bu tazminat talebini adıma sunmaya yetkilendiriyorum."
+    }
+  },
   "Footer": {
     "tagline": "Rezervasyon edilen uçuşlar için yolculuk karar zekası ve şeffaf izleme.",
     "links": {

@@ -3,7 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
-export function CompensationCard() {
+interface CompensationCardProps {
+    tripId: string;
+}
+
+export function CompensationCard({ tripId }: CompensationCardProps) {
     const t = useTranslations('GuardianTripDetails.compensation');
 
     return (
@@ -22,7 +26,7 @@ export function CompensationCard() {
                 </div>
 
                 <a
-                    href="/claim-process"
+                    href={`/claim-process/${tripId}`}
                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold px-5 py-3 text-sm shadow-sm shadow-amber-300/40 transition-all"
                 >
                     {t('buttonText')}

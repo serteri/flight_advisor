@@ -563,6 +563,7 @@ model MonitoredTrip {
   snapshot        TripSnapshot?
   deliveries      NotificationDelivery[]
   playbook        DisruptionPlaybook?
+  claimRequests   ClaimRequest[]
 
   @@index([userId])
   @@index([status, nextCheckAt])
@@ -598,6 +599,32 @@ model LoginToken {
   expiresAt  DateTime
 
   @@index([identifier])
+}
+
+model ClaimRequest {
+  id               String   @id @default(cuid())
+  tripId           String
+  userId           String?
+
+  // Step 1: confirmed flight details (snapshot at submission time)
+  fullName         String
+  email            String
+
+  // Step 2: passport/ticket document required for the legal process
+  documentPath     String?
+  documentName     String?
+
+  // Step 3: legal authorization
+  signatureDataUrl String?  @db.Text
+  consentGiven     Boolean  @default(false)
+
+  status           String   @default("SUBMITTED")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trip             MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
 }
 
 model FlightSegment {

@@ -46,6 +46,37 @@
     "title": "Your tracked trips",
     "empty": "You don't have any tracked trips yet."
   },
+  "ClaimProcess": {
+    "title": "Start your compensation claim",
+    "subtitle": "A few quick steps and we'll take it from here.",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit claim",
+    "genericError": "Something went wrong. Please try again.",
+    "submittedTitle": "Claim submitted",
+    "submittedSubtitle": "We've received your claim and will be in touch by email with next steps.",
+    "backToTrip": "Back to my trip",
+    "step1": {
+      "title": "Confirm your flight details",
+      "route": "Route",
+      "flightNumber": "Flight number",
+      "date": "Date",
+      "fullNameLabel": "Full name",
+      "emailLabel": "Email"
+    },
+    "step2": {
+      "title": "Upload your passport or ticket",
+      "description": "We need a copy of your passport or ticket to process the claim with the airline.",
+      "uploadPrompt": "Click to upload a PDF or image"
+    },
+    "step3": {
+      "title": "Sign and authorize",
+      "description": "By signing below and confirming, you authorize FlightAgent to file this compensation claim on your behalf.",
+      "signatureHint": "Draw your signature above (optional)",
+      "clearSignature": "Clear",
+      "consentText": "I confirm the details above are accurate and authorize FlightAgent to submit this compensation claim on my behalf."
+    }
+  },
   "Footer": {
     "tagline": "Trip decision intelligence and transparent monitoring for booked flights.",
     "links": {

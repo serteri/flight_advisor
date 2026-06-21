@@ -21,6 +21,9 @@
 # production
 /build
 
+# user-uploaded claim documents (PII) — never commit, never serve via /public
+/private-uploads
+
 # misc
 .DS_Store
 *.pem
