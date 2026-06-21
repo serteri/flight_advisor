@@ -16,6 +16,11 @@ export interface AviationstackError {
     code?: string;
 }
 
+export interface FlightRoute {
+    originIata: string;
+    destinationIata: string;
+}
+
 const usesLiveApi = (): boolean => {
     return process.env.NODE_ENV === 'production' || process.env.AVIATIONSTACK_FORCE_LIVE === 'true';
 };
@@ -100,4 +105,82 @@ export async function getAircraftEquipment(
     }
 
     return getLiveAircraftInfo(flightNumber, date);
+}
+
+// Static mock routes so dev/test never spend the real Aviationstack quota.
+// Keyed by flight number, with a generic fallback for unknown numbers.
+const MOCK_ROUTES_BY_FLIGHT: Record<string, FlightRoute> = {
+    DEFAULT: { originIata: 'JFK', destinationIata: 'LHR' },
+};
+
+function getMockFlightRoute(flightNumber: string): FlightRoute {
+    const key = flightNumber.toUpperCase();
+    console.log(`[Aviationstack] DEV MODE — returning mock route data for ${key}`);
+    return MOCK_ROUTES_BY_FLIGHT[key] ?? MOCK_ROUTES_BY_FLIGHT.DEFAULT;
+}
+
+async function getLiveFlightRoute(flightNumber: string): Promise<FlightRoute | AviationstackError> {
+    const apiKey = process.env.AVIATIONSTACK_API_KEY;
+    if (!apiKey) {
+        console.error('[Aviationstack] Missing AVIATIONSTACK_API_KEY in .env');
+        return {
+            error: true,
+            message: 'Aviationstack API key not configured',
+            code: 'MISSING_CREDENTIALS',
+        };
+    }
+
+    try {
+        const url = `https://api.aviationstack.com/v1/flights?access_key=${apiKey}&flight_iata=${flightNumber}`;
+
+        console.log(`[Aviationstack] LIVE route request for ${flightNumber} (quota-limited — use sparingly)`);
+
+        const response = await fetch(url, { method: 'GET' });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[Aviationstack] API error (${response.status}):`, errorText);
+            return {
+                error: true,
+                message: `Aviationstack API returned ${response.status}: ${errorText}`,
+                code: `HTTP_${response.status}`,
+            };
+        }
+
+        const data = await response.json();
+        const flight = Array.isArray(data?.data) ? data.data[0] : null;
+
+        const originIata = flight?.departure?.iata ?? null;
+        const destinationIata = flight?.arrival?.iata ?? null;
+
+        if (!originIata || !destinationIata) {
+            return {
+                error: true,
+                message: `No route found for ${flightNumber}`,
+                code: 'NOT_FOUND',
+            };
+        }
+
+        return { originIata, destinationIata };
+    } catch (err: any) {
+        console.error('[Aviationstack] Exception during fetch:', err.message);
+        return {
+            error: true,
+            message: err.message || 'Unknown Aviationstack fetch error',
+            code: 'FETCH_EXCEPTION',
+        };
+    }
+}
+
+/**
+ * Resolves the origin/destination IATA codes for a flight number. In any
+ * non-production environment (without the live override flag) this returns
+ * static mock route data and never calls the real Aviationstack API.
+ */
+export async function getFlightRoute(flightNumber: string): Promise<FlightRoute | AviationstackError> {
+    if (!usesLiveApi()) {
+        return getMockFlightRoute(flightNumber);
+    }
+
+    return getLiveFlightRoute(flightNumber);
 }

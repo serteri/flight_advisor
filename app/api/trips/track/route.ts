@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getFlightRoute } from '@/lib/api/aviationstack';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FLIGHT_NUMBER_REGEX = /^([A-Za-z]{2,3})\s*(\d{1,4}[A-Za-z]?)$/;
@@ -47,7 +48,37 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
     }
 
+    const fullFlightNumber = `${airlineCode}${flightDigits}`;
+
     try {
+        let originIata = 'UNK';
+        let destinationIata = 'UNK';
+
+        const cachedRoute = await prisma.flightRouteCache.findUnique({
+            where: { flightNumber: fullFlightNumber },
+        });
+
+        if (cachedRoute) {
+            originIata = cachedRoute.originIata;
+            destinationIata = cachedRoute.destinationIata;
+        } else {
+            const route = await getFlightRoute(fullFlightNumber);
+            if (!('error' in route)) {
+                originIata = route.originIata;
+                destinationIata = route.destinationIata;
+
+                await prisma.flightRouteCache.create({
+                    data: {
+                        flightNumber: fullFlightNumber,
+                        originIata,
+                        destinationIata,
+                    },
+                });
+            } else {
+                console.warn(`[POST /api/trips/track] Could not resolve route for ${fullFlightNumber}: ${route.message}`);
+            }
+        }
+
         const user = await prisma.user.upsert({
             where: { email },
             update: {},
@@ -58,7 +89,9 @@ export async function POST(req: Request) {
         const trip = await prisma.monitoredTrip.create({
             data: {
                 userId: user.id,
-                routeLabel: `Flight ${airlineCode}${flightDigits}`,
+                routeLabel: originIata !== 'UNK' && destinationIata !== 'UNK'
+                    ? `${originIata} ➝ ${destinationIata}`
+                    : `Flight ${fullFlightNumber}`,
                 originalPrice: 0,
                 currency: 'AUD',
                 ticketClass: 'UNKNOWN',
@@ -71,8 +104,8 @@ export async function POST(req: Request) {
                         segmentOrder: 0,
                         airlineCode,
                         flightNumber: flightDigits,
-                        origin: 'UNK',
-                        destination: 'UNK',
+                        origin: originIata,
+                        destination: destinationIata,
                         departureDate,
                         arrivalDate: departureDate,
                     }],

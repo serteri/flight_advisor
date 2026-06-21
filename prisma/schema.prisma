@@ -583,6 +583,14 @@ model Passenger {
   @@index([tripId])
 }
 
+model FlightRouteCache {
+  id              String   @id @default(cuid())
+  flightNumber    String   @unique
+  originIata      String
+  destinationIata String
+  updatedAt       DateTime @updatedAt
+}
+
 model FlightSegment {
   id            String   @id @default(cuid())
   tripId        String
