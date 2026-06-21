@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getFlightRoute } from '@/lib/api/aviationstack';
+import { sendWelcomeEmail } from '@/lib/email/sender';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FLIGHT_NUMBER_REGEX = /^([A-Za-z]{2,3})\s*(\d{1,4}[A-Za-z]?)$/;
@@ -112,6 +113,11 @@ export async function POST(req: Request) {
                 },
             },
         });
+
+        const emailResult = await sendWelcomeEmail(email, trip.id, fullFlightNumber);
+        if (!emailResult.success) {
+            console.warn(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailResult.error}`);
+        }
 
         return NextResponse.json({ id: trip.id }, { status: 201 });
     } catch (error) {
