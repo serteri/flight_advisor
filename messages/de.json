@@ -442,23 +442,23 @@
           "title": "Schutzfokus",
           "desc": "Alles dreht sich um den Schutz abgeschlossener Buchungen, nicht um die Suche nach neuen."
         }
-      }
-    },
-    "heroForm": {
-      "flightNumberLabel": "Flugnummer",
-      "flightNumberPlaceholder": "z. B. TK1999",
-      "dateLabel": "Flugdatum",
-      "emailLabel": "E-Mail",
-      "emailPlaceholder": "E-Mail für Benachrichtigungen",
-      "consentText": "Ich stimme zu, Flugbenachrichtigungen für diese Reise per E-Mail zu erhalten.",
-      "submit": "Meinen Flug verfolgen",
-      "submitting": "Überwachung wird gestartet...",
-      "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-      "confirmation": {
-        "title": "Wir verfolgen deinen Flug",
-        "subtitle": "Du erhältst eine E-Mail-Benachrichtigung, falls sich bei dieser Reise etwas ändert.",
-        "nextSteps": "Erstelle jederzeit ein kostenloses Konto, um das vollständige Überwachungs-Dashboard für diese Reise zu sehen.",
-        "backHome": "Zurück zur Startseite"
+      },
+      "heroForm": {
+        "flightNumberLabel": "Flugnummer",
+        "flightNumberPlaceholder": "z. B. TK1999",
+        "dateLabel": "Flugdatum",
+        "emailLabel": "E-Mail",
+        "emailPlaceholder": "E-Mail für Benachrichtigungen",
+        "consentText": "Ich stimme zu, Flugbenachrichtigungen für diese Reise per E-Mail zu erhalten.",
+        "submit": "Meinen Flug verfolgen",
+        "submitting": "Überwachung wird gestartet...",
+        "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+        "confirmation": {
+          "title": "Wir verfolgen deinen Flug",
+          "subtitle": "Du erhältst eine E-Mail-Benachrichtigung, falls sich bei dieser Reise etwas ändert.",
+          "nextSteps": "Erstelle jederzeit ein kostenloses Konto, um das vollständige Überwachungs-Dashboard für diese Reise zu sehen.",
+          "backHome": "Zurück zur Startseite"
+        }
       }
     }
   },
