@@ -453,6 +453,12 @@
         "submit": "Meinen Flug verfolgen",
         "submitting": "Überwachung wird gestartet...",
         "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+        "errors": {
+          "invalidFlight": "Ungültige Flugnummer",
+          "invalidDate": "Bitte wähle ein gültiges, zukünftiges Datum",
+          "invalidEmail": "Ungültige E-Mail-Adresse",
+          "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren"
+        },
         "confirmation": {
           "title": "Wir verfolgen deinen Flug",
           "subtitle": "Du erhältst eine E-Mail-Benachrichtigung, falls sich bei dieser Reise etwas ändert.",

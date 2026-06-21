@@ -453,6 +453,12 @@
         "submit": "Uçuşumu takip et",
         "submitting": "İzleme başlatılıyor...",
         "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+        "errors": {
+          "invalidFlight": "Geçersiz uçuş numarası",
+          "invalidDate": "Lütfen geçerli, ileri bir tarih seçin",
+          "invalidEmail": "Geçersiz e-posta adresi",
+          "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz"
+        },
         "confirmation": {
           "title": "Uçuşunuzu takip ediyoruz",
           "subtitle": "Bu yolculukla ilgili bir değişiklik olursa e-posta ile uyarı alacaksınız.",

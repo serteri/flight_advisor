@@ -403,6 +403,12 @@
         "submit": "Track my flight",
         "submitting": "Starting monitoring...",
         "genericError": "Something went wrong. Please try again.",
+        "errors": {
+          "invalidFlight": "Invalid flight number",
+          "invalidDate": "Please choose a valid, upcoming date",
+          "invalidEmail": "Invalid email address",
+          "consentRequired": "Please agree to receive flight alerts to continue"
+        },
         "confirmation": {
           "title": "We're tracking your flight",
           "subtitle": "You'll get an email alert if anything changes with this trip.",
