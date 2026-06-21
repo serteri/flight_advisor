@@ -31,6 +31,21 @@
     "scoreItinerary": "Flug Bewerten",
     "intelligenceMode": "REISEINTELLIGENZ"
   },
+  "MagicLogin": {
+    "title": "Ohne Passwort anmelden",
+    "subtitle": "Gib deine E-Mail-Adresse ein und wir senden dir einen sicheren Link zu deinen verfolgten Reisen.",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "du@beispiel.com",
+    "submit": "Login-Link senden",
+    "submitting": "Wird gesendet...",
+    "sentTitle": "Überprüfe deine E-Mails",
+    "sentSubtitle": "Falls für diese Adresse ein Konto existiert, ist ein Login-Link auf dem Weg. Der Link läuft in 15 Minuten ab.",
+    "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+  },
+  "MyTrips": {
+    "title": "Deine verfolgten Reisen",
+    "empty": "Du hast noch keine verfolgten Reisen."
+  },
   "Footer": {
     "tagline": "Reiseentscheidungsintelligenz und transparente Überwachung für gebuchte Flüge.",
     "links": {

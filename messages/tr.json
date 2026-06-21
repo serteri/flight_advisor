@@ -31,6 +31,21 @@
     "scoreItinerary": "Bir Uçuşu Skorla",
     "intelligenceMode": "SEYAHAT ZEKASI"
   },
+  "MagicLogin": {
+    "title": "Şifresiz giriş yap",
+    "subtitle": "E-postanızı girin, takip ettiğiniz yolculuklara erişmeniz için güvenli bir bağlantı gönderelim.",
+    "emailLabel": "E-posta",
+    "emailPlaceholder": "siz@ornek.com",
+    "submit": "Giriş bağlantısı gönder",
+    "submitting": "Gönderiliyor...",
+    "sentTitle": "E-postanızı kontrol edin",
+    "sentSubtitle": "Bu adrese kayıtlı bir hesap varsa, bir giriş bağlantısı yola çıktı. Bağlantı 15 dakika içinde geçerliliğini kaybeder.",
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+  },
+  "MyTrips": {
+    "title": "Takip ettiğiniz yolculuklar",
+    "empty": "Henüz takip ettiğiniz bir yolculuk yok."
+  },
   "Footer": {
     "tagline": "Rezervasyon edilen uçuşlar için yolculuk karar zekası ve şeffaf izleme.",
     "links": {

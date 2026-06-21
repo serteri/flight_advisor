@@ -591,6 +591,15 @@ model FlightRouteCache {
   updatedAt       DateTime @updatedAt
 }
 
+model LoginToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expiresAt  DateTime
+
+  @@index([identifier])
+}
+
 model FlightSegment {
   id            String   @id @default(cuid())
   tripId        String

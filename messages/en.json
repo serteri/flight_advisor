@@ -31,6 +31,21 @@
     "scoreItinerary": "Score Itinerary",
     "intelligenceMode": "ITINERARY INTELLIGENCE"
   },
+  "MagicLogin": {
+    "title": "Log in without a password",
+    "subtitle": "Enter your email and we'll send you a secure link to access your tracked trips.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "submit": "Send login link",
+    "submitting": "Sending...",
+    "sentTitle": "Check your email",
+    "sentSubtitle": "If an account exists for that address, a login link is on its way. The link expires in 15 minutes.",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "MyTrips": {
+    "title": "Your tracked trips",
+    "empty": "You don't have any tracked trips yet."
+  },
   "Footer": {
     "tagline": "Trip decision intelligence and transparent monitoring for booked flights.",
     "links": {
