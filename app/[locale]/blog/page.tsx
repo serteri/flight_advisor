@@ -1,15 +1,16 @@
 
 import { getBlogPosts, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 export default async function BlogIndex({
     params,
 }: {
     params: Promise<{ locale: string }>;
 }) {
-    const t = await getTranslations('BlogPage');
     const { locale } = await params;
+    setRequestLocale(locale);
+    const t = await getTranslations('BlogPage');
     const currentLocale: BlogLocale = locale === 'tr' || locale === 'de' ? locale : 'en';
     const posts = getBlogPosts(currentLocale);
 

@@ -4,7 +4,7 @@ import { getBlogPostBySlug, type BlogLocale } from '@/app/lib/blog-data';
 import { Link } from '@/i18n/routing';
 import { ChevronRight, Clock, Calendar, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 function normalizeLocale(locale: string): BlogLocale {
     return locale === 'tr' || locale === 'de' ? locale : 'en';
@@ -57,8 +57,9 @@ export default async function BlogPost({
 }: {
     params: Promise<{ slug: string; locale: string }>;
 }) {
-    const t = await getTranslations('BlogPage');
     const { slug, locale } = await params;
+    setRequestLocale(locale);
+    const t = await getTranslations('BlogPage');
     const currentLocale = normalizeLocale(locale);
     const post = getBlogPostBySlug(currentLocale, slug);
 

@@ -1,11 +1,12 @@
 import { CheckCircle2, Mail, Plane } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 
-export default async function TripTrackingConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function TripTrackingConfirmationPage({ params }: { params: Promise<{ id: string; locale: string }> }) {
+    const { id, locale } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations('HomePage.guardian.heroForm.confirmation');
 
     const trip = await prisma.monitoredTrip.findUnique({

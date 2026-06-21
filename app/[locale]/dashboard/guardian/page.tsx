@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ShieldCheck, Plane } from "lucide-react";
 import { TravelGuardianDashboard } from "@/components/TravelGuardianDashboard"; // New component
 import { Prisma } from "@prisma/client";
@@ -22,8 +22,9 @@ const estimateEu261Value = (trip: Prisma.MonitoredTripGetPayload<{ include: { al
     return 600;
 };
 
-export default async function GuardianDashboard() {
-    const locale = await getLocale();
+export default async function GuardianDashboard({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations("GuardianDashboard");
     const session = await auth();
 

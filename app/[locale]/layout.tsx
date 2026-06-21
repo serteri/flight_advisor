@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
+import { routing } from '@/i18n/routing';
 import SessionProvider from "@/components/SessionProvider";
 import BuyNowVariantBootstrap from '@/components/experiment/BuyNowVariantBootstrap';
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
     description: "Monitor your flights, get disruption alerts, and generate EU261 compensation claims automatically.",
 };
 
+export function generateStaticParams() {
+    return routing.locales.map((locale) => ({ locale }));
+}
+
 export default async function RootLayout({
     children,
     params
@@ -26,6 +31,7 @@ export default async function RootLayout({
     params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
+    setRequestLocale(locale);
     const messages = await getMessages();
 
     return (

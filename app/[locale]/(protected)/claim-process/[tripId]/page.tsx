@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/auth/currentUser';
@@ -11,6 +11,7 @@ export default async function ClaimProcessPage({
     params: Promise<{ locale: string; tripId: string }>;
 }) {
     const { locale, tripId } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations('ClaimProcess');
 
     const userId = await getCurrentUserId();

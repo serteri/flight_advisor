@@ -1,7 +1,7 @@
 import { Link, redirect } from '@/i18n/routing';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ArrowLeft, Clock3, Plane, ShieldAlert } from 'lucide-react';
 
 const toStatusLabel = (status?: string | null, delayMinutes?: number) => {
@@ -59,8 +59,9 @@ const formatDate = (value?: Date | string | null) => {
     });
 };
 
-export default async function GuardianHistoryPage() {
-    const locale = await getLocale();
+export default async function GuardianHistoryPage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations('GuardianHistory');
     const session = await auth();
     if (!session || !session.user?.id) {

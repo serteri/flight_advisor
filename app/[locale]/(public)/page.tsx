@@ -2,7 +2,7 @@ import { ShieldCheck, Bell, Clock, FileText, ArrowRight, PlaneTakeoff, AlertTria
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { HeroSearchForm } from "@/components/home/HeroSearchForm";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,7 +10,9 @@ export const metadata: Metadata = {
     description: "Monitor your flights, get disruption alerts, and generate EU261 compensation claims automatically.",
 };
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations("HomePage.guardian");
 
     return (

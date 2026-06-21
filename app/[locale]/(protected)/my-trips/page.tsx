@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Plane, Calendar } from 'lucide-react';
 import { Link, redirect } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
@@ -7,6 +7,7 @@ import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicL
 
 export default async function MyTripsPage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
+    setRequestLocale(locale);
     const t = await getTranslations('MyTrips');
 
     const cookieStore = await cookies();
