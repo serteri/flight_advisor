@@ -46,6 +46,28 @@
     "title": "Your tracked trips",
     "empty": "You don't have any tracked trips yet."
   },
+  "ClaimStatus": {
+    "title": "Compensation claim tracking",
+    "subtitle": "Your legal file is progressing through these stages.",
+    "current": "Current stage: {status}",
+    "tripReference": "Trip: {route}",
+    "status": {
+      "PENDING": "Application received",
+      "SUBMITTED": "Submitted",
+      "LEGAL_REVIEW": "Legal review",
+      "AIRLINE_CONTACTED": "Airline contacted",
+      "SETTLED": "Settled",
+      "REJECTED": "Rejected"
+    },
+    "description": {
+      "PENDING": "We received your request and queued your file.",
+      "SUBMITTED": "Your claim package has been submitted to our legal workflow.",
+      "LEGAL_REVIEW": "Our legal team is reviewing your documents and eligibility.",
+      "AIRLINE_CONTACTED": "We contacted the airline and are tracking their response.",
+      "SETTLED": "Your case reached a settlement outcome.",
+      "REJECTED": "The claim was rejected. We will share rationale and next options."
+    }
+  },
   "ClaimProcess": {
     "title": "Start your compensation claim",
     "subtitle": "A few quick steps and we'll take it from here.",

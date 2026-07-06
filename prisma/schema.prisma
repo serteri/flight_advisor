@@ -482,6 +482,11 @@ enum ClaimStatus {
   DRAFT
   SENT
   PAID
+  PENDING
+  SUBMITTED
+  LEGAL_REVIEW
+  AIRLINE_CONTACTED
+  SETTLED
   REJECTED
 }
 
@@ -619,7 +624,7 @@ model ClaimRequest {
   signatureDataUrl String?  @db.Text
   consentGiven     Boolean  @default(false)
 
-  status           String   @default("SUBMITTED")
+  status           ClaimStatus @default(PENDING)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

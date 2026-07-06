@@ -71,7 +71,6 @@ export async function POST(req: Request) {
             documentName,
             signatureDataUrl: typeof signatureDataUrl === 'string' ? signatureDataUrl : null,
             consentGiven,
-            status: 'SUBMITTED',
         },
     });
 

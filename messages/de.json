@@ -46,6 +46,28 @@
     "title": "Deine verfolgten Reisen",
     "empty": "Du hast noch keine verfolgten Reisen."
   },
+  "ClaimStatus": {
+    "title": "Status deiner Entschädigung",
+    "subtitle": "Deine Akte durchläuft transparent diese Schritte.",
+    "current": "Aktueller Schritt: {status}",
+    "tripReference": "Reise: {route}",
+    "status": {
+      "PENDING": "Antrag eingegangen",
+      "SUBMITTED": "Eingereicht",
+      "LEGAL_REVIEW": "Juristische Prüfung",
+      "AIRLINE_CONTACTED": "Airline kontaktiert",
+      "SETTLED": "Vergleich erzielt",
+      "REJECTED": "Abgelehnt"
+    },
+    "description": {
+      "PENDING": "Wir haben deinen Antrag erhalten und deine Akte eröffnet.",
+      "SUBMITTED": "Dein Anspruchspaket wurde in den juristischen Ablauf übergeben.",
+      "LEGAL_REVIEW": "Unser Legal-Team prüft Unterlagen und Anspruchsvoraussetzungen.",
+      "AIRLINE_CONTACTED": "Wir haben die Airline kontaktiert und warten auf Antwort.",
+      "SETTLED": "Der Fall wurde erfolgreich abgeschlossen.",
+      "REJECTED": "Der Antrag wurde abgelehnt. Wir senden dir Begründung und Optionen."
+    }
+  },
   "ClaimProcess": {
     "title": "Starte deinen Entschädigungsantrag",
     "subtitle": "Ein paar kurze Schritte, den Rest übernehmen wir.",

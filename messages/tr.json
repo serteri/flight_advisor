@@ -46,6 +46,28 @@
     "title": "Takip ettiğiniz yolculuklar",
     "empty": "Henüz takip ettiğiniz bir yolculuk yok."
   },
+  "ClaimStatus": {
+    "title": "Tazminat başvuru takibi",
+    "subtitle": "Hukuki dosyanız aşağıdaki aşamalardan ilerliyor.",
+    "current": "Mevcut aşama: {status}",
+    "tripReference": "Yolculuk: {route}",
+    "status": {
+      "PENDING": "Başvurunuz alındı",
+      "SUBMITTED": "Başvuru gönderildi",
+      "LEGAL_REVIEW": "Hukuki inceleme",
+      "AIRLINE_CONTACTED": "Havayolu ile iletişime geçildi",
+      "SETTLED": "Uzlaşma sağlandı",
+      "REJECTED": "Reddedildi"
+    },
+    "description": {
+      "PENDING": "Talebinizi aldık ve dosyanızı sıraya aldık.",
+      "SUBMITTED": "Başvuru paketi hukuki iş akışına iletildi.",
+      "LEGAL_REVIEW": "Hukuk ekibimiz belgelerinizi ve uygunluğunuzu inceliyor.",
+      "AIRLINE_CONTACTED": "Havayoluyla iletişime geçtik, yanıtı takip ediyoruz.",
+      "SETTLED": "Dosyanız uzlaşma ile sonuçlandı.",
+      "REJECTED": "Başvuru reddedildi. Gerekçe ve sonraki seçenekleri paylaşacağız."
+    }
+  },
   "ClaimProcess": {
     "title": "Tazminat talebinizi başlatın",
     "subtitle": "Birkaç hızlı adım, gerisini biz hallederiz.",
