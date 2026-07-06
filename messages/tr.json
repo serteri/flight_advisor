@@ -46,7 +46,7 @@
     "title": "Takip ettiğiniz yolculuklar",
     "empty": "Henüz takip ettiğiniz bir yolculuk yok."
   },
-  "ClaimStatus": {
+  "ClaimProgress": {
     "title": "Tazminat başvuru takibi",
     "subtitle": "Hukuki dosyanız aşağıdaki aşamalardan ilerliyor.",
     "current": "Mevcut aşama: {status}",

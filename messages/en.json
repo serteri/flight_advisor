@@ -46,7 +46,7 @@
     "title": "Your tracked trips",
     "empty": "You don't have any tracked trips yet."
   },
-  "ClaimStatus": {
+  "ClaimProgress": {
     "title": "Compensation claim tracking",
     "subtitle": "Your legal file is progressing through these stages.",
     "current": "Current stage: {status}",

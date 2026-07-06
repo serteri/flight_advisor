@@ -12,7 +12,7 @@ export default async function MyTripsPage({ params }: { params: Promise<{ locale
     const { locale } = await params;
     setRequestLocale(locale);
     const t = await getTranslations('MyTrips');
-    const claimT = await getTranslations('ClaimStatus');
+    const claimT = await getTranslations('ClaimProgress');
 
     const cookieStore = await cookies();
     const userId = verifySessionCookieValue(cookieStore.get(AUTH_SESSION_COOKIE)?.value);

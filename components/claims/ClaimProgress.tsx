@@ -23,10 +23,11 @@ const STATUS_FLOW: ClaimStatus[] = [
 ];
 
 export function ClaimProgress({ status, orientation = 'horizontal' }: ClaimProgressProps) {
-    const t = useTranslations('ClaimStatus');
+    const t = useTranslations('ClaimProgress');
     const currentIndex = STATUS_FLOW.indexOf(status);
     const effectiveIndex = currentIndex === -1 ? 0 : currentIndex;
     const isRejected = status === 'REJECTED';
+    const isSettled = status === 'SETTLED';
 
     if (isRejected) {
         return (
@@ -49,32 +50,42 @@ export function ClaimProgress({ status, orientation = 'horizontal' }: ClaimProgr
                 {STATUS_FLOW.map((step, index) => {
                     const completed = index < effectiveIndex;
                     const active = index === effectiveIndex;
+                    const settledStep = isSettled;
+                    const toneClasses = settledStep
+                        ? {
+                            card: 'border-emerald-200 bg-emerald-50',
+                            dotDone: 'text-emerald-600',
+                            dotActive: 'text-emerald-600 fill-emerald-600',
+                            number: 'text-emerald-700',
+                        }
+                        : {
+                            card: 'border-sky-200 bg-sky-50',
+                            dotDone: 'text-sky-600',
+                            dotActive: 'text-sky-600 fill-sky-600',
+                            number: 'text-sky-700',
+                        };
 
                     return (
                         <div
                             key={step}
                             className={`relative rounded-xl border px-3 py-2.5 transition-colors ${
-                                active
-                                    ? 'border-sky-300 bg-sky-50'
-                                    : completed
-                                        ? 'border-emerald-200 bg-emerald-50'
-                                        : 'border-slate-200 bg-slate-50'
+                                active || completed
+                                    ? toneClasses.card
+                                    : 'border-slate-200 bg-slate-50'
                             }`}
                         >
                             <div className="flex items-center gap-2">
                                 {completed ? (
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                    <CheckCircle2 className={`h-4 w-4 ${toneClasses.dotDone}`} />
                                 ) : active ? (
-                                    <Circle className="h-4 w-4 text-sky-600 fill-sky-600" />
+                                    <Circle className={`h-4 w-4 ${toneClasses.dotActive}`} />
                                 ) : (
                                     <Circle className="h-4 w-4 text-slate-300" />
                                 )}
                                 <span
                                     className={`text-xs font-semibold uppercase tracking-wide ${
-                                        active
-                                            ? 'text-sky-700'
-                                            : completed
-                                                ? 'text-emerald-700'
+                                        active || completed
+                                            ? toneClasses.number
                                                 : 'text-slate-500'
                                     }`}
                                 >

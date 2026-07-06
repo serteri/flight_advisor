@@ -46,7 +46,7 @@
     "title": "Deine verfolgten Reisen",
     "empty": "Du hast noch keine verfolgten Reisen."
   },
-  "ClaimStatus": {
+  "ClaimProgress": {
     "title": "Status deiner Entschädigung",
     "subtitle": "Deine Akte durchläuft transparent diese Schritte.",
     "current": "Aktueller Schritt: {status}",
