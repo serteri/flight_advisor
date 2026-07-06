@@ -7,6 +7,7 @@
 import { Resend } from 'resend';
 import { render } from '@react-email/components';
 import { WelcomeTripEmail } from '@/components/emails/WelcomeTripEmail';
+import { DisruptionAlertEmail } from '@/components/emails/DisruptionAlertEmail';
 
 export interface SendEmailResult {
     success: boolean;
@@ -34,6 +35,10 @@ const buildLoginLink = (token: string, redirectTo?: string): string => {
         return base;
     }
     return `${base}&redirect=${encodeURIComponent(redirectTo)}`;
+};
+
+const buildClaimLink = (tripId: string): string => {
+    return `${getBaseUrl()}/claim-process/${tripId}`;
 };
 
 export async function sendWelcomeEmail(
@@ -101,5 +106,49 @@ export async function sendLoginMagicLink(email: string, token: string): Promise<
     } catch (err: any) {
         console.error('[Email] Exception while sending login magic link:', err.message);
         return { success: false, mocked: false, error: err.message || 'Unknown email send error' };
+    }
+}
+
+export async function sendDisruptionAlert(
+    email: string,
+    tripId: string,
+    flightNumber: string,
+): Promise<SendEmailResult> {
+    const claimLink = buildClaimLink(tripId);
+
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(
+            `[Email] DEV MODE — would send disruption alert to ${email} for flight ${flightNumber}. Claim link: ${claimLink}`,
+        );
+        return { success: true, mocked: true, previewUrl: claimLink };
+    }
+
+    if (!usesLiveApi()) {
+        console.log(
+            `[Email] Production delivery disabled — missing RESEND_API_KEY for disruption alert. Recipient: ${email}, tripId: ${tripId}`,
+        );
+        return { success: false, mocked: true, error: 'RESEND_API_KEY missing in production' };
+    }
+
+    try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const html = await render(DisruptionAlertEmail({ flightNumber, claimLink }));
+
+        const response = await resend.emails.send({
+            from: process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev',
+            to: email,
+            subject: `Urgent: Flight ${flightNumber} disruption detected`,
+            html,
+        });
+
+        if (response.error) {
+            console.error('[Email] Resend error (disruption alert):', response.error.message);
+            return { success: false, mocked: false, error: response.error.message };
+        }
+
+        return { success: true, mocked: false, messageId: response.data?.id, previewUrl: claimLink };
+    } catch (err: any) {
+        console.error('[Email] Exception while sending disruption alert:', err.message);
+        return { success: false, mocked: false, error: err.message || 'Unknown disruption email send error' };
     }
 }

@@ -6,6 +6,7 @@ import { getFlightStatus } from "@/services/flightStatusService";
 import { getAircraftEquipment } from "@/lib/api/aviationstack";
 import { assessEu261ForDisruption, isEu261Carrier, isEu261Country } from "@/services/guardian/eu261Rules";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
+import { sendDisruptionAlert } from "@/lib/email/sender";
 import { recordGuardianMetric } from "@/services/healthMetrics";
 import type { GuardianMetricEvent } from "@/types/operatorHealth";
 import { MonitoringEventType, recordMonitoringEvent } from "@/lib/alertLifecycle";
@@ -122,7 +123,7 @@ async function claimTripsForMonitoring(now: Date) {
     const leaseExpiresAt = new Date(now.getTime() + TRIP_LEASE_MS);
     const candidateTrips = await prisma.monitoredTrip.findMany({
         where: {
-            status: 'ACTIVE',
+            status: { in: ['ACTIVE', 'CANCELLED'] },
             nextCheckAt: { lte: now },
             OR: [
                 { processingLeaseExpiresAt: null },
@@ -140,7 +141,7 @@ async function claimTripsForMonitoring(now: Date) {
         const claim = await prisma.monitoredTrip.updateMany({
             where: {
                 id: candidate.id,
-                status: 'ACTIVE',
+                status: { in: ['ACTIVE', 'CANCELLED'] },
                 nextCheckAt: { lte: now },
                 OR: [
                     { processingLeaseExpiresAt: null },
@@ -410,6 +411,36 @@ export async function processFlightMonitoring() {
                             isRead: false,
                         },
                     });
+
+                    const shouldSendProactiveClaimAlert =
+                        event.type === 'CANCELLED' || (event.type === 'DELAY' && event.severity === 'high');
+
+                    if (shouldSendProactiveClaimAlert && !trip.lastAlertSentAt) {
+                        const recipientEmail = trip.user?.email || trip.subscriberEmail;
+
+                        if (!recipientEmail) {
+                            console.warn(`[GUARDIAN] Missing recipient email for proactive claim alert on trip ${trip.id}`);
+                        } else {
+                            const alertFlightNumber = fullFlightNumber || `${String(segment.airlineCode || '').toUpperCase()}${String(segment.flightNumber || '').toUpperCase()}`;
+                            const disruptionEmailResult = await sendDisruptionAlert(recipientEmail, trip.id, alertFlightNumber);
+
+                            if (disruptionEmailResult.success) {
+                                const sentAt = new Date();
+                                await prisma.monitoredTrip.update({
+                                    where: { id: trip.id },
+                                    data: { lastAlertSentAt: sentAt },
+                                });
+                                trip.lastAlertSentAt = sentAt;
+                                console.log(
+                                    `[GUARDIAN] Proactive claim alert sent for trip ${trip.id} to ${recipientEmail}. Link: ${disruptionEmailResult.previewUrl || 'n/a'}`,
+                                );
+                            } else {
+                                console.warn(
+                                    `[GUARDIAN] Failed to send proactive claim alert for trip ${trip.id}: ${disruptionEmailResult.error}`,
+                                );
+                            }
+                        }
+                    }
                     
                     if (trip.user) {
                         notificationPromises.push(
@@ -530,6 +561,13 @@ export async function processFlightMonitoring() {
                 } else {
                     computedStatus = 'UNKNOWN';
                     currentDataQuality = 'UNKNOWN';
+                }
+
+                // Manual or upstream cancellation flags on the trip itself must
+                // still trigger cancellation handling even if provider data is
+                // temporarily unavailable.
+                if (trip.status === 'CANCELLED') {
+                    computedStatus = 'CANCELLED';
                 }
 
                 if (computedStatus === 'UNKNOWN') {

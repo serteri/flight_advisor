@@ -549,6 +549,7 @@ model MonitoredTrip {
   checkFrequency  Int        @default(360)
   processingLeaseId        String?
   processingLeaseExpiresAt DateTime?
+  lastAlertSentAt DateTime?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
