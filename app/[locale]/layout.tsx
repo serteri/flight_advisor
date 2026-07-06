@@ -11,6 +11,24 @@ import "../globals.css";
 
 const GA_ID = "G-04HJXKRJFE";
 
+function assertRequiredRuntimeEnv() {
+    const missing: string[] = [];
+
+    if (!process.env.RESEND_API_KEY) {
+        missing.push('RESEND_API_KEY');
+    }
+
+    if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
+        missing.push('NEXTAUTH_SECRET (or AUTH_SECRET)');
+    }
+
+    if (missing.length > 0) {
+        throw new Error(`[Startup Fail-Fast] Missing required runtime env vars: ${missing.join(', ')}`);
+    }
+}
+
+assertRequiredRuntimeEnv();
+
 export const metadata: Metadata = {
     title: {
         default: "FlightAgent — Flight Monitoring & EU261 Compensation",

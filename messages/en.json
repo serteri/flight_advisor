@@ -75,6 +75,13 @@
       "signatureHint": "Draw your signature above (optional)",
       "clearSignature": "Clear",
       "consentText": "I confirm the details above are accurate and authorize FlightAgent to submit this compensation claim on my behalf."
+    },
+    "errors": {
+      "fullNameRequired": "Please enter your full name",
+      "invalidEmail": "Please enter a valid email address",
+      "documentRequired": "Please upload your passport or ticket",
+      "signatureRequired": "Please provide your signature to continue",
+      "consentRequired": "You must authorize us to submit this claim"
     }
   },
   "Footer": {

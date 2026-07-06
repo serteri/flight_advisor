@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { CheckCircle2, FileText, Loader2, Plane, ShieldCheck, Upload } from 'lucide-react';
@@ -22,6 +23,14 @@ interface ClaimProcessFormProps {
 
 const STEP_COUNT = 3;
 
+type ClaimFormErrors = {
+    fullName?: string;
+    email?: string;
+    document?: string;
+    signatureDataUrl?: string;
+    consentGiven?: string;
+};
+
 export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimProcessFormProps) {
     const t = useTranslations('ClaimProcess');
     const router = useRouter();
@@ -35,15 +44,91 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState(false);
+    const [formState, setFormState] = useState<{ errors: ClaimFormErrors }>({ errors: {} });
 
     const canGoToStep2 = fullName.trim().length > 0 && email.trim().length > 0;
     const canGoToStep3 = file !== null;
     const canSubmit = consentGiven;
 
-    const goNext = () => setStep((s) => Math.min(STEP_COUNT, s + 1));
     const goBack = () => setStep((s) => Math.max(1, s - 1));
 
-    const handleSubmit = async () => {
+    const stepOneSchema = z.object({
+        fullName: z.string().trim().min(2, { message: t('errors.fullNameRequired') }),
+        email: z.string().trim().email({ message: t('errors.invalidEmail') }),
+    });
+
+    const stepTwoSchema = z.object({
+        document: z.custom<File>((value) => value instanceof File && value.size > 0, {
+            message: t('errors.documentRequired'),
+        }),
+    });
+
+    const stepThreeSchema = z
+        .object({
+            signatureDataUrl: z.string().min(1, { message: t('errors.signatureRequired') }),
+            consentGiven: z.boolean(),
+        })
+        .refine((value) => value.consentGiven, {
+            message: t('errors.consentRequired'),
+            path: ['consentGiven'],
+        });
+
+    const setValidationErrors = (errors: ClaimFormErrors) => {
+        setFormState({ errors });
+    };
+
+    const validateCurrentStep = (): boolean => {
+        if (step === 1) {
+            const result = stepOneSchema.safeParse({ fullName, email });
+            if (result.success) {
+                setValidationErrors({});
+                return true;
+            }
+
+            const nextErrors: ClaimFormErrors = {};
+            for (const issue of result.error.issues) {
+                const field = issue.path[0] as keyof ClaimFormErrors;
+                if (field && !nextErrors[field]) {
+                    nextErrors[field] = issue.message;
+                }
+            }
+            setValidationErrors(nextErrors);
+            return false;
+        }
+
+        if (step === 2) {
+            const result = stepTwoSchema.safeParse({ document: file });
+            if (result.success) {
+                setValidationErrors({});
+                return true;
+            }
+
+            setValidationErrors({ document: result.error.issues[0]?.message || t('errors.documentRequired') });
+            return false;
+        }
+
+        const result = stepThreeSchema.safeParse({
+            signatureDataUrl: signatureDataUrl || '',
+            consentGiven,
+        });
+
+        if (result.success) {
+            setValidationErrors({});
+            return true;
+        }
+
+        const nextErrors: ClaimFormErrors = {};
+        for (const issue of result.error.issues) {
+            const field = issue.path[0] as keyof ClaimFormErrors;
+            if (field && !nextErrors[field]) {
+                nextErrors[field] = issue.message;
+            }
+        }
+        setValidationErrors(nextErrors);
+        return false;
+    };
+
+    const submitClaim = async () => {
         if (isSubmitting || !canSubmit) return;
         setError(null);
         setIsSubmitting(true);
@@ -76,6 +161,23 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
         }
     };
 
+    const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (isSubmitting) return;
+
+        const isValid = validateCurrentStep();
+        if (!isValid) {
+            return;
+        }
+
+        if (step < STEP_COUNT) {
+            setStep((s) => Math.min(STEP_COUNT, s + 1));
+            return;
+        }
+
+        await submitClaim();
+    };
+
     if (submitted) {
         return (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center space-y-3">
@@ -96,7 +198,11 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
     }
 
     return (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
+        <form
+            onSubmit={handleFormSubmit}
+            noValidate
+            className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6"
+        >
             <div className="flex items-center gap-3">
                 {[1, 2, 3].map((s) => (
                     <div key={s} className="flex items-center gap-2 flex-1">
@@ -135,9 +241,17 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                                 type="text"
                                 required
                                 value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
+                                onChange={(e) => {
+                                    setFullName(e.target.value);
+                                    if (formState.errors.fullName) {
+                                        setValidationErrors({ ...formState.errors, fullName: undefined });
+                                    }
+                                }}
                                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             />
+                            {formState.errors.fullName && (
+                                <p className="text-red-500 text-sm">{formState.errors.fullName}</p>
+                            )}
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('step1.emailLabel')}</label>
@@ -145,9 +259,17 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                                 type="email"
                                 required
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    if (formState.errors.email) {
+                                        setValidationErrors({ ...formState.errors, email: undefined });
+                                    }
+                                }}
                                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             />
+                            {formState.errors.email && (
+                                <p className="text-red-500 text-sm">{formState.errors.email}</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -174,9 +296,17 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                             type="file"
                             accept="application/pdf,image/*"
                             className="hidden"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                            onChange={(e) => {
+                                setFile(e.target.files?.[0] || null);
+                                if (formState.errors.document) {
+                                    setValidationErrors({ ...formState.errors, document: undefined });
+                                }
+                            }}
                         />
                     </label>
+                    {formState.errors.document && (
+                        <p className="text-red-500 text-sm">{formState.errors.document}</p>
+                    )}
                 </div>
             )}
 
@@ -188,18 +318,36 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                     </h2>
                     <p className="text-sm text-slate-600">{t('step3.description')}</p>
 
-                    <SignaturePad onChange={setSignatureDataUrl} />
+                    <SignaturePad
+                        onChange={(value) => {
+                            setSignatureDataUrl(value);
+                            if (formState.errors.signatureDataUrl) {
+                                setValidationErrors({ ...formState.errors, signatureDataUrl: undefined });
+                            }
+                        }}
+                    />
+                    {formState.errors.signatureDataUrl && (
+                        <p className="text-red-500 text-sm">{formState.errors.signatureDataUrl}</p>
+                    )}
 
                     <label className="flex items-start gap-2.5 text-sm text-slate-600">
                         <input
                             type="checkbox"
                             required
                             checked={consentGiven}
-                            onChange={(e) => setConsentGiven(e.target.checked)}
+                            onChange={(e) => {
+                                setConsentGiven(e.target.checked);
+                                if (formState.errors.consentGiven) {
+                                    setValidationErrors({ ...formState.errors, consentGiven: undefined });
+                                }
+                            }}
                             className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span>{t('step3.consentText')}</span>
                     </label>
+                    {formState.errors.consentGiven && (
+                        <p className="text-red-500 text-sm">{formState.errors.consentGiven}</p>
+                    )}
                 </div>
             )}
 
@@ -217,8 +365,7 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
 
                 {step < STEP_COUNT ? (
                     <button
-                        type="button"
-                        onClick={goNext}
+                        type="submit"
                         disabled={(step === 1 && !canGoToStep2) || (step === 2 && !canGoToStep3)}
                         className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-semibold px-5 py-2.5 text-sm disabled:opacity-50"
                     >
@@ -226,8 +373,7 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                     </button>
                 ) : (
                     <button
-                        type="button"
-                        onClick={handleSubmit}
+                        type="submit"
                         disabled={!canSubmit || isSubmitting}
                         className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-semibold px-5 py-2.5 text-sm disabled:opacity-50"
                     >
@@ -236,6 +382,6 @@ export function ClaimProcessForm({ tripId, flightSummary, defaultEmail }: ClaimP
                     </button>
                 )}
             </div>
-        </div>
+        </form>
     );
 }

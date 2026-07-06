@@ -13,34 +13,42 @@ export interface SendEmailResult {
     mocked: boolean;
     messageId?: string;
     error?: string;
+    previewUrl?: string;
 }
 
 const usesLiveApi = (): boolean => {
     return process.env.NODE_ENV === 'production' && Boolean(process.env.RESEND_API_KEY);
 };
 
-const getBaseUrl = (): string => process.env.NEXTAUTH_URL || 'http://localhost:3000';
+const getBaseUrl = (): string => {
+    if (process.env.NODE_ENV === 'production') {
+        return process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    }
 
-const buildMagicLink = (tripId: string): string => {
-    return `${getBaseUrl()}/trip/${tripId}`;
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 };
 
-const buildLoginLink = (token: string): string => {
-    return `${getBaseUrl()}/api/auth/verify?token=${token}`;
+const buildLoginLink = (token: string, redirectTo?: string): string => {
+    const base = `${getBaseUrl()}/api/auth/verify?token=${token}`;
+    if (!redirectTo) {
+        return base;
+    }
+    return `${base}&redirect=${encodeURIComponent(redirectTo)}`;
 };
 
 export async function sendWelcomeEmail(
     email: string,
-    tripId: string,
+    token: string,
     flightNumber: string,
+    redirectTo?: string,
 ): Promise<SendEmailResult> {
-    const magicLink = buildMagicLink(tripId);
+    const magicLink = buildLoginLink(token, redirectTo);
 
     if (!usesLiveApi()) {
         console.log(
             `[Email] DEV MODE — would send welcome email to ${email} for flight ${flightNumber}. Magic link: ${magicLink}`,
         );
-        return { success: true, mocked: true };
+        return { success: true, mocked: true, previewUrl: magicLink };
     }
 
     try {
@@ -59,7 +67,7 @@ export async function sendWelcomeEmail(
             return { success: false, mocked: false, error: response.error.message };
         }
 
-        return { success: true, mocked: false, messageId: response.data?.id };
+        return { success: true, mocked: false, messageId: response.data?.id, previewUrl: magicLink };
     } catch (err: any) {
         console.error('[Email] Exception while sending welcome email:', err.message);
         return { success: false, mocked: false, error: err.message || 'Unknown email send error' };

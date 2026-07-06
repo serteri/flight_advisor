@@ -75,6 +75,13 @@
       "signatureHint": "Zeichne deine Unterschrift oben (optional)",
       "clearSignature": "Löschen",
       "consentText": "Ich bestätige, dass die obigen Angaben korrekt sind, und bevollmächtige FlightAgent, diesen Entschädigungsantrag in meinem Namen einzureichen."
+    },
+    "errors": {
+      "fullNameRequired": "Bitte gib deinen vollständigen Namen ein",
+      "invalidEmail": "Bitte gib eine gültige E-Mail-Adresse ein",
+      "documentRequired": "Bitte lade deinen Pass oder dein Ticket hoch",
+      "signatureRequired": "Bitte unterschreibe, um fortzufahren",
+      "consentRequired": "Du musst die Einreichung dieses Antrags autorisieren"
     }
   },
   "Footer": {

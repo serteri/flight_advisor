@@ -75,6 +75,13 @@
       "signatureHint": "İmzanızı yukarıya çizin (isteğe bağlı)",
       "clearSignature": "Temizle",
       "consentText": "Yukarıdaki bilgilerin doğru olduğunu onaylıyorum ve FlightAgent'ı bu tazminat talebini adıma sunmaya yetkilendiriyorum."
+    },
+    "errors": {
+      "fullNameRequired": "Lütfen ad soyad girin",
+      "invalidEmail": "Lütfen geçerli bir e-posta adresi girin",
+      "documentRequired": "Lütfen pasaport veya bilet yükleyin",
+      "signatureRequired": "Devam etmek için imza gerekli",
+      "consentRequired": "Bu talebi göndermemiz için yetki vermelisiniz"
     }
   },
   "Footer": {

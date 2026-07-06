@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { getFlightRoute } from '@/lib/api/aviationstack';
 import { sendWelcomeEmail } from '@/lib/email/sender';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FLIGHT_NUMBER_REGEX = /^([A-Za-z]{2,3})\s*(\d{1,4}[A-Za-z]?)$/;
+const TOKEN_TTL_MS = 15 * 60 * 1000;
 
 type TrackTripPayload = {
     flightNumber?: string;
@@ -114,12 +116,27 @@ export async function POST(req: Request) {
             },
         });
 
-        const emailResult = await sendWelcomeEmail(email, trip.id, fullFlightNumber);
+        const token = randomBytes(32).toString('hex');
+        await prisma.loginToken.create({
+            data: {
+                identifier: email,
+                token,
+                expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
+            },
+        });
+
+        const claimRedirectPath = `/claim-process/${trip.id}`;
+        const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, claimRedirectPath);
         if (!emailResult.success) {
             console.warn(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailResult.error}`);
         }
 
-        return NextResponse.json({ id: trip.id }, { status: 201 });
+        const responsePayload: { id: string; devMagicLoginUrl?: string } = { id: trip.id };
+        if (process.env.NODE_ENV !== 'production' && emailResult.previewUrl) {
+            responsePayload.devMagicLoginUrl = emailResult.previewUrl;
+        }
+
+        return NextResponse.json(responsePayload, { status: 201 });
     } catch (error) {
         console.error('[POST /api/trips/track] Failed to create trip:', error);
         return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 });
