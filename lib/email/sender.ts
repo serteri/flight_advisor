@@ -109,16 +109,19 @@ export async function sendLoginMagicLink(email: string, token: string): Promise<
     }
 }
 
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
+
 export async function sendDisruptionAlert(
     email: string,
     tripId: string,
     flightNumber: string,
+    claimRuleType?: ClaimRuleType,
 ): Promise<SendEmailResult> {
     const claimLink = buildClaimLink(tripId);
 
     if (process.env.NODE_ENV !== 'production') {
         console.log(
-            `[Email] DEV MODE — would send disruption alert to ${email} for flight ${flightNumber}. Claim link: ${claimLink}`,
+            `[Email] DEV MODE — would send disruption alert to ${email} for flight ${flightNumber} (rule: ${claimRuleType ?? 'default'}). Claim link: ${claimLink}`,
         );
         return { success: true, mocked: true, previewUrl: claimLink };
     }
@@ -132,12 +135,19 @@ export async function sendDisruptionAlert(
 
     try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const html = await render(DisruptionAlertEmail({ flightNumber, claimLink }));
+        const html = await render(DisruptionAlertEmail({ flightNumber, claimLink, claimRuleType }));
+
+        const subjectMap: Record<ClaimRuleType, string> = {
+            COMPENSATION_CANCELLED: `Your flight ${flightNumber} was cancelled — check your rights`,
+            COMPENSATION_DELAYED:   `Major delay on flight ${flightNumber} — check your rights`,
+            REFUND_AND_EXPENSES:    `Flight ${flightNumber} disrupted — refund options available`,
+        };
+        const subject = claimRuleType ? subjectMap[claimRuleType] : `Urgent: Flight ${flightNumber} disruption detected`;
 
         const response = await resend.emails.send({
             from: process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev',
             to: email,
-            subject: `Urgent: Flight ${flightNumber} disruption detected`,
+            subject,
             html,
         });
 
@@ -152,3 +162,4 @@ export async function sendDisruptionAlert(
         return { success: false, mocked: false, error: err.message || 'Unknown disruption email send error' };
     }
 }
+

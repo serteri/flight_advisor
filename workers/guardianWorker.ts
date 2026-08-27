@@ -89,6 +89,42 @@ const getAirportCountryCode = (iata: string): string | null => {
     return country || null;
 };
 
+// ─── LEAD GENERATION — ClaimRuleType Belirleme ─────────────────────────────
+// API yanıtına göre hangi hukuki senaryoya düştüğünü tespit eder.
+// Öncelik sırası: Avustralya iç hat > İptal > 3 Saat+ Rötar
+
+const AUSTRALIA_COUNTRY_CODE = 'AU';
+
+const isAustralianAirport = (iata: string): boolean => {
+    const countryCode = getAirportCountryCode(iata);
+    return countryCode === AUSTRALIA_COUNTRY_CODE;
+};
+
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
+
+const determineClaimRuleType = (
+    flightStatus: 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN',
+    delayMinutes: number,
+    origin: string,
+    destination: string,
+): ClaimRuleType => {
+    // 1. ÖNCE: Avustralya iç hat kontrolü (her iki taraf da AU ise EU261 işlemez)
+    if (isAustralianAirport(origin) && isAustralianAirport(destination)) {
+        return 'REFUND_AND_EXPENSES';
+    }
+    // 2. İptal tespiti
+    if (flightStatus === 'CANCELLED') {
+        return 'COMPENSATION_CANCELLED';
+    }
+    // 3. 3 Saat (180 dakika) ve üzeri varış rötarı
+    if (delayMinutes >= 180) {
+        return 'COMPENSATION_DELAYED';
+    }
+    // Varsayılan (daha az rötar — henüz kural eşiği yok)
+    return 'COMPENSATION_DELAYED';
+};
+
+
 const getAirportCoordinates = (iata: string): { lat: number; lon: number } | null => {
     const airport = getAirportData(iata);
     const lat = Number(airport?.lat);
@@ -418,11 +454,56 @@ export async function processFlightMonitoring() {
                     if (shouldSendProactiveClaimAlert && !trip.lastAlertSentAt) {
                         const recipientEmail = trip.user?.email || trip.subscriberEmail;
 
+                        // ── ClaimRuleType belirleme (Lead Generation iş mantığı) ──────────────
+                        const ruleType = determineClaimRuleType(
+                            computedStatus,
+                            explicitDelayMinutes,
+                            String(segment.origin || ''),
+                            String(segment.destination || ''),
+                        );
+                        console.log(`[GUARDIAN] ClaimRuleType for trip ${trip.id}: ${ruleType}`);
+
+                        // ── ClaimRequest kaydını upsert et (idempotent) ───────────────────────
+                        // Aynı trip için birden fazla tetikleyici gelirse, var olan kaydı güncelle
+                        try {
+                            const existingClaim = await prisma.claimRequest.findFirst({
+                                where: { tripId: trip.id },
+                                select: { id: true },
+                            });
+                            if (!existingClaim) {
+                                await prisma.claimRequest.create({
+                                    data: {
+                                        tripId:        trip.id,
+                                        userId:        trip.userId,
+                                        fullName:      trip.user?.name || '',
+                                        email:         recipientEmail || '',
+                                        claimRuleType: ruleType,
+                                        status:        'PENDING',
+                                    },
+                                });
+                                console.log(`[GUARDIAN] ClaimRequest created for trip ${trip.id} (${ruleType})`);
+                            } else {
+                                await prisma.claimRequest.update({
+                                    where: { id: existingClaim.id },
+                                    data:  { claimRuleType: ruleType },
+                                });
+                                console.log(`[GUARDIAN] ClaimRequest updated for trip ${trip.id} (${ruleType})`);
+                            }
+                        } catch (claimErr) {
+                            console.error(`[GUARDIAN] Failed to upsert ClaimRequest for trip ${trip.id}:`, claimErr);
+                        }
+                        // ────────────────────────────────────────────────────────────────────────
+
                         if (!recipientEmail) {
                             console.warn(`[GUARDIAN] Missing recipient email for proactive claim alert on trip ${trip.id}`);
                         } else {
                             const alertFlightNumber = fullFlightNumber || `${String(segment.airlineCode || '').toUpperCase()}${String(segment.flightNumber || '').toUpperCase()}`;
-                            const disruptionEmailResult = await sendDisruptionAlert(recipientEmail, trip.id, alertFlightNumber);
+                            const disruptionEmailResult = await sendDisruptionAlert(
+                                recipientEmail,
+                                trip.id,
+                                alertFlightNumber,
+                                ruleType,
+                            );
 
                             if (disruptionEmailResult.success) {
                                 const sentAt = new Date();
@@ -441,6 +522,7 @@ export async function processFlightMonitoring() {
                             }
                         }
                     }
+
                     
                     if (trip.user) {
                         notificationPromises.push(

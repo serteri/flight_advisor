@@ -478,6 +478,13 @@ enum ClaimType {
   AMENITY
 }
 
+// 🏷️ CLAIM RULE TYPE — Lead Generation model için hangi hukuki senaryoya düştüğü
+enum ClaimRuleType {
+  COMPENSATION_CANCELLED   // İptal Tazminatı (AB261 veya ülke eşdeğeri)
+  COMPENSATION_DELAYED     // 3 Saat+ Varış Rötarı Tazminatı
+  REFUND_AND_EXPENSES      // Bilet İadesi ve Masraf Talebi (Avustralya/global iç hat)
+}
+
 enum ClaimStatus {
   DRAFT
   SENT
@@ -623,6 +630,9 @@ model ClaimRequest {
   // Step 3: legal authorization
   signatureDataUrl String?  @db.Text
   consentGiven     Boolean  @default(false)
+
+  // Hukuki senaryo tipi — worker tarafından API verisiyle otomatik atanır
+  claimRuleType    ClaimRuleType @default(COMPENSATION_DELAYED)
 
   status           ClaimStatus @default(PENDING)
   createdAt        DateTime @default(now())

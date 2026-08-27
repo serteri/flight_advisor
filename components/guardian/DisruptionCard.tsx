@@ -3,19 +3,45 @@
 import { generateCompensationLink } from '@/services/guardian/airhelp';
 import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
-export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[] }) {
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
+
+interface ClaimRuleDisplay {
+    title: string;
+    ctaLabel: string;
+}
+
+const RULE_DISPLAY: Record<ClaimRuleType, ClaimRuleDisplay> = {
+    COMPENSATION_CANCELLED: {
+        title: 'İptal Tazminatı Haklarınız',
+        ctaLabel: 'İptal Haklarımı Kontrol Et',
+    },
+    COMPENSATION_DELAYED: {
+        title: '3 Saat+ Rötar Tazminatı Haklarınız',
+        ctaLabel: 'Rötar Haklarımı Kontrol Et',
+    },
+    REFUND_AND_EXPENSES: {
+        title: 'Bilet İadesi ve Masraf Karşılama Süreciniz',
+        ctaLabel: 'İade Sürecimi Başlat',
+    },
+};
+
+const DEFAULT_RULE: ClaimRuleDisplay = RULE_DISPLAY.COMPENSATION_DELAYED;
+
+export function DisruptionCard({ segment, alerts }: { segment: any; alerts: any[] }) {
     // Bu uçuş bacağı (Segment) ile ilgili bir 'DISRUPTION' (Rötar/İptal) alarmı var mı?
-    const disruptionAlert = alerts && alerts.length > 0 ? alerts.find(a =>
-        a.type === 'DISRUPTION' &&
-        (a.segmentId === segment.id || !a.segmentId)
-    ) : null;
+    const disruptionAlert =
+        alerts && alerts.length > 0
+            ? alerts.find(
+                  (a) => a.type === 'DISRUPTION' && (a.segmentId === segment.id || !a.segmentId),
+              )
+            : null;
 
     // Link Generation
     const claimLink = generateCompensationLink(
         segment.flightNumber || 'FLIGHT',
         segment.departureTime || '',
         segment.origin || '',
-        segment.destination || ''
+        segment.destination || '',
     );
 
     // ----------------------------------------------------------------
@@ -44,8 +70,11 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
     }
 
     // ----------------------------------------------------------------
-    // DURUM 2: SORUN VAR! (Kırmızı Mod)
+    // DURUM 2: SORUN VAR! (Kırmızı Mod) — ClaimRuleType'a göre dinamik başlık
     // ----------------------------------------------------------------
+    const ruleType = (disruptionAlert as any).claimRuleType as ClaimRuleType | undefined;
+    const ruleDisplay = ruleType ? (RULE_DISPLAY[ruleType] ?? DEFAULT_RULE) : DEFAULT_RULE;
+
     return (
         <div className="bg-red-50 p-6 rounded-2xl border border-red-200 shadow-lg relative overflow-hidden group">
             {/* Arkaplan Efekti */}
@@ -59,12 +88,7 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
                         <div className="bg-red-100 p-2 rounded-lg">
                             <AlertTriangle className="w-5 h-5" />
                         </div>
-                        <span>Tazminat Hakkı Doğdu!</span>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-xs font-bold text-red-400 uppercase">Tahmini Tutar</div>
-                        {/* Use bracket notation or cast if potentialValue is missing from type */}
-                        <span className="text-3xl font-black text-slate-900">{(disruptionAlert as any).potentialValue || '600€'}</span>
+                        <span>{ruleDisplay.title}</span>
                     </div>
                 </div>
 
@@ -78,10 +102,11 @@ export function DisruptionCard({ segment, alerts }: { segment: any, alerts: any[
                     rel="noopener noreferrer"
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-transform active:scale-95 flex items-center justify-center gap-2"
                 >
-                    Dilekçeyi Oluştur (%0 Komisyon)
+                    {ruleDisplay.ctaLabel}
                     <ShieldCheck className="w-5 h-5" />
                 </a>
             </div>
         </div>
     );
 }
+

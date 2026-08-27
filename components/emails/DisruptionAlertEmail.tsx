@@ -11,47 +11,107 @@ import {
     Text,
 } from '@react-email/components';
 
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
+
 interface DisruptionAlertEmailProps {
     flightNumber: string;
     claimLink: string;
+    claimRuleType?: ClaimRuleType;
 }
 
-export function DisruptionAlertEmail({ flightNumber, claimLink }: DisruptionAlertEmailProps) {
+interface ClaimTypeContent {
+    preview: string;
+    heading: string;
+    alertTitle: string;
+    alertBody: string;
+    ctaLabel: string;
+    supportText: string;
+}
+
+const CONTENT_MAP: Record<ClaimRuleType, ClaimTypeContent> = {
+    COMPENSATION_CANCELLED: {
+        preview: `Your flight FLIGHT has been cancelled — find out your rights.`,
+        heading: `Your flight FLIGHT has been cancelled`,
+        alertTitle: 'Cancellation Rights Detected',
+        alertBody:
+            'Flight FLIGHT appears to be cancelled. Depending on the airline and route, you may be entitled to a full refund or rebooking at no cost.',
+        ctaLabel: 'Check My Cancellation Rights',
+        supportText:
+            'Acting early helps preserve your documents and options. We will keep monitoring and notify you of any updates.',
+    },
+    COMPENSATION_DELAYED: {
+        preview: `Your flight FLIGHT is severely delayed — find out your options.`,
+        heading: `Your flight FLIGHT has a major delay`,
+        alertTitle: 'Significant Delay Detected (3h+)',
+        alertBody:
+            'Flight FLIGHT has been delayed by 3 hours or more at the arrival gate. You may be entitled to delay compensation under applicable regulations.',
+        ctaLabel: 'Check My Delay Rights',
+        supportText:
+            'We are continuing to monitor your flight. If the delay is confirmed, your case file will be ready to submit.',
+    },
+    REFUND_AND_EXPENSES: {
+        preview: `Your flight FLIGHT was disrupted — refund and expense options available.`,
+        heading: `Your flight FLIGHT has been disrupted`,
+        alertTitle: 'Refund & Expenses Process Available',
+        alertBody:
+            'Flight FLIGHT appears disrupted. For routes where EU261 does not apply, you may still be eligible for a ticket refund and reasonable out-of-pocket expense reimbursement.',
+        ctaLabel: 'Start My Refund Process',
+        supportText:
+            'Keep all receipts for meals, accommodation or alternative transport. These may be claimable. We will keep monitoring your flight.',
+    },
+};
+
+const DEFAULT_RULE_TYPE: ClaimRuleType = 'COMPENSATION_DELAYED';
+
+function resolveContent(flightNumber: string, ruleType?: ClaimRuleType): ClaimTypeContent {
+    const base = CONTENT_MAP[ruleType ?? DEFAULT_RULE_TYPE] ?? CONTENT_MAP[DEFAULT_RULE_TYPE];
+    const replace = (str: string) => str.replace(/FLIGHT/g, flightNumber);
+    return {
+        preview:     replace(base.preview),
+        heading:     replace(base.heading),
+        alertTitle:  base.alertTitle,
+        alertBody:   replace(base.alertBody),
+        ctaLabel:    base.ctaLabel,
+        supportText: base.supportText,
+    };
+}
+
+export function DisruptionAlertEmail({
+    flightNumber,
+    claimLink,
+    claimRuleType,
+}: DisruptionAlertEmailProps) {
+    const content = resolveContent(flightNumber, claimRuleType);
+
     return (
         <Html>
             <Head />
-            <Preview>Urgent: Your flight {flightNumber} has a major disruption. Claim up to EUR 600.</Preview>
+            <Preview>{content.preview}</Preview>
             <Body style={main}>
                 <Container style={container}>
                     <Section style={badge}>
-                        <Text style={badgeText}>FlightAgent Emergency Update</Text>
+                        <Text style={badgeText}>FlightAgent Alert</Text>
                     </Section>
 
-                    <Heading style={heading}>Your flight {flightNumber} has been disrupted</Heading>
+                    <Heading style={heading}>{content.heading}</Heading>
 
                     <Text style={paragraph}>
-                        We detected a critical status change for your booking. Your flight may be cancelled
-                        or severely delayed.
+                        We detected a significant status change for your booking. Our system is
+                        actively monitoring your flight and will keep you updated.
                     </Text>
 
                     <Section style={alertBox}>
-                        <Text style={alertTitle}>Compensation opportunity</Text>
-                        <Text style={alertBody}>
-                            Flight <strong>{flightNumber}</strong> appears disrupted. You may be eligible for up to
-                            <strong> EUR 600</strong> in compensation.
-                        </Text>
+                        <Text style={alertTitle}>{content.alertTitle}</Text>
+                        <Text style={alertBody}>{content.alertBody}</Text>
                     </Section>
 
                     <Section style={ctaSection}>
                         <Button style={button} href={claimLink}>
-                            Start my compensation file
+                            {content.ctaLabel}
                         </Button>
                     </Section>
 
-                    <Text style={paragraphSecondary}>
-                        If this event is confirmed, acting early helps preserve documents and speeds up your claim.
-                        We will keep monitoring and notify you of major updates.
-                    </Text>
+                    <Text style={paragraphSecondary}>{content.supportText}</Text>
 
                     <Hr style={hr} />
 
@@ -84,14 +144,14 @@ const container = {
 
 const badge = {
     display: 'inline-block',
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#fef3c7',
     borderRadius: '999px',
     padding: '6px 14px',
     marginBottom: '16px',
 };
 
 const badgeText = {
-    color: '#b91c1c',
+    color: '#92400e',
     fontSize: '12px',
     fontWeight: 700,
     margin: 0,
@@ -113,8 +173,8 @@ const paragraph = {
 };
 
 const alertBox = {
-    backgroundColor: '#fff1f2',
-    border: '1px solid #fecdd3',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fde68a',
     borderRadius: '14px',
     padding: '14px 16px',
     margin: '20px 0',
@@ -122,14 +182,14 @@ const alertBox = {
 
 const alertTitle = {
     margin: '0 0 8px',
-    color: '#9f1239',
+    color: '#78350f',
     fontWeight: 700,
     fontSize: '14px',
 };
 
 const alertBody = {
     margin: 0,
-    color: '#881337',
+    color: '#92400e',
     fontSize: '14px',
     lineHeight: '22px',
 };
@@ -172,3 +232,4 @@ const footerLink = {
     color: '#0f172a',
     wordBreak: 'break-all' as const,
 };
+
