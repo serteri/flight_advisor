@@ -49,9 +49,19 @@ export async function POST(req: Request) {
       const claim = input.claimId
         ? await prisma.compensationClaim.findUnique({
           where: { id: input.claimId },
-          include: { flightLeg: true },
+          include: {
+            flightLeg: { include: { trip: { select: { userId: true } } } },
+            monitor: { select: { userId: true } },
+          },
         })
         : null;
+
+      if (input.claimId) {
+        const ownerId = claim?.flightLeg?.trip.userId ?? claim?.monitor?.userId ?? null;
+        if (!claim || ownerId !== user.id) {
+          return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
+        }
+      }
 
       const flightLeg = claim?.flightLeg;
       const regulation = input.flightDetails?.regulation ?? claim?.regulation ?? 'EU261/2004';

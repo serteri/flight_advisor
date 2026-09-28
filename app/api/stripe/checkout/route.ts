@@ -14,7 +14,7 @@ const priceIdSuffix = isStripeTestMode ? 'TEST_' : '';
 console.log('🔧 [STRIPE CONFIG - GET]', {
     mode: isStripeTestMode ? 'TEST' : 'LIVE',
     suffix: priceIdSuffix,
-    secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
+    secretKeyConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
 });
 
 const PRICE_MAP: Record<PlanType, Record<BillingCycle, string | undefined>> = {
@@ -90,7 +90,6 @@ export async function GET(req: Request) {
             stripeMode: isStripeTestMode ? 'TEST' : 'LIVE',
             envVarName,
             priceId: priceId || '❌ MISSING',
-            priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
         });
 
         if (!priceId) {

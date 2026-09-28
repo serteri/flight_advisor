@@ -21,25 +21,6 @@ function apiBypass(req: NextRequest) {
     return null;
 }
 
-function notifyCompanyVisit(req: NextRequest, origin: string) {
-    const company = req.nextUrl.searchParams.get('c');
-    if (!company) {
-        return;
-    }
-
-    const notifyUrl = new URL('/api/notify-visit', origin);
-
-    void fetch(notifyUrl.toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            company,
-            path: req.nextUrl.pathname,
-            timestamp: Date.now(),
-        }),
-    }).catch(() => undefined);
-}
-
 // Detects an explicit /tr or /de prefix. Anything else (including "/" and
 // "/en...") is treated as the default locale and is never redirected.
 function matchPrefixedLocale(pathname: string): PrefixedLocale | null {
@@ -77,8 +58,6 @@ export default auth((req) => {
 
     const pathname = req.nextUrl.pathname;
     const origin = getRequestOrigin(req as NextRequest);
-
-    notifyCompanyVisit(req as NextRequest, origin);
 
     // Loop guard: an explicit "/en" prefix is legacy/bookmarked. Strip it
     // with a single redirect and never re-add it — this path never reaches

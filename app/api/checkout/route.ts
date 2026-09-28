@@ -10,7 +10,7 @@ const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
 
 console.log('🔧 [STRIPE CONFIG]', {
     mode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
-    secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
+    secretKeyConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
 });
 
 console.log('Make sure STRIPE_PRO_MONTHLY_PRICE_ID is set in Vercel');
@@ -97,7 +97,6 @@ export async function POST(req: Request) {
             stripeMode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
             envVarName,
             priceId: priceId || '❌ MISSING',
-            priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
         });
 
         if (!priceId) {
