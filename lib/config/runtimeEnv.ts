@@ -43,6 +43,20 @@ export function getMissingRequiredEnv(): string[] {
     if (!process.env.NOTIFICATION_FROM_EMAIL?.trim()) missing.push('NOTIFICATION_FROM_EMAIL');
     if (!process.env.APP_BASE_URL?.trim()) missing.push('APP_BASE_URL');
     if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) missing.push('NEXTAUTH_SECRET (or AUTH_SECRET)');
+
+    // Monitoring runs on QStash + AeroDataBox only in Vercel production;
+    // development and preview use mocks and unpublished schedules.
+    if (process.env.VERCEL_ENV === 'production') {
+        for (const name of [
+            'QSTASH_TOKEN',
+            'QSTASH_CURRENT_SIGNING_KEY',
+            'QSTASH_NEXT_SIGNING_KEY',
+            'RAPID_API_KEY',
+            'RAPID_API_HOST_AERODATABOX',
+        ]) {
+            if (!process.env[name]) missing.push(name);
+        }
+    }
     return missing;
 }
 

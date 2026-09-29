@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Loader2, Mail, Plane, Calendar, ShieldCheck } from 'lucide-react';
+import { isValidFlightNumber } from '@/lib/flights/flightNumber';
 
 type FieldErrors = {
     flightNumber?: string;
@@ -29,7 +30,7 @@ export function HeroSearchForm() {
     startOfToday.setHours(0, 0, 0, 0);
 
     const formSchema = z.object({
-        flightNumber: z.string().min(3, { message: t('errors.invalidFlight') }),
+        flightNumber: z.string().refine(isValidFlightNumber, { message: t('errors.invalidFlight') }),
         date: z.coerce
             .date({ message: t('errors.invalidDate') })
             .min(startOfToday, { message: t('errors.invalidDate') }),

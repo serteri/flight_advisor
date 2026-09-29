@@ -568,6 +568,12 @@ model MonitoredTrip {
   lastEmailError   String?
   lastEmailErrorAt DateTime?
 
+  // Event-driven monitoring (QStash checkpoints)
+  routeUnknown     Boolean   @default(false) // provider could not resolve origin/destination; EU261 is skipped
+  apiCallsUsed     Int       @default(0)     // flight-data provider calls spent on this trip (hard cap per trip)
+  monitoringEndsAt DateTime?                 // scheduled arrival + 48h; trip becomes COMPLETED after this
+  scheduledChecks  ScheduledTripCheck[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -669,9 +675,14 @@ model FlightSegment {
   departureDate DateTime
   arrivalDate   DateTime
   
+  // Provider schedule in UTC (AeroDataBox). departureDate keeps the local
+  // flight date used for lookups; these hold the exact scheduled instants.
+  scheduledDepartureUtc DateTime?
+  scheduledArrivalUtc   DateTime?
+
   // Aircraft Details
   aircraftType  String?  // "77W"
-  
+
   // User Specifics
   userSeat      String?  // "24A"
   cabinClass    String?  // "ECONOMY"
@@ -868,6 +879,7 @@ enum TripStatus {
   COMPLETED
   CANCELLED
   ARCHIVED
+  PENDING_CONFIRMATION // lead-capture trip awaiting double opt-in
 }
 
 // Persisted monitoring state — replaces in-memory lastAlertState.
@@ -1125,6 +1137,40 @@ model DisruptionPlaybook {
 
   @@index([monitoredTripId])
   @@index([airlineIata])
+}
+
+// ⏱️ One planned QStash delivery for a monitored trip. Stored so checkpoints
+// can be cancelled and re-planned when the flight schedule changes.
+model ScheduledTripCheck {
+  id          String   @id @default(cuid())
+  tripId      String
+  kind        String   // DEP_MINUS_24H | DEP_MINUS_3H | DEP | ARR_PLUS_1H | ARR_PLUS_4H | EXTRA_ARR_PLUS_1H | COMPLETE
+  runAt       DateTime
+  messageId   String?  // QStash message id (null when publishing failed or in dev)
+  status      String   @default("SCHEDULED") // SCHEDULED | DONE | SKIPPED | CANCELLED | FAILED
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trip        MonitoredTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, status])
+}
+
+// 📊 Monthly usage of a metered external API (one row per provider+month).
+model ApiQuotaState {
+  id                 String   @id @default(cuid())
+  provider           String   // "AERODATABOX"
+  period             String   // "YYYY-MM" (UTC)
+  callsUsed          Int      @default(0)
+  unitsUsed          Int      @default(0)
+  headerLimit        Int?     // last limit reported by RapidAPI headers
+  headerRemaining    Int?     // last remaining reported by RapidAPI headers
+  headerKind         String?  // "units" | "requests"
+  lastAlertThreshold Int      @default(0) // highest threshold (80/95/100) already emailed to admin
+  updatedAt          DateTime @updatedAt
+
+  @@unique([provider, period])
 }
 
 // 📬 LEAD CAPTURE — Email / waitlist sign-ups
