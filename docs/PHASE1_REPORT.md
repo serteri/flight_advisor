@@ -104,7 +104,7 @@ Filtre önerisi:
 - Senin kendi admin oturumundan gelmeyen her 2xx şüphelidir.
 
 **Zaman aralığı:**
-- Başlangıç: bu route'ların ilk prod deploy'u. Tarihi şu komutla bulabilirsin (commit tarihi alt sınırdır):
+- Başlangıç: bu route'ların ilk prod deploy'u. Route'lar `784577c` commit'iyle **2026-04-16 00:30 (+10:00)** tarihinde eklendi; deploy bu tarihte ya da sonrasında olmuştur. Kontrol için:
   ```bash
   git log --diff-filter=A --format="%h %ad %s" --date=iso -- app/api/admin/experiments/route.ts
   ```
