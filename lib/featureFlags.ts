@@ -60,6 +60,20 @@ export function isClaimDocumentUploadEnabled(): boolean {
     return process.env.CLAIM_DOCUMENT_UPLOAD_ENABLED === 'true';
 }
 
+/**
+ * Pro checkout on /pricing.
+ *
+ * DEFAULT: false — hidden until the paid features on the pricing page exist
+ * and the checkout path works for magic-link users. The /api/checkout route
+ * itself is unchanged. NEXT_PUBLIC_ so the client pricing page can read it
+ * (inlined at build time — rebuild after changing).
+ *
+ * Enable: NEXT_PUBLIC_PRO_CHECKOUT_ENABLED=true
+ */
+export function isProCheckoutEnabled(): boolean {
+    return process.env.NEXT_PUBLIC_PRO_CHECKOUT_ENABLED === 'true';
+}
+
 // ── Fallback Metrics (In-Memory, Non-Persistent) ─────────────────────────────
 // Tracks unified vs legacy pipeline usage for observability.
 // Resets on process restart — this is intentional (no persistent state dependency).

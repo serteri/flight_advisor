@@ -107,7 +107,7 @@
     }
   },
   "Footer": {
-    "tagline": "Reiseentscheidungsintelligenz und transparente Überwachung für gebuchte Flüge.",
+    "tagline": "Verspätungs- und Annullierungswarnungen mit Entschädigungshinweisen für gebuchte Flüge.",
     "links": {
       "home": "Startseite",
       "guardian": "Guardian",
@@ -140,22 +140,20 @@
     "guardian": {
       "backToHome": "Zurück zur Startseite",
       "title": "Einfache Tarife für Flugschutz",
-      "subtitle": "Überwache deine Reisen und erhalte eine Entschädigung, wenn etwas schiefgeht.",
+      "subtitle": "Überwachen Sie Ihre Flüge und erfahren Sie, ob Sie möglicherweise Anspruch auf Entschädigung haben.",
       "free": {
         "item1": "1 Flug überwachen",
         "item2": "Störungswarnungen (E-Mail)",
-        "item3": "EU261-Anspruchsprüfung",
+        "item3": "EU261- / UK261-Anspruchsprüfung",
         "item4": "Einfaches Anspruchsschreiben",
         "cta": "Kostenlos starten"
       },
       "pro": {
-        "item1": "Unbegrenzte Flüge überwachen",
-        "item2": "Priorisierte Störungswarnungen",
-        "item3": "EU261-Anspruchsschreiben + PDF",
-        "item4": "E-Mail an Airline (automatisiert)",
-        "item5": "Warnverlauf",
+        "item1": "Unbegrenzt viele Flüge überwachen",
+        "item2": "Warnungsverlauf",
         "checkingOut": "Bezahlvorgang wird gestartet...",
-        "cta": "Pro starten"
+        "cta": "Pro starten",
+        "comingSoon": "Pro ist bald verfügbar."
       }
     }
   },
@@ -436,11 +434,11 @@
       }
     },
     "guardian": {
-      "badge": "Guardian-Modus aktiv",
+      "badge": "Überwachung von Flugstörungen",
       "hero": {
         "title": "Jede Buchung überwachen,",
         "titleHighlight": "vor Störungen reagieren",
-        "subtitle": "FlightAgent konzentriert sich jetzt auf Guardian-Workflows: kontinuierliche Überwachung, Störungswarnungen und EU261-Entschädigungsführung."
+        "subtitle": "Wir überwachen Ihre gebuchten Flüge, benachrichtigen Sie per E-Mail bei Verspätung oder Annullierung und zeigen, ob Sie möglicherweise Anspruch auf Entschädigung nach EU261 oder UK261 haben."
       },
       "cta": {
         "openGuardian": "Guardian öffnen",
@@ -482,7 +480,7 @@
         "emailPlaceholder": "E-Mail für Benachrichtigungen",
         "consentText": "Ich stimme zu, Flugbenachrichtigungen für diese Reise per E-Mail zu erhalten.",
         "submit": "Meinen Flug verfolgen",
-        "submitting": "Überwachung wird gestartet...",
+        "submitting": "Bestätigung wird gesendet...",
         "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
         "errors": {
           "invalidFlight": "Ungültige Flugnummer",
@@ -491,9 +489,9 @@
           "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren"
         },
         "confirmation": {
-          "title": "Wir verfolgen deinen Flug",
-          "subtitle": "Du erhältst eine E-Mail-Benachrichtigung, falls sich bei dieser Reise etwas ändert.",
-          "nextSteps": "Erstelle jederzeit ein kostenloses Konto, um das vollständige Überwachungs-Dashboard für diese Reise zu sehen.",
+          "title": "Bitte prüfe dein Postfach",
+          "subtitle": "Wir haben dir einen Bestätigungslink geschickt. Die Überwachung beginnt, sobald du ihn öffnest.",
+          "nextSteps": "Der Link ist 24 Stunden gültig. Falls du die E-Mail nicht siehst, prüfe deinen Spam-Ordner.",
           "backHome": "Zurück zur Startseite"
         }
       }
@@ -501,14 +499,14 @@
   },
   "AboutPage": {
     "title": "?ber FlightAgent",
-    "subtitle": "Trip decision intelligence for long-haul travelers.",
+    "subtitle": "Warnungen bei Flugstörungen und Hinweise zur Entschädigung.",
     "mission": {
       "title": "Unsere Mission",
-      "content": "FlightAgent hilft Reisenden, Itinerary-Qualit?t vor der Buchung zu verstehen und gebuchte Reisen danach mit transparenten scheduled Checks zu monitoren. Wir sind keine OTA und versprechen keine Real-time Airline Operations."
+      "content": "FlightAgent überwacht Ihre bereits gebuchten Flüge. Bei erheblicher Verspätung oder Annullierung informieren wir Sie per E-Mail und schätzen anhand der verfügbaren Flugdaten ein, ob Sie möglicherweise Anspruch auf Entschädigung nach EU261 oder UK261 haben."
     },
     "story": {
       "title": "Unsere Geschichte",
-      "content": "FlightAgent wurde f?r Reisende gebaut, die mehr als Cheap-price Sorting brauchen. Long-haul Itineraries k?nnen durch knappe Connections, Self-transfer, stale Data oder schlechte Rebooking-Optionen riskant werden."
+      "content": "Viele Passagiere erfahren nie, dass ein gestörter Flug entschädigungsfähig sein könnte, oder geben wegen komplizierter Regeln auf. FlightAgent erkennt solche Fälle für Sie und erklärt die nächsten Schritte verständlich. Wir sind keine Anwaltskanzlei und bieten keine Rechtsberatung."
     }
   },
   "Auth": {

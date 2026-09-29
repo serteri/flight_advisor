@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { withFreemiumGate } from '@/lib/freemium/gate';
 import { prisma } from '@/lib/prisma';
 import { isOwnedBy } from '@/lib/auth/ownership';
@@ -130,25 +130,18 @@ async function loadSource(input: z.infer<typeof letterSchema>, userId: string): 
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.email) {
+  // Either session system (NextAuth or magic-link): lead users reach the
+  // trip page through the magic link and the Free plan includes the letter.
+  const userId = await getCurrentUserId();
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const input = letterSchema.parse(await req.json());
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    return withFreemiumGate(user.id, 'compensation_letter', async () => {
-      const source = await loadSource(input, user.id);
+    return withFreemiumGate(userId, 'compensation_letter', async () => {
+      const source = await loadSource(input, userId);
       if (source === 'not_found') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
       }

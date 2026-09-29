@@ -537,6 +537,8 @@ model MonitoredTrip {
   // Lead capture (anonymous "track my flight" form)
   subscriberEmail String?
   consentGiven    Boolean  @default(false)
+  confirmedAt     DateTime? // double opt-in: magic link opened; null while PENDING_CONFIRMATION
+  requestIpHash   String?   // HMAC of the submitting IP, only for rate limiting (never the raw IP)
 
   // Finansal Veriler (Bilet Bazlı)
   originalPrice   Float
@@ -592,6 +594,8 @@ model MonitoredTrip {
   @@index([userId])
   @@index([status, nextCheckAt])
   @@index([status, nextCheckAt, processingLeaseExpiresAt])
+  @@index([subscriberEmail, createdAt])
+  @@index([requestIpHash, createdAt])
 }
 
 model Passenger {

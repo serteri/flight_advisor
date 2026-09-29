@@ -92,7 +92,7 @@ export async function sendWelcomeEmail(
     const html = await render(WelcomeTripEmail({ flightNumber, magicLink }));
     const result = await deliverViaResend('welcome', {
         to: email,
-        subject: `Your flight ${flightNumber} is now protected`,
+        subject: `Confirm alerts for flight ${flightNumber}`,
         html,
     });
     return { ...result, previewUrl: magicLink };

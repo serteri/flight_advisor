@@ -107,7 +107,7 @@
     }
   },
   "Footer": {
-    "tagline": "Rezervasyon edilen uçuşlar için yolculuk karar zekası ve şeffaf izleme.",
+    "tagline": "Rezervasyonlu uçuşlar için rötar ve iptal uyarıları, tazminat rehberliği.",
     "links": {
       "home": "Ana Sayfa",
       "guardian": "Guardian",
@@ -140,22 +140,20 @@
     "guardian": {
       "backToHome": "Anasayfaya dön",
       "title": "Uçuş koruması için basit planlar",
-      "subtitle": "Seyahatlerini izle, bir şeyler ters giderse tazminat al.",
+      "subtitle": "Uçuşlarınızı izleyin ve tazminat hakkınız olup olmayabileceğini öğrenin.",
       "free": {
         "item1": "1 uçuşu izle",
         "item2": "Aksaklık uyarıları (e-posta)",
-        "item3": "AB261 uygunluk kontrolü",
+        "item3": "EU261 / UK261 uygunluk kontrolü",
         "item4": "Temel talep mektubu",
         "cta": "Ücretsiz başla"
       },
       "pro": {
-        "item1": "Sınırsız uçuş izle",
-        "item2": "Öncelikli aksaklık uyarıları",
-        "item3": "AB261 talep mektubu + PDF",
-        "item4": "Havayoluna e-posta (otomatik)",
-        "item5": "Uyarı geçmişi",
+        "item1": "Sınırsız uçuş takibi",
+        "item2": "Uyarı geçmişi",
         "checkingOut": "Ödeme başlatılıyor...",
-        "cta": "Pro'yu Başlat"
+        "cta": "Pro'yu Başlat",
+        "comingSoon": "Pro yakında geliyor."
       }
     }
   },
@@ -436,11 +434,11 @@
       }
     },
     "guardian": {
-      "badge": "Guardian modu aktif",
+      "badge": "Uçuş aksaklığı takibi",
       "hero": {
         "title": "Her rezervasyonu izle,",
         "titleHighlight": "aksaklık gelmeden önce harekete geç",
-        "subtitle": "FlightAgent artık Guardian iş akışlarına odaklanıyor: sürekli izleme, uçuş aksaklık uyarıları ve AB261 tazminat rehberliği."
+        "subtitle": "Rezervasyonu yapılmış uçuşlarınızı izliyor, rötar veya iptal olduğunda size e-posta gönderiyor ve EU261 ya da UK261 kapsamında tazminat hakkınız olabileceğini bildiriyoruz."
       },
       "cta": {
         "openGuardian": "Guardian'ı Aç",
@@ -482,7 +480,7 @@
         "emailPlaceholder": "Uyarılar için e-posta",
         "consentText": "Bu yolculukla ilgili uçuş uyarılarını e-posta ile almayı kabul ediyorum.",
         "submit": "Uçuşumu takip et",
-        "submitting": "İzleme başlatılıyor...",
+        "submitting": "Onay gönderiliyor...",
         "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
         "errors": {
           "invalidFlight": "Geçersiz uçuş numarası",
@@ -491,9 +489,9 @@
           "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz"
         },
         "confirmation": {
-          "title": "Uçuşunuzu takip ediyoruz",
-          "subtitle": "Bu yolculukla ilgili bir değişiklik olursa e-posta ile uyarı alacaksınız.",
-          "nextSteps": "Bu yolculuğun tam izleme panelini görmek için istediğiniz zaman ücretsiz bir hesap oluşturabilirsiniz.",
+          "title": "E-postanızı kontrol edin",
+          "subtitle": "Size bir onay bağlantısı gönderdik. Bağlantıyı açtığınız anda izleme başlar.",
+          "nextSteps": "Bağlantı 24 saat geçerlidir. E-postayı göremiyorsanız spam klasörünü kontrol edin.",
           "backHome": "Ana sayfaya dön"
         }
       }
@@ -501,14 +499,14 @@
   },
   "AboutPage": {
     "title": "FlightAgent Hakkinda",
-    "subtitle": "Trip decision intelligence for long-haul travelers.",
+    "subtitle": "Yolcular için uçuş aksaklığı uyarıları ve tazminat rehberliği.",
     "mission": {
       "title": "Misyonumuz",
-      "content": "FlightAgent, yolcularin rezervasyon oncesi itinerary kalitesini anlamasina ve booked tripleri seffaf scheduled checks ile izlemesine yardim eder. OTA degiliz; real-time airline operations vaadi vermeyiz."
+      "content": "FlightAgent, rezervasyonunu yaptığınız uçuşları izler. Uçuşunuz ciddi şekilde rötar yaparsa veya iptal edilirse size e-posta gönderir ve elimizdeki uçuş verilerine göre EU261 ya da UK261 kapsamında tazminat hakkınız olup olamayacağını tahmin ederiz."
     },
     "story": {
       "title": "Hikayemiz",
-      "content": "FlightAgent, cheap-price sorttan fazlasina ihtiyac duyan yolcular icin kuruldu. Long-haul itineraryler tight connection, self-transfer, stale data veya kotu rebooking opsiyonlariyla risk tasir; urun karar netligi ve honest monitoring state etrafinda tasarlandi."
+      "content": "Çoğu yolcu, aksayan bir uçuşun tazminata konu olabileceğini hiç öğrenmez ya da kurallar karmaşık olduğu için vazgeçer. FlightAgent bu durumları sizin için yakalamak ve sonraki adımları sade bir dille anlatmak için kuruldu. Bir hukuk bürosu değiliz ve hukuki tavsiye vermiyoruz."
     }
   },
   "Auth": {

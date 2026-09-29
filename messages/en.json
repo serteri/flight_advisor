@@ -107,7 +107,7 @@
     }
   },
   "Footer": {
-    "tagline": "Trip decision intelligence and transparent monitoring for booked flights.",
+    "tagline": "Delay and cancellation alerts with compensation guidance for booked flights.",
     "links": {
       "home": "Home",
       "guardian": "Guardian",
@@ -386,11 +386,11 @@
       }
     },
     "guardian": {
-      "badge": "Guardian mode is active",
+      "badge": "Flight disruption monitoring",
       "hero": {
         "title": "Monitor every booking,",
         "titleHighlight": "react before disruption hits",
-        "subtitle": "FlightAgent now focuses on Guardian workflows: continuous monitoring, disruption alerts, and EU261 compensation guidance."
+        "subtitle": "We watch your booked flights, email you when they are delayed or cancelled, and tell you whether you may be eligible for EU261 or UK261 compensation."
       },
       "cta": {
         "openGuardian": "Open Guardian",
@@ -432,7 +432,7 @@
         "emailPlaceholder": "Email for alerts",
         "consentText": "I agree to receive flight alerts for this trip by email.",
         "submit": "Track my flight",
-        "submitting": "Starting monitoring...",
+        "submitting": "Sending confirmation...",
         "genericError": "Something went wrong. Please try again.",
         "errors": {
           "invalidFlight": "Invalid flight number",
@@ -441,9 +441,9 @@
           "consentRequired": "Please agree to receive flight alerts to continue"
         },
         "confirmation": {
-          "title": "We're tracking your flight",
-          "subtitle": "You'll get an email alert if anything changes with this trip.",
-          "nextSteps": "Create a free account any time to see the full monitoring dashboard for this trip.",
+          "title": "Check your email",
+          "subtitle": "We sent you a confirmation link. Monitoring starts as soon as you open it.",
+          "nextSteps": "The link is valid for 24 hours. If you do not see the email, check your spam folder.",
           "backHome": "Back to home"
         }
       }
@@ -470,22 +470,20 @@
     "guardian": {
       "backToHome": "Back to home",
       "title": "Simple plans for flight protection",
-      "subtitle": "Monitor your trips and get compensated when things go wrong.",
+      "subtitle": "Monitor your flights and find out if you may be eligible for compensation.",
       "free": {
         "item1": "Monitor 1 flight",
         "item2": "Disruption alerts (email)",
-        "item3": "EU261 eligibility check",
+        "item3": "EU261 / UK261 eligibility check",
         "item4": "Basic claim letter",
         "cta": "Get started free"
       },
       "pro": {
         "item1": "Monitor unlimited flights",
-        "item2": "Priority disruption alerts",
-        "item3": "EU261 claim letter + PDF",
-        "item4": "Email to airline (automated)",
-        "item5": "Alert history",
+        "item2": "Alert history",
         "checkingOut": "Starting checkout...",
-        "cta": "Start Pro"
+        "cta": "Start Pro",
+        "comingSoon": "Pro is coming soon."
       }
     }
   },
@@ -501,14 +499,14 @@
   },
   "AboutPage": {
     "title": "About FlightAgent",
-    "subtitle": "Trip decision intelligence for long-haul travelers.",
+    "subtitle": "Flight disruption alerts and compensation guidance for travelers.",
     "mission": {
       "title": "Our Mission",
-      "content": "FlightAgent helps travelers understand itinerary quality before booking and monitor booked trips afterward with transparent, scheduled checks. We focus on risk, route structure, fare context, and advisor-style recommendations rather than acting as an OTA or promising real-time airline operations."
+      "content": "FlightAgent monitors the flights you have already booked. When a flight is significantly delayed or cancelled, we email you and estimate whether you may be eligible for compensation under EU261 or UK261, based on the flight data available to us."
     },
     "story": {
       "title": "Our Story",
-      "content": "FlightAgent was built for travelers who need more than a cheap-price sort. Long-haul itineraries can fail through tight connections, self-transfers, stale data, or poor rebooking options, so our product is designed around decision clarity and honest monitoring state."
+      "content": "Most passengers never find out that a disrupted flight could qualify for compensation, or give up because the rules are hard to follow. FlightAgent was built to spot these cases for you and explain the next steps in plain language. We are not a law firm and do not provide legal advice."
     }
   },
   "Auth": {

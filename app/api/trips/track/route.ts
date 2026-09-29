@@ -3,11 +3,18 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { sendWelcomeEmail } from '@/lib/email/sender';
 import { parseFlightNumber } from '@/lib/flights/flightNumber';
-import { initializeTripMonitoring } from '@/lib/guardian/tripLifecycle';
+import {
+    TRACK_RATE_WINDOW_MS,
+    clientIpFromHeaders,
+    evaluateTrackRateLimit,
+    hashRequestIp,
+} from '@/lib/guardian/trackRateLimit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+// The link doubles as the opt-in confirmation, so it must survive until the
+// subscriber actually opens their inbox.
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type TrackTripPayload = {
@@ -57,7 +64,28 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Flight date is in the past' }, { status: 400 });
     }
 
+    const requestIpHash = hashRequestIp(
+        clientIpFromHeaders(req.headers),
+        process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+    );
+
     try {
+        const windowStart = new Date(Date.now() - TRACK_RATE_WINDOW_MS);
+        const [emailRecent, ipRecent] = await Promise.all([
+            prisma.monitoredTrip.count({ where: { subscriberEmail: email, createdAt: { gte: windowStart } } }),
+            requestIpHash
+                ? prisma.monitoredTrip.count({ where: { requestIpHash, createdAt: { gte: windowStart } } })
+                : Promise.resolve(null),
+        ]);
+        const rate = evaluateTrackRateLimit({ emailRecent, ipRecent });
+        if (!rate.allowed) {
+            console.warn(`[POST /api/trips/track] Rate limited (${rate.reason})`);
+            return NextResponse.json(
+                { error: 'Too many requests. Please try again later.' },
+                { status: 429, headers: { 'Retry-After': String(TRACK_RATE_WINDOW_MS / 1000) } },
+            );
+        }
+
         const user = await prisma.user.upsert({
             where: { email },
             update: {},
@@ -76,7 +104,9 @@ export async function POST(req: Request) {
                 ticketClass: 'UNKNOWN',
                 subscriberEmail: email,
                 consentGiven: consent,
-                status: 'ACTIVE',
+                requestIpHash,
+                // Double opt-in: monitoring starts when the emailed link is opened.
+                status: 'PENDING_CONFIRMATION',
                 routeUnknown: true,
                 nextCheckAt: now,
                 segments: {
@@ -102,8 +132,8 @@ export async function POST(req: Request) {
             },
         });
 
-        const claimRedirectPath = `/claim-process/${trip.id}`;
-        const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, claimRedirectPath);
+        const tripRedirectPath = `/dashboard/guardian/${trip.id}`;
+        const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, tripRedirectPath);
         if (!emailResult.success) {
             const emailError = emailResult.error || 'Unknown email delivery failure';
             console.error(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailError}`);
@@ -120,9 +150,10 @@ export async function POST(req: Request) {
             );
         }
 
-        await initializeTripMonitoring(trip.id, now);
-
-        const responsePayload: { id: string; devMagicLoginUrl?: string } = { id: trip.id };
+        const responsePayload: { id: string; pendingConfirmation: true; devMagicLoginUrl?: string } = {
+            id: trip.id,
+            pendingConfirmation: true,
+        };
         if (process.env.NODE_ENV !== 'production' && emailResult.previewUrl) {
             responsePayload.devMagicLoginUrl = emailResult.previewUrl;
         }
