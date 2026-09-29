@@ -4,6 +4,7 @@ import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/auth/currentUser';
+import { isClaimDocumentUploadEnabled } from '@/lib/featureFlags';
 
 // Uploaded claim documents (passport/ticket) contain PII for an active legal
 // process, so they're written outside /public — never directly served by
@@ -11,6 +12,13 @@ import { getCurrentUserId } from '@/lib/auth/currentUser';
 const UPLOAD_ROOT = path.join(process.cwd(), 'private-uploads', 'claims');
 
 export async function POST(req: Request) {
+    if (!isClaimDocumentUploadEnabled()) {
+        return NextResponse.json(
+            { error: 'Claim submission with documents is temporarily unavailable.' },
+            { status: 503 },
+        );
+    }
+
     const userId = await getCurrentUserId();
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

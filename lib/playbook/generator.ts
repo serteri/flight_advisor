@@ -161,7 +161,7 @@ function buildSignificantDelayScenario(
         ? `At 3h+ arrival delay: compensation of up to ${currency} 600 may be owed`
         : 'Check if compensation is owed',
       detail: isRegulated
-        ? `Under ${zone}, a 3h+ arrival delay may trigger cash compensation. Extraordinary circumstances (weather, ATC strike) exempt the airline.`
+        ? `Under ${zone}, a 3h+ arrival delay may trigger cash compensation. The airline may cite extraordinary circumstances (weather, ATC strike) to refuse it.`
         : 'Check your travel insurance and the airline\'s own delay compensation policy.',
       doThis: true,
       timeContext: 'After travel — via claim process',
@@ -219,7 +219,7 @@ function buildCancellationScenario(
         ? `If notified less than 14 days before departure: compensation up to ${currency} 600 may be owed`
         : 'Check if compensation applies',
       detail: isRegulated
-        ? `Under ${zone}, cancellations notified < 14 days before departure entitle you to cash compensation (subject to route distance and extraordinary circumstances).`
+        ? `Under ${zone}, cancellations notified < 14 days before departure may entitle you to cash compensation (subject to route distance and extraordinary circumstances).`
         : 'Check your travel insurance policy and the airline\'s own cancellation terms.',
       doThis: true,
       timeContext: 'Via claim process after travel',

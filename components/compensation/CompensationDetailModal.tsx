@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { AirlineClaimHistory } from './AirlineClaimHistory';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { CompensationBadge, type CompensationBadgeStatus } from './CompensationBadge';
 
 export type CompensationTierView = {
@@ -66,16 +67,14 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         claimId: props.claimId,
-        passengerName: props.passengerName || 'Passenger',
+        passengerName: props.passengerName || undefined,
+        // Amount is computed server-side by the compensation engine.
         flightDetails: {
           flightNumber: props.flightNumber,
           origin: props.origin,
           destination: props.destination,
           scheduledDate: props.scheduledDate,
           delayHours,
-          compensationAmount: props.amount ?? undefined,
-          currency: props.currency ?? undefined,
-          regulation: props.regulation,
         },
       }),
     });
@@ -124,7 +123,7 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
           <section className="space-y-3">
             <div>
               <p className="text-sm font-semibold text-slate-900">Amount breakdown</p>
-              <p className="text-xs text-slate-500">Potential values are estimates, not guaranteed airline payment outcomes.</p>
+              <LegalDisclaimer />
             </div>
             <div className="divide-y rounded-md border border-slate-200">
               {props.tiers.map((tier) => (

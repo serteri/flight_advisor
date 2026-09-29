@@ -119,8 +119,8 @@ export function checkDisruptionPro(
         return {
             type: 'DISRUPTION_MONEY',
             severity: 'MONEY',
-            title: '💰 Confirmed Compensation Rights',
-            message: `Delay > 3 hours due to "Operational" reasons. Under EU Regulations, you are entitled to 600€ cash compensation.`,
+            title: '💰 Possible Compensation',
+            message: `Delay > 3 hours due to "Operational" reasons. Under EU Regulations, you may be eligible for up to 600€ compensation. The airline may claim extraordinary circumstances.`,
             actionLabel: 'Open Claim File',
             potentialValue: '600€',
         };

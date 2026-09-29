@@ -23,11 +23,11 @@ export const Templates = {
     DISRUPTION: {
         STANDARD: (data: TemplateData) => ({
             title: `🚨 Flight ${data.flight} Cancelled/Delayed`,
-            message: `Your flight to ${data.destination} has a major disruption. You are eligible for ${data.amount} compensation. File claim now.`
+            message: `Your flight to ${data.destination} has a major disruption. You may be eligible for up to ${data.amount} compensation.`
         }),
         JUNIOR_GUARDIAN: (data: TemplateData) => ({
             title: `✈️ Ops! Uçak Biraz Geç Kalacak 🐢`,
-            message: `Merak etme! Uçağımız biraz dinleniyor. ${data.amount} tazminat hakkın var. Bu sırada Terminal ${data.terminal || '2'}'deki Lego Alanı'na gidebilirsin! 🎡`
+            message: `Merak etme! Uçağımız biraz dinleniyor. ${data.amount} tazminat hakkın olabilir. Bu sırada Terminal ${data.terminal || '2'}'deki Lego Alanı'na gidebilirsin! 🎡`
         })
     },
 

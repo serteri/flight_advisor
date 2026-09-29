@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 
 import type { ChannelResponse, EmailRequest } from '../types';
 import { getNotificationFromEmail } from '@/lib/config/runtimeEnv';
+import { withLegalFooter } from '@/lib/email/legalFooter';
 
 export class ResendProvider {
     private readonly client: Resend;
@@ -17,12 +18,16 @@ export class ResendProvider {
             // Resolved per send (not in the constructor) so a missing
             // NOTIFICATION_FROM_EMAIL surfaces as a recorded delivery failure
             // instead of crashing module initialisation.
+            const { html, text } = withLegalFooter({
+                html: request.html || `<p>${request.text}</p>`,
+                text: request.text,
+            });
             const response = await this.client.emails.send({
                 from: this.fromEmail ?? getNotificationFromEmail(),
                 to: request.to,
                 subject: request.subject,
-                html: request.html || `<p>${request.text}</p>`,
-                text: request.text,
+                html,
+                text,
             });
 
             if (response.error) {

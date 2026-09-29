@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { useRouter } from '@/i18n/routing';
 import {
     AlertTriangle,
@@ -419,22 +420,25 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
         setClaimCopyState('copying');
         try {
-            const delayHours = delayMinutes > 0 ? Math.round((delayMinutes / 60) * 10) / 10 : undefined;
-            const response = await fetch('/api/compensation/generate-letter', {
+            // The server derives flight, amount and passenger name from the trip.
+            const requestLetter = (passengerName?: string) => fetch('/api/compensation/generate-letter', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    passengerName: 'Passenger',
-                    flightDetails: {
-                        flightNumber: `${segmentForClaim.airlineCode}${segmentForClaim.flightNumber}`,
-                        origin: segmentForClaim.origin,
-                        destination: segmentForClaim.destination,
-                        scheduledDate: d(segmentForClaim.departureDate),
-                        delayHours,
-                        regulation: 'EU261',
-                    },
-                }),
+                body: JSON.stringify({ tripId: trip.id, passengerName }),
             });
+
+            let response = await requestLetter();
+            if (response.status === 422) {
+                const body = await response.clone().json().catch(() => null);
+                if (body?.error === 'passenger_name_required') {
+                    const name = window.prompt(t('claim.namePrompt'))?.trim();
+                    if (!name) {
+                        setClaimCopyState('idle');
+                        return;
+                    }
+                    response = await requestLetter(name);
+                }
+            }
 
             if (!response.ok) {
                 setClaimCopyState('failed');
@@ -666,6 +670,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 <p className="text-xs text-slate-500">
                                     {t('claim.pasteHint')}
                                 </p>
+                                <LegalDisclaimer />
                             </div>
                         )}
 

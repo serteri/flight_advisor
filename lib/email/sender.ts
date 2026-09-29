@@ -13,6 +13,7 @@ import { render } from '@react-email/components';
 import { WelcomeTripEmail } from '@/components/emails/WelcomeTripEmail';
 import { DisruptionAlertEmail } from '@/components/emails/DisruptionAlertEmail';
 import { appUrl, getNotificationFromEmail } from '@/lib/config/runtimeEnv';
+import { withLegalFooter } from '@/lib/email/legalFooter';
 
 export interface SendEmailResult {
     success: boolean;
@@ -51,12 +52,13 @@ export async function deliverViaResend(
 
     try {
         const resend = new Resend(apiKey);
+        const { html, text } = withLegalFooter({ html: message.html, text: message.text });
         const response = await resend.emails.send({
             from: getNotificationFromEmail(),
             to: message.to,
             subject: message.subject,
-            html: message.html,
-            text: message.text,
+            html,
+            text,
         });
 
         if (response.error) {

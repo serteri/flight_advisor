@@ -10,7 +10,7 @@ exports.Templates = {
     DISRUPTION: {
         STANDARD: (data) => ({
             title: `🚨 Flight ${data.flight} Cancelled/Delayed`,
-            message: `Your flight to ${data.destination} has a major disruption. You are eligible for ${data.amount} compensation. File claim now.`
+            message: `Your flight to ${data.destination} has a major disruption. You may be eligible for up to ${data.amount} compensation.`
         }),
         JUNIOR_GUARDIAN: (data) => ({
             title: `✈️ Ops! Uçak Biraz Geç Kalacak 🐢`,

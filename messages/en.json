@@ -113,7 +113,9 @@
       "guardian": "Guardian",
       "pricing": "Pricing",
       "blog": "Blog",
-      "about": "About"
+      "about": "About",
+      "terms": "Terms",
+      "privacy": "Privacy"
     },
     "copyright": "© {year} FlightAgent. All rights reserved."
   },
@@ -686,7 +688,8 @@
       "copyLetter": "Copy claim letter",
       "copied": "Claim letter copied.",
       "failed": "Could not generate letter.",
-      "pasteHint": "Paste your claim letter into the airline's form."
+      "pasteHint": "Paste your claim letter into the airline's form.",
+      "namePrompt": "Passenger name as it appears on the booking:"
     },
     "changes": {
       "title": "Recent changes",
@@ -1260,5 +1263,12 @@
     "send": "Send Claim",
     "sent": "Claim Sent!",
     "sentDesc": "We have sent a formal 'Goodwill Compensation' request to {airline} Customer Relations. You should hear back within 7 days."
+  },
+  "Legal": {
+    "disclaimer": "FlightAgent is not a law firm and does not provide legal advice. Compensation information is an estimate based on flight data; the airline may dispute eligibility, for example by citing extraordinary circumstances.",
+    "termsTitle": "Terms of Service",
+    "privacyTitle": "Privacy Policy",
+    "placeholder": "This page is being prepared and will be published before launch.",
+    "claimUnavailable": "Submitting claims with documents is temporarily unavailable. You can still copy a claim letter from your trip page and send it to the airline yourself."
   }
 }

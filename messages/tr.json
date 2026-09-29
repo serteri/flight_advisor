@@ -113,7 +113,9 @@
       "guardian": "Guardian",
       "pricing": "Fiyatlandırma",
       "blog": "Blog",
-      "about": "Hakkımızda"
+      "about": "Hakkımızda",
+      "terms": "Koşullar",
+      "privacy": "Gizlilik"
     },
     "copyright": "© {year} FlightAgent. Tüm hakları saklıdır."
   },
@@ -686,7 +688,8 @@
       "copyLetter": "Talep mektubunu kopyala",
       "copied": "Talep mektubu kopyalandı.",
       "failed": "Mektup oluşturulamadı.",
-      "pasteHint": "Talep mektubunu havayolunun formuna yapıştır."
+      "pasteHint": "Talep mektubunu havayolunun formuna yapıştır.",
+      "namePrompt": "Rezervasyondaki yolcu adı:"
     },
     "changes": {
       "title": "Son değişiklikler",
@@ -1260,5 +1263,12 @@
   "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
   "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
   "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
-  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
+  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route.",
+  "Legal": {
+    "disclaimer": "FlightAgent bir hukuk bürosu değildir ve hukuki tavsiye vermez. Tazminat bilgileri uçuş verilerine dayalı bir tahmindir; havayolu, örneğin olağanüstü koşulları gerekçe göstererek hakkınıza itiraz edebilir.",
+    "termsTitle": "Kullanım Koşulları",
+    "privacyTitle": "Gizlilik Politikası",
+    "placeholder": "Bu sayfa hazırlanıyor ve lansmandan önce yayımlanacak.",
+    "claimUnavailable": "Belgeyle talep gönderimi geçici olarak kullanılamıyor. Yolculuk sayfanızdan talep mektubunu kopyalayıp havayoluna kendiniz gönderebilirsiniz."
+  }
 }

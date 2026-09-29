@@ -1,6 +1,7 @@
 
 import { Resend } from 'resend';
 import { getNotificationFromEmail } from '@/lib/config/runtimeEnv';
+import { withLegalFooter } from '@/lib/email/legalFooter';
 
 export async function sendEmail(to: string, subject: string, attachment: Buffer, filename: string) {
     const apiKey = process.env.RESEND_API_KEY;
@@ -16,7 +17,7 @@ export async function sendEmail(to: string, subject: string, attachment: Buffer,
             from: getNotificationFromEmail(),
             to,
             subject,
-            text: `Attachment included: ${filename}`,
+            text: withLegalFooter({ text: `Attachment included: ${filename}` }).text,
             attachments: [
                 {
                     filename,

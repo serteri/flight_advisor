@@ -3,21 +3,29 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { withFreemiumGate } from '@/lib/freemium/gate';
 import { prisma } from '@/lib/prisma';
+import { isOwnedBy } from '@/lib/auth/ownership';
+import { evaluateCompensation, type CompensationInput } from '@/lib/compensation/engine';
+import {
+  buildClaimLetter,
+  compensationInputFromFlight,
+  isRealPassengerName,
+} from '@/lib/compensation/claimLetter';
 
+// Client-sent amount/currency/regulation are intentionally not accepted:
+// the amount always comes from the compensation engine.
 const flightDetailsSchema = z.object({
-  flightNumber: z.string().min(2).max(12).optional(),
-  origin: z.string().length(3).optional(),
-  destination: z.string().length(3).optional(),
+  flightNumber: z.string().min(2).max(12),
+  origin: z.string().length(3),
+  destination: z.string().length(3),
   scheduledDate: z.string().optional(),
   delayHours: z.number().min(0).optional(),
-  compensationAmount: z.number().int().positive().optional(),
-  currency: z.enum(['EUR', 'GBP', 'AUD']).optional(),
-  regulation: z.string().optional(),
+  cancelled: z.boolean().optional(),
 });
 
 const letterSchema = z.object({
+  tripId: z.string().min(1).optional(),
   claimId: z.string().min(1).optional(),
-  passengerName: z.string().min(2).max(120),
+  passengerName: z.string().max(120).optional(),
   flightDetails: flightDetailsSchema.optional(),
 });
 
@@ -26,6 +34,100 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', {
   month: 'long',
   year: 'numeric',
 }).format(date);
+
+interface LetterSource {
+  flightNumber: string;
+  origin: string;
+  destination: string;
+  scheduledDate: string;
+  disruption: 'DELAY' | 'CANCELLATION';
+  arrivalDelayMinutes: number | null;
+  engineInput: CompensationInput;
+  storedName: string | null;
+}
+
+async function loadSource(input: z.infer<typeof letterSchema>, userId: string): Promise<LetterSource | null | 'not_found'> {
+  if (input.tripId) {
+    const trip = await prisma.monitoredTrip.findUnique({
+      where: { id: input.tripId },
+      include: {
+        segments: { orderBy: { segmentOrder: 'asc' } },
+        snapshot: true,
+        passengers: true,
+        user: { select: { name: true } },
+      },
+    });
+    if (!trip || !isOwnedBy(trip, userId)) return 'not_found';
+    const first = trip.segments[0];
+    const last = trip.segments[trip.segments.length - 1];
+    if (!first || !last) return null;
+    const disruption = trip.snapshot?.status?.toUpperCase() === 'CANCELLED' ? 'CANCELLATION' : 'DELAY';
+    const arrivalDelayMinutes = trip.snapshot?.delayMinutes ?? null;
+    return {
+      flightNumber: `${first.airlineCode}${first.flightNumber}`,
+      origin: first.origin,
+      destination: last.destination,
+      scheduledDate: formatDate(first.departureDate),
+      disruption,
+      arrivalDelayMinutes,
+      engineInput: {
+        disruption,
+        carrierIata: first.airlineCode,
+        originIata: first.origin,
+        finalDestinationIata: last.destination,
+        scheduledDepartureUtc: first.scheduledDepartureUtc?.toISOString() ?? null,
+        arrivalDelayMinutes,
+      },
+      storedName: trip.passengers.find((p) => isRealPassengerName(p.name))?.name ?? trip.user?.name ?? null,
+    };
+  }
+
+  if (input.claimId) {
+    const claim = await prisma.compensationClaim.findUnique({
+      where: { id: input.claimId },
+      include: {
+        flightLeg: { include: { trip: { select: { userId: true } } } },
+        monitor: { select: { userId: true } },
+      },
+    });
+    const ownerId = claim?.flightLeg?.trip.userId ?? claim?.monitor?.userId ?? null;
+    if (!claim || !isOwnedBy({ userId: ownerId }, userId)) return 'not_found';
+    const leg = claim.flightLeg;
+    if (!leg) return null;
+    const arrivalDelayMinutes = claim.delayMinutes ?? null;
+    return {
+      flightNumber: leg.flightNumber,
+      origin: leg.origin,
+      destination: leg.destination,
+      scheduledDate: leg.scheduledDep ? formatDate(leg.scheduledDep) : 'the scheduled date',
+      disruption: 'DELAY',
+      arrivalDelayMinutes,
+      engineInput: compensationInputFromFlight({
+        flightNumber: leg.flightNumber,
+        origin: leg.origin,
+        destination: leg.destination,
+        disruption: 'DELAY',
+        arrivalDelayMinutes,
+      }),
+      storedName: null,
+    };
+  }
+
+  const details = input.flightDetails;
+  if (!details) return null;
+  const disruption = details.cancelled ? 'CANCELLATION' : 'DELAY';
+  const arrivalDelayMinutes = details.delayHours !== undefined ? Math.round(details.delayHours * 60) : null;
+  return {
+    flightNumber: details.flightNumber.toUpperCase(),
+    origin: details.origin.toUpperCase(),
+    destination: details.destination.toUpperCase(),
+    scheduledDate: details.scheduledDate ?? 'the scheduled date',
+    disruption,
+    arrivalDelayMinutes,
+    engineInput: compensationInputFromFlight({ ...details, disruption, arrivalDelayMinutes }),
+    storedName: null,
+  };
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -46,60 +148,41 @@ export async function POST(req: Request) {
     }
 
     return withFreemiumGate(user.id, 'compensation_letter', async () => {
-      const claim = input.claimId
-        ? await prisma.compensationClaim.findUnique({
-          where: { id: input.claimId },
-          include: {
-            flightLeg: { include: { trip: { select: { userId: true } } } },
-            monitor: { select: { userId: true } },
-          },
-        })
-        : null;
-
-      if (input.claimId) {
-        const ownerId = claim?.flightLeg?.trip.userId ?? claim?.monitor?.userId ?? null;
-        if (!claim || ownerId !== user.id) {
-          return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
-        }
+      const source = await loadSource(input, user.id);
+      if (source === 'not_found') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      }
+      if (!source) {
+        return NextResponse.json({ error: 'Flight details are required' }, { status: 400 });
       }
 
-      const flightLeg = claim?.flightLeg;
-      const regulation = input.flightDetails?.regulation ?? claim?.regulation ?? 'EU261/2004';
-      const amount = input.flightDetails?.compensationAmount ?? claim?.estimatedAmount ?? null;
-      const currency = input.flightDetails?.currency ?? claim?.currency ?? (regulation === 'UK261' ? 'GBP' : 'EUR');
-      const delayHours = input.flightDetails?.delayHours
-        ?? (claim?.delayMinutes ? Math.round((claim.delayMinutes / 60) * 10) / 10 : null);
+      const passengerName = isRealPassengerName(input.passengerName) ? input.passengerName : source.storedName;
+      if (!isRealPassengerName(passengerName)) {
+        return NextResponse.json(
+          { error: 'passenger_name_required', message: 'Enter the passenger name as it appears on the booking.' },
+          { status: 422 },
+        );
+      }
 
-      const flightNumber = input.flightDetails?.flightNumber ?? flightLeg?.flightNumber ?? '[FLIGHT_NUMBER]';
-      const origin = input.flightDetails?.origin ?? flightLeg?.origin ?? '[ORIGIN]';
-      const destination = input.flightDetails?.destination ?? flightLeg?.destination ?? '[DESTINATION]';
-      const scheduledDate = input.flightDetails?.scheduledDate
-        ?? (flightLeg?.scheduledDep ? formatDate(flightLeg.scheduledDep) : '[SCHEDULED_DATE]');
+      const compensation = evaluateCompensation(source.engineInput);
+      const letter = buildClaimLetter({
+        passengerName,
+        flightNumber: source.flightNumber,
+        origin: source.origin,
+        destination: source.destination,
+        scheduledDate: source.scheduledDate,
+        disruption: source.disruption,
+        arrivalDelayMinutes: source.arrivalDelayMinutes,
+        compensation,
+        today: new Date(),
+      });
 
-      const regulationReference = regulation === 'UK261'
-        ? 'UK261, the post-Brexit equivalent passenger-rights framework'
-        : 'Regulation (EC) No 261/2004 Article 7';
-
-      const letter = [
-        formatDate(new Date()),
-        '',
-        `Passenger: ${input.passengerName}`,
-        '',
-        'Dear Customer Relations Team,',
-        '',
-        `I am writing regarding flight ${flightNumber} from ${origin} to ${destination}, scheduled for ${scheduledDate}.`,
-        '',
-        `Based on the information currently available, the arrival delay was ${delayHours ?? '[DELAY_HOURS]'} hours. I am therefore requesting compensation of ${amount ? `${currency} ${amount}` : `[COMPENSATION_AMOUNT]`} under ${regulationReference}.`,
-        '',
-        'This claim is based on reported timing information and the applicable distance band for the journey. If you believe extraordinary circumstances apply, please provide the specific operational evidence relied upon.',
-        '',
-        'Please arrange payment within 14 days of this letter, or provide a written explanation of your position within the same period.',
-        '',
-        'If the matter cannot be resolved directly, I reserve the right to escalate the claim to the relevant national enforcement body or alternative dispute resolution body.',
-        '',
-        'Yours faithfully,',
-        input.passengerName,
-      ].join('\n');
+      if (!letter) {
+        return NextResponse.json(
+          { error: 'not_likely_eligible', status: compensation.status, reasons: compensation.reasons },
+          { status: 422 },
+        );
+      }
 
       return new NextResponse(letter, {
         status: 200,

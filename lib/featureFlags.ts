@@ -45,6 +45,21 @@ export function useUnifiedDebug(): boolean {
     return raw !== '0' && raw.toLowerCase() !== 'false';
 }
 
+/**
+ * Collection of passport/ticket uploads, signatures and IBANs for claims.
+ *
+ * DEFAULT: false — disabled until there is a legal basis (terms, privacy
+ * policy, power of attorney), encrypted persistent storage (the current
+ * writer targets the local filesystem, which is read-only on Vercel) and a
+ * retention policy. While disabled the claim endpoints return 503.
+ * The code is kept.
+ *
+ * Enable: CLAIM_DOCUMENT_UPLOAD_ENABLED=true
+ */
+export function isClaimDocumentUploadEnabled(): boolean {
+    return process.env.CLAIM_DOCUMENT_UPLOAD_ENABLED === 'true';
+}
+
 // ── Fallback Metrics (In-Memory, Non-Persistent) ─────────────────────────────
 // Tracks unified vs legacy pipeline usage for observability.
 // Resets on process restart — this is intentional (no persistent state dependency).

@@ -113,7 +113,9 @@
       "guardian": "Guardian",
       "pricing": "Preise",
       "blog": "Blog",
-      "about": "Über uns"
+      "about": "Über uns",
+      "terms": "AGB",
+      "privacy": "Datenschutz"
     },
     "copyright": "© {year} FlightAgent. Alle Rechte vorbehalten."
   },
@@ -1015,7 +1017,8 @@
       "copyLetter": "Anspruchsschreiben kopieren",
       "copied": "Anspruchsschreiben kopiert.",
       "failed": "Schreiben konnte nicht erstellt werden.",
-      "pasteHint": "Füge dein Anspruchsschreiben in das Formular der Airline ein."
+      "pasteHint": "Füge dein Anspruchsschreiben in das Formular der Airline ein.",
+      "namePrompt": "Name des Passagiers wie in der Buchung:"
     },
     "changes": {
       "title": "Letzte Änderungen",
@@ -1260,5 +1263,12 @@
   "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
   "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
   "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
-  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
+  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route.",
+  "Legal": {
+    "disclaimer": "FlightAgent ist keine Anwaltskanzlei und bietet keine Rechtsberatung. Angaben zur Entschädigung sind Schätzungen auf Basis von Flugdaten; die Airline kann den Anspruch bestreiten, z. B. unter Berufung auf außergewöhnliche Umstände.",
+    "termsTitle": "Nutzungsbedingungen",
+    "privacyTitle": "Datenschutzerklärung",
+    "placeholder": "Diese Seite wird vorbereitet und vor dem Start veröffentlicht.",
+    "claimUnavailable": "Das Einreichen von Ansprüchen mit Dokumenten ist vorübergehend nicht verfügbar. Sie können weiterhin auf Ihrer Reiseseite ein Anspruchsschreiben kopieren und selbst an die Airline senden."
+  }
 }
