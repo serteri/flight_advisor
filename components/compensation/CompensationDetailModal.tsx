@@ -31,7 +31,7 @@ export type CompensationDetailModalProps = {
   scheduledDate: string;
   carrier: string;
   status: CompensationBadgeStatus;
-  regulation: 'EU261' | 'UK261' | 'DGCA' | 'NONE';
+  regulation: 'EU261' | 'UK261' | 'AU_DOMESTIC' | 'NONE';
   distanceKm?: number | null;
   delayMinutes?: number | null;
   amount?: number | null;
@@ -42,14 +42,14 @@ export type CompensationDetailModalProps = {
 const regulationCopy: Record<CompensationDetailModalProps['regulation'], string> = {
   EU261: 'EU261/2004 may apply to flights departing the EU, or flights arriving in the EU on an EU carrier.',
   UK261: 'UK261 is the UK passenger-rights equivalent for eligible UK departures and some UK-carrier arrivals.',
-  DGCA: 'Australian rules focus on care obligations such as meals, hotel, and rebooking. Cash compensation is not mandatory.',
-  NONE: 'This route/carrier combination does not appear to fall under EU261, UK261, or Australian DGCA care rules.',
+  AU_DOMESTIC: 'Australian domestic flights have no statutory compensation scheme. Refunds and care depend on airline policy and Australian Consumer Law.',
+  NONE: 'This route/carrier combination does not appear to fall under EU261 or UK261.',
 };
 
 const learnMoreHref: Record<CompensationDetailModalProps['regulation'], string> = {
   EU261: 'https://transport.ec.europa.eu/transport-themes/passenger-rights/air_en',
   UK261: 'https://www.caa.co.uk/passengers/resolving-travel-problems/delays-and-cancellations/',
-  DGCA: 'https://www.infrastructure.gov.au/infrastructure-transport-vehicles/aviation/aviation-consumer-protection',
+  AU_DOMESTIC: 'https://www.infrastructure.gov.au/infrastructure-transport-vehicles/aviation/aviation-consumer-protection',
   // Same-origin link: client components cannot read APP_BASE_URL.
   NONE: '/',
 };
@@ -156,7 +156,7 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
               <span className="text-xs text-slate-500">
                 {copyState === 'copied' ? 'Claim letter copied.' : copyState === 'failed' ? 'Could not generate letter.' : ''}
               </span>
-              <Button type="button" onClick={generateLetter} disabled={props.regulation === 'DGCA' || props.regulation === 'NONE'}>
+              <Button type="button" onClick={generateLetter} disabled={props.regulation === 'AU_DOMESTIC' || props.regulation === 'NONE'}>
                 Generate Claim Letter
               </Button>
             </div>

@@ -8,7 +8,8 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
-import { assessEu261ForDisruption, isEu261Carrier, isEu261Country, type Eu261Assessment } from "@/services/guardian/eu261Rules";
+import { evaluateCompensation, type CompensationResult } from "@/lib/compensation/engine";
+import { compensationInputFromFlight } from "@/lib/compensation/fromFlight";
 import { notifyGuardianEvent } from "@/services/notifications/guardianNotifier";
 import { sendDisruptionAlert } from "@/lib/email/sender";
 import { recordGuardianMetric } from "@/services/healthMetrics";
@@ -23,7 +24,6 @@ import {
     replanTripChecks,
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
-import airports from 'airports';
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -53,11 +53,18 @@ type ComputedStatus = 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN';
 const LEASE_MS = 10 * 60 * 1000;
 const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIRMATION']);
 
-const getDelayBucket = (minutes: number): number => {
-    if (minutes >= 60) return 60;
-    if (minutes >= 30) return 30;
-    if (minutes >= 15) return 15;
-    return 0;
+// Delay alert thresholds (arrival delay, minutes). 180 and 240 are the EU261/
+// UK261 thresholds (3h eligibility, 4h full long-haul amount) — crossing them
+// re-evaluates compensation instead of stopping at 60.
+export const DELAY_BUCKETS = [15, 30, 60, 180, 240] as const;
+const BUCKET_SEVERITY: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'medium', 180: 'high', 240: 'high' };
+
+export const getDelayBucket = (minutes: number): number => {
+    let bucket = 0;
+    for (const threshold of DELAY_BUCKETS) {
+        if (minutes >= threshold) bucket = threshold;
+    }
+    return bucket;
 };
 
 const normalizeCode = (value: unknown): string => String(value || '').trim().toUpperCase();
@@ -92,56 +99,25 @@ const severityLabel = (severity: GuardianEventSeverity): 'LOW' | 'MEDIUM' | 'HIG
     return 'LOW';
 };
 
-const getAirportData = (iata: string): any | null => {
-    const code = normalizeCode(iata);
-    if (!code) return null;
-    return (airports as any[]).find((item: any) => normalizeCode(item?.iata) === code) || null;
-};
+// ─── LEAD GENERATION — proactive "check your rights" email ─────────────────
+// Sent at most once per trip, and only when the compensation engine says so:
+//  - delay: LIKELY_ELIGIBLE (arrival delay ≥180 min measured after landing)
+//  - cancellation: EU261/UK261 in scope and not ruled out (LIKELY_ELIGIBLE or
+//    NEEDS_INFO because the notice date is unknown)
+// Never below 180 minutes, never when the route is unknown.
 
-const getAirportCountryCode = (iata: string): string | null => {
-    const country = normalizeCode(getAirportData(iata)?.country);
-    return country || null;
-};
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED';
 
-const getDistanceKm = (originIata: string, destinationIata: string): number | null => {
-    const from = getAirportData(originIata);
-    const to = getAirportData(destinationIata);
-    const [lat1, lon1, lat2, lon2] = [from?.lat, from?.lon, to?.lat, to?.lon].map(Number);
-    if (![lat1, lon1, lat2, lon2].every(Number.isFinite)) return null;
-
-    const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2));
-    return Math.round(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-};
-
-// ─── LEAD GENERATION — ClaimRuleType ──────────────────────────────────────
-// Öncelik sırası: Avustralya iç hat > İptal > 3 Saat+ Rötar
-
-type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
-
-const determineClaimRuleType = (
-    flightStatus: ComputedStatus,
-    delayMinutes: number,
-    origin: string,
-    destination: string,
-): ClaimRuleType => {
-    if (getAirportCountryCode(origin) === 'AU' && getAirportCountryCode(destination) === 'AU') {
-        return 'REFUND_AND_EXPENSES';
+export function proactiveClaimRuleType(
+    computedStatus: ComputedStatus,
+    compensation: CompensationResult | null,
+): ClaimRuleType | null {
+    if (!compensation || compensation.regime === 'NONE') return null;
+    if (computedStatus === 'CANCELLED') {
+        return compensation.status === 'NOT_ELIGIBLE' ? null : 'COMPENSATION_CANCELLED';
     }
-    if (flightStatus === 'CANCELLED') {
-        return 'COMPENSATION_CANCELLED';
-    }
-    return 'COMPENSATION_DELAYED';
-};
-
-const ROUTE_UNKNOWN_ASSESSMENT: Eu261Assessment = {
-    eligible: 'unknown',
-    reason: 'Route could not be resolved from flight data, so EU261 was not assessed.',
-    compensationRange: null,
-    confidence: 'low',
-};
+    return compensation.status === 'LIKELY_ELIGIBLE' ? 'COMPENSATION_DELAYED' : null;
+}
 
 const computeStatus = (flight: NormalizedFlight, delayMinutes: number | null): ComputedStatus => {
     if (flight.status === 'cancelled') return 'CANCELLED';
@@ -372,19 +348,21 @@ async function deriveAndDispatchEvents(ctx: {
         computedStatus = 'CANCELLED';
     }
 
-    const assessEu261 = (input: { eventType: 'DELAY' | 'CANCELLED'; delayMinutes?: number }): Eu261Assessment => {
-        if (routeUnknown) return ROUTE_UNKNOWN_ASSESSMENT;
-        const originCountry = flight.origin.countryCode || getAirportCountryCode(segment.origin);
-        return assessEu261ForDisruption({
-            ...input,
-            departureAirport: segment.origin,
-            arrivalAirport: segment.destination,
-            carrier: segment.airlineCode,
-            departsFromScope: originCountry ? isEu261Country(originCountry) : undefined,
-            carrierInScope: segment.airlineCode ? isEu261Carrier(segment.airlineCode) : undefined,
-            distanceKm: flight.greatCircleDistanceKm ?? getDistanceKm(segment.origin, segment.destination),
+    // Single compensation evaluation for this check. Journey = first departure
+    // to the FINAL destination of the trip. Skipped entirely when the route is
+    // unknown — never guessed.
+    const lastSegment = trip.segments.length > 1 ? trip.segments[trip.segments.length - 1] : segment;
+    const compensation: CompensationResult | null = routeUnknown
+        ? null
+        : evaluateCompensation({
+            ...compensationInputFromFlight(flight, {
+                originIata: segment.origin,
+                finalDestinationIata: lastSegment.destination,
+                carrierIata: segment.airlineCode,
+            }),
+            ...(computedStatus === 'CANCELLED' ? { disruption: 'CANCELLATION' as const } : {}),
         });
-    };
+    const compensationEligible = compensation?.status === 'LIKELY_ELIGIBLE';
 
     const generatedEvents: GuardianEvent[] = [];
     const notificationPromises: Promise<void>[] = [];
@@ -465,14 +443,47 @@ async function deriveAndDispatchEvents(ctx: {
             },
         });
 
-        const shouldSendProactiveClaimAlert =
-            !routeUnknown && (event.type === 'CANCELLED' || (event.type === 'DELAY' && event.severity === 'high'));
+        if (trip.user) {
+            notificationPromises.push(dispatchNotification(eventPayload, event));
+        }
+    };
 
-        if (shouldSendProactiveClaimAlert && !trip.lastAlertSentAt) {
-            const recipientEmail = trip.user?.email || trip.subscriberEmail;
-            const ruleType = determineClaimRuleType(computedStatus, explicitDelayMinutes, segment.origin, segment.destination);
-            console.log(`[GUARDIAN] ClaimRuleType for trip ${trip.id}: ${ruleType}`);
+    const dispatchNotification = (eventPayload: GuardianEvent, event: { type: GuardianEventType; severity: GuardianEventSeverity }) =>
+        notifyGuardianEvent(eventPayload, trip.user!)
+            .then(() => {
+                recordGuardianMetric({
+                    tripId: trip.id,
+                    eventType: event.type,
+                    eventSeverity: event.severity,
+                    notificationAttempted: true,
+                    notificationSucceeded: true,
+                    timestamp: new Date(),
+                });
+            })
+            .catch((err) => {
+                console.error(`[GUARDIAN] Notification dispatch failed for trip ${trip.id}:`, err);
+                recordGuardianMetric({
+                    tripId: trip.id,
+                    eventType: event.type,
+                    eventSeverity: event.severity,
+                    notificationAttempted: true,
+                    notificationSucceeded: false,
+                    timestamp: new Date(),
+                });
+            });
 
+    // Proactive "check your rights" email — decided by the compensation engine,
+    // independent of which delay bucket fired (the ≥180 min result usually only
+    // becomes known after landing, when no new bucket is crossed).
+    const sendProactiveClaimAlertIfDue = async () => {
+        const ruleType = proactiveClaimRuleType(computedStatus, compensation);
+        if (!ruleType || trip.lastAlertSentAt) return;
+
+        const recipientEmail = trip.user?.email || trip.subscriberEmail;
+        console.log(`[GUARDIAN] Proactive claim alert due for trip ${trip.id}: ${ruleType} (${compensation?.regime} ${compensation?.status})`);
+
+        {
+            // ClaimRequest lead (idempotent per trip).
             try {
                 const existingClaim = await prisma.claimRequest.findFirst({
                     where: { tripId: trip.id },
@@ -518,33 +529,6 @@ async function deriveAndDispatchEvents(ctx: {
                 }
             }
         }
-
-        if (trip.user) {
-            notificationPromises.push(
-                notifyGuardianEvent(eventPayload, trip.user)
-                    .then(() => {
-                        recordGuardianMetric({
-                            tripId: trip.id,
-                            eventType: event.type,
-                            eventSeverity: event.severity,
-                            notificationAttempted: true,
-                            notificationSucceeded: true,
-                            timestamp: new Date(),
-                        });
-                    })
-                    .catch((err) => {
-                        console.error(`[GUARDIAN] Notification dispatch failed for trip ${trip.id}:`, err);
-                        recordGuardianMetric({
-                            tripId: trip.id,
-                            eventType: event.type,
-                            eventSeverity: event.severity,
-                            notificationAttempted: true,
-                            notificationSucceeded: false,
-                            timestamp: new Date(),
-                        });
-                    }),
-            );
-        }
     };
 
     const buildStatusDetail = (fields: Record<string, string | number | boolean | undefined | null>) =>
@@ -586,26 +570,26 @@ async function deriveAndDispatchEvents(ctx: {
             routeUnknown,
         });
     } else if (computedStatus === 'CANCELLED' && previousState.status !== 'CANCELLED') {
-        const eu261Assessment = assessEu261({ eventType: 'CANCELLED' });
-        const eligibleEU261 = eu261Assessment.eligible === true;
         await queueDispatch({
             type: 'CANCELLED',
             subType: 'status_cancelled',
             severity: 'high',
             previous: previousState.status,
-            current: { status: 'CANCELLED', eligibleEU261, eu261Assessment, ...flightContext },
+            current: { status: 'CANCELLED', compensation, ...flightContext },
         }, {
             cancellationMarker: 'status_cancelled',
             previousStatus: previousState.status,
             currentStatus: 'CANCELLED',
-            eligibleEU261,
-            eu261Assessment,
+            compensationStatus: compensation?.status ?? 'NOT_ASSESSED',
         });
         newSnapshot.status = 'CANCELLED';
         newSnapshot.delayMinutes = 0;
         newSnapshot.dataQuality = currentDataQuality;
-        newSnapshot.statusDetail = buildStatusDetail({ status: 'CANCELLED', eligibleEU261, source: flight.source });
-        newSnapshot.eu261Eligible = eligibleEU261;
+        newSnapshot.statusDetail = buildStatusDetail({
+            status: 'CANCELLED',
+            compensation: compensation?.status ?? 'not_assessed',
+            source: flight.source,
+        });
     } else {
         newSnapshot.status = computedStatus;
         newSnapshot.dataQuality = currentDataQuality;
@@ -623,20 +607,15 @@ async function deriveAndDispatchEvents(ctx: {
         const currBucket = getDelayBucket(explicitDelayMinutes);
 
         if (currBucket > prevBucket && currBucket >= 15) {
-            const severityMap: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'high' };
-            const eu261Assessment = assessEu261({ eventType: 'DELAY', delayMinutes: explicitDelayMinutes });
-            const eligibleEU261 = eu261Assessment.eligible === true;
-
             await queueDispatch({
                 type: 'DELAY',
                 subType: `delay_bucket_${currBucket}`,
-                severity: severityMap[currBucket] || 'high',
+                severity: BUCKET_SEVERITY[currBucket] ?? 'high',
                 previous: `${previousState.delayMinutes}min`,
                 current: {
                     delayMinutes: explicitDelayMinutes,
                     bucket: currBucket,
-                    eligibleEU261,
-                    eu261Assessment,
+                    compensation,
                     ...flightContext,
                 },
             }, {
@@ -646,13 +625,8 @@ async function deriveAndDispatchEvents(ctx: {
                 toDelay: explicitDelayMinutes,
                 fromBucket: prevBucket,
                 bucket: currBucket,
-                eligibleEU261,
-                eu261Assessment,
+                compensationStatus: compensation?.status ?? 'NOT_ASSESSED',
             });
-
-            if (eligibleEU261) {
-                newSnapshot.eu261Eligible = true;
-            }
         }
 
         newSnapshot.delayMinutes = explicitDelayMinutes;
@@ -713,6 +687,11 @@ async function deriveAndDispatchEvents(ctx: {
             });
         }
     }
+
+    // Sticky: once the engine has said LIKELY_ELIGIBLE, keep the flag.
+    newSnapshot.eu261Eligible = newSnapshot.eu261Eligible || compensationEligible;
+
+    await sendProactiveClaimAlertIfDue();
 
     if (notificationPromises.length > 0) {
         await Promise.allSettled(notificationPromises);

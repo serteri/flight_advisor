@@ -13,8 +13,6 @@ export const EU_COUNTRIES = new Set([
 
 export const UK_COUNTRIES = new Set(['GB']);
 
-export const DGCA_COUNTRIES = new Set(['AU']);
-
 export const AIRLINE_ZONES: Record<string, CarrierZone> = {
   A3: { country: 'GR', isEuCarrier: true, isUkCarrier: false, acceptanceRate: 0.69 },
   AA: { country: 'US', isEuCarrier: false, isUkCarrier: false, acceptanceRate: 0.48 },

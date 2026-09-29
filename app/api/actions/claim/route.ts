@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateClaimPDF } from '@/services/legal/pdfGenerator';
 import { sendEmail } from '@/services/notifications/sender';
+import { evaluateCompensation } from '@/lib/compensation/engine';
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -68,13 +69,20 @@ export async function POST(req: Request) {
             ? `${Math.floor(delayMinutes / 60)} hours ${delayMinutes % 60} minutes`
             : 'Unknown delay duration';
 
-        const amount = delayMinutes && delayMinutes >= 180
-            ? '600 EUR'
-            : delayMinutes && delayMinutes >= 120
-                ? '400 EUR'
-                : delayMinutes && delayMinutes >= 60
-                    ? '250 EUR'
-                    : 'Unknown amount';
+        // Amount comes only from the compensation engine (distance band + scope),
+        // never from the delay length.
+        const lastSegment = trip.segments[trip.segments.length - 1];
+        const compensation = evaluateCompensation({
+            disruption: trip.snapshot?.status === 'CANCELLED' ? 'CANCELLATION' : 'DELAY',
+            carrierIata: firstSegment.airlineCode,
+            originIata: firstSegment.origin,
+            finalDestinationIata: lastSegment.destination,
+            scheduledDepartureUtc: firstSegment.scheduledDepartureUtc?.toISOString() ?? null,
+            arrivalDelayMinutes: delayMinutes,
+        });
+        const amount = compensation.status === 'LIKELY_ELIGIBLE' && compensation.amount !== null && compensation.currency
+            ? `${compensation.amount} ${compensation.currency}`
+            : 'To be determined';
 
         const tripData = {
             userName: trip.user?.name || session.user.name || 'Passenger',

@@ -78,9 +78,7 @@ export async function POST(req: Request) {
 
       const regulationReference = regulation === 'UK261'
         ? 'UK261, the post-Brexit equivalent passenger-rights framework'
-        : regulation === 'DGCA'
-          ? 'the Australian consumer and airline care framework'
-          : 'Regulation (EC) No 261/2004 Article 7';
+        : 'Regulation (EC) No 261/2004 Article 7';
 
       const letter = [
         formatDate(new Date()),
