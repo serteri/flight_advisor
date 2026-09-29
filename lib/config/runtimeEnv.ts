@@ -60,8 +60,17 @@ export function getMissingRequiredEnv(): string[] {
     return missing;
 }
 
+// next build evaluates the layout while prerendering static pages. Env is a
+// runtime concern (Vercel injects it per environment), so the build only warns;
+// every request and the QStash handler still fail fast.
+export const isNextBuildPhase = (): boolean => process.env.NEXT_PHASE === 'phase-production-build';
+
 export function assertRequiredRuntimeEnv(context: string): void {
     const missing = getMissingRequiredEnv();
+    if (missing.length > 0 && isNextBuildPhase()) {
+        console.warn(`[Startup Fail-Fast:${context}] Build phase — not enforced. Missing at runtime would fail: ${missing.join(', ')}`);
+        return;
+    }
     if (missing.length > 0) {
         throw new RuntimeEnvError(`[Startup Fail-Fast:${context}] Missing required runtime env vars: ${missing.join(', ')}`);
     }
