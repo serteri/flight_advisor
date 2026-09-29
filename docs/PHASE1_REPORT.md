@@ -17,10 +17,17 @@
 | `cf71c12` | **security:** sahiplik kontrolleri, ADMIN_EMAILS bypass | 0 hata | 77/77 |
 | `9087e9a` | 1.5 Hukuki metin temizliği | 0 hata | 83/83 |
 | `c24d2fe` | 1.6 Site metni, fiyatlandırma, rate limit, double opt-in | 0 hata | 89/89 |
+| `78637c6` | Koltuk haritası action'ı ve yetim yardımcıları silindi | 0 hata | 89/89 |
+| `f050a35` | **security:** Amadeus route'larına oturum zorunluluğu, client logu silindi | 0 hata | 95/95 |
+| `88ab0a0` | `scripts/backfill-checkpoints.ts` | 0 hata | 100/100 |
 
-Son durum: `npx tsc --noEmit` → 0 hata. `npm test` → **89 test, 89 geçti, 0 kaldı** (11 dosya: compensationEngine 34, aerodatabox 11, checkpoints 8, flightNumber 7, ownership 6, quotaPolicy 6, legalText 6, trackRateLimit 5, workerRules 4, featureFlags 1, freemium 1).
+Tüm commit'ler `phase-1` branch'inde. `main`'e push yapılmadı.
 
-Kod çalıştırılmadı. `next build` ve tarayıcı testi yapılmadı. Doğrulama tsc ve birim testleriyle sınırlı.
+Son durum:
+- `npx tsc --noEmit` → 0 hata
+- `npm test` → **100 test, 100 geçti, 0 kaldı** (13 dosya: compensationEngine 34, aerodatabox 11, checkpoints 8, flightNumber 7, ownership 6, quotaPolicy 6, legalText 6, paidApiAuth 6, trackRateLimit 5, backfill 5, workerRules 4, featureFlags 1, freemium 1)
+- `next build` → başarılı, 0 hata, 0 uyarı (§3)
+- Tarayıcıda uçtan uca test yapılmadı.
 
 ---
 
@@ -70,12 +77,42 @@ Dinamik segment (`[id]` vb.) alan tüm page ve route'lar, ayrıca body/query'den
 | `app/api/admin/experiments/route.ts:15`, `…/experiments/[id]/route.ts:15` | `ADMIN_EMAILS` tanımsızken `"".split(",")` → `[""]` sonucu, e-postası olmayan (oturumsuz) herkesi admin sayıyordu | `lib/auth/adminEmails.ts` `isListedAdminEmail()`, boş girdiler atılıyor |
 | `app/api/admin/decision-config/route.ts:8` | `filter(Boolean)` vardı, açık yoktu | Aynı ortak helper'a taşındı |
 | `app/[locale]/(public)/trip/[id]/page.tsx:9` | Oturumsuz erişilebilir, `subscriberEmail` tam gösteriliyordu | E-posta maskelendi (`a***@domain`) |
-| `app/actions/flight.ts:10` `getLatestSeatMap` | Oturumsuz server action, ücretli Amadeus kotası harcıyordu | Oturum zorunlu |
+| `app/actions/flight.ts` `getLatestSeatMap` | Oturumsuz server action, ücretli Amadeus kotası harcıyordu | Önce oturum zorunlu yapıldı. Sonra action ve yalnızca onun kullandığı `utils/seatMapMapper.ts` ile `lib/aircraftData.ts` silindi (`78637c6`) |
+| `app/api/flights/validate-pnr/route.ts` | Oturumsuz; herhangi bir PNR + soyadı için Amadeus'tan rezervasyon verisi dönüyordu. Ayrıca Amadeus client nesnesini logluyordu | Oturum yoksa 401, debug logları silindi (`f050a35`) |
+| `app/api/flights/seat-map`, `flights/verify-schedule`, `cf-geo`, `ip-geo` | Oturumsuz, ücretli Amadeus kotası harcıyorlardı | Oturum yoksa 401 (`f050a35`). Yalnızca `verify-schedule`'ın bir çağıranı var (dashboard `AddTripModal`, zaten giriş yapılmış kullanıcı); diğer dördü kullanılmıyor |
 | `app/api/compensation/generate-letter/route.ts:60,94` | (1.5'te yeniden yazıldı) | `tripId` ve `claimId` için `isOwnedBy` |
 | Sorunsuz bulunanlar | `api/guardian/[tripId]`, `api/guardian/[tripId]/alerts/stale`, `api/track-route/[id]`, `(protected)/claim-process/[tripId]`, `api/admin/claims/[id]/status`, `actions/delete-route`, `actions/deleteWatchedFlight`, `api/actions/claim`, `api/guardian/check` (QStash imzası), `blog/[slug]` (public içerik) | — |
 
 - `lib/auth/ownership.ts:7` `isOwnedBy()`: sahibi `null` olan lead trip'leri, çağıran da `null` olsa bile asla eşleşmez.
-- Testler: `tests/ownership.test.ts` (6).
+- Testler: `tests/ownership.test.ts` (6) ve `tests/paidApiAuth.test.ts` (6). İkincisi, Amadeus'a ulaşan her `app/api` route'unun ilk Amadeus çağrısından önce 401 guard'ı olmasını ve client'ı loglamamasını denetliyor.
+
+#### Admin experiments açığı: prod'da istismar edildi mi?
+**Açığın koşulu:** Prod'da `ADMIN_EMAILS` tanımsız ya da boş olmalı. Bir de sonda virgül (`a@x.io,`) ya da boş eleman varsa aynı durum oluşur. Bu durumda oturumu olmayan (ya da e-postası olmayan) herkes admin sayılıyordu. `ADMIN_EMAILS` prod'da dolu ve boş eleman içermiyorsa açık hiç tetiklenmemiştir. Önce bunu Vercel → Settings → Environment Variables'tan kontrol et.
+
+**Vercel log'larında bakılacak istekler:**
+
+| Metod | Route | Açık varsa etkisi |
+|---|---|---|
+| `GET` | `/api/admin/experiments` (opsiyonel `?status=`) | Deney listesini okuma |
+| `POST` | `/api/admin/experiments` | Yeni deney oluşturma |
+| `PUT` | `/api/admin/experiments/<id>` | Deney durumunu değiştirme (DRAFT/RUNNING/PAUSED/COMPLETED) |
+| `GET`, `POST` vb. | `/api/admin/decision-config` | Bu route'ta açık yoktu. Karşılaştırma için bak: aynı IP'den gelen tarama trafiği varsa ipucu verir |
+
+Filtre önerisi:
+- Path `/api/admin/` ile başlayan, status **200/201** olan istekler, özellikle `POST` ve `PUT`.
+- 403'ler zararsızdır (başarısız deneme), ama saldırgan IP'lerini gösterirler.
+- Senin kendi admin oturumundan gelmeyen her 2xx şüphelidir.
+
+**Zaman aralığı:**
+- Başlangıç: bu route'ların ilk prod deploy'u. Tarihi şu komutla bulabilirsin (commit tarihi alt sınırdır):
+  ```bash
+  git log --diff-filter=A --format="%h %ad %s" --date=iso -- app/api/admin/experiments/route.ts
+  ```
+- Bitiş: `cf71c12` içeren kodun prod'a deploy edildiği an. Faz 1 merge'ü yapılana kadar açık prod'da **hâlâ açıktır**. `ADMIN_EMAILS`'i prod'da hemen doldurmak, merge'ü beklemeden açığı kapatır.
+
+**Log saklama süresi sınırı:** Vercel runtime log'larını plana göre kısa süre tutar (birkaç saat ile birkaç gün arası; log drain yoksa eski kayıt kalmaz). Bu projede log drain olup olmadığı doğrulanamadı. Log'lar yetmezse DB'ye bak. Bu route'ların başarılı her çağrısı iz bırakır:
+- `Experiment*` tablolarında senin oluşturmadığın kayıtlar
+- Beklenmeyen `status` değişiklikleri ve `updatedAt` zamanları
 - Tarama sınırı: yalnızca `[param]`, `searchParams.get('id'|'tripId'|…)` ve `body.tripId` benzeri kalıplar arandı. Farklı adlandırılmış id alanları gözden kaçmış olabilir.
 
 ### 1.5 Hukuki metin temizliği — `9087e9a`
@@ -145,11 +182,25 @@ Sıra önemlidir. Kod en son gider, çünkü yeni kod hem yeni kolonları okur h
 Fail-fast listesindeki bir değişken eksikse `app/[locale]/layout.tsx` her sayfada hata fırlatır ve **tüm site açılmaz**. Bu yüzden env'ler koddan önce girilmelidir.
 
 ### Adım 3 — Kod
-1. `main`'i push et ve Vercel deploy'unu bekle.
+1. `phase-1` branch'ini `main`'e merge et (sen yapacaksın, şema prod'a uygulandıktan sonra) ve Vercel deploy'unu bekle.
 2. Deploy sonrası kontrol:
    - `npx tsx scripts/send-test-alert.ts <adres>` ile e-posta teslimatı
    - Formdan bir test trip'i oluştur → onay e-postası → linke tıkla → trip `ACTIVE` olmalı ve QStash'te checkpoint'ler görünmeli
-3. **Eski ACTIVE trip'ler:** cron kaldırıldığı için deploy öncesinde oluşmuş aktif trip'lerin QStash planı yok ve kendiliğinden kontrol edilmeyecekler. Bir backfill script'i yazılmadı (§7). Bu trip'ler için `initializeTripMonitoring(tripId)` bir kez çağrılmalı.
+
+### Adım 4 — Backfill (şemadan sonra, deploy'dan hemen sonra)
+Cron kaldırıldığı için deploy öncesinde oluşmuş ACTIVE trip'lerin QStash planı yok ve kendiliğinden kontrol edilmeyecekler. Deploy biter bitmez, **prod env'iyle** (`VERCEL_ENV=production`, QStash ve RapidAPI key'leri, prod `DATABASE_URL`) çalıştır:
+
+```bash
+npx tsx scripts/backfill-checkpoints.ts                          # dry run: kaç trip, hangi checkpoint'ler
+npx tsx scripts/backfill-checkpoints.ts --apply                  # planla (trip başına 1 AeroDataBox çağrısı)
+npx tsx scripts/backfill-checkpoints.ts --apply --complete-past  # varışı geçmiş ACTIVE trip'leri COMPLETED yap
+```
+
+- Script her çalıştırmada önce `DATABASE_URL` host'unu yazdırır. Varsayılan mod dry-run'dır; `--apply` olmadan hiçbir şey yazmaz.
+- Idempotent'tir: QStash mesaj id'si olan trip atlanır. Geçmişte kalan checkpoint'ler hiç planlanmaz.
+- `--complete-past` tek başına sadece sayıyı raporlar; yazmak için `--apply` ile birlikte verilmesi gerekir.
+- Mantık `lib/guardian/backfill.ts` içinde, testleri `tests/backfill.test.ts` (5).
+- Dry-run'daki "to schedule" sayısı, harcanacak AeroDataBox çağrı sayısına eşittir. Çalıştırmadan önce kalan kotayla karşılaştır.
 
 ### Şema uygulanmadan kod deploy edilirse ne kırılır
 Prisma varsayılan olarak modelin tüm skaler kolonlarını SELECT eder. Kolon DB'de yoksa sorgu `P2022 column does not exist` hatasıyla düşer. Sonuçları:
@@ -167,12 +218,18 @@ Prisma varsayılan olarak modelin tüm skaler kolonlarını SELECT eder. Kolon D
 
 ---
 
-## 3. Test sonuçları
+## 3. Test ve build sonuçları
 
 ```
 npx tsc --noEmit   → exit 0
-npm test           → tests 89, pass 89, fail 0
+npm test           → tests 100, pass 100, fail 0
+next build         → exit 0, 0 hata, 0 uyarı, 92 sayfa üretildi
 ```
+
+`next build` şu koşullarla çalıştırıldı:
+- `DATABASE_URL`, build'in prod DB'ye dokunamaması için ulaşılamayan bir yerel adrese (`127.0.0.1:1`) yönlendirildi. Build hiçbir DB bağlantısı gerektirmedi.
+- `NOTIFICATION_FROM_EMAIL` ve `APP_BASE_URL` `.env` ve `.env.local`'da tanımlı değil. Fail-fast layout'u geçmek için yalnızca build sürecine placeholder değerler verildi, dosyaya yazılmadı. Vercel'de bu iki değişken eksikse **prod build'i de başarısız olur** (§2 Adım 2).
+- `/[locale]/pricing` SSG olarak üretiliyor. `NEXT_PUBLIC_PRO_CHECKOUT_ENABLED` değiştirilirse yeniden build gerekir.
 
 ---
 
@@ -212,7 +269,9 @@ npm test           → tests 89, pass 89, fail 0
 6. **Neon branch:** connection string'i `.env.local`'a `DATABASE_URL` olarak koy. Şema adımına oradan devam edilecek.
 7. **QStash:** Upstash konsolunda token ve signing key'leri al. `APP_BASE_URL` prod domain'i olmalı, çünkü callback'ler oraya gidiyor.
 8. **`/terms` ve `/privacy` metinlerini yaz:** `app/[locale]/(public)/{terms,privacy}/page.tsx`, `TODO(owner)`.
-9. **Deploy sonrası:** eski ACTIVE trip'ler için checkpoint backfill (§2 Adım 3).
+9. **Deploy sonrası:** eski ACTIVE trip'ler için `scripts/backfill-checkpoints.ts` (§2 Adım 4).
+10. **Admin experiments açığı:** prod'da `ADMIN_EMAILS`'i hemen doldur, sonra log ve DB kontrolü yap (§1, "Admin experiments açığı").
+11. **Merge:** `phase-1` → `main`, şema prod'a uygulandıktan sonra.
 
 ---
 
@@ -262,7 +321,7 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 ## 7. Açık kalan riskler
 
 - **Şema uygulanmadı.** Kod şu an hiçbir DB ile uyumlu değil (§2). Deploy sırası kritik.
-- **Eski ACTIVE trip'ler için backfill yok.** Cron kaldırıldı; deploy öncesi trip'ler izlenmeyecek. Küçük bir script gerekir (istersen yazarım).
+- **Backfill elle çalıştırılmalı** (§2 Adım 4). Çalıştırılmazsa deploy öncesi trip'ler izlenmez.
 - **Onaylanmamış `PENDING_CONFIRMATION` trip'leri temizlenmiyor.** Zararsızlar (izlenmiyor, e-posta gitmiyor) ama birikirler. Periyodik silme ya da arşivleme gerekir.
 - **Double opt-in linki aynı zamanda 30 günlük oturum açıyor.** 24 saatlik geçerlilik süresi login linki için uzun sayılabilir. Link kaçarsa hesaba erişim sağlar.
 - **İki ayrı auth sistemi hâlâ duruyor.** NextAuth iki örnek hâlinde (`auth.ts` ve `lib/auth.ts`), bir de magic-link var. Guardian sayfaları ve `generate-letter` artık ikisini de kabul ediyor. Checkout ve bazı dashboard route'ları hâlâ yalnızca NextAuth kabul ediyor (STATUS_REPORT #10).
@@ -273,4 +332,20 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 - **`/api/checkout`** buton gizli olsa da doğrudan çağrılabilir. Stripe webhook eksikleri (STATUS_REPORT #11) sürüyor.
 - **Pasaport/IBAN depolaması** hâlâ yerel diske yazıyor. Flag kapalı olduğu sürece erişilemez.
 - **Güvenlik taraması** kalıp tabanlıydı (§1). Tüm API yüzeyinin elle denetimi yapılmadı.
-- **`next build` ve uçtan uca test çalıştırılmadı.**
+- **Uçtan uca test yapılmadı.** `next build` geçti, ama tarayıcıda akışlar denenmedi.
+
+---
+
+## 8. Faz 2 listesi
+
+- **Amadeus zincirinin tamamen silinmesi.** Koltuk haritası action'ı silindi, ama bağımlılık zinciri geniş olduğu için gerisi bırakıldı:
+  - Kütüphane: `lib/amadeus.ts`, `lib/virtualInterlining.ts`
+  - Route'lar: `app/api/flights/{seat-map,validate-pnr,verify-schedule}`, `app/api/{cf-geo,ip-geo}` (şimdilik oturum zorunlu)
+  - Servisler: `services/flight/{booking,schedule,seatmap}.ts`, `services/guardian/{awardUpgrade,backupGenerator,seatSpy}.ts`
+  - `workers/processor.ts`, `scripts/test-amadeus.ts`, `scripts/test_amadeus.ts`
+  - `amadeus` npm paketi
+  - Dikkat: `verify-schedule`'ı dashboard'daki `AddTripModal` kullanıyor. Önce AeroDataBox'a taşınmalı. `cf-geo` ve `ip-geo` Amadeus'u sadece şehir araması için kullanıyor.
+- STATUS_REPORT §5'teki diğer ölü kodlar ve `HomePage.hero/badge/trust/faq` i18n anahtarları.
+- `/pricing/features` sayfasının kaldırılması ya da yeniden yazılması.
+- Onaylanmamış `PENDING_CONFIRMATION` trip'lerin temizliği.
+- Free "1 uçuş" limitinin backend'de uygulanması.
