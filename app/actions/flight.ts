@@ -3,8 +3,15 @@
 import { getAmadeusClient } from '@/lib/amadeus';
 import { mapAmadeusToVisualizer } from '@/utils/seatMapMapper';
 import { getAircraftInfo } from '@/lib/aircraftData';
+import { auth } from '@/auth';
 
 export async function getLatestSeatMap(segmentId: string, segmentData: any) {
+    // Server actions are public POST endpoints; this one spends paid Amadeus quota.
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const amadeus = getAmadeusClient();
 

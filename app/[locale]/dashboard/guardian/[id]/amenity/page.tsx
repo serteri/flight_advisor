@@ -2,10 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AmenityClaimForm } from "@/components/guardian/AmenityClaimForm";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "@/i18n/routing";
+import { Link, redirect } from "@/i18n/routing";
+import { getCurrentUserId } from "@/lib/auth/currentUser";
+import { isOwnedBy } from "@/lib/auth/ownership";
 
-export default async function AmenityPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function AmenityPage({ params }: { params: Promise<{ id: string; locale: string }> }) {
+    const { id, locale } = await params;
+
+    const userId = await getCurrentUserId();
+    if (!userId) redirect({ href: '/login', locale });
 
     // Fetch MonitoredTrip with segments
     const trip = await prisma.monitoredTrip.findUnique({
@@ -13,7 +18,7 @@ export default async function AmenityPage({ params }: { params: Promise<{ id: st
         include: { segments: true }
     });
 
-    if (!trip) {
+    if (!trip || !isOwnedBy(trip, userId)) {
         notFound();
     }
 

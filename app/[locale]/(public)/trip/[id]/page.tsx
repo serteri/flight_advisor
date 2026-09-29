@@ -4,6 +4,14 @@ import { Link } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 
+// This page is reachable by trip id without a session, so it must not echo
+// the subscriber's full address.
+function maskEmail(email: string): string {
+    const [local, domain] = email.split('@');
+    if (!domain) return '***';
+    return `${local.slice(0, 1)}***@${domain}`;
+}
+
 export default async function TripTrackingConfirmationPage({ params }: { params: Promise<{ id: string; locale: string }> }) {
     const { id, locale } = await params;
     setRequestLocale(locale);
@@ -36,7 +44,7 @@ export default async function TripTrackingConfirmationPage({ params }: { params:
                         {trip.subscriberEmail && (
                             <div className="flex items-center gap-2 text-sm text-slate-600">
                                 <Mail className="w-4 h-4 text-slate-400" />
-                                {trip.subscriberEmail}
+                                {maskEmail(trip.subscriberEmail)}
                             </div>
                         )}
                     </div>

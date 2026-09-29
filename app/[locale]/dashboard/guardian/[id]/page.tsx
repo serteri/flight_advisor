@@ -1,13 +1,15 @@
-import { auth } from '@/auth';
+import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { redirect } from '@/i18n/routing';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
+import { isOwnedBy } from '@/lib/auth/ownership';
 import { TripDetailsClient } from './TripDetailsClient';
 
 export default async function TripDetailsPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
     const { id, locale } = await params;
 
-    const session = await auth();
-    if (!session?.user) redirect({ href: '/login', locale });
+    const userId = await getCurrentUserId();
+    if (!userId) redirect({ href: '/login', locale });
 
     // 1. VERİ ÇEKME (JOIN İŞLEMİ)
     // Trip'i çekerken, içindeki 'segments'leri de çekiyoruz.
@@ -44,7 +46,8 @@ export default async function TripDetailsPage({ params }: { params: Promise<{ lo
         }
     });
 
-    if (!trip) return <div className="p-8 text-center font-bold text-slate-500">Yolculuk bulunamadı veya silinmiş.</div>;
+    // Not found and not-yours look identical, so trip ids can't be probed.
+    if (!trip || !isOwnedBy(trip, userId)) notFound();
 
     // 2. Client Component'e Gönder
     return <TripDetailsClient trip={trip} locale={locale} />;

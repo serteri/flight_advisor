@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
+import { isOwnedBy } from '@/lib/auth/ownership';
 import { generatePlaybook, PLAYBOOK_DISCLAIMER } from '@/lib/playbook/generator';
 import type { PlaybookResponse } from '@/lib/playbook/types';
 
@@ -33,6 +35,11 @@ const GeneratePlaybookSchema = z.object({
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -53,9 +60,9 @@ export async function POST(request: Request) {
   // Verify the trip exists
   const trip = await prisma.monitoredTrip.findUnique({
     where: { id: monitoredTripId },
-    select: { id: true },
+    select: { id: true, userId: true },
   });
-  if (!trip) {
+  if (!isOwnedBy(trip, userId)) {
     return NextResponse.json(
       { error: `MonitoredTrip ${monitoredTripId} not found` },
       { status: 404 },
