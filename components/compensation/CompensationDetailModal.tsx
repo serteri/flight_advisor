@@ -50,7 +50,8 @@ const learnMoreHref: Record<CompensationDetailModalProps['regulation'], string> 
   EU261: 'https://transport.ec.europa.eu/transport-themes/passenger-rights/air_en',
   UK261: 'https://www.caa.co.uk/passengers/resolving-travel-problems/delays-and-cancellations/',
   DGCA: 'https://www.infrastructure.gov.au/infrastructure-transport-vehicles/aviation/aviation-consumer-protection',
-  NONE: 'https://www.flightagent.io',
+  // Same-origin link: client components cannot read APP_BASE_URL.
+  NONE: '/',
 };
 
 export function CompensationDetailModal(props: CompensationDetailModalProps) {

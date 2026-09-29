@@ -3,6 +3,7 @@ import { processFlightMonitoring } from "@/workers/guardianWorker";
 import { processPendingAlertRetries } from "@/services/notifications/alertRetryWorker";
 import { expireDueAlertEvents } from "@/lib/alertLifecycle";
 import { prisma } from "@/lib/prisma";
+import { assertRequiredRuntimeEnv } from "@/lib/config/runtimeEnv";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
     }
     
     try {
+        assertRequiredRuntimeEnv('cron-guardian');
         console.log("🛡️ [CRON] Guardian Worker triggered at", new Date().toISOString());
         
         // Run the monitoring cycle
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest) {
     }
     
     try {
+        assertRequiredRuntimeEnv('cron-guardian');
         console.log("🛡️ [CRON] Guardian Worker manually triggered");
         const monitoring = await processFlightMonitoring();
         const retries = await processPendingAlertRetries();

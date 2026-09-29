@@ -509,16 +509,22 @@ export async function processFlightMonitoring() {
                                 const sentAt = new Date();
                                 await prisma.monitoredTrip.update({
                                     where: { id: trip.id },
-                                    data: { lastAlertSentAt: sentAt },
+                                    data: { lastAlertSentAt: sentAt, lastEmailError: null, lastEmailErrorAt: null },
                                 });
                                 trip.lastAlertSentAt = sentAt;
                                 console.log(
                                     `[GUARDIAN] Proactive claim alert sent for trip ${trip.id} to ${recipientEmail}. Link: ${disruptionEmailResult.previewUrl || 'n/a'}`,
                                 );
                             } else {
-                                console.warn(
-                                    `[GUARDIAN] Failed to send proactive claim alert for trip ${trip.id}: ${disruptionEmailResult.error}`,
+                                // lastAlertSentAt stays null so the next cycle retries.
+                                const emailError = disruptionEmailResult.error || 'Unknown email delivery failure';
+                                console.error(
+                                    `[GUARDIAN] Failed to send proactive claim alert for trip ${trip.id}: ${emailError}`,
                                 );
+                                await prisma.monitoredTrip.update({
+                                    where: { id: trip.id },
+                                    data: { lastEmailError: emailError, lastEmailErrorAt: new Date() },
+                                });
                             }
                         }
                     }

@@ -1,13 +1,18 @@
 // lib/email/sender.ts
 //
-// Resend domain verification isn't finished yet, so this must never fire a
-// real send outside production. Dev/test always log the magic link and
-// return a mock success instead of touching the Resend API.
+// Transactional email via Resend. Outside production nothing is sent: the
+// magic/claim link is logged and a mocked success is returned, so local and
+// preview environments never spend quota or email real users.
+//
+// In production every failure (missing config, Resend error, exception) is
+// logged with console.error and returned as { success: false, error } so the
+// caller can persist it — nothing is swallowed here.
 
 import { Resend } from 'resend';
 import { render } from '@react-email/components';
 import { WelcomeTripEmail } from '@/components/emails/WelcomeTripEmail';
 import { DisruptionAlertEmail } from '@/components/emails/DisruptionAlertEmail';
+import { appUrl, getNotificationFromEmail } from '@/lib/config/runtimeEnv';
 
 export interface SendEmailResult {
     success: boolean;
@@ -17,29 +22,55 @@ export interface SendEmailResult {
     previewUrl?: string;
 }
 
-const usesLiveApi = (): boolean => {
-    return process.env.NODE_ENV === 'production' && Boolean(process.env.RESEND_API_KEY);
-};
+type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
 
-const getBaseUrl = (): string => {
-    if (process.env.NODE_ENV === 'production') {
-        return process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    }
-
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-};
+const isProduction = (): boolean => process.env.NODE_ENV === 'production';
 
 const buildLoginLink = (token: string, redirectTo?: string): string => {
-    const base = `${getBaseUrl()}/api/auth/verify?token=${token}`;
+    const base = appUrl(`/api/auth/verify?token=${token}`);
     if (!redirectTo) {
         return base;
     }
     return `${base}&redirect=${encodeURIComponent(redirectTo)}`;
 };
 
-const buildClaimLink = (tripId: string): string => {
-    return `${getBaseUrl()}/claim-process/${tripId}`;
-};
+const buildClaimLink = (tripId: string): string => appUrl(`/claim-process/${tripId}`);
+
+// Sends through Resend and normalises every failure mode into a result.
+// `label` only identifies the email kind in logs.
+export async function deliverViaResend(
+    label: string,
+    message: { to: string; subject: string; html: string; text?: string },
+): Promise<SendEmailResult> {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+        const error = 'RESEND_API_KEY is not set';
+        console.error(`[Email:${label}] ${error} — recipient ${message.to}`);
+        return { success: false, mocked: false, error };
+    }
+
+    try {
+        const resend = new Resend(apiKey);
+        const response = await resend.emails.send({
+            from: getNotificationFromEmail(),
+            to: message.to,
+            subject: message.subject,
+            html: message.html,
+            text: message.text,
+        });
+
+        if (response.error) {
+            console.error(`[Email:${label}] Resend rejected message to ${message.to}: ${response.error.message}`);
+            return { success: false, mocked: false, error: response.error.message };
+        }
+
+        return { success: true, mocked: false, messageId: response.data?.id };
+    } catch (err: any) {
+        const error = err?.message || 'Unknown email send error';
+        console.error(`[Email:${label}] Exception sending to ${message.to}: ${error}`);
+        return { success: false, mocked: false, error };
+    }
+}
 
 export async function sendWelcomeEmail(
     email: string,
@@ -49,67 +80,53 @@ export async function sendWelcomeEmail(
 ): Promise<SendEmailResult> {
     const magicLink = buildLoginLink(token, redirectTo);
 
-    if (!usesLiveApi()) {
+    if (!isProduction()) {
         console.log(
             `[Email] DEV MODE — would send welcome email to ${email} for flight ${flightNumber}. Magic link: ${magicLink}`,
         );
         return { success: true, mocked: true, previewUrl: magicLink };
     }
 
-    try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const html = await render(WelcomeTripEmail({ flightNumber, magicLink }));
-
-        const response = await resend.emails.send({
-            from: process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev',
-            to: email,
-            subject: `Your flight ${flightNumber} is now protected`,
-            html,
-        });
-
-        if (response.error) {
-            console.error('[Email] Resend error:', response.error.message);
-            return { success: false, mocked: false, error: response.error.message };
-        }
-
-        return { success: true, mocked: false, messageId: response.data?.id, previewUrl: magicLink };
-    } catch (err: any) {
-        console.error('[Email] Exception while sending welcome email:', err.message);
-        return { success: false, mocked: false, error: err.message || 'Unknown email send error' };
-    }
+    const html = await render(WelcomeTripEmail({ flightNumber, magicLink }));
+    const result = await deliverViaResend('welcome', {
+        to: email,
+        subject: `Your flight ${flightNumber} is now protected`,
+        html,
+    });
+    return { ...result, previewUrl: magicLink };
 }
 
 export async function sendLoginMagicLink(email: string, token: string): Promise<SendEmailResult> {
     const loginLink = buildLoginLink(token);
 
-    if (!usesLiveApi()) {
+    if (!isProduction()) {
         console.log(`[Email] DEV MODE — would send login magic link to ${email}. Link: ${loginLink}`);
         return { success: true, mocked: true };
     }
 
-    try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-
-        const response = await resend.emails.send({
-            from: process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev',
-            to: email,
-            subject: 'Your FlightAgent login link',
-            html: `<p>Click the link below to log in. This link expires in 15 minutes.</p><p><a href="${loginLink}">${loginLink}</a></p>`,
-        });
-
-        if (response.error) {
-            console.error('[Email] Resend error:', response.error.message);
-            return { success: false, mocked: false, error: response.error.message };
-        }
-
-        return { success: true, mocked: false, messageId: response.data?.id };
-    } catch (err: any) {
-        console.error('[Email] Exception while sending login magic link:', err.message);
-        return { success: false, mocked: false, error: err.message || 'Unknown email send error' };
-    }
+    return deliverViaResend('magic-link', {
+        to: email,
+        subject: 'Your FlightAgent login link',
+        html: `<p>Click the link below to log in. This link expires in 15 minutes.</p><p><a href="${loginLink}">${loginLink}</a></p>`,
+    });
 }
 
-type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
+export async function renderDisruptionAlert(
+    flightNumber: string,
+    claimLink: string,
+    claimRuleType?: ClaimRuleType,
+): Promise<{ subject: string; html: string }> {
+    const html = await render(DisruptionAlertEmail({ flightNumber, claimLink, claimRuleType }));
+
+    const subjectMap: Record<ClaimRuleType, string> = {
+        COMPENSATION_CANCELLED: `Your flight ${flightNumber} was cancelled — check your rights`,
+        COMPENSATION_DELAYED:   `Major delay on flight ${flightNumber} — check your rights`,
+        REFUND_AND_EXPENSES:    `Flight ${flightNumber} disrupted — refund options available`,
+    };
+    const subject = claimRuleType ? subjectMap[claimRuleType] : `Urgent: Flight ${flightNumber} disruption detected`;
+
+    return { subject, html };
+}
 
 export async function sendDisruptionAlert(
     email: string,
@@ -119,47 +136,14 @@ export async function sendDisruptionAlert(
 ): Promise<SendEmailResult> {
     const claimLink = buildClaimLink(tripId);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProduction()) {
         console.log(
             `[Email] DEV MODE — would send disruption alert to ${email} for flight ${flightNumber} (rule: ${claimRuleType ?? 'default'}). Claim link: ${claimLink}`,
         );
         return { success: true, mocked: true, previewUrl: claimLink };
     }
 
-    if (!usesLiveApi()) {
-        console.log(
-            `[Email] Production delivery disabled — missing RESEND_API_KEY for disruption alert. Recipient: ${email}, tripId: ${tripId}`,
-        );
-        return { success: false, mocked: true, error: 'RESEND_API_KEY missing in production' };
-    }
-
-    try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const html = await render(DisruptionAlertEmail({ flightNumber, claimLink, claimRuleType }));
-
-        const subjectMap: Record<ClaimRuleType, string> = {
-            COMPENSATION_CANCELLED: `Your flight ${flightNumber} was cancelled — check your rights`,
-            COMPENSATION_DELAYED:   `Major delay on flight ${flightNumber} — check your rights`,
-            REFUND_AND_EXPENSES:    `Flight ${flightNumber} disrupted — refund options available`,
-        };
-        const subject = claimRuleType ? subjectMap[claimRuleType] : `Urgent: Flight ${flightNumber} disruption detected`;
-
-        const response = await resend.emails.send({
-            from: process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev',
-            to: email,
-            subject,
-            html,
-        });
-
-        if (response.error) {
-            console.error('[Email] Resend error (disruption alert):', response.error.message);
-            return { success: false, mocked: false, error: response.error.message };
-        }
-
-        return { success: true, mocked: false, messageId: response.data?.id, previewUrl: claimLink };
-    } catch (err: any) {
-        console.error('[Email] Exception while sending disruption alert:', err.message);
-        return { success: false, mocked: false, error: err.message || 'Unknown disruption email send error' };
-    }
+    const { subject, html } = await renderDisruptionAlert(flightNumber, claimLink, claimRuleType);
+    const result = await deliverViaResend('disruption-alert', { to: email, subject, html });
+    return { ...result, previewUrl: claimLink };
 }
-

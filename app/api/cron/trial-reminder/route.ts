@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EmailChannel } from '@/services/notifications/channels/email';
 import type { NotificationPayload } from '@/services/notifications/types';
+import { getAppBaseUrl } from '@/lib/config/runtimeEnv';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
 
     const { targetStart, targetEnd } = getTargetWindow(3);
     const now = new Date();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://flight-guardian.com';
+    const appUrl = getAppBaseUrl();
 
     try {
         const users = await prisma.user.findMany({

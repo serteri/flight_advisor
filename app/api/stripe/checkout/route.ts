@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptions";
+import { getAppBaseUrl } from "@/lib/config/runtimeEnv";
 
 type PlanType = 'PRO' | 'ELITE';
 type BillingCycle = 'monthly' | 'yearly';
@@ -36,11 +37,7 @@ console.log('💰 [PRICE MAP - GET]', {
 });
 
 function resolveBaseUrl() {
-    return (
-        process.env.NEXTAUTH_URL ||
-        process.env.NEXT_PUBLIC_APP_URL ||
-        'http://localhost:3000'
-    );
+    return getAppBaseUrl();
 }
 
 function resolvePlanParam(planParam: string | null): PlanType | null {
@@ -394,8 +391,8 @@ export async function POST(req: Request) {
                 planId: plan.id,
                 plan: resolvedPlan || '',
             },
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/en/dashboard?success=true`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/en/pricing?canceled=true`,
+            success_url: `${getAppBaseUrl()}/en/dashboard?success=true`,
+            cancel_url: `${getAppBaseUrl()}/en/pricing?canceled=true`,
         });
 
         return NextResponse.json({ url: checkoutSession.url });

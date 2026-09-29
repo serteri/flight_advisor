@@ -28,7 +28,9 @@ export async function POST(req: Request) {
 
     const emailResult = await sendLoginMagicLink(email, token);
     if (!emailResult.success) {
-        console.warn(`[POST /api/auth/request-link] Failed to send magic link to ${email}: ${emailResult.error}`);
+        const emailError = emailResult.error || 'Unknown email delivery failure';
+        console.error(`[POST /api/auth/request-link] Failed to send magic link to ${email}: ${emailError}`);
+        await prisma.loginToken.update({ where: { token }, data: { emailError } });
     }
 
     // Always respond with success regardless of whether the email exists or

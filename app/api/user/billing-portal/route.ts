@@ -3,14 +3,9 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
+import { getAppBaseUrl } from '@/lib/config/runtimeEnv';
 
-const resolveBaseUrl = () => {
-  return (
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'http://localhost:3000'
-  );
-};
+const resolveBaseUrl = () => getAppBaseUrl();
 
 const resolveSessionUserId = async () => {
   const session = await auth();

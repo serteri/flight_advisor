@@ -125,7 +125,7 @@ async function sendGuardianEmail(to: string, subject: string, body: string, trip
         success: result.success,
         providerMessageId: result.id,
         channel: 'EMAIL',
-        error: result.success ? undefined : 'EMAIL channel unavailable or provider rejected request',
+        error: result.success ? undefined : (result.error || 'EMAIL channel unavailable or provider rejected request'),
     };
 }
 

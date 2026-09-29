@@ -128,7 +128,19 @@ export async function POST(req: Request) {
         const claimRedirectPath = `/claim-process/${trip.id}`;
         const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, claimRedirectPath);
         if (!emailResult.success) {
-            console.warn(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailResult.error}`);
+            const emailError = emailResult.error || 'Unknown email delivery failure';
+            console.error(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailError}`);
+            await Promise.all([
+                prisma.monitoredTrip.update({
+                    where: { id: trip.id },
+                    data: { lastEmailError: emailError, lastEmailErrorAt: new Date() },
+                }),
+                prisma.loginToken.update({ where: { token }, data: { emailError } }),
+            ]);
+            return NextResponse.json(
+                { error: 'We could not send the confirmation email. Please check the address and try again.' },
+                { status: 502 },
+            );
         }
 
         const responsePayload: { id: string; devMagicLoginUrl?: string } = { id: trip.id };

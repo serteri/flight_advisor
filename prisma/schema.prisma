@@ -563,6 +563,11 @@ model MonitoredTrip {
   processingLeaseExpiresAt DateTime?
   lastAlertSentAt DateTime?
 
+  // Last transactional email failure for this trip (welcome/confirmation or
+  // disruption alert). Cleared on the next successful send.
+  lastEmailError   String?
+  lastEmailErrorAt DateTime?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -610,6 +615,8 @@ model LoginToken {
   identifier String
   token      String   @unique
   expiresAt  DateTime
+  // Set when the email carrying this token could not be delivered.
+  emailError String?
 
   @@index([identifier])
 }

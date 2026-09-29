@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { getAppBaseUrl } from '@/lib/config/runtimeEnv';
 
 type PlanType = 'PRO';
 type BillingCycle = 'monthly';
@@ -24,11 +25,7 @@ console.log('💰 [PRICE MAP]', {
 });
 
 function resolveBaseUrl() {
-    return (
-        process.env.NEXTAUTH_URL ||
-        process.env.NEXT_PUBLIC_APP_URL ||
-        'http://localhost:3000'
-    );
+    return getAppBaseUrl();
 }
 
 export async function POST(req: Request) {
