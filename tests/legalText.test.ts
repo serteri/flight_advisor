@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LEGAL_DISCLAIMER_TEXT, withLegalFooter } from '@/lib/email/legalFooter';
-import { buildClaimLetter, isRealPassengerName, compensationInputFromFlight } from '@/lib/compensation/claimLetter';
+import { buildClaimLetter, isRealPassengerName, compensationInputFromFlightNumber } from '@/lib/compensation/claimLetter';
 import { evaluateCompensation, type CompensationResult } from '@/lib/compensation/engine';
 
 test('withLegalFooter appends the notice to html (inside body) and text, once', () => {
@@ -57,7 +57,7 @@ test('claim letter is refused unless the engine says LIKELY_ELIGIBLE', () => {
 });
 
 test('client-side flight details go through the engine (carrier parsed from flight number)', () => {
-    const input = compensationInputFromFlight({
+    const input = compensationInputFromFlightNumber({
         flightNumber: 'w61234', origin: 'bud', destination: 'lhr', disruption: 'DELAY', arrivalDelayMinutes: 200,
     });
     assert.equal(input.carrierIata, 'W6');

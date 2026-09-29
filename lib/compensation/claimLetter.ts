@@ -43,7 +43,7 @@ export function formatCompensationAmount(result: CompensationResult): string | n
 }
 
 /** Engine input for a flight given as number + endpoints (no trip record). */
-export function compensationInputFromFlight(details: {
+export function compensationInputFromFlightNumber(details: {
     flightNumber: string;
     origin: string;
     destination: string;

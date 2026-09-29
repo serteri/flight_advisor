@@ -7,7 +7,7 @@ import { isOwnedBy } from '@/lib/auth/ownership';
 import { evaluateCompensation, type CompensationInput } from '@/lib/compensation/engine';
 import {
   buildClaimLetter,
-  compensationInputFromFlight,
+  compensationInputFromFlightNumber,
   isRealPassengerName,
 } from '@/lib/compensation/claimLetter';
 
@@ -102,7 +102,7 @@ async function loadSource(input: z.infer<typeof letterSchema>, userId: string): 
       scheduledDate: leg.scheduledDep ? formatDate(leg.scheduledDep) : 'the scheduled date',
       disruption: 'DELAY',
       arrivalDelayMinutes,
-      engineInput: compensationInputFromFlight({
+      engineInput: compensationInputFromFlightNumber({
         flightNumber: leg.flightNumber,
         origin: leg.origin,
         destination: leg.destination,
@@ -124,7 +124,7 @@ async function loadSource(input: z.infer<typeof letterSchema>, userId: string): 
     scheduledDate: details.scheduledDate ?? 'the scheduled date',
     disruption,
     arrivalDelayMinutes,
-    engineInput: compensationInputFromFlight({ ...details, disruption, arrivalDelayMinutes }),
+    engineInput: compensationInputFromFlightNumber({ ...details, disruption, arrivalDelayMinutes }),
     storedName: null,
   };
 }
