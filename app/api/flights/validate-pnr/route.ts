@@ -1,21 +1,22 @@
 
 import { NextResponse } from 'next/server';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { validateAndFetchPNR } from '@/services/flight/booking';
 import { getRealFlightDetails } from '@/services/flight/schedule';
 
 export async function POST(req: Request) {
+    // Paid Amadeus quota (and, for PNR lookups, booking data): signed-in users only.
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const body = await req.json();
         const { pnr, surname, flightNumber, carrierCode, date } = body;
 
         // Mode 1: PNR Validation
         if (pnr) {
-            // DEBUG: Inspect Amadeus Instance
-            // @ts-ignore
-            const amadeusInstance = (await import('@/lib/amadeus')).default;
-            console.log("DEBUG: Amadeus Keys:", Object.keys(amadeusInstance));
-            console.log("DEBUG: Amadeus.booking:", amadeusInstance.booking);
-
             const result = await validateAndFetchPNR(pnr, surname);
 
             // MOCK OVERRIDE FOR DEMO (If API fails or explicit demo PNR used)

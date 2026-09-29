@@ -1,8 +1,15 @@
 
 import { NextResponse } from 'next/server';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
 import amadeus from '@/lib/amadeus'; // Default export
 
 export async function POST(req: Request) {
+    // Paid Amadeus quota (and, for PNR lookups, booking data): signed-in users only.
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const { airlineCode, flightNumber, date } = await req.json();
 

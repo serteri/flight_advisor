@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { getAmadeusClient } from "@/lib/amadeus";
 
 /**
@@ -7,6 +8,12 @@ import { getAmadeusClient } from "@/lib/amadeus";
  * Uses ip-api.com (free, no API key needed)
  */
 export async function GET(request: NextRequest) {
+    // Paid Amadeus quota (and, for PNR lookups, booking data): signed-in users only.
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         // Get client IP (works on localhost too)
         const forwarded = request.headers.get('x-forwarded-for');

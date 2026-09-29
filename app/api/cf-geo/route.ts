@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { getAmadeusClient } from "@/lib/amadeus";
 import { getNearestFallbackCity } from "@/lib/fallback-cities";
 
@@ -7,6 +8,12 @@ import { getNearestFallbackCity } from "@/lib/fallback-cities";
  * Uses x-geo-* headers set by middleware from Cloudflare's request.cf object
  */
 export async function GET(request: NextRequest) {
+    // Paid Amadeus quota (and, for PNR lookups, booking data): signed-in users only.
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get geolocation data from headers (set by middleware)
     const geoCity = request.headers.get('x-geo-city');
     const geoCountry = request.headers.get('x-geo-country');
