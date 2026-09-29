@@ -1,0 +1,123 @@
+// scripts/backfill-checkpoints.ts
+//
+// One-off after the QStash migration: ACTIVE trips created while monitoring
+// ran on the Vercel cron have no ScheduledTripCheck rows, so nothing would
+// ever check them again. Run once, right after the schema is applied and the
+// new code is deployed.
+//
+// Usage:
+//   npx tsx scripts/backfill-checkpoints.ts                 # dry run (default): list only, writes nothing
+//   npx tsx scripts/backfill-checkpoints.ts --apply         # schedule checkpoints for future trips
+//   npx tsx scripts/backfill-checkpoints.ts --apply --complete-past
+//                                    # also mark ACTIVE trips whose scheduled arrival has passed as
+//                                    # COMPLETED (without --apply it only reports how many)
+//
+// Idempotent: a trip that already has a ScheduledTripCheck with a QStash
+// message id is skipped. Past checkpoints are never scheduled.
+// --apply calls initializeTripMonitoring, which spends ONE provider lookup per
+// trip (registration, within the per-trip budget) and publishes to QStash
+// only in production (VERCEL_ENV=production) — run it with production env.
+//
+// Reads DATABASE_URL from .env.local / .env (in that order) and prints its host
+// before doing anything.
+
+import { config as loadEnv } from 'dotenv';
+
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
+
+async function main() {
+    const args = new Set(process.argv.slice(2));
+    const apply = args.has('--apply');
+    const completePast = args.has('--complete-past');
+    const unknown = [...args].filter((a) => !['--apply', '--complete-past'].includes(a));
+    if (unknown.length) {
+        console.error(`Unknown argument(s): ${unknown.join(', ')}`);
+        process.exit(1);
+    }
+
+    let host = '(unparseable)';
+    try { host = new URL(process.env.DATABASE_URL ?? '').hostname; } catch { /* keep placeholder */ }
+    console.log(`DATABASE_URL host: ${host}`);
+    console.log(`Mode: ${apply ? 'APPLY' : 'DRY RUN'}${completePast ? ' + complete-past' : ''}\n`);
+
+    // Imported after env is loaded.
+    const { prisma } = await import('@/lib/prisma');
+    const { initializeTripMonitoring } = await import('@/lib/guardian/tripLifecycle');
+    const { classifyForBackfill } = await import('@/lib/guardian/backfill');
+
+    const now = new Date();
+    const trips = await prisma.monitoredTrip.findMany({
+        where: { status: 'ACTIVE' },
+        select: {
+            id: true,
+            routeLabel: true,
+            segments: {
+                orderBy: { segmentOrder: 'asc' },
+                take: 1,
+                select: { departureDate: true, arrivalDate: true, scheduledDepartureUtc: true, scheduledArrivalUtc: true },
+            },
+            scheduledChecks: { where: { messageId: { not: null } }, select: { id: true }, take: 1 },
+        },
+    });
+
+    const counts = { SKIP_ALREADY_SCHEDULED: 0, SKIP_NO_SEGMENT: 0, PAST_ARRIVAL: 0, SCHEDULE: 0 };
+    const toSchedule: string[] = [];
+    const past: string[] = [];
+
+    for (const trip of trips) {
+        const decision = classifyForBackfill({
+            hasScheduledMessage: trip.scheduledChecks.length > 0,
+            segment: trip.segments[0] ?? null,
+        }, now);
+        counts[decision.action]++;
+
+        if (decision.action === 'SCHEDULE') {
+            toSchedule.push(trip.id);
+            const plan = decision.checks.map((c) => `${c.kind}@${c.runAt.toISOString()}`).join(', ');
+            console.log(`SCHEDULE  ${trip.id}  ${trip.routeLabel}  → ${plan}`);
+        } else if (decision.action === 'PAST_ARRIVAL') {
+            past.push(trip.id);
+            console.log(`PAST      ${trip.id}  ${trip.routeLabel}  arrival ${decision.arrivalUtc!.toISOString()}${completePast ? '' : '  (skipped; use --complete-past)'}`);
+        }
+    }
+
+    console.log(`\nACTIVE trips: ${trips.length}`);
+    console.log(`  to schedule:            ${counts.SCHEDULE} (≈${counts.SCHEDULE} provider lookups on --apply)`);
+    console.log(`  arrival already passed: ${counts.PAST_ARRIVAL}`);
+    console.log(`  already scheduled:      ${counts.SKIP_ALREADY_SCHEDULED}`);
+    console.log(`  no segment:             ${counts.SKIP_NO_SEGMENT}`);
+
+    if (apply) {
+        let ok = 0;
+        for (const id of toSchedule) {
+            try {
+                await initializeTripMonitoring(id, new Date());
+                ok++;
+            } catch (error) {
+                console.error(`FAILED    ${id}:`, error);
+            }
+        }
+        console.log(`\nScheduled ${ok}/${toSchedule.length} trips.`);
+    }
+
+    if (completePast && past.length > 0) {
+        if (apply) {
+            const res = await prisma.monitoredTrip.updateMany({
+                where: { id: { in: past }, status: 'ACTIVE' },
+                data: { status: 'COMPLETED' },
+            });
+            console.log(`Marked ${res.count} past trips COMPLETED.`);
+        } else {
+            console.log(`\nDry run: would mark ${past.length} past trips COMPLETED (add --apply).`);
+        }
+    }
+
+    if (!apply) console.log('\nDry run — nothing was written. Re-run with --apply.');
+    await prisma.$disconnect();
+}
+
+main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});
