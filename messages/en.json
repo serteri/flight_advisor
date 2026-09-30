@@ -1271,5 +1271,10 @@
     "privacyTitle": "Privacy Policy",
     "placeholder": "This page is being prepared and will be published before launch.",
     "claimUnavailable": "Submitting claims with documents is temporarily unavailable. You can still copy a claim letter from your trip page and send it to the airline yourself."
+  },
+  "Waitlist": {
+    "confirmationTitle": "You're on the list",
+    "message": "Email alerts will be active very soon; we'll let you know as soon as they are.",
+    "loginNotice": "Sign-in by email link will be active very soon; we'll let you know as soon as it is."
   }
 }

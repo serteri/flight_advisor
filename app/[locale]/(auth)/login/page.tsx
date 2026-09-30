@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Link, routing } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { use } from "react";
+import { WaitlistNotice } from "@/components/auth/WaitlistNotice";
+import { isEmailDeliveryReady } from "@/lib/featureFlags";
+
+// EMAIL_DELIVERY_READY is read per request, not baked in at build time.
+export const dynamic = "force-dynamic";
 
 type LoginPageProps = {
     params: Promise<{ locale: string }>;
@@ -47,6 +52,8 @@ export default function LoginPage(props: LoginPageProps) {
                         {t("subtitle")}
                     </p>
                 </div>
+
+                {!isEmailDeliveryReady() && <WaitlistNotice />}
 
                 <div className="space-y-4">
                     <form

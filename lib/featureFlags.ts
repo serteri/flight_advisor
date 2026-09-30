@@ -74,6 +74,22 @@ export function isProCheckoutEnabled(): boolean {
     return process.env.NEXT_PUBLIC_PRO_CHECKOUT_ENABLED === 'true';
 }
 
+/**
+ * Waitlist mode until the sending domain is verified in Resend.
+ *
+ * DEFAULT: false — the tracking form still saves trips (PENDING_CONFIRMATION)
+ * but no token is created and no email is attempted; the confirmation and
+ * login pages show a "coming soon" notice; /api/auth/request-link sends
+ * nothing; the email delivery policy blocks every send. RESEND_API_KEY and
+ * NOTIFICATION_FROM_EMAIL are not required by the fail-fast check.
+ *
+ * Going live: set EMAIL_DELIVERY_READY=true, then run
+ * scripts/send-pending-confirmations.ts once for the waiting sign-ups.
+ */
+export function isEmailDeliveryReady(env: NodeJS.ProcessEnv = process.env): boolean {
+    return env.EMAIL_DELIVERY_READY === 'true';
+}
+
 // ── Fallback Metrics (In-Memory, Non-Persistent) ─────────────────────────────
 // Tracks unified vs legacy pipeline usage for observability.
 // Resets on process restart — this is intentional (no persistent state dependency).

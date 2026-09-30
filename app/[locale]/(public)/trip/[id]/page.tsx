@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
+import { isEmailDeliveryReady } from '@/lib/featureFlags';
 
 // This page is reachable by trip id without a session, so it must not echo
 // the subscriber's full address.
@@ -25,6 +26,9 @@ export default async function TripTrackingConfirmationPage({ params }: { params:
     if (!trip) return notFound();
 
     const segment = trip.segments[0] || null;
+    // Waitlist mode: no confirmation email was sent, so don't tell them to check it.
+    const waitlist = !isEmailDeliveryReady();
+    const tWaitlist = await getTranslations('Waitlist');
 
     return (
         <div className="container mx-auto px-4 md:px-6 py-16">
@@ -32,8 +36,8 @@ export default async function TripTrackingConfirmationPage({ params }: { params:
                 <div className="mx-auto w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
                     <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
-                <p className="text-slate-600">{t('subtitle')}</p>
+                <h1 className="text-2xl font-bold text-slate-900">{waitlist ? tWaitlist('confirmationTitle') : t('title')}</h1>
+                <p className="text-slate-600">{waitlist ? tWaitlist('message') : t('subtitle')}</p>
 
                 {segment && (
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left space-y-2">
@@ -50,7 +54,7 @@ export default async function TripTrackingConfirmationPage({ params }: { params:
                     </div>
                 )}
 
-                <p className="text-sm text-slate-500">{t('nextSteps')}</p>
+                {!waitlist && <p className="text-sm text-slate-500">{t('nextSteps')}</p>}
 
                 <Link
                     href="/"

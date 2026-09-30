@@ -1271,5 +1271,10 @@
     "privacyTitle": "Datenschutzerklärung",
     "placeholder": "Diese Seite wird vorbereitet und vor dem Start veröffentlicht.",
     "claimUnavailable": "Das Einreichen von Ansprüchen mit Dokumenten ist vorübergehend nicht verfügbar. Sie können weiterhin auf Ihrer Reiseseite ein Anspruchsschreiben kopieren und selbst an die Airline senden."
+  },
+  "Waitlist": {
+    "confirmationTitle": "Du bist auf der Liste",
+    "message": "E-Mail-Benachrichtigungen werden in Kürze aktiv; wir informieren dich, sobald es so weit ist.",
+    "loginNotice": "Die Anmeldung per E-Mail-Link wird in Kürze aktiv; wir informieren dich, sobald es so weit ist."
   }
 }

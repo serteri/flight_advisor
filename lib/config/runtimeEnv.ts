@@ -39,8 +39,12 @@ export function appUrl(path: string): string {
 // Names of required env vars that are missing (empty when fully configured).
 export function getMissingRequiredEnv(): string[] {
     const missing: string[] = [];
-    if (!process.env.RESEND_API_KEY) missing.push('RESEND_API_KEY');
-    if (!process.env.NOTIFICATION_FROM_EMAIL?.trim()) missing.push('NOTIFICATION_FROM_EMAIL');
+    // Sender settings are only required once email delivery is switched on
+    // (EMAIL_DELIVERY_READY=true); in waitlist mode the domain isn't verified yet.
+    if (process.env.EMAIL_DELIVERY_READY === 'true') {
+        if (!process.env.RESEND_API_KEY) missing.push('RESEND_API_KEY');
+        if (!process.env.NOTIFICATION_FROM_EMAIL?.trim()) missing.push('NOTIFICATION_FROM_EMAIL');
+    }
     if (!process.env.APP_BASE_URL?.trim()) missing.push('APP_BASE_URL');
     if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) missing.push('NEXTAUTH_SECRET (or AUTH_SECRET)');
 

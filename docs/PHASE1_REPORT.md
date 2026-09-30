@@ -186,6 +186,36 @@ Sıra önemlidir. Kod en son gider, çünkü yeni kod hem yeni kolonları okur h
 
 Fail-fast listesindeki bir değişken eksikse `app/[locale]/layout.tsx` her sayfada hata fırlatır ve **tüm site açılmaz**. Bu yüzden env'ler koddan önce girilmelidir.
 
+### Bekleme listesi modu (`EMAIL_DELIVERY_READY`)
+
+Resend'de gönderici domain doğrulanana kadar site bekleme listesi modunda çalışır. `EMAIL_DELIVERY_READY` tanımsızsa ya da `true` değilse (varsayılan):
+
+- **Takip formu:** Trip `PENDING_CONFIRMATION` olarak kaydedilir. Token oluşturulmaz, e-posta denenmez. Kullanıcı "Listeye eklendin — E-posta uyarıları çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz." mesajını görür (en/de/tr).
+- **Giriş:** `/login` sayfasında bilgilendirme görünür. `/magic-login` formu gizler ve aynı bilgilendirmeyi gösterir. `/api/auth/request-link` 503 döner, token oluşturmaz.
+- **E-posta:** Gönderim kuralı (`lib/email/deliveryPolicy.ts`) prod'da da hiçbir e-postanın gitmesine izin vermez. Doğrulanmamış bir domain'e gönderim denemesi olmaz.
+- **Fail-fast:** Bu modda `RESEND_API_KEY` ve `NOTIFICATION_FROM_EMAIL` zorunlu değildir. `APP_BASE_URL` ve auth secret'ı zorunlu kalır.
+
+**Canlıya geçiş:**
+1. Domain doğrulandıktan sonra Vercel Production'da `RESEND_API_KEY`, `NOTIFICATION_FROM_EMAIL` ve `EMAIL_DELIVERY_READY=true` ayarla, ardından redeploy et.
+2. Bekleyen kayıtlara tek seferlik onay e-postası gönder:
+
+```bash
+ npx tsx scripts/send-pending-confirmations.ts --dry-run --database-url '<PROD_URL>' --i-understand-this-is-prod
+ VERCEL_ENV=production EMAIL_DELIVERY_READY=true npx tsx scripts/send-pending-confirmations.ts --apply --database-url '<PROD_URL>' --i-understand-this-is-prod
+```
+
+- Her adrese tek e-posta gider. Linke tıklanınca o adrese ait bekleyen tüm trip'ler onaylanır.
+- Önceden `LoginToken`'ı olan adresler atlanır. Script token'ı göndermeden önce oluşturduğu için ikinci çalıştırma aynı adrese tekrar göndermez.
+- Onay vermemiş ya da uçuş tarihi geçmiş trip'ler atlanır. Çıktıdaki e-posta adresleri maskelidir.
+- `--apply`, gerçek gönderime izin verilmediğinde (`VERCEL_ENV=production` ve `EMAIL_DELIVERY_READY=true` birlikte değilse ya da gönderici env'leri eksikse) reddeder. Aksi hâlde e-postalar yalnızca mock'lanır ama token'lar oluşur, sonraki gerçek çalıştırma da bu adresleri atlardı.
+- Veritabanı kuralı backfill ile aynı: prod'a bağlanmak için `--database-url` ve `--i-understand-this-is-prod` birlikte gerekir.
+
+**Branch'te doğrulama (`next start`, bayrak kapalı, `NOTIFICATION_FROM_EMAIL`/`RESEND_API_KEY` tanımsız):**
+- Form 201 döndü, yanıtta `waitlist:true`. Onay sayfası en ve tr'de bekleme listesi metnini gösterdi.
+- `/login` bilgilendirmeyi gösterdi. `/magic-login` formu gizledi. `request-link` 503 döndü.
+- Hiç gönderim denemesi olmadı.
+- Script dry-run'ı yeni kaydı SEND, eski test kaydını ALREADY_HAS_TOKEN olarak listeledi. `--apply` gerçek gönderime izin verilmediği için reddedildi.
+
 ### Adım 3 — Kod
 1. `phase-1` branch'ini `main`'e merge et (sen yapacaksın, şema prod'a uygulandıktan sonra) ve Vercel deploy'unu bekle.
 2. Deploy sonrası kontrol:

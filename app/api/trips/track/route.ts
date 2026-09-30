@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { sendWelcomeEmail } from '@/lib/email/sender';
 import { parseFlightNumber } from '@/lib/flights/flightNumber';
+import { isEmailDeliveryReady } from '@/lib/featureFlags';
 import {
     TRACK_RATE_WINDOW_MS,
     clientIpFromHeaders,
@@ -122,6 +123,13 @@ export async function POST(req: Request) {
                 },
             },
         });
+
+        // Waitlist mode (sending domain not verified yet): keep the sign-up as
+        // PENDING_CONFIRMATION, create no token, attempt no email.
+        // scripts/send-pending-confirmations.ts emails them once delivery is on.
+        if (!isEmailDeliveryReady()) {
+            return NextResponse.json({ id: trip.id, pendingConfirmation: true, waitlist: true }, { status: 201 });
+        }
 
         const token = randomBytes(32).toString('hex');
         await prisma.loginToken.create({

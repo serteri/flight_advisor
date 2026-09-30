@@ -9,11 +9,21 @@ import {
     loginLinkGlobalCap,
     outstandingLoginLinkWindow,
 } from '@/lib/auth/loginLinkRateLimit';
+import { isEmailDeliveryReady } from '@/lib/featureFlags';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_MS = LOGIN_LINK_TTL_MS;
 
 export async function POST(req: Request) {
+    // Waitlist mode: no login emails until the sending domain is verified.
+    // No token is created, so nothing is left behind for a later bulk send.
+    if (!isEmailDeliveryReady()) {
+        return NextResponse.json(
+            { error: 'email_delivery_not_ready', message: 'Sign-in by email link will be active very soon.' },
+            { status: 503 },
+        );
+    }
+
     let body: { email?: string };
     try {
         body = await req.json();

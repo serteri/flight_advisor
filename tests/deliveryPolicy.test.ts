@@ -6,8 +6,11 @@ import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
 
 const env = (vars: Record<string, string>) => vars as unknown as NodeJS.ProcessEnv;
 
-test('real email only from the Vercel production deployment', () => {
-    assert.equal(isRealEmailDeliveryAllowed(env({ VERCEL_ENV: 'production', NODE_ENV: 'production' })), true);
+test('real email only from Vercel production AND once EMAIL_DELIVERY_READY=true', () => {
+    assert.equal(isRealEmailDeliveryAllowed(env({ VERCEL_ENV: 'production', NODE_ENV: 'production', EMAIL_DELIVERY_READY: 'true' })), true);
+    assert.equal(isRealEmailDeliveryAllowed(env({ VERCEL_ENV: 'production', NODE_ENV: 'production' })), false, 'waitlist mode');
+    assert.equal(isRealEmailDeliveryAllowed(env({ VERCEL_ENV: 'production', EMAIL_DELIVERY_READY: 'false' })), false);
+    assert.equal(isRealEmailDeliveryAllowed(env({ VERCEL_ENV: 'preview', EMAIL_DELIVERY_READY: 'true' })), false);
 });
 
 test('Vercel preview is mocked even though NODE_ENV=production there', () => {

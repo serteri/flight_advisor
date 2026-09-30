@@ -1271,5 +1271,10 @@
     "privacyTitle": "Gizlilik Politikası",
     "placeholder": "Bu sayfa hazırlanıyor ve lansmandan önce yayımlanacak.",
     "claimUnavailable": "Belgeyle talep gönderimi geçici olarak kullanılamıyor. Yolculuk sayfanızdan talep mektubunu kopyalayıp havayoluna kendiniz gönderebilirsiniz."
+  },
+  "Waitlist": {
+    "confirmationTitle": "Listeye eklendin",
+    "message": "E-posta uyarıları çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz.",
+    "loginNotice": "E-posta linkiyle giriş çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz."
   }
 }
