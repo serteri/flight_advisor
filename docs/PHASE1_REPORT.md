@@ -258,7 +258,13 @@ next build         → exit 0, 0 hata, 0 uyarı, 92 sayfa üretildi
 | Claim mektubu | ✅ **EUR 300** (>3500 km, 180–239 dk → %50). Gerçek ad ve "may be entitled" dili var. Ad yoksa 422. İstemcinin gönderdiği tutar yok sayılıyor. Başka kullanıcının trip'i için 404 |
 
 **E2E'de bulunan ve düzeltilen hatalar:**
-- **`1fe7b98` security:** Disruption alert yolu (`ResendProvider`) ve claim eki gönderimi, dev'den **gerçek** `RESEND_API_KEY` ile Resend'e istek atıyordu. Sadece doğrulanmamış bir dev gönderici domain'i nedeniyle reddedildi. Branch'ler prod kopyası olduğu için dev'deki bir kontrol, gerçek abonelere e-posta atabilirdi. Artık gerçek gönderim yalnızca `NODE_ENV=production` iken (ya da `EMAIL_FORCE_LIVE=true` ile) yapılıyor. XX1240 uyarısıyla branch'te doğrulandı: e-posta MOCK olarak loglandı, Resend çağrılmadı.
+- **`1fe7b98` security:** Disruption alert yolu (`ResendProvider`) ve claim eki gönderimi, dev'den **gerçek** `RESEND_API_KEY` ile Resend'e istek atıyordu. Sadece doğrulanmamış bir dev gönderici domain'i nedeniyle reddedildi. Branch'ler prod kopyası olduğu için dev'deki bir kontrol, gerçek abonelere e-posta atabilirdi. XX1240 uyarısıyla branch'te doğrulandı: e-posta MOCK olarak loglandı, Resend çağrılmadı.
+- **`e41d680` security (`1fe7b98`'in düzeltmesi):** `1fe7b98`'deki kural `NODE_ENV=production` kontrolüne dayanıyordu. Bu değer Vercel **preview**'da ve yerelde `next start` ile çalışırken de `production` olduğu için, bu iki ortam da gerçek e-posta gönderecekti.
+  - Artık gerçek gönderim **yalnızca `VERCEL_ENV=production` iken** (ya da `EMAIL_FORCE_LIVE=true` ile) yapılıyor. Kural `NODE_ENV`'e hiç bakmıyor.
+  - `deliverViaResend` artık kuralı kendisi de kontrol ediyor; önceden kota uyarısı bu kontrolü atlıyordu. Yalnızca `scripts/send-test-alert.ts` açık bir bayrakla kuralı atlıyor.
+  - Mock modunda çalışan giriş linkleri (içlerinde token var) artık Vercel loglarına yazılmıyor.
+  - Branch'te `next start` ile doğrulandı: giriş e-postası mock'landı.
+  - Sonuç: Preview'ı yeniden açsan bile preview e-posta göndermez.
 - **`6a8214b`:** Magic-link oturumu artık proxy'den geçip yalnızca kendi trip sayfalarına ulaşabiliyor. Cookie imzası kontrol ediliyor; sayfa ayrıca sahipliği kontrol edip değilse 404 dönüyor. Dashboard'un geri kalanı hâlâ NextAuth istiyor.
 - **Backfill script'i** (bu commit):
   - Idempotency kuralı genişletildi: mesaj id'si **veya** `SCHEDULED`/`DONE` durumunda bir satır varsa trip atlanıyor. Prod'da bu, önceki kuralla eşdeğer; dev'de mesaj id'si hiç oluşmadığı için gerekliydi.
