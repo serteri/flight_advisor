@@ -1,14 +1,16 @@
 // lib/email/deliveryPolicy.ts
 //
-// Outside production no email leaves the machine. Dev and preview databases
-// can be copies of production (Neon branches) that hold real subscribers'
-// addresses, and RESEND_API_KEY is the real key — so every Resend send point
-// asks this first. lib/email/sender.ts, services/notifications/providers/
-// resend.ts and services/notifications/sender.ts all use it.
+// Real email leaves only from the Vercel *production* deployment. Everything
+// else — local dev, local `next start`, Vercel preview (which also runs with
+// NODE_ENV=production!) — is mocked: those environments can point at Neon
+// branches that are copies of production with real subscribers' addresses,
+// and RESEND_API_KEY is the real key.
 //
-// EMAIL_FORCE_LIVE=true overrides it for deliberate end-to-end tests.
-// scripts/send-test-alert.ts calls Resend directly and is not affected.
+// Every Resend send point asks this first: deliverViaResend (magic-link,
+// opt-in, disruption alert, quota alert), ResendProvider and the claim
+// attachment sender. EMAIL_FORCE_LIVE=true overrides it for a deliberate
+// end-to-end test. scripts/send-test-alert.ts bypasses it explicitly.
 
 export function isRealEmailDeliveryAllowed(env: NodeJS.ProcessEnv = process.env): boolean {
-    return env.NODE_ENV === 'production' || env.EMAIL_FORCE_LIVE === 'true';
+    return env.VERCEL_ENV === 'production' || env.EMAIL_FORCE_LIVE === 'true';
 }

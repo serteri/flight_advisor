@@ -29,6 +29,11 @@ import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
 
 const isProduction = (): boolean => isRealEmailDeliveryAllowed();
 
+// Mocked login links carry a live token. Print them for local work only, never
+// into Vercel (preview) logs.
+export const loggableLink = (link: string, env: NodeJS.ProcessEnv = process.env): string =>
+    env.VERCEL_ENV ? '[link hidden on Vercel]' : link;
+
 const buildLoginLink = (token: string, redirectTo?: string): string => {
     const base = appUrl(`/api/auth/verify?token=${token}`);
     if (!redirectTo) {
@@ -44,7 +49,14 @@ const buildClaimLink = (tripId: string): string => appUrl(`/claim-process/${trip
 export async function deliverViaResend(
     label: string,
     message: { to: string; subject: string; html: string; text?: string },
+    // Only scripts/send-test-alert.ts sets this: an explicit, manual real send.
+    options: { bypassDeliveryPolicy?: boolean } = {},
 ): Promise<SendEmailResult> {
+    if (!options.bypassDeliveryPolicy && !isRealEmailDeliveryAllowed()) {
+        console.log(`[Email:${label}] MOCK (not Vercel production): "${message.subject}" to ${message.to} not sent`);
+        return { success: true, mocked: true };
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
         const error = 'RESEND_API_KEY is not set';
@@ -86,7 +98,7 @@ export async function sendWelcomeEmail(
 
     if (!isProduction()) {
         console.log(
-            `[Email] DEV MODE — would send welcome email to ${email} for flight ${flightNumber}. Magic link: ${magicLink}`,
+            `[Email] DEV MODE — would send welcome email to ${email} for flight ${flightNumber}. Magic link: ${loggableLink(magicLink)}`,
         );
         return { success: true, mocked: true, previewUrl: magicLink };
     }
@@ -104,7 +116,7 @@ export async function sendLoginMagicLink(email: string, token: string): Promise<
     const loginLink = buildLoginLink(token);
 
     if (!isProduction()) {
-        console.log(`[Email] DEV MODE — would send login magic link to ${email}. Link: ${loginLink}`);
+        console.log(`[Email] DEV MODE — would send login magic link to ${email}. Link: ${loggableLink(loginLink)}`);
         return { success: true, mocked: true };
     }
 

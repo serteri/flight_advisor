@@ -16,7 +16,7 @@ export class ResendProvider {
 
     async sendEmail(request: EmailRequest): Promise<ChannelResponse> {
         if (!isRealEmailDeliveryAllowed()) {
-            console.log(`[ResendProvider] MOCK (non-production): "${request.subject}" to ${request.to} not sent`);
+            console.log(`[ResendProvider] MOCK (not Vercel production): "${request.subject}" to ${request.to} not sent`);
             return { success: true, channel: 'EMAIL', providerMessageId: 'mock-non-production' };
         }
 

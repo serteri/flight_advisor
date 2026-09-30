@@ -52,7 +52,7 @@ async function main() {
     console.log(`To:      ${to}`);
     console.log(`Subject: [TEST] ${subject}`);
 
-    const result = await deliverViaResend('send-test-alert', { to, subject: `[TEST] ${subject}`, html });
+    const result = await deliverViaResend('send-test-alert', { to, subject: `[TEST] ${subject}`, html }, { bypassDeliveryPolicy: true });
 
     if (result.success) {
         console.log(`Resend accepted the message. id=${result.messageId}`);
