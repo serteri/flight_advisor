@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { EmailChannel } from '@/services/notifications/channels/email';
 import type { NotificationPayload } from '@/services/notifications/types';
 import { getAppBaseUrl } from '@/lib/config/runtimeEnv';
+import { checkCronAuth } from '@/lib/auth/cronAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +19,12 @@ const getTargetWindow = (daysFromNow: number) => {
 };
 
 export async function GET(request: Request) {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    const cronAuth = checkCronAuth(request.headers.get('authorization'), process.env.CRON_SECRET);
+    if (cronAuth === 'NOT_CONFIGURED') {
+        console.error('[trial-reminder] CRON_SECRET is not set — refusing to run');
+        return NextResponse.json({ error: 'Cron endpoint not configured' }, { status: 503 });
+    }
+    if (cronAuth === 'UNAUTHORIZED') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
