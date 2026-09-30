@@ -193,19 +193,46 @@ Fail-fast listesindeki bir değişken eksikse `app/[locale]/layout.tsx` her sayf
    - Formdan bir test trip'i oluştur → onay e-postası → linke tıkla → trip `ACTIVE` olmalı ve QStash'te checkpoint'ler görünmeli
 
 ### Adım 4 — Backfill (şemadan sonra, deploy'dan hemen sonra)
-Cron kaldırıldığı için deploy öncesinde oluşmuş ACTIVE trip'lerin QStash planı yok ve kendiliğinden kontrol edilmeyecekler. Deploy biter bitmez, **prod env'iyle** (`VERCEL_ENV=production`, QStash ve RapidAPI key'leri, prod `DATABASE_URL`) çalıştır:
+
+**Prod'da çalışacak tek mod: `--complete-past`.**
+- Branch testinde prod kopyasındaki ACTIVE trip'lerin hepsinin varışı geçmişti. Planlanacak gelecek trip yok.
+- `--complete-past` sadece varışı geçmiş ACTIVE trip'leri COMPLETED yapar: checkpoint planlamaz, AeroDataBox çağrısı yapmaz, QStash'e mesaj göndermez ve **QStash env'i gerektirmez**.
+- Gelecek trip planlaması ayrı bir moddur (`--apply`, `--complete-past` olmadan) ve QStash ister. Dry-run'da "future, to schedule" 0'dan büyük çıkarsa ayrıca konuşulur.
+
+**Prod veritabanı kuralı** (`lib/ops/dbTarget.ts`, `tests/dbTarget.test.ts`):
+- `DATABASE_URL` hiçbir zaman `.env`'den okunmaz. Varsayılan kaynak `.env.local`'dır, ve orada prod host'u (`ep-gentle-math`) varsa komut reddedilir.
+- Prod'a bağlanmak için ikisi birden gerekir: komut satırında `--database-url '<prod url>'` **ve** `--i-understand-this-is-prod`. Script host'u yazdırır ve 5 saniye bekler (Ctrl+C ile iptal edilebilir).
+- Reddedilen durumlar: prod host'u bayraksız verilirse, bayrak prod olmayan bir URL'le verilirse, bayrak URL'siz verilirse.
+- Aynı kural `scripts/with-db.ts` için de geçerli. Bu wrapper Prisma CLI gibi başka komutları çalıştırmak için kullanılıyor.
+
+**Komutlar:** `<PROD_URL>` Neon'daki prod connection string'i. Tırnak içinde yaz; shell geçmişine düşmemesi için komutun başına bir boşluk koyabilirsin.
 
 ```bash
-npx tsx scripts/backfill-checkpoints.ts                          # dry run: kaç trip, hangi checkpoint'ler
-VERCEL_ENV=production npx tsx scripts/backfill-checkpoints.ts --apply               # planla (trip başına 1 AeroDataBox çağrısı)
-VERCEL_ENV=production npx tsx scripts/backfill-checkpoints.ts --apply --complete-past  # varışı geçmiş ACTIVE trip'leri COMPLETED yap
+# 1) Dry-run: hangi trip'ler COMPLETED olacak (yazma yok)
+ npx tsx scripts/backfill-checkpoints.ts --complete-past --dry-run --database-url '<PROD_URL>' --i-understand-this-is-prod
+
+# 2) Onaydan sonra uygula
+ npx tsx scripts/backfill-checkpoints.ts --complete-past --apply --database-url '<PROD_URL>' --i-understand-this-is-prod
 ```
 
-- Script her çalıştırmada önce `DATABASE_URL` host'unu yazdırır. Varsayılan mod dry-run'dır; `--apply` olmadan hiçbir şey yazmaz.
-- Idempotent'tir: QStash mesaj id'si olan trip atlanır. Geçmişte kalan checkpoint'ler hiç planlanmaz.
-- `--complete-past` tek başına sadece sayıyı raporlar; yazmak için `--apply` ile birlikte verilmesi gerekir.
-- Mantık `lib/guardian/backfill.ts` içinde, testleri `tests/backfill.test.ts` (5).
-- Dry-run'daki "to schedule" sayısı, harcanacak AeroDataBox çağrı sayısına eşittir. Çalıştırmadan önce kalan kotayla karşılaştır.
+- Dry-run çıktısı her trip için `COMPLETE <id> <uçuş> <rota> arrival … created …` satırı basar, altında sayıları verir. `future, to schedule` satırı 0 olmalıdır; değilse uygulamadan önce durulur.
+- Script idempotent'tir: ikinci çalıştırma 0 trip bulur.
+
+**Branch'teki sonuç (prod kopyası, `ep-broad-boat-a7mh68j0`):** QStash env'i olmadan çalıştırıldı; 7 trip COMPLETED oldu, tekrar çalıştırmada 0.
+
+| Trip | Uçuş | Rota | Tahmini varış (UTC) | Oluşturulma |
+|---|---|---|---|---|
+| `cmptuf7pj0001jjxc7vyy3y2m` | QF51 | BNE ➝ SIN | 2026-06-18 15:00 | 2026-05-31 |
+| `cmptvxng50001k204p7a8e1f1` | QF51 | BNE ➝ SIN | 2026-07-10 15:00 | 2026-05-31 |
+| `cmr9a432l0002jja0vbi4wbcp` | TK1999 | JFK ➝ LHR | 2026-07-13 15:00 | 2026-07-06 |
+| `cmr9a49xo0007jja0aajgefql` | TK1999 | JFK ➝ LHR | 2026-07-13 15:00 | 2026-07-06 |
+| `cmr9a4n81000cjja06qu8go16` | TK1999 | JFK ➝ LHR | 2026-07-13 15:00 | 2026-07-06 |
+| `cmr9a6bu1000hjja07zyb5dg5` | TK1999 | JFK ➝ LHR | 2026-07-13 15:00 | 2026-07-06 |
+| `cmr9a6lz1000mjja05k30wk0q` | TK1999 | JFK ➝ LHR | 2026-07-13 15:00 | 2026-07-06 |
+
+- Varış saatleri tahmini: bu trip'lerde kesin saat yok, uçuş tarihi 12:00 + 3 saat olarak hesaplanıyor. Sonucu değiştirmiyor, varışların hepsi geçmişte.
+- Aynı TK1999 trip'inin 2 dakika içinde 5 kez oluşturulmuş olması test verisi olduğunu düşündürüyor.
+- Prod'daki liste, branch açıldıktan sonra oluşan trip'ler yüzünden farklı olabilir. Prod dry-run'ı esas alınır.
 
 ### Şema uygulanmadan kod deploy edilirse ne kırılır
 Prisma varsayılan olarak modelin tüm skaler kolonlarını SELECT eder. Kolon DB'de yoksa sorgu `P2022 column does not exist` hatasıyla düşer. Sonuçları:
