@@ -2,8 +2,19 @@ import NextAuth from "next-auth";
 import authConfig from "@/auth.config";
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicLinkSession';
+import { canEnterDashboard } from '@/lib/auth/dashboardAccess';
 
 const { auth } = NextAuth(authConfig);
+
+// Signature-checked, not just present. A missing secret counts as no session.
+function hasValidMagicLinkSession(req: NextRequest): boolean {
+    try {
+        return verifySessionCookieValue(req.cookies.get(AUTH_SESSION_COOKIE)?.value) !== null;
+    } catch {
+        return false;
+    }
+}
 
 // Only these locales ever appear as a URL prefix. "en" (the default) never
 // does — it's the bare, unprefixed path.
@@ -75,7 +86,11 @@ export default auth((req) => {
     const isDashboard = pathname.includes('/dashboard');
     const isLogin = pathname === '/login' || pathname === '/tr/login' || pathname === '/de/login';
 
-    if (isDashboard && !isLoggedIn) {
+    if (isDashboard && !canEnterDashboard({
+        pathname,
+        hasNextAuthSession: isLoggedIn,
+        hasValidMagicLinkSession: hasValidMagicLinkSession(req as NextRequest),
+    })) {
         const loginUrl = new URL(`${localePrefix}/login`, origin);
         if (req.nextUrl.search) loginUrl.search = req.nextUrl.search;
         return NextResponse.redirect(loginUrl);
