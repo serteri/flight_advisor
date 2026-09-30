@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendLoginMagicLink } from '@/lib/email/sender';
+import { isLoginLinkRateLimited } from '@/lib/auth/loginLinkRateLimit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -17,6 +18,17 @@ export async function POST(req: Request) {
     const email = (body.email || '').trim().toLowerCase();
     if (!email || !EMAIL_REGEX.test(email)) {
         return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    }
+
+    const outstanding = await prisma.loginToken.count({
+        where: { identifier: email, expiresAt: { gt: new Date() } },
+    });
+    if (isLoginLinkRateLimited(outstanding)) {
+        console.warn('[POST /api/auth/request-link] Rate limited (outstanding login links)');
+        return NextResponse.json(
+            { error: 'Too many login links requested. Please use the latest email or try again in 15 minutes.' },
+            { status: 429, headers: { 'Retry-After': String(TOKEN_TTL_MS / 1000) } },
+        );
     }
 
     const token = randomBytes(32).toString('hex');
