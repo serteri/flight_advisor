@@ -67,3 +67,12 @@ test('client-side flight details go through the engine (carrier parsed from flig
     assert.equal(result.status, 'LIKELY_ELIGIBLE');
     assert.equal(result.regime, 'EU261');
 });
+
+test('history badge never claims eligibility as a fact (en/de/tr)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const expected: Record<string, string> = { en: 'May be eligible', de: 'Möglicherweise berechtigt', tr: 'Hak kazanmış olabilirsiniz' };
+    for (const [locale, text] of Object.entries(expected)) {
+        const messages = JSON.parse(readFileSync(`messages/${locale}.json`, 'utf8'));
+        assert.equal(messages.GuardianHistory.eligible, text, locale);
+    }
+});
