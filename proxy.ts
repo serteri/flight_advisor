@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicLinkSession';
 import { canEnterDashboard } from '@/lib/auth/dashboardAccess';
+import { getMissingRequiredEnv } from '@/lib/config/runtimeEnv';
 
 const { auth } = NextAuth(authConfig);
 
@@ -25,7 +26,6 @@ function apiBypass(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
 
     if (pathname.startsWith('/api/')) {
-        console.log('[PROXY] API bypass - direct passthrough:', pathname);
         return NextResponse.next();
     }
 
@@ -62,6 +62,15 @@ function getRequestOrigin(req: NextRequest) {
 
 // @ts-ignore
 export default auth((req) => {
+    // Runtime fail-fast for EVERY request, including prerendered static pages
+    // (the layout check never runs for those) and API routes. The proxy never
+    // runs during next build, so the build itself is unaffected.
+    const missingEnv = getMissingRequiredEnv();
+    if (missingEnv.length > 0) {
+        console.error(`[Startup Fail-Fast:proxy] Missing required runtime env vars: ${missingEnv.join(', ')} — ${req.method} ${req.nextUrl.pathname} → 500`);
+        return new NextResponse('Service unavailable: server configuration is incomplete.', { status: 500 });
+    }
+
     const apiBypassResult = apiBypass(req as NextRequest);
     if (apiBypassResult !== null) {
         return apiBypassResult;
@@ -134,6 +143,8 @@ export default auth((req) => {
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|airlines|\.well-known).*)'
+        // /api is included so the env fail-fast above covers API routes too;
+        // apiBypass() passes them through untouched otherwise.
+        '/((?!_next/static|_next/image|favicon.ico|airlines|\.well-known).*)'
     ]
 };
