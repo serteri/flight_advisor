@@ -13,7 +13,8 @@
 //                                    # COMPLETED (without --apply it only reports how many)
 //
 // Idempotent: a trip that already has a ScheduledTripCheck with a QStash
-// message id is skipped. Past checkpoints are never scheduled.
+// message id, or a SCHEDULED/DONE check row, is skipped. Past checkpoints are
+// never scheduled.
 // --apply calls initializeTripMonitoring, which spends ONE provider lookup per
 // trip (registration, within the per-trip budget) and publishes to QStash
 // only in production (VERCEL_ENV=production) — run it with production env.
@@ -34,6 +35,14 @@ async function main() {
     if (unknown.length) {
         console.error(`Unknown argument(s): ${unknown.join(', ')}`);
         process.exit(1);
+    }
+
+    // Without QStash nothing can be published: every run would spend a provider
+    // lookup and leave FAILED rows. Only local development stores unpublished
+    // SCHEDULED rows on purpose.
+    if (apply && !process.env.QSTASH_TOKEN && process.env.NODE_ENV !== 'development') {
+        console.error('REFUSED: --apply needs QSTASH_TOKEN (run with production env). Dry run works without it.');
+        process.exit(2);
     }
 
     let host = '(unparseable)';
@@ -57,7 +66,13 @@ async function main() {
                 take: 1,
                 select: { departureDate: true, arrivalDate: true, scheduledDepartureUtc: true, scheduledArrivalUtc: true },
             },
-            scheduledChecks: { where: { messageId: { not: null } }, select: { id: true }, take: 1 },
+            // Already planned: a QStash message id exists, or a live SCHEDULED/DONE row
+            // (dev never gets message ids; a failed publish is FAILED and is retried).
+            scheduledChecks: {
+                where: { OR: [{ messageId: { not: null } }, { status: { in: ['SCHEDULED', 'DONE'] } }] },
+                select: { id: true },
+                take: 1,
+            },
         },
     });
 
@@ -89,16 +104,28 @@ async function main() {
     console.log(`  no segment:             ${counts.SKIP_NO_SEGMENT}`);
 
     if (apply) {
-        let ok = 0;
+        const totals = { published: 0, failed: 0, storedUnpublished: 0 };
         for (const id of toSchedule) {
+            const startedAt = new Date();
             try {
-                await initializeTripMonitoring(id, new Date());
-                ok++;
+                await initializeTripMonitoring(id, startedAt);
             } catch (error) {
-                console.error(`FAILED    ${id}:`, error);
+                console.error(`ERROR     ${id}:`, error);
             }
+            // Report what actually happened, not just that the call returned.
+            const rows = await prisma.scheduledTripCheck.findMany({
+                where: { tripId: id, createdAt: { gte: startedAt } },
+                select: { messageId: true, status: true },
+            });
+            const published = rows.filter((r) => r.messageId).length;
+            const failed = rows.filter((r) => r.status === 'FAILED').length;
+            const storedUnpublished = rows.length - published - failed;
+            totals.published += published;
+            totals.failed += failed;
+            totals.storedUnpublished += storedUnpublished;
+            console.log(`APPLIED   ${id}: ${published} published to QStash, ${failed} failed, ${storedUnpublished} stored unpublished (dev)`);
         }
-        console.log(`\nScheduled ${ok}/${toSchedule.length} trips.`);
+        console.log(`\nTrips: ${toSchedule.length}. QStash messages: ${totals.published} published, ${totals.failed} failed, ${totals.storedUnpublished} stored unpublished.`);
     }
 
     if (completePast && past.length > 0) {
