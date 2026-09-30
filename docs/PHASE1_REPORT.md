@@ -161,6 +161,11 @@ Sıra önemlidir. Kod en son gider, çünkü yeni kod hem yeni kolonları okur h
    `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`
    Beklenen çıktı `docs/phase1_schema.sql` ile aynıdır. Fazlası çıkarsa bu, migration kaymasıdır (STATUS_REPORT #17). DROP görürsen dur.
 3. Branch'e uygula, branch üzerinde uygulamayı test et, sonra aynı SQL'i prod'a uygula.
+   **Prod'da iki ayrı çalıştırmada uygula.** `ALTER TYPE … ADD VALUE` transaction dışında, diğer ifadelerden önce ve tek başına çalışmalı:
+   1. `docs/phase1_schema_1_enum.sql`: yalnızca `ALTER TYPE "TripStatus" ADD VALUE 'PENDING_CONFIRMATION'`
+   2. Bu başarılı olduktan sonra `docs/phase1_schema_2_rest.sql`: kolonlar, tablolar, index'ler ve FK (10 ifade)
+
+   İki dosya birlikte ifade ifade `docs/phase1_schema.sql` ile aynıdır; bunu `tests/schemaSplit.test.ts` doğruluyor. Birinci adım başarılı, ikinci başarısız olursa enum değeri kalır. Bu zararsızdır: eski kod bu değeri kullanmaz. İkinci dosya sorun giderildikten sonra tekrar çalıştırılır.
 4. Değişikliklerin hepsi eklemelidir: nullable ya da default'lu kolon, yeni tablo, yeni enum değeri, index. Veri kaybı yoktur. Eski kod yeni şemayla çalışmaya devam eder, bu yüzden şemayı önce uygulamak güvenlidir.
 
 ### Adım 2 — Environment variables (Vercel, Production)
@@ -306,7 +311,7 @@ next build         → exit 0, 0 hata, 0 uyarı, 92 sayfa üretildi
   - `.env.local` → `DATABASE_URL` **tanımlı değil**. Uygulanacak bir branch yok.
   - `.env` → `ep-gentle-math-a7ajyh5a-pooler.ap-southeast-2.aws.neon.tech / db=neondb`. Büyük olasılıkla prod. **Kullanılmadı ve kullanılmayacak.**
 - Branch URL'i `.env.local`'a girildiğinde: host yazdırılacak, sen teyit edeceksin, sonra `migrate diff --from-url` ile gerçek fark alınıp branch'e uygulanacak.
-- Not: `ALTER TYPE … ADD VALUE` aynı transaction içinde yeni değeri kullanan bir ifadeyle birlikte çalıştırılamaz. SQL dosyası bunu yapmıyor.
+- Not: `ALTER TYPE … ADD VALUE` prod'da ayrı bir çalıştırmada, transaction dışında ve diğer ifadelerden önce uygulanacak (`docs/phase1_schema_1_enum.sql`, ardından `docs/phase1_schema_2_rest.sql`; bkz. §2 Adım 1).
 
 ---
 
