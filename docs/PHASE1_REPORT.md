@@ -401,3 +401,7 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 - `/pricing/features` sayfasının kaldırılması ya da yeniden yazılması.
 - Onaylanmamış `PENDING_CONFIRMATION` trip'lerin temizliği.
 - Free "1 uçuş" limitinin backend'de uygulanması.
+- **`/api/auth/request-link` için IP başına limit.**
+  - Şu an iki koruma var: adres başına en fazla 3 açık link (fazlası 429) ve global tavan `LOGIN_LINK_GLOBAL_CAP` (varsayılan 30). Tavan aşılınca token oluşturulmuyor ve e-posta gitmiyor, ama kullanıcı aynı başarı yanıtını alıyor; sunucu uyarı logluyor.
+  - IP limiti için `LoginToken`'a `requestIpHash` ve `createdAt` kolonları ile bir index gerekiyor. Faz 1 şeması dondurulduğu için eklenmedi.
+  - Eksik kalan: tek bir IP'nin çok sayıda farklı adrese istek atması şu an sadece global tavanla sınırlı. Tavan dolunca meşru kullanıcılar da o 15 dakika boyunca giriş e-postası alamıyor.

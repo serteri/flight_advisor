@@ -2,10 +2,16 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendLoginMagicLink } from '@/lib/email/sender';
-import { isLoginLinkRateLimited } from '@/lib/auth/loginLinkRateLimit';
+import {
+    LOGIN_LINK_TTL_MS,
+    isLoginLinkGlobalCapReached,
+    isLoginLinkRateLimited,
+    loginLinkGlobalCap,
+    outstandingLoginLinkWindow,
+} from '@/lib/auth/loginLinkRateLimit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+const TOKEN_TTL_MS = LOGIN_LINK_TTL_MS;
 
 export async function POST(req: Request) {
     let body: { email?: string };
@@ -29,6 +35,17 @@ export async function POST(req: Request) {
             { error: 'Too many login links requested. Please use the latest email or try again in 15 minutes.' },
             { status: 429, headers: { 'Retry-After': String(TOKEN_TTL_MS / 1000) } },
         );
+    }
+
+    // Global cap: silently skip (same success response as below, so it can't be
+    // used to probe) and warn on the server.
+    const cap = loginLinkGlobalCap();
+    const outstandingGlobal = await prisma.loginToken.count({
+        where: { expiresAt: outstandingLoginLinkWindow(new Date()) },
+    });
+    if (isLoginLinkGlobalCapReached(outstandingGlobal, cap)) {
+        console.warn(`[POST /api/auth/request-link] Global cap reached (${outstandingGlobal} outstanding login links >= ${cap}); no token created, no email sent`);
+        return NextResponse.json({ success: true });
     }
 
     const token = randomBytes(32).toString('hex');
