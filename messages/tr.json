@@ -653,7 +653,7 @@
       "cancellationFound": "İptal göstergeleri bulundu",
       "cancellationNone": "Henüz iptal göstergesi yok",
       "guardianLoop": "Guardian döngüsü",
-      "every6Hours": "Her 6 saatte bir",
+      "every6Hours": "Uçuşun önemli anlarında",
       "currentDisruptionLevel": "Mevcut aksaklık seviyesi:",
       "alerts": "Uyarılar",
       "active": "Aktif",
@@ -668,13 +668,17 @@
       "noSegments": "Segment verisi mevcut değil."
     },
     "eu261": {
-      "title": "AB261 durumu",
-      "protectionLabel": "Koruma",
-      "protected": "Korunuyor",
-      "notProtected": "Henüz Korunmuyor",
+      "title": "Tazminat durumu",
+      "protectionLabel": "Kapsam",
       "compensation": "Tazminat",
-      "eligibility": "Uygunluk",
-      "dataQuality": "Veri kalitesi:"
+      "eligibility": "Durum",
+      "dataQuality": "Veri kalitesi:",
+      "regimeNone": "Kapsam dışı",
+      "status": {
+        "LIKELY_ELIGIBLE": "Hak olabilir",
+        "NOT_ELIGIBLE": "Uygun değil",
+        "NEEDS_INFO": "Daha fazla bilgi gerekli"
+      }
     },
     "claim": {
       "title": "Talebini gönder",
@@ -749,16 +753,15 @@
       "onTime": "Zamanında"
     },
     "compensation": {
-      "eligibleHigh": "250 - 600 EUR (tahmini)",
-      "eligibleLow": "250 EUR (olası minimum, tahmini)",
-      "notEligible": "Korunuyor — aksaklık tespit edilmedi",
+      "notEligible": "Mevcut uçuş verilerine göre uygun değil",
       "unknown": "Bilinmiyor (daha fazla aksaklık verisi gerekli)",
       "title": "Tazminat hakkınız olabilir",
-      "description": "Uçuşunuzdaki aksaklık nedeniyle AB261 kapsamında 600€'ya kadar tazminat hakkınız olabilir.",
-      "buttonText": "Tazminat talebi başlat"
+      "description": "Uçuş verilerine göre {regime} kapsamında yaklaşık {amount} tazminata hakkınız olabilir. Havayolu, örneğin olağanüstü koşulları gerekçe göstererek itiraz edebilir.",
+      "buttonText": "Tazminat talebi başlat",
+      "estimate": "{amount} (tahmini)"
     },
     "explanation": {
-      "eligible": "Guardian, AB261 kriterlerini karşılayabilecek bir aksaklık örüntüsü tespit etti.",
+      "eligible": "Uçuş verilerine göre bu aksaklık tazminata konu olabilir. Bu bir tahmindir, hukuki değerlendirme değildir.",
       "notEligible": "Şu anda nitelikli bir iptal veya uzun rötar örüntüsü doğrulanmadı.",
       "unknown": "Guardian henüz yeterli doğrulanmış aksaklık verisi toplamadığı için uygunluk bilinmiyor."
     },

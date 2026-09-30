@@ -982,7 +982,7 @@
       "cancellationFound": "Stornierungsindikatoren gefunden",
       "cancellationNone": "Noch kein Stornierungsindikator",
       "guardianLoop": "Guardian-Zyklus",
-      "every6Hours": "Alle 6 Stunden",
+      "every6Hours": "Zu wichtigen Flugzeitpunkten",
       "currentDisruptionLevel": "Aktuelles Störungsniveau:",
       "alerts": "Warnungen",
       "active": "Aktiv",
@@ -997,13 +997,17 @@
       "noSegments": "Keine Segmentdaten verfügbar."
     },
     "eu261": {
-      "title": "EU261-Status",
-      "protectionLabel": "Schutz",
-      "protected": "Geschützt",
-      "notProtected": "Noch nicht geschützt",
+      "title": "Entschädigungsstatus",
+      "protectionLabel": "Regelung",
       "compensation": "Entschädigung",
-      "eligibility": "Anspruchsberechtigung",
-      "dataQuality": "Datenqualität:"
+      "eligibility": "Status",
+      "dataQuality": "Datenqualität:",
+      "regimeNone": "Nicht abgedeckt",
+      "status": {
+        "LIKELY_ELIGIBLE": "Möglicher Anspruch",
+        "NOT_ELIGIBLE": "Kein Anspruch",
+        "NEEDS_INFO": "Weitere Informationen nötig"
+      }
     },
     "claim": {
       "title": "Anspruch einreichen",
@@ -1078,16 +1082,15 @@
       "onTime": "Pünktlich"
     },
     "compensation": {
-      "eligibleHigh": "250 - 600 EUR (geschätzt)",
-      "eligibleLow": "250 EUR (mögliches Minimum, geschätzt)",
-      "notEligible": "Geschützt — keine Störung erkannt",
+      "notEligible": "Nach aktuellen Flugdaten kein Anspruch",
       "unknown": "Unbekannt (mehr Störungsdaten erforderlich)",
       "title": "Du hast möglicherweise Anspruch auf Entschädigung",
-      "description": "Aufgrund der Störung bei deinem Flug hast du möglicherweise Anspruch auf bis zu 600 € Entschädigung nach EU261.",
-      "buttonText": "Entschädigung beantragen"
+      "description": "Laut Flugdaten haben Sie möglicherweise Anspruch auf etwa {amount} nach {regime}. Die Airline kann dies bestreiten, z. B. unter Berufung auf außergewöhnliche Umstände.",
+      "buttonText": "Entschädigung beantragen",
+      "estimate": "{amount} (Schätzung)"
     },
     "explanation": {
-      "eligible": "Guardian hat ein Störungsmuster erkannt, das die EU261-Kriterien erfüllen könnte.",
+      "eligible": "Laut Flugdaten könnte diese Störung entschädigungsfähig sein. Dies ist eine Schätzung, keine rechtliche Bewertung.",
       "notEligible": "Es liegt derzeit kein bestätigtes qualifizierendes Stornierungs- oder Langverspätungsmuster vor.",
       "unknown": "Die Anspruchsberechtigung ist unbekannt, da Guardian noch nicht genug verifizierte Störungsnachweise gesammelt hat."
     },

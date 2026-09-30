@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from '@/i18n/routing';
 import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { isOwnedBy } from '@/lib/auth/ownership';
+import { evaluateTripCompensation } from '@/lib/compensation/tripCompensation';
 import { TripDetailsClient } from './TripDetailsClient';
 
 export default async function TripDetailsPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
@@ -49,6 +50,10 @@ export default async function TripDetailsPage({ params }: { params: Promise<{ lo
     // Not found and not-yours look identical, so trip ids can't be probed.
     if (!trip || !isOwnedBy(trip, userId)) notFound();
 
+    // Same engine result the claim letter uses; the client only displays it.
+    const { regime, status, amount, currency } = evaluateTripCompensation(trip);
+    const compensation = { regime, status, amount, currency };
+
     // 2. Client Component'e Gönder
-    return <TripDetailsClient trip={trip} locale={locale} />;
+    return <TripDetailsClient trip={trip} locale={locale} compensation={compensation} />;
 }

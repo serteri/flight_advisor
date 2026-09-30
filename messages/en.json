@@ -653,7 +653,7 @@
       "cancellationFound": "Cancellation indicators found",
       "cancellationNone": "No cancellation indicator yet",
       "guardianLoop": "Guardian loop",
-      "every6Hours": "Every 6 hours",
+      "every6Hours": "At key flight milestones",
       "currentDisruptionLevel": "Current disruption level:",
       "alerts": "Alerts",
       "active": "Active",
@@ -668,13 +668,17 @@
       "noSegments": "No segment data available."
     },
     "eu261": {
-      "title": "EU261 status",
-      "protectionLabel": "Protection",
-      "protected": "Protected",
-      "notProtected": "Not Protected Yet",
+      "title": "Compensation status",
+      "protectionLabel": "Regime",
       "compensation": "Compensation",
-      "eligibility": "Eligibility",
-      "dataQuality": "Data quality:"
+      "eligibility": "Status",
+      "dataQuality": "Data quality:",
+      "regimeNone": "Not covered",
+      "status": {
+        "LIKELY_ELIGIBLE": "May be eligible",
+        "NOT_ELIGIBLE": "Not eligible",
+        "NEEDS_INFO": "Needs more information"
+      }
     },
     "claim": {
       "title": "Submit your claim",
@@ -749,16 +753,15 @@
       "onTime": "On Time"
     },
     "compensation": {
-      "eligibleHigh": "EUR 250 - 600 (estimate)",
-      "eligibleLow": "EUR 250 (possible minimum, estimate)",
-      "notEligible": "Protected — no disruption detected",
+      "notEligible": "Not eligible based on current flight data",
       "unknown": "Unknown (needs more disruption data)",
       "title": "You may be eligible for compensation",
-      "description": "Due to the disruption on your flight, you may be entitled to up to €600 in compensation under EU261.",
-      "buttonText": "Start my claim"
+      "description": "Based on the flight data, you may be eligible for about {amount} under {regime}. The airline may dispute this, for example by citing extraordinary circumstances.",
+      "buttonText": "Start my claim",
+      "estimate": "{amount} (estimate)"
     },
     "explanation": {
-      "eligible": "Guardian detected a disruption pattern that may satisfy EU261 criteria.",
+      "eligible": "Based on the flight data, this disruption may qualify for compensation. This is an estimate, not a legal assessment.",
       "notEligible": "No qualifying cancellation or long-delay pattern is currently confirmed.",
       "unknown": "Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet."
     },

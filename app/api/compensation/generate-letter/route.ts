@@ -5,6 +5,7 @@ import { withFreemiumGate } from '@/lib/freemium/gate';
 import { prisma } from '@/lib/prisma';
 import { isOwnedBy } from '@/lib/auth/ownership';
 import { evaluateCompensation, type CompensationInput } from '@/lib/compensation/engine';
+import { compensationInputFromTrip } from '@/lib/compensation/tripCompensation';
 import {
   buildClaimLetter,
   compensationInputFromFlightNumber,
@@ -60,24 +61,17 @@ async function loadSource(input: z.infer<typeof letterSchema>, userId: string): 
     if (!trip || !isOwnedBy(trip, userId)) return 'not_found';
     const first = trip.segments[0];
     const last = trip.segments[trip.segments.length - 1];
-    if (!first || !last) return null;
-    const disruption = trip.snapshot?.status?.toUpperCase() === 'CANCELLED' ? 'CANCELLATION' : 'DELAY';
-    const arrivalDelayMinutes = trip.snapshot?.delayMinutes ?? null;
+    // Same engine input as the trip page (lib/compensation/tripCompensation.ts).
+    const engineInput = compensationInputFromTrip(trip);
+    if (!first || !last || !engineInput) return null;
     return {
       flightNumber: `${first.airlineCode}${first.flightNumber}`,
       origin: first.origin,
       destination: last.destination,
       scheduledDate: formatDate(first.departureDate),
-      disruption,
-      arrivalDelayMinutes,
-      engineInput: {
-        disruption,
-        carrierIata: first.airlineCode,
-        originIata: first.origin,
-        finalDestinationIata: last.destination,
-        scheduledDepartureUtc: first.scheduledDepartureUtc?.toISOString() ?? null,
-        arrivalDelayMinutes,
-      },
+      disruption: engineInput.disruption,
+      arrivalDelayMinutes: engineInput.arrivalDelayMinutes ?? null,
+      engineInput,
       storedName: trip.passengers.find((p) => isRealPassengerName(p.name))?.name ?? trip.user?.name ?? null,
     };
   }
