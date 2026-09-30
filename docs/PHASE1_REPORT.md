@@ -233,7 +233,59 @@ next build         → exit 0, 0 hata, 0 uyarı, 92 sayfa üretildi
 
 ---
 
-## 4. Şema adımı (durduruldu)
+## 3b. Neon branch testi (2026-09-30)
+
+**Branch:** `ep-broad-boat-a7mh68j0` (prod'dan, parent = main). Prod host'u (`ep-gentle-math`) hiçbir komutta kullanılmadı. Veritabanına dokunan her komut bir wrapper üzerinden çalıştırıldı: URL yalnızca `.env.local`'dan okunuyor, host `ep-gentle-math` içeriyorsa komut reddediliyor. Bunun nedeni, Prisma CLI'ın `.env.local`'ı değil yalnızca `.env`'i (prod) okuması.
+
+**Şema:**
+- Branch'e karşı `prisma migrate diff`, `docs/phase1_schema.sql` ile içerik olarak birebir aynı çıktı; sadece ifade sırası farklı. DROP ya da ALTER COLUMN yok. Prod'da migration kayması yok.
+- `prisma db execute` ile uygulandı. Tekrar alınan diff boş: "empty migration".
+- Sorguyla doğrulananlar: 10 kolon (tip, null ve default değerleri beklendiği gibi), `ScheduledTripCheck` ve `ApiQuotaState` tabloları, `TripStatus.PENDING_CONFIRMATION`, 4 index ve 1 FK. Prisma client yeni alanları okuyabiliyor.
+- Branch'teki mevcut veri: 7 ACTIVE ve 1 CANCELLED trip.
+
+**Build ve testler:** `next build` başarılı (`NOTIFICATION_FROM_EMAIL` ve `APP_BASE_URL` tanımsızken bile). 109 testin 109'u geçti.
+
+**Dev'de uçtan uca** (QStash token'ı yok, AeroDataBox mock):
+
+| Akış | Sonuç |
+|---|---|
+| Takip formu (tarayıcı, XX1180) | ✅ "Check your email" sayfası geldi, e-posta maskeli. Trip `PENDING_CONFIRMATION`, 0 checkpoint, IP hash'lenmiş |
+| Double opt-in linki | ✅ Trip `ACTIVE` oldu, `confirmedAt` yazıldı. 5 checkpoint planlandı (geçmiş olan DEP-24h atlandı). Mock'tan rota CDG→JFK |
+| ↳ Link açılınca trip sayfası | ❌→✅ **Hata bulundu ve düzeltildi** (`6a8214b`): proxy yalnızca NextAuth kabul ediyordu, magic-link kullanıcısı `/login`'e düşüyordu |
+| Magic-link girişi (`/api/auth/request-link`) | ✅ Giriş yapıldı, kendi trip'i 200, `/my-trips` 200. Aynı link ikinci kez kullanılınca `expired_token` |
+| Başka kullanıcının trip'i | ✅ Trip sayfası 404, amenity 404, playbook API 404. Oturumsuz ve sahte cookie → `/login`. Magic-link oturumuyla `/dashboard` → `/login` |
+| XX1180 EU261 | ✅ ARR+1h kontrolü: gecikme 185 dk, motor sonucu `EU261 LIKELY_ELIGIBLE` |
+| Claim mektubu | ✅ **EUR 300** (>3500 km, 180–239 dk → %50). Gerçek ad ve "may be entitled" dili var. Ad yoksa 422. İstemcinin gönderdiği tutar yok sayılıyor. Başka kullanıcının trip'i için 404 |
+
+**E2E'de bulunan ve düzeltilen hatalar:**
+- **`1fe7b98` security:** Disruption alert yolu (`ResendProvider`) ve claim eki gönderimi, dev'den **gerçek** `RESEND_API_KEY` ile Resend'e istek atıyordu. Sadece doğrulanmamış bir dev gönderici domain'i nedeniyle reddedildi. Branch'ler prod kopyası olduğu için dev'deki bir kontrol, gerçek abonelere e-posta atabilirdi. Artık gerçek gönderim yalnızca `NODE_ENV=production` iken (ya da `EMAIL_FORCE_LIVE=true` ile) yapılıyor. XX1240 uyarısıyla branch'te doğrulandı: e-posta MOCK olarak loglandı, Resend çağrılmadı.
+- **`6a8214b`:** Magic-link oturumu artık proxy'den geçip yalnızca kendi trip sayfalarına ulaşabiliyor. Cookie imzası kontrol ediliyor; sayfa ayrıca sahipliği kontrol edip değilse 404 dönüyor. Dashboard'un geri kalanı hâlâ NextAuth istiyor.
+- **Backfill script'i** (bu commit):
+  - Idempotency kuralı genişletildi: mesaj id'si **veya** `SCHEDULED`/`DONE` durumunda bir satır varsa trip atlanıyor. Prod'da bu, önceki kuralla eşdeğer; dev'de mesaj id'si hiç oluşmadığı için gerekliydi.
+  - `QSTASH_TOKEN` yokken `--apply` artık reddediliyor. Önceden her çalıştırma bir AeroDataBox çağrısı harcıyor, `FAILED` satırlar bırakıyor ve "Scheduled 1/1" diye yanıltıcı bir özet yazıyordu.
+  - Özet artık gerçek sonucu yazıyor: yayınlanan, başarısız ve yayınlanmadan saklanan mesaj sayıları.
+
+**Backfill (branch):**
+
+| Çalıştırma | Sonuç |
+|---|---|
+| Dry-run | 10 ACTIVE: **7 gerçek trip'in varışı geçmiş** (Haziran–Temmuz 2026), 2 E2E trip zaten planlı, 1 sentetik legacy trip planlanacak |
+| `--apply` (QStash yok) | Reddedildi, exit 2 |
+| `--apply` (dev) | 1 trip → 6 checkpoint yayınlanmadan saklandı. **QStash'e 0 mesaj** gitti (token yok) |
+| `--apply` tekrar | 0 trip; idempotent |
+
+- **Prod'da beklenen durum:** Prod'daki 7 ACTIVE trip'in hepsinin varış tarihi geçmiş. Planlanacak bir şey yok; bunlar `--apply --complete-past` ile COMPLETED yapılmalı. Dry-run'ı prod'da tekrar çalıştırıp kontrol et, çünkü deploy'a kadar yeni trip'ler oluşabilir.
+- **QStash hedefi:** Dev'de QStash token'ı olmadığı için hiçbir mesaj gönderilmedi. Callback URL'i `APP_BASE_URL`'den türetiliyor (dev'de `http://localhost:3000`), yani prod'a giden bir mesaj yolu yoktu.
+
+**Branch'te bırakılan test verisi:** `e2e-a@example.test` ve `e2e-b@example.test` kullanıcıları, 3 trip, bunların checkpoint ve alert kayıtları. Önceki bozuk `--apply` denemelerinden kalan `FAILED` checkpoint satırları. Tümü yalnızca branch'te; branch silinince gider.
+
+**E2E'de görülen, düzeltilmeyen UI sorunları (Faz 2):**
+- Trip sayfasındaki EU261 kartı motoru kullanmıyor. Banner "up to €600", kart "EUR 250 - 600 (estimate)", "ELIGIBLE / Protected" gösteriyor; motor ve mektup ise €300 diyor. Hem tutarsız hem de 1.5'teki temkinli dille çelişiyor. Kart, motor sonucuyla beslenmeli.
+- "Guardian loop: Every 6 hours" metni eski; cron kaldırıldı.
+- Aynı olay için iki `DELAY_DETECTED` kaydı görünüyor. Biri "State: FAILED"; bu, dev'de e-posta düzeltmesinden önceki gönderim hatası.
+- `/api/auth/request-link` için rate limit yok. Herhangi bir adrese sınırsız giriş e-postası gönderilebilir.
+
+## 4. Şema adımı — branch'te uygulandı, prod bekliyor
 
 - Faz 1'deki tüm şema değişikliklerini (1.2, 1.3 ve 1.6) içeren tek diff: **`docs/phase1_schema.sql`**. Faz öncesi şemadan (`8350218:prisma/schema.prisma`) üretildi: `prisma migrate diff --from-schema-datamodel <eski> --to-schema-datamodel prisma/schema.prisma --script`. Veritabanına bağlanılmadı.
 - İçerik:
