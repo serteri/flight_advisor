@@ -25,7 +25,9 @@ export interface SendEmailResult {
 
 type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
 
-const isProduction = (): boolean => process.env.NODE_ENV === 'production';
+import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
+
+const isProduction = (): boolean => isRealEmailDeliveryAllowed();
 
 const buildLoginLink = (token: string, redirectTo?: string): string => {
     const base = appUrl(`/api/auth/verify?token=${token}`);

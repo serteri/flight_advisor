@@ -2,8 +2,14 @@
 import { Resend } from 'resend';
 import { getNotificationFromEmail } from '@/lib/config/runtimeEnv';
 import { withLegalFooter } from '@/lib/email/legalFooter';
+import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
 
 export async function sendEmail(to: string, subject: string, attachment: Buffer, filename: string) {
+    if (!isRealEmailDeliveryAllowed()) {
+        console.log(`[sendEmail] MOCK (non-production): "${subject}" with ${filename} to ${to} not sent`);
+        return { success: true, message: 'Mocked outside production', id: 'mock-non-production' };
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
         console.error(`[sendEmail] RESEND_API_KEY is missing — attachment email to ${to} not sent`);

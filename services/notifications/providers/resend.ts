@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import type { ChannelResponse, EmailRequest } from '../types';
 import { getNotificationFromEmail } from '@/lib/config/runtimeEnv';
 import { withLegalFooter } from '@/lib/email/legalFooter';
+import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
 
 export class ResendProvider {
     private readonly client: Resend;
@@ -14,6 +15,11 @@ export class ResendProvider {
     }
 
     async sendEmail(request: EmailRequest): Promise<ChannelResponse> {
+        if (!isRealEmailDeliveryAllowed()) {
+            console.log(`[ResendProvider] MOCK (non-production): "${request.subject}" to ${request.to} not sent`);
+            return { success: true, channel: 'EMAIL', providerMessageId: 'mock-non-production' };
+        }
+
         try {
             // Resolved per send (not in the constructor) so a missing
             // NOTIFICATION_FROM_EMAIL surfaces as a recorded delivery failure
