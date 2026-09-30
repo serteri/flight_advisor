@@ -8,7 +8,7 @@ const src = readFileSync('proxy.ts', 'utf8');
 
 test('proxy checks required env before anything else and answers 500', () => {
     const guard = src.indexOf('getMissingRequiredEnv()');
-    const bypass = src.indexOf('apiBypass(req');
+    const bypass = src.indexOf('apiBypass(req as NextRequest)');
     assert.ok(guard > 0, 'env guard missing');
     assert.ok(guard < bypass, 'env guard must run before the API bypass');
     assert.match(src, /status: 500/);
