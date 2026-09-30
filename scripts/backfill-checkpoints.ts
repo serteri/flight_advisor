@@ -16,8 +16,10 @@
 // message id, or a SCHEDULED/DONE check row, is skipped. Past checkpoints are
 // never scheduled.
 // --apply calls initializeTripMonitoring, which spends ONE provider lookup per
-// trip (registration, within the per-trip budget) and publishes to QStash
-// only in production (VERCEL_ENV=production) — run it with production env.
+// trip (registration, within the per-trip budget). Publishing and live flight
+// data both require VERCEL_ENV=production (lib/guardian/qstashPolicy.ts,
+// lib/flightData/client.ts), so run --apply with the production env and
+// VERCEL_ENV=production set explicitly; otherwise it refuses.
 //
 // Reads DATABASE_URL from .env.local / .env (in that order) and prints its host
 // before doing anything.
@@ -37,12 +39,18 @@ async function main() {
         process.exit(1);
     }
 
-    // Without QStash nothing can be published: every run would spend a provider
-    // lookup and leave FAILED rows. Only local development stores unpublished
-    // SCHEDULED rows on purpose.
-    if (apply && !process.env.QSTASH_TOKEN && process.env.NODE_ENV !== 'development') {
-        console.error('REFUSED: --apply needs QSTASH_TOKEN (run with production env). Dry run works without it.');
-        process.exit(2);
+    // --apply must really publish, or trips end up with unpublished rows that
+    // nothing will ever call (and each run spends a provider lookup). Only local
+    // development stores unpublished SCHEDULED rows on purpose.
+    if (apply && process.env.NODE_ENV !== 'development') {
+        const { isQStashPublishAllowed } = await import('@/lib/guardian/qstashPolicy');
+        if (!isQStashPublishAllowed() || !process.env.QSTASH_TOKEN) {
+            console.error(
+                'REFUSED: --apply must publish to QStash. Run with the production env: '
+                + 'VERCEL_ENV=production and QSTASH_TOKEN set (or QSTASH_FORCE_LIVE=true). Dry run works without it.',
+            );
+            process.exit(2);
+        }
     }
 
     let host = '(unparseable)';

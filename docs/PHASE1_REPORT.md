@@ -192,8 +192,8 @@ Cron kaldırıldığı için deploy öncesinde oluşmuş ACTIVE trip'lerin QStas
 
 ```bash
 npx tsx scripts/backfill-checkpoints.ts                          # dry run: kaç trip, hangi checkpoint'ler
-npx tsx scripts/backfill-checkpoints.ts --apply                  # planla (trip başına 1 AeroDataBox çağrısı)
-npx tsx scripts/backfill-checkpoints.ts --apply --complete-past  # varışı geçmiş ACTIVE trip'leri COMPLETED yap
+VERCEL_ENV=production npx tsx scripts/backfill-checkpoints.ts --apply               # planla (trip başına 1 AeroDataBox çağrısı)
+VERCEL_ENV=production npx tsx scripts/backfill-checkpoints.ts --apply --complete-past  # varışı geçmiş ACTIVE trip'leri COMPLETED yap
 ```
 
 - Script her çalıştırmada önce `DATABASE_URL` host'unu yazdırır. Varsayılan mod dry-run'dır; `--apply` olmadan hiçbir şey yazmaz.

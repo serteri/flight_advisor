@@ -4,25 +4,35 @@
 // planned checkpoint is persisted as a ScheduledTripCheck row first, so the
 // schedule is visible and cancellable even when publishing fails.
 //
-// Without QSTASH_TOKEN: in local development the row is kept (SCHEDULED, no
-// messageId) and can be triggered by hand; anywhere else it is marked FAILED
-// and logged as an error — nothing is silently dropped.
+// Publishing is gated by lib/guardian/qstashPolicy.ts (Vercel production or
+// QSTASH_FORCE_LIVE=true). Outside that, the row is kept SCHEDULED without a
+// messageId and can be triggered by hand. Where publishing is allowed but
+// QSTASH_TOKEN is missing, the row is marked FAILED and logged as an error —
+// nothing is silently dropped.
 
 import { Client } from '@upstash/qstash';
 import { prisma } from '@/lib/prisma';
 import { appUrl } from '@/lib/config/runtimeEnv';
 import type { PlannedCheck } from '@/lib/guardian/checkpoints';
+import { isQStashPublishAllowed } from '@/lib/guardian/qstashPolicy';
 
 let cachedClient: Client | null | undefined;
 
+// Null outside Vercel production: no publish and no QStash cancel calls.
 function getQStashClient(): Client | null {
+    if (!isQStashPublishAllowed()) return null;
     if (cachedClient !== undefined) return cachedClient;
     const token = process.env.QSTASH_TOKEN;
     cachedClient = token ? new Client({ token }) : null;
     return cachedClient;
 }
 
-const isLocalDevelopment = () => process.env.NODE_ENV === 'development';
+export type PublishDecision = 'PUBLISH' | 'STORE_UNPUBLISHED' | 'FAIL_NO_TOKEN';
+
+export function publishDecision(input: { publishAllowed: boolean; hasToken: boolean }): PublishDecision {
+    if (!input.publishAllowed) return 'STORE_UNPUBLISHED';
+    return input.hasToken ? 'PUBLISH' : 'FAIL_NO_TOKEN';
+}
 
 export function checkEndpointUrl(tripId: string, checkId: string): string {
     return appUrl(`/api/guardian/check?tripId=${encodeURIComponent(tripId)}&checkId=${encodeURIComponent(checkId)}`);
@@ -36,9 +46,10 @@ export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[])
             data: { tripId, kind: check.kind, runAt: check.runAt },
         });
 
-        if (!client) {
-            if (isLocalDevelopment()) {
-                console.log(`[Scheduler] DEV: QSTASH_TOKEN missing — ${check.kind} for trip ${tripId} stored but not published (check ${row.id})`);
+        const decision = publishDecision({ publishAllowed: isQStashPublishAllowed(), hasToken: Boolean(client) });
+        if (decision !== 'PUBLISH' || !client) {
+            if (decision === 'STORE_UNPUBLISHED') {
+                console.log(`[Scheduler] MOCK (not Vercel production): ${check.kind} for trip ${tripId} stored but not published (check ${row.id})`);
             } else {
                 console.error(`[Scheduler] QSTASH_TOKEN missing — ${check.kind} for trip ${tripId} could not be scheduled`);
                 await prisma.scheduledTripCheck.update({
