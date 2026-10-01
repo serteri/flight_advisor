@@ -2,7 +2,42 @@
 
 **Tarih:** 2026-09-30
 **Referans:** `docs/STATUS_REPORT.md`
-**Durum:** 1.1–1.6 tamamlandı ve commit'lendi (push yok). Şema **hiçbir veritabanına uygulanmadı** (bkz. §4).
+**Durum:** ✅ **Faz 1 tamamlandı ve production'da** (2026-10-01). Aşağıdaki bölümler süreç kaydıdır; ilk hâlinden kalan "şema uygulanmadı" ve "push yok" notları artık geçerli değil.
+
+---
+
+## ✅ Faz 1 tamamlandı
+
+| | |
+|---|---|
+| **Production deploy** | `4b9e7c3` (Merge PR #3, `phase-1` → `main`, 2026-10-01 12:40 UTC). Bir önceki merge (`058354e`, PR #2) Vercel'in Ignored Build Step'inde iptal edilmişti; nedeni ve düzeltmesi §9'da (`07ac096`) |
+| **Şema** | 2026-10-01 **12:22 UTC**, prod (`ep-gentle-math-a7ajyh5a`). Önce `phase1_schema_1_enum.sql` tek başına ve transaction dışında; ardından `phase1_schema_2_rest.sql`, 10 ifade, tek transaction. Sorguyla doğrulandı. Tekrar alınan diff boş ("empty migration"). Ayrıntı §4 |
+| **Backfill** | 2026-10-01 **21:38 UTC**, `--complete-past --apply`: varışı geçmiş 7 ACTIVE trip COMPLETED yapıldı (2× QF51 BNE→SIN, 5× TK1999 JFK→LHR). Planlanacak gelecek trip yoktu. QStash'e hiç mesaj gönderilmedi |
+| **Prod durumu (21:38 UTC, salt okunur)** | ACTIVE 0 · COMPLETED 7 · CANCELLED 1 · PENDING_CONFIRMATION 1 (bekleme listesi formundan gelen test kaydı `cmuq1ly6g…`, TK1999, 7 Oct 2026; dokunulmadı) |
+| **E-posta modu** | Bekleme listesi (`EMAIL_DELIVERY_READY` kapalı). Form kayıtları PENDING olarak tutuluyor, hiçbir e-posta gönderilmiyor |
+| **Kod** | 156 test geçiyor. `next build` env olmadan da geçiyor. Faz 2 çalışmaları `phase-2` branch'inde; `phase-1` kapatıldı |
+
+### Açık kalan işler (Kaptan)
+
+1. **E-posta domain'i:**
+   - Resend'de gönderici domain'ini doğrula (SPF, DKIM, DMARC). `NOTIFICATION_FROM_EMAIL` bu domain'den olmalı.
+   - Ardından Vercel'de `EMAIL_DELIVERY_READY=true` yap ve redeploy et.
+   - Sonra `scripts/send-pending-confirmations.ts` çalıştır: önce `--dry-run`, sonra `VERCEL_ENV=production EMAIL_DELIVERY_READY=true … --apply`. Prod bayrakları: `--database-url` ve `--i-understand-this-is-prod`.
+   - `npx tsx scripts/send-test-alert.ts <adres>` ile gerçek teslimatı doğrula.
+2. **Terms ve Privacy içeriği:** `app/[locale]/(public)/{terms,privacy}/page.tsx`. Şu an `TODO(owner)` placeholder ve `noindex`. İçerik yazılınca `noindex` kaldırılmalı. Claim formundaki vekâlet metni de hukuken gözden geçirilmeli (§7).
+3. **Key iptalleri:**
+   - **Travelpayouts** token'ı git geçmişinde açıkta. Önce iptal et, sonra geçmiş temizliği yap (`git filter-repo` ve force-push, §5).
+   - **Duffel** (`DUFFEL_ACCESS_TOKEN`) kullanılmıyor; iptal edip Vercel'den sil.
+   - Ayrıca §5'teki key rotasyonları: Resend, AeroDataBox, Stripe.
+4. **Vercel ortam ayrımı:**
+   - Elle tanımlanmış **`NODE_ENV`**'i sil; bunu Next.js kendisi ayarlar.
+   - **`DATABASE_URL`** Development, Preview ve Production'da aynı. Preview ve Development için ayrı bir Neon branch'i tanımla; prod URL'i yalnızca Production'da kalsın.
+   - Settings → Environment Variables → "Automatically expose System Environment Variables" açık mı, kontrol et (§9).
+   - Production Branch'in `main` olduğunu doğrula.
+5. **Önerilen env'ler:** `AERODATABOX_MONTHLY_QUOTA` ve `AERODATABOX_UNITS_PER_CALL` (planına göre), `ADMIN_EMAIL` (kota uyarıları için).
+6. **Admin experiments açığı:** §1'deki log ve DB kontrolünü yap (açığın başlangıcı: 2026-04-16).
+
+Faz 2'nin ilk maddesi: tarihler her yerde ay adıyla gösterilsin (§8).
 
 ---
 
