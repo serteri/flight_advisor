@@ -480,6 +480,9 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 
 ## 8. Faz 2 listesi
 
+- **Tarih formatı (öncelikli):** Arayüzde ve e-postalarda tüm tarihler ay adıyla gösterilsin (ör. "7 Oct 2026"). Sayısal format (15/10/2026, 10/15/2026 gibi) hiçbir yerde kullanılmasın.
+  - Örnek: takip onay sayfası şu an `toLocaleDateString()` ile "15/10/2026" gösteriyor.
+  - Tek bir ortak format fonksiyonu yazılmalı, ay adı locale'e göre seçilmeli: en "7 Oct 2026", de "7. Okt. 2026", tr "7 Eki 2026".
 - **Amadeus zincirinin tamamen silinmesi.** Koltuk haritası action'ı silindi, ama bağımlılık zinciri geniş olduğu için gerisi bırakıldı:
   - Kütüphane: `lib/amadeus.ts`, `lib/virtualInterlining.ts`
   - Route'lar: `app/api/flights/{seat-map,validate-pnr,verify-schedule}`, `app/api/{cf-geo,ip-geo}` (şimdilik oturum zorunlu)
