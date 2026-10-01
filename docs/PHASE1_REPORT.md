@@ -495,3 +495,22 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
   - Şu an iki koruma var: adres başına en fazla 3 açık link (fazlası 429) ve global tavan `LOGIN_LINK_GLOBAL_CAP` (varsayılan 30). Tavan aşılınca token oluşturulmuyor ve e-posta gitmiyor, ama kullanıcı aynı başarı yanıtını alıyor; sunucu uyarı logluyor.
   - IP limiti için `LoginToken`'a `requestIpHash` ve `createdAt` kolonları ile bir index gerekiyor. Faz 1 şeması dondurulduğu için eklenmedi.
   - Eksik kalan: tek bir IP'nin çok sayıda farklı adrese istek atması şu an sadece global tavanla sınırlı. Tavan dolunca meşru kullanıcılar da o 15 dakika boyunca giriş e-postası alamıyor.
+
+## 9. Vercel production deploy'u atlandı (2026-10-01) — düzeltme
+
+**Belirti:** `phase-1` main'e merge edildi (`058354e`, 12:29:25 UTC). Vercel 12:29:29'da bir **Production** deploy'u oluşturdu ama durumu **Canceled** oldu. Ready görünen iki production deploy (12:10 ve 12:27) `8350218`'in redeploy'larıydı; o commit'in `vercel.json`'unda ignore kuralı yok, o yüzden geçtiler.
+
+**Neden (en olası):**
+- Eski kural `[ "$VERCEL_ENV" != "production" ]`, `VERCEL_ENV` değeri `production` olmadığında build'i atlıyordu.
+- Ignored Build Step sırasında `VERCEL_ENV` boş geldiyse (örneğin projede "Automatically expose System Environment Variables" kapalıysa) `"" != "production"` doğru olur, exit 0 döner ve **production da atlanır**.
+- Doğrulanamadı: CLI, iptal edilen deploy'un build log'unu ve hangi commit'ten geldiğini göstermiyor.
+
+**Düzeltme:** `vercel.json` → `"ignoreCommand": "[ \"$VERCEL_ENV\" = \"preview\" ]"`.
+- Sadece açıkça `preview` olan build'ler atlanır. `production`, boş ya da başka bir değer her zaman build edilir. Production artık eksik bir değişken yüzünden kilitlenemez.
+- `VERCEL_ENV` boş gelirse preview'lar build olur. O durumda da e-posta ve QStash kuralları (`VERCEL_ENV !== 'production'`) gerçek gönderimi ve yayınlamayı engeller.
+- Test: `tests/vercelIgnore.test.ts`. Komutu `sh` ile dört değer için çalıştırıyor.
+
+**Kaptan'ın kontrol etmesi gerekenler (CLI bunları göstermiyor):**
+- Vercel → Settings → Git → **Production Branch** = `main` olmalı.
+- Settings → Environment Variables → **Automatically expose System Environment Variables** açık olmalı. Böylece preview'lar da yeniden atlanır.
+- İptal edilen deploy'un sayfasında "canceled as a result of running the command defined in the Ignored Build Step" yazıp yazmadığı. Bu, nedeni teyit eder.
