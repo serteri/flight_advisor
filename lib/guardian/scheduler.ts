@@ -23,7 +23,9 @@ function getQStashClient(): Client | null {
     if (!isQStashPublishAllowed()) return null;
     if (cachedClient !== undefined) return cachedClient;
     const token = process.env.QSTASH_TOKEN;
-    cachedClient = token ? new Client({ token }) : null;
+    // baseUrl explicit: the SDK would silently fall back to the default region if
+    // QSTASH_URL were missing; it is required by the production fail-fast check.
+    cachedClient = token ? new Client({ token, baseUrl: process.env.QSTASH_URL }) : null;
     return cachedClient;
 }
 

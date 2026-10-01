@@ -30,3 +30,20 @@ test('scheduler gates the QStash client on the policy; backfill refuses unpublis
     const backfill = readFileSync('scripts/backfill-checkpoints.ts', 'utf8');
     assert.match(backfill, /isQStashPublishAllowed\(\) \|\| !process\.env\.QSTASH_TOKEN/);
 });
+
+test('QStash client uses QSTASH_URL explicitly and production fail-fast requires it', async () => {
+    const scheduler = readFileSync('lib/guardian/scheduler.ts', 'utf8');
+    assert.match(scheduler, /new Client\(\{ token, baseUrl: process\.env\.QSTASH_URL \}\)/);
+    const { getMissingRequiredEnv } = await import('@/lib/config/runtimeEnv');
+    const keys = ['VERCEL_ENV', 'QSTASH_URL', 'APP_BASE_URL', 'NEXTAUTH_SECRET'] as const;
+    const prev = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+    try {
+        Object.assign(process.env, { VERCEL_ENV: 'production', APP_BASE_URL: 'https://x', NEXTAUTH_SECRET: 's' });
+        delete process.env.QSTASH_URL;
+        assert.ok(getMissingRequiredEnv().includes('QSTASH_URL'));
+        process.env.VERCEL_ENV = 'preview';
+        assert.ok(!getMissingRequiredEnv().includes('QSTASH_URL'), 'only required in production');
+    } finally {
+        for (const k of keys) { if (prev[k] === undefined) delete process.env[k]; else process.env[k] = prev[k]!; }
+    }
+});

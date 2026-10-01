@@ -52,6 +52,7 @@ export function getMissingRequiredEnv(): string[] {
     // development and preview use mocks and unpublished schedules.
     if (process.env.VERCEL_ENV === 'production') {
         for (const name of [
+            'QSTASH_URL',
             'QSTASH_TOKEN',
             'QSTASH_CURRENT_SIGNING_KEY',
             'QSTASH_NEXT_SIGNING_KEY',
