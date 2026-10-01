@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { getAppBaseUrl } from '@/lib/config/runtimeEnv';
 
 type PlanType = 'PRO';
 type BillingCycle = 'monthly';
@@ -10,7 +11,7 @@ const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_MONTHLY_PRICE_ID;
 
 console.log('🔧 [STRIPE CONFIG]', {
     mode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
-    secretKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'MISSING',
+    secretKeyConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
 });
 
 console.log('Make sure STRIPE_PRO_MONTHLY_PRICE_ID is set in Vercel');
@@ -24,11 +25,7 @@ console.log('💰 [PRICE MAP]', {
 });
 
 function resolveBaseUrl() {
-    return (
-        process.env.NEXTAUTH_URL ||
-        process.env.NEXT_PUBLIC_APP_URL ||
-        'http://localhost:3000'
-    );
+    return getAppBaseUrl();
 }
 
 export async function POST(req: Request) {
@@ -97,7 +94,6 @@ export async function POST(req: Request) {
             stripeMode: (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE',
             envVarName,
             priceId: priceId || '❌ MISSING',
-            priceIdPrefix: priceId?.substring(0, 15) || 'N/A',
         });
 
         if (!priceId) {

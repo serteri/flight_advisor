@@ -45,6 +45,51 @@ export function useUnifiedDebug(): boolean {
     return raw !== '0' && raw.toLowerCase() !== 'false';
 }
 
+/**
+ * Collection of passport/ticket uploads, signatures and IBANs for claims.
+ *
+ * DEFAULT: false — disabled until there is a legal basis (terms, privacy
+ * policy, power of attorney), encrypted persistent storage (the current
+ * writer targets the local filesystem, which is read-only on Vercel) and a
+ * retention policy. While disabled the claim endpoints return 503.
+ * The code is kept.
+ *
+ * Enable: CLAIM_DOCUMENT_UPLOAD_ENABLED=true
+ */
+export function isClaimDocumentUploadEnabled(): boolean {
+    return process.env.CLAIM_DOCUMENT_UPLOAD_ENABLED === 'true';
+}
+
+/**
+ * Pro checkout on /pricing.
+ *
+ * DEFAULT: false — hidden until the paid features on the pricing page exist
+ * and the checkout path works for magic-link users. The /api/checkout route
+ * itself is unchanged. NEXT_PUBLIC_ so the client pricing page can read it
+ * (inlined at build time — rebuild after changing).
+ *
+ * Enable: NEXT_PUBLIC_PRO_CHECKOUT_ENABLED=true
+ */
+export function isProCheckoutEnabled(): boolean {
+    return process.env.NEXT_PUBLIC_PRO_CHECKOUT_ENABLED === 'true';
+}
+
+/**
+ * Waitlist mode until the sending domain is verified in Resend.
+ *
+ * DEFAULT: false — the tracking form still saves trips (PENDING_CONFIRMATION)
+ * but no token is created and no email is attempted; the confirmation and
+ * login pages show a "coming soon" notice; /api/auth/request-link sends
+ * nothing; the email delivery policy blocks every send. RESEND_API_KEY and
+ * NOTIFICATION_FROM_EMAIL are not required by the fail-fast check.
+ *
+ * Going live: set EMAIL_DELIVERY_READY=true, then run
+ * scripts/send-pending-confirmations.ts once for the waiting sign-ups.
+ */
+export function isEmailDeliveryReady(env: NodeJS.ProcessEnv = process.env): boolean {
+    return env.EMAIL_DELIVERY_READY === 'true';
+}
+
 // ── Fallback Metrics (In-Memory, Non-Persistent) ─────────────────────────────
 // Tracks unified vs legacy pipeline usage for observability.
 // Resets on process restart — this is intentional (no persistent state dependency).

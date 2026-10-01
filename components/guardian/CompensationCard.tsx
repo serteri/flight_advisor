@@ -5,9 +5,12 @@ import { Sparkles, ArrowRight } from 'lucide-react';
 
 interface CompensationCardProps {
     tripId: string;
+    /** Engine estimate, e.g. "EUR 300". */
+    amount: string;
+    regime: 'EU261' | 'UK261' | 'NONE';
 }
 
-export function CompensationCard({ tripId }: CompensationCardProps) {
+export function CompensationCard({ tripId, amount, regime }: CompensationCardProps) {
     const t = useTranslations('GuardianTripDetails.compensation');
 
     return (
@@ -21,7 +24,7 @@ export function CompensationCard({ tripId }: CompensationCardProps) {
                     </div>
                     <div>
                         <h2 className="text-lg md:text-xl font-bold text-slate-900">{t('title')}</h2>
-                        <p className="mt-1 text-sm text-slate-600 max-w-xl">{t('description')}</p>
+                        <p className="mt-1 text-sm text-slate-600 max-w-xl">{t('description', { amount, regime })}</p>
                     </div>
                 </div>
 

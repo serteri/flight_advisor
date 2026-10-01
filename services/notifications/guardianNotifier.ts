@@ -8,6 +8,7 @@ import { EmailChannel } from "@/services/notifications/channels/email";
 import { SmsChannel } from "@/services/notifications/channels/sms";
 import { NotificationProviderManager } from "@/services/notifications/providers";
 import { GuardianEvent } from "@/workers/guardianWorker";
+import type { CompensationResult } from "@/lib/compensation/engine";
 import {
     AlertDeliveryChannel,
     queueAlertDelivery,
@@ -79,35 +80,32 @@ const smsChannel = SmsChannel.getInstance();
 const providerManager = NotificationProviderManager.getInstance();
 const LOW_SEVERITY_THROTTLE_MS = 6 * 60 * 60 * 1000;
 
-type Eu261Assessment = {
-    eligible: true | false | 'unknown';
-    reason: string;
-    compensationRange: 'EUR_250' | 'EUR_400' | 'EUR_600' | null;
-    confidence: 'low' | 'medium';
-};
+// Result of lib/compensation/engine.ts attached by the worker as event.current.compensation.
+type Eu261Assessment = CompensationResult;
 
 const getEu261Assessment = (event: GuardianEvent): Eu261Assessment | null => {
-    const assessment = (event.current as any)?.eu261Assessment;
-    if (!assessment || typeof assessment !== 'object') return null;
+    const assessment = (event.current as any)?.compensation;
+    if (!assessment || typeof assessment !== 'object' || typeof assessment.status !== 'string') return null;
     return assessment as Eu261Assessment;
 };
 
 const formatEu261Hint = (assessment: Eu261Assessment | null): string => {
     if (!assessment) return '';
 
-    const compText = assessment.compensationRange
-        ? ` Potential compensation band: ${assessment.compensationRange.replace('EUR_', 'EUR ')}.`
-        : '';
+    const scheme = assessment.regime === 'NONE' ? 'EU261/UK261' : assessment.regime;
 
-    if (assessment.eligible === true) {
-        return ` EU261 check: likely eligible (${assessment.confidence} confidence).${compText}`;
+    if (assessment.status === 'LIKELY_ELIGIBLE') {
+        const amountText = assessment.amount !== null && assessment.currency
+            ? ` (potentially ${assessment.currency} ${assessment.amount})`
+            : '';
+        return ` Based on flight data you may be eligible for compensation under ${scheme}${amountText}. The airline may claim extraordinary circumstances.`;
     }
 
-    if (assessment.eligible === false) {
-        return ` EU261 check: currently appears out of scope (${assessment.confidence} confidence).`;
+    if (assessment.status === 'NEEDS_INFO') {
+        return ` ${scheme} may apply, but more information is needed to assess eligibility.`;
     }
 
-    return ` EU261 check: scope is currently unclear (${assessment.confidence} confidence).`;
+    return ` Based on flight data this disruption does not appear to qualify for ${scheme} compensation.`;
 };
 
 async function sendGuardianEmail(to: string, subject: string, body: string, tripId: string, eu261Assessment: Eu261Assessment | null): Promise<ChannelResponse> {
@@ -125,7 +123,7 @@ async function sendGuardianEmail(to: string, subject: string, body: string, trip
         success: result.success,
         providerMessageId: result.id,
         channel: 'EMAIL',
-        error: result.success ? undefined : 'EMAIL channel unavailable or provider rejected request',
+        error: result.success ? undefined : (result.error || 'EMAIL channel unavailable or provider rejected request'),
     };
 }
 
@@ -418,7 +416,7 @@ const deriveSeverityLabel = (event: GuardianEvent, eu261Assessment: Eu261Assessm
         event.type === 'CANCELLED' ||
         event.type === 'GATE_CHANGE' ||
         event.type === 'DELAY' ||
-        eu261Assessment?.eligible === true
+        eu261Assessment?.status === 'LIKELY_ELIGIBLE'
     ) {
         return 'HIGH';
     }
@@ -437,7 +435,7 @@ const deriveSeverityLabel = (event: GuardianEvent, eu261Assessment: Eu261Assessm
 
 const shouldUseLowConfidenceTone = (event: GuardianEvent, eu261Assessment: Eu261Assessment | null): boolean => {
     if (event.type === 'DATA_ISSUE') return true;
-    return eu261Assessment?.confidence === 'low' || eu261Assessment?.eligible === 'unknown';
+    return eu261Assessment?.status === 'NEEDS_INFO';
 };
 
 const buildEmailBody = (message: Omit<FormattedMessage, 'emailBody' | 'smsBody' | 'pushBody' | 'emailSubject'>): string => {

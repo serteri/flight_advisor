@@ -1,0 +1,33 @@
+[
+  {
+    "greatCircleDistance": { "meter": 1181600.0, "km": 1181.6, "mile": 734.21, "nm": 638.01, "feet": 3876640.4 },
+    "departure": {
+      "airport": {
+        "icao": "EDDB", "iata": "BER", "name": "Berlin Brandenburg", "shortName": "Brandenburg",
+        "municipalityName": "Berlin", "location": { "lat": 52.3514, "lon": 13.4939 },
+        "countryCode": "DE", "timeZone": "Europe/Berlin"
+      },
+      "scheduledTime": { "utc": "2026-01-15 06:10Z", "local": "2026-01-15 07:10+01:00" },
+      "revisedTime": { "utc": "2026-01-15 06:12Z", "local": "2026-01-15 07:12+01:00" },
+      "terminal": "1", "gate": "B17", "quality": ["Basic", "Live"]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "LIRF", "iata": "FCO", "name": "Rome Fiumicino", "shortName": "Fiumicino",
+        "municipalityName": "Rome", "location": { "lat": 41.8003, "lon": 12.2389 },
+        "countryCode": "IT", "timeZone": "Europe/Rome"
+      },
+      "scheduledTime": { "utc": "2026-01-15 08:20Z", "local": "2026-01-15 09:20+01:00" },
+      "revisedTime": { "utc": "2026-01-15 08:15Z", "local": "2026-01-15 09:15+01:00" },
+      "terminal": "1", "quality": ["Basic", "Live"]
+    },
+    "lastUpdatedUtc": "2026-01-15 08:20Z",
+    "number": "U2 1234",
+    "callSign": "EJU1234",
+    "status": "Arrived",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": { "reg": "OE-MOCK", "model": "Airbus A320neo" },
+    "airline": { "name": "easyJet", "iata": "U2", "icao": "EZY" }
+  }
+]

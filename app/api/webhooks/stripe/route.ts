@@ -277,8 +277,6 @@ export async function POST(req: Request) {
                 return new NextResponse('Webhook secret not configured', { status: 500 });
             }
 
-            console.log('[STRIPE_WEBHOOK] 🔑 Secret prefix:', secret.substring(0, 10) + '...');
-            
             event = stripe.webhooks.constructEvent(
                 body,
                 signature,

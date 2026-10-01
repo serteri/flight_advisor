@@ -27,16 +27,17 @@ export function WelcomeTripEmail({ flightNumber, magicLink }: WelcomeTripEmailPr
                         <Text style={badgeText}>FlightAgent Guardian</Text>
                     </Section>
 
-                    <Heading style={heading}>Your flight is now protected</Heading>
+                    <Heading style={heading}>Confirm your flight alerts</Heading>
 
                     <Text style={paragraph}>
-                        Your flight <strong>{flightNumber}</strong> has been placed under monitoring.
-                        Click the button below to see the details and audit log.
+                        Someone (hopefully you) asked us to monitor flight <strong>{flightNumber}</strong> and
+                        email this address about delays and cancellations. Monitoring starts only after you
+                        confirm. If this wasn&apos;t you, ignore this email and nothing more will be sent.
                     </Text>
 
                     <Section style={ctaSection}>
                         <Button style={button} href={magicLink}>
-                            View my trip
+                            Confirm and start monitoring
                         </Button>
                     </Section>
 

@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
-import { getFlightRoute } from '@/lib/api/aviationstack';
 import { sendWelcomeEmail } from '@/lib/email/sender';
+import { parseFlightNumber } from '@/lib/flights/flightNumber';
+import { isEmailDeliveryReady } from '@/lib/featureFlags';
+import {
+    TRACK_RATE_WINDOW_MS,
+    clientIpFromHeaders,
+    evaluateTrackRateLimit,
+    hashRequestIp,
+} from '@/lib/guardian/trackRateLimit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const FLIGHT_NUMBER_REGEX = /^([A-Za-z]{2,3})\s*(\d{1,4}[A-Za-z]?)$/;
-const TOKEN_TTL_MS = 15 * 60 * 1000;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+// The link doubles as the opt-in confirmation, so it must survive until the
+// subscriber actually opens their inbox.
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type TrackTripPayload = {
     flightNumber?: string;
@@ -23,7 +33,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const flightNumber = (body.flightNumber || '').trim().toUpperCase();
+    const flightNumber = (body.flightNumber || '').trim();
     const date = (body.date || '').trim();
     const email = (body.email || '').trim().toLowerCase();
     const consent = body.consent === true;
@@ -40,46 +50,41 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Consent is required to start tracking' }, { status: 400 });
     }
 
-    const flightMatch = flightNumber.match(FLIGHT_NUMBER_REGEX);
-    if (!flightMatch) {
+    const parsedFlight = parseFlightNumber(flightNumber);
+    if (!parsedFlight) {
         return NextResponse.json({ error: 'Invalid flight number format' }, { status: 400 });
     }
-    const [, airlineCode, flightDigits] = flightMatch;
+    const { airlineCode, number: flightDigits, full: fullFlightNumber } = parsedFlight;
 
-    const departureDate = new Date(date);
+    const departureDate = DATE_REGEX.test(date) ? new Date(`${date}T00:00:00.000Z`) : new Date(NaN);
     if (Number.isNaN(departureDate.getTime())) {
         return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
     }
+    // One day of slack for travellers in timezones ahead of UTC.
+    if (departureDate.getTime() < Date.now() - DAY_MS) {
+        return NextResponse.json({ error: 'Flight date is in the past' }, { status: 400 });
+    }
 
-    const fullFlightNumber = `${airlineCode}${flightDigits}`;
+    const requestIpHash = hashRequestIp(
+        clientIpFromHeaders(req.headers),
+        process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+    );
 
     try {
-        let originIata = 'UNK';
-        let destinationIata = 'UNK';
-
-        const cachedRoute = await prisma.flightRouteCache.findUnique({
-            where: { flightNumber: fullFlightNumber },
-        });
-
-        if (cachedRoute) {
-            originIata = cachedRoute.originIata;
-            destinationIata = cachedRoute.destinationIata;
-        } else {
-            const route = await getFlightRoute(fullFlightNumber);
-            if (!('error' in route)) {
-                originIata = route.originIata;
-                destinationIata = route.destinationIata;
-
-                await prisma.flightRouteCache.create({
-                    data: {
-                        flightNumber: fullFlightNumber,
-                        originIata,
-                        destinationIata,
-                    },
-                });
-            } else {
-                console.warn(`[POST /api/trips/track] Could not resolve route for ${fullFlightNumber}: ${route.message}`);
-            }
+        const windowStart = new Date(Date.now() - TRACK_RATE_WINDOW_MS);
+        const [emailRecent, ipRecent] = await Promise.all([
+            prisma.monitoredTrip.count({ where: { subscriberEmail: email, createdAt: { gte: windowStart } } }),
+            requestIpHash
+                ? prisma.monitoredTrip.count({ where: { requestIpHash, createdAt: { gte: windowStart } } })
+                : Promise.resolve(null),
+        ]);
+        const rate = evaluateTrackRateLimit({ emailRecent, ipRecent });
+        if (!rate.allowed) {
+            console.warn(`[POST /api/trips/track] Rate limited (${rate.reason})`);
+            return NextResponse.json(
+                { error: 'Too many requests. Please try again later.' },
+                { status: 429, headers: { 'Retry-After': String(TRACK_RATE_WINDOW_MS / 1000) } },
+            );
         }
 
         const user = await prisma.user.upsert({
@@ -88,33 +93,43 @@ export async function POST(req: Request) {
             create: { email },
         });
 
+        // Route and schedule are resolved by the registration lookup in
+        // initializeTripMonitoring; until then the route is UNK.
         const now = new Date();
         const trip = await prisma.monitoredTrip.create({
             data: {
                 userId: user.id,
-                routeLabel: originIata !== 'UNK' && destinationIata !== 'UNK'
-                    ? `${originIata} ➝ ${destinationIata}`
-                    : `Flight ${fullFlightNumber}`,
+                routeLabel: `Flight ${fullFlightNumber}`,
                 originalPrice: 0,
                 currency: 'AUD',
                 ticketClass: 'UNKNOWN',
                 subscriberEmail: email,
                 consentGiven: consent,
-                status: 'ACTIVE',
+                requestIpHash,
+                // Double opt-in: monitoring starts when the emailed link is opened.
+                status: 'PENDING_CONFIRMATION',
+                routeUnknown: true,
                 nextCheckAt: now,
                 segments: {
                     create: [{
                         segmentOrder: 0,
                         airlineCode,
                         flightNumber: flightDigits,
-                        origin: originIata,
-                        destination: destinationIata,
+                        origin: 'UNK',
+                        destination: 'UNK',
                         departureDate,
                         arrivalDate: departureDate,
                     }],
                 },
             },
         });
+
+        // Waitlist mode (sending domain not verified yet): keep the sign-up as
+        // PENDING_CONFIRMATION, create no token, attempt no email.
+        // scripts/send-pending-confirmations.ts emails them once delivery is on.
+        if (!isEmailDeliveryReady()) {
+            return NextResponse.json({ id: trip.id, pendingConfirmation: true, waitlist: true }, { status: 201 });
+        }
 
         const token = randomBytes(32).toString('hex');
         await prisma.loginToken.create({
@@ -125,13 +140,28 @@ export async function POST(req: Request) {
             },
         });
 
-        const claimRedirectPath = `/claim-process/${trip.id}`;
-        const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, claimRedirectPath);
+        const tripRedirectPath = `/dashboard/guardian/${trip.id}`;
+        const emailResult = await sendWelcomeEmail(email, token, fullFlightNumber, tripRedirectPath);
         if (!emailResult.success) {
-            console.warn(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailResult.error}`);
+            const emailError = emailResult.error || 'Unknown email delivery failure';
+            console.error(`[POST /api/trips/track] Welcome email failed for trip ${trip.id}: ${emailError}`);
+            await Promise.all([
+                prisma.monitoredTrip.update({
+                    where: { id: trip.id },
+                    data: { lastEmailError: emailError, lastEmailErrorAt: new Date() },
+                }),
+                prisma.loginToken.update({ where: { token }, data: { emailError } }),
+            ]);
+            return NextResponse.json(
+                { error: 'We could not send the confirmation email. Please check the address and try again.' },
+                { status: 502 },
+            );
         }
 
-        const responsePayload: { id: string; devMagicLoginUrl?: string } = { id: trip.id };
+        const responsePayload: { id: string; pendingConfirmation: true; devMagicLoginUrl?: string } = {
+            id: trip.id,
+            pendingConfirmation: true,
+        };
         if (process.env.NODE_ENV !== 'production' && emailResult.previewUrl) {
             responsePayload.devMagicLoginUrl = emailResult.previewUrl;
         }

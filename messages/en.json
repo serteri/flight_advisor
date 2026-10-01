@@ -107,13 +107,15 @@
     }
   },
   "Footer": {
-    "tagline": "Trip decision intelligence and transparent monitoring for booked flights.",
+    "tagline": "Delay and cancellation alerts with compensation guidance for booked flights.",
     "links": {
       "home": "Home",
       "guardian": "Guardian",
       "pricing": "Pricing",
       "blog": "Blog",
-      "about": "About"
+      "about": "About",
+      "terms": "Terms",
+      "privacy": "Privacy"
     },
     "copyright": "© {year} FlightAgent. All rights reserved."
   },
@@ -384,11 +386,11 @@
       }
     },
     "guardian": {
-      "badge": "Guardian mode is active",
+      "badge": "Flight disruption monitoring",
       "hero": {
         "title": "Monitor every booking,",
         "titleHighlight": "react before disruption hits",
-        "subtitle": "FlightAgent now focuses on Guardian workflows: continuous monitoring, disruption alerts, and EU261 compensation guidance."
+        "subtitle": "We watch your booked flights, email you when they are delayed or cancelled, and tell you whether you may be eligible for EU261 or UK261 compensation."
       },
       "cta": {
         "openGuardian": "Open Guardian",
@@ -430,7 +432,7 @@
         "emailPlaceholder": "Email for alerts",
         "consentText": "I agree to receive flight alerts for this trip by email.",
         "submit": "Track my flight",
-        "submitting": "Starting monitoring...",
+        "submitting": "Sending confirmation...",
         "genericError": "Something went wrong. Please try again.",
         "errors": {
           "invalidFlight": "Invalid flight number",
@@ -439,9 +441,9 @@
           "consentRequired": "Please agree to receive flight alerts to continue"
         },
         "confirmation": {
-          "title": "We're tracking your flight",
-          "subtitle": "You'll get an email alert if anything changes with this trip.",
-          "nextSteps": "Create a free account any time to see the full monitoring dashboard for this trip.",
+          "title": "Check your email",
+          "subtitle": "We sent you a confirmation link. Monitoring starts as soon as you open it.",
+          "nextSteps": "The link is valid for 24 hours. If you do not see the email, check your spam folder.",
           "backHome": "Back to home"
         }
       }
@@ -468,22 +470,20 @@
     "guardian": {
       "backToHome": "Back to home",
       "title": "Simple plans for flight protection",
-      "subtitle": "Monitor your trips and get compensated when things go wrong.",
+      "subtitle": "Monitor your flights and find out if you may be eligible for compensation.",
       "free": {
         "item1": "Monitor 1 flight",
         "item2": "Disruption alerts (email)",
-        "item3": "EU261 eligibility check",
+        "item3": "EU261 / UK261 eligibility check",
         "item4": "Basic claim letter",
         "cta": "Get started free"
       },
       "pro": {
         "item1": "Monitor unlimited flights",
-        "item2": "Priority disruption alerts",
-        "item3": "EU261 claim letter + PDF",
-        "item4": "Email to airline (automated)",
-        "item5": "Alert history",
+        "item2": "Alert history",
         "checkingOut": "Starting checkout...",
-        "cta": "Start Pro"
+        "cta": "Start Pro",
+        "comingSoon": "Pro is coming soon."
       }
     }
   },
@@ -499,14 +499,14 @@
   },
   "AboutPage": {
     "title": "About FlightAgent",
-    "subtitle": "Trip decision intelligence for long-haul travelers.",
+    "subtitle": "Flight disruption alerts and compensation guidance for travelers.",
     "mission": {
       "title": "Our Mission",
-      "content": "FlightAgent helps travelers understand itinerary quality before booking and monitor booked trips afterward with transparent, scheduled checks. We focus on risk, route structure, fare context, and advisor-style recommendations rather than acting as an OTA or promising real-time airline operations."
+      "content": "FlightAgent monitors the flights you have already booked. When a flight is significantly delayed or cancelled, we email you and estimate whether you may be eligible for compensation under EU261 or UK261, based on the flight data available to us."
     },
     "story": {
       "title": "Our Story",
-      "content": "FlightAgent was built for travelers who need more than a cheap-price sort. Long-haul itineraries can fail through tight connections, self-transfers, stale data, or poor rebooking options, so our product is designed around decision clarity and honest monitoring state."
+      "content": "Most passengers never find out that a disrupted flight could qualify for compensation, or give up because the rules are hard to follow. FlightAgent was built to spot these cases for you and explain the next steps in plain language. We are not a law firm and do not provide legal advice."
     }
   },
   "Auth": {
@@ -653,7 +653,7 @@
       "cancellationFound": "Cancellation indicators found",
       "cancellationNone": "No cancellation indicator yet",
       "guardianLoop": "Guardian loop",
-      "every6Hours": "Every 6 hours",
+      "every6Hours": "At key flight milestones",
       "currentDisruptionLevel": "Current disruption level:",
       "alerts": "Alerts",
       "active": "Active",
@@ -668,13 +668,17 @@
       "noSegments": "No segment data available."
     },
     "eu261": {
-      "title": "EU261 status",
-      "protectionLabel": "Protection",
-      "protected": "Protected",
-      "notProtected": "Not Protected Yet",
+      "title": "Compensation status",
+      "protectionLabel": "Regime",
       "compensation": "Compensation",
-      "eligibility": "Eligibility",
-      "dataQuality": "Data quality:"
+      "eligibility": "Status",
+      "dataQuality": "Data quality:",
+      "regimeNone": "Not covered",
+      "status": {
+        "LIKELY_ELIGIBLE": "May be eligible",
+        "NOT_ELIGIBLE": "Not eligible",
+        "NEEDS_INFO": "Needs more information"
+      }
     },
     "claim": {
       "title": "Submit your claim",
@@ -686,7 +690,8 @@
       "copyLetter": "Copy claim letter",
       "copied": "Claim letter copied.",
       "failed": "Could not generate letter.",
-      "pasteHint": "Paste your claim letter into the airline's form."
+      "pasteHint": "Paste your claim letter into the airline's form.",
+      "namePrompt": "Passenger name as it appears on the booking:"
     },
     "changes": {
       "title": "Recent changes",
@@ -748,16 +753,15 @@
       "onTime": "On Time"
     },
     "compensation": {
-      "eligibleHigh": "EUR 250 - 600 (estimate)",
-      "eligibleLow": "EUR 250 (possible minimum, estimate)",
-      "notEligible": "Protected — no disruption detected",
+      "notEligible": "Not eligible based on current flight data",
       "unknown": "Unknown (needs more disruption data)",
       "title": "You may be eligible for compensation",
-      "description": "Due to the disruption on your flight, you may be entitled to up to €600 in compensation under EU261.",
-      "buttonText": "Start my claim"
+      "description": "Based on the flight data, you may be eligible for about {amount} under {regime}. The airline may dispute this, for example by citing extraordinary circumstances.",
+      "buttonText": "Start my claim",
+      "estimate": "{amount} (estimate)"
     },
     "explanation": {
-      "eligible": "Guardian detected a disruption pattern that may satisfy EU261 criteria.",
+      "eligible": "Based on the flight data, this disruption may qualify for compensation. This is an estimate, not a legal assessment.",
       "notEligible": "No qualifying cancellation or long-delay pattern is currently confirmed.",
       "unknown": "Eligibility is unknown because Guardian has not gathered enough verified disruption evidence yet."
     },
@@ -789,7 +793,7 @@
       "actions": "Actions"
     },
     "unknown": "Unknown",
-    "eligible": "Eligible",
+    "eligible": "May be eligible",
     "view": "View",
     "disruptionTimeline": "Disruption Timeline",
     "noAlertEvents": "No alert events have been recorded yet."
@@ -1260,5 +1264,17 @@
     "send": "Send Claim",
     "sent": "Claim Sent!",
     "sentDesc": "We have sent a formal 'Goodwill Compensation' request to {airline} Customer Relations. You should hear back within 7 days."
+  },
+  "Legal": {
+    "disclaimer": "FlightAgent is not a law firm and does not provide legal advice. Compensation information is an estimate based on flight data; the airline may dispute eligibility, for example by citing extraordinary circumstances.",
+    "termsTitle": "Terms of Service",
+    "privacyTitle": "Privacy Policy",
+    "placeholder": "This page is being prepared and will be published before launch.",
+    "claimUnavailable": "Submitting claims with documents is temporarily unavailable. You can still copy a claim letter from your trip page and send it to the airline yourself."
+  },
+  "Waitlist": {
+    "confirmationTitle": "You're on the list",
+    "message": "Email alerts will be active very soon; we'll let you know as soon as they are.",
+    "loginNotice": "Sign-in by email link will be active very soon; we'll let you know as soon as it is."
   }
 }

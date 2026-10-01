@@ -1,0 +1,35 @@
+[
+  {
+    "greatCircleDistance": { "meter": 5837400.0, "km": 5837.4, "mile": 3627.23, "nm": 3151.94, "feet": 19151574.8 },
+    "departure": {
+      "airport": {
+        "icao": "LFPG", "iata": "CDG", "name": "Paris Charles de Gaulle", "shortName": "Charles de Gaulle",
+        "municipalityName": "Paris", "location": { "lat": 49.0128, "lon": 2.55 },
+        "countryCode": "FR", "timeZone": "Europe/Paris"
+      },
+      "scheduledTime": { "utc": "2026-01-15 09:00Z", "local": "2026-01-15 10:00+01:00" },
+      "revisedTime": { "utc": "2026-01-15 13:00Z", "local": "2026-01-15 14:00+01:00" },
+      "runwayTime": { "utc": "2026-01-15 13:14Z", "local": "2026-01-15 14:14+01:00" },
+      "terminal": "2E", "gate": "K41", "quality": ["Basic", "Live"]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "KJFK", "iata": "JFK", "name": "New York John F Kennedy", "shortName": "John F Kennedy",
+        "municipalityName": "New York", "location": { "lat": 40.6398, "lon": -73.7789 },
+        "countryCode": "US", "timeZone": "America/New_York"
+      },
+      "scheduledTime": { "utc": "2026-01-15 17:30Z", "local": "2026-01-15 12:30-05:00" },
+      "revisedTime": { "utc": "2026-01-15 21:35Z", "local": "2026-01-15 16:35-05:00" },
+      "runwayTime": { "utc": "2026-01-15 21:22Z", "local": "2026-01-15 16:22-05:00" },
+      "terminal": "1", "gate": "5", "quality": ["Basic", "Live"]
+    },
+    "lastUpdatedUtc": "2026-01-15 21:40Z",
+    "number": "XX 1240",
+    "callSign": "XXX1240",
+    "status": "Arrived",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": { "reg": "F-MOCK", "modeS": "390000", "model": "Boeing 777-300ER" },
+    "airline": { "name": "Mock Air", "iata": "XX", "icao": "XXX" }
+  }
+]

@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { isClaimDocumentUploadEnabled } from '@/lib/featureFlags';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { redirect } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/auth/currentUser';
@@ -13,6 +15,7 @@ export default async function ClaimProcessPage({
     const { locale, tripId } = await params;
     setRequestLocale(locale);
     const t = await getTranslations('ClaimProcess');
+    const tLegal = await getTranslations('Legal');
 
     const userId = await getCurrentUserId();
     if (!userId) {
@@ -40,6 +43,13 @@ export default async function ClaimProcessPage({
                     <p className="text-sm text-slate-600 mt-1">{t('subtitle')}</p>
                 </div>
 
+                <LegalDisclaimer className="rounded-xl border border-slate-200 bg-slate-50 p-3" />
+
+                {!isClaimDocumentUploadEnabled() ? (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        {tLegal('claimUnavailable')}
+                    </p>
+                ) : (
                 <ClaimProcessForm
                     tripId={trip.id}
                     flightSummary={{
@@ -51,6 +61,7 @@ export default async function ClaimProcessPage({
                     }}
                     defaultEmail={trip.subscriberEmail || ''}
                 />
+                )}
             </div>
         </div>
     );

@@ -3,8 +3,19 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generateClaimPDF } from '@/services/legal/pdfGenerator';
 import { sendEmail } from '@/services/notifications/sender';
+import { evaluateCompensation } from '@/lib/compensation/engine';
+import { isClaimDocumentUploadEnabled } from '@/lib/featureFlags';
+import { formatCompensationAmount, isRealPassengerName } from '@/lib/compensation/claimLetter';
 
 export async function POST(req: Request) {
+    // Collects an IBAN — gated with the other personal-document intake.
+    if (!isClaimDocumentUploadEnabled()) {
+        return NextResponse.json(
+            { success: false, error: 'Claim submission is temporarily unavailable.' },
+            { status: 503 },
+        );
+    }
+
     const session = await auth();
     if (!session?.user?.id && !session?.user?.email) {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -43,6 +54,7 @@ export async function POST(req: Request) {
             include: {
                 segments: { orderBy: { segmentOrder: 'asc' } },
                 snapshot: true,
+                passengers: true,
                 user: { select: { name: true, email: true } }
             }
         });
@@ -68,22 +80,44 @@ export async function POST(req: Request) {
             ? `${Math.floor(delayMinutes / 60)} hours ${delayMinutes % 60} minutes`
             : 'Unknown delay duration';
 
-        const amount = delayMinutes && delayMinutes >= 180
-            ? '600 EUR'
-            : delayMinutes && delayMinutes >= 120
-                ? '400 EUR'
-                : delayMinutes && delayMinutes >= 60
-                    ? '250 EUR'
-                    : 'Unknown amount';
+        // Amount comes only from the compensation engine (distance band + scope),
+        // never from the delay length.
+        const lastSegment = trip.segments[trip.segments.length - 1];
+        const compensation = evaluateCompensation({
+            disruption: trip.snapshot?.status === 'CANCELLED' ? 'CANCELLATION' : 'DELAY',
+            carrierIata: firstSegment.airlineCode,
+            originIata: firstSegment.origin,
+            finalDestinationIata: lastSegment.destination,
+            scheduledDepartureUtc: firstSegment.scheduledDepartureUtc?.toISOString() ?? null,
+            arrivalDelayMinutes: delayMinutes,
+        });
+        const amount = formatCompensationAmount(compensation);
+        if (!amount) {
+            return NextResponse.json(
+                { success: false, error: 'not_likely_eligible', status: compensation.status, reasons: compensation.reasons },
+                { status: 422 }
+            );
+        }
+
+        const passengerName = trip.passengers.find((p) => isRealPassengerName(p.name))?.name
+            ?? (isRealPassengerName(trip.user?.name) ? trip.user?.name : null)
+            ?? (isRealPassengerName(session.user.name) ? session.user.name : null);
+        if (!passengerName) {
+            return NextResponse.json(
+                { success: false, error: 'passenger_name_required' },
+                { status: 422 }
+            );
+        }
 
         const tripData = {
-            userName: trip.user?.name || session.user.name || 'Passenger',
+            userName: passengerName,
             pnr: trip.pnr || 'UNKNOWN',
             flightNumber: `${firstSegment.airlineCode}${firstSegment.flightNumber}`,
             date: firstSegment.departureDate.toLocaleDateString('en-GB'),
-            route: `${firstSegment.origin} -> ${firstSegment.destination}`,
+            route: `${firstSegment.origin} -> ${lastSegment.destination}`,
             delayDuration,
             amount,
+            regime: compensation.regime,
             iban,
         };
 

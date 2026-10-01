@@ -7,27 +7,12 @@ import SessionProvider from "@/components/SessionProvider";
 import BuyNowVariantBootstrap from '@/components/experiment/BuyNowVariantBootstrap';
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import Footer from "@/components/Footer";
+import { assertRequiredRuntimeEnv } from "@/lib/config/runtimeEnv";
 import "../globals.css";
 
 const GA_ID = "G-04HJXKRJFE";
 
-function assertRequiredRuntimeEnv() {
-    const missing: string[] = [];
-
-    if (!process.env.RESEND_API_KEY) {
-        missing.push('RESEND_API_KEY');
-    }
-
-    if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
-        missing.push('NEXTAUTH_SECRET (or AUTH_SECRET)');
-    }
-
-    if (missing.length > 0) {
-        throw new Error(`[Startup Fail-Fast] Missing required runtime env vars: ${missing.join(', ')}`);
-    }
-}
-
-assertRequiredRuntimeEnv();
+assertRequiredRuntimeEnv('layout');
 
 export const metadata: Metadata = {
     title: {

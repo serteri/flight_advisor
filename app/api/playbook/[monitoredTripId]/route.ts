@@ -4,6 +4,8 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/auth/currentUser';
+import { isOwnedBy } from '@/lib/auth/ownership';
 import { getAirlinePolicy } from '@/lib/playbook/airlinePolicies';
 import { PLAYBOOK_DISCLAIMER } from '@/lib/playbook/generator';
 import type {
@@ -21,6 +23,19 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
   if (!monitoredTripId) {
     return NextResponse.json({ error: 'Missing monitoredTripId' }, { status: 400 });
+  }
+
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const trip = await prisma.monitoredTrip.findUnique({
+    where: { id: monitoredTripId },
+    select: { userId: true },
+  });
+  if (!isOwnedBy(trip, userId)) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const record = await prisma.disruptionPlaybook.findUnique({

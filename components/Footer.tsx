@@ -1,6 +1,7 @@
 import { Plane } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 
 export default async function Footer() {
     const t = await getTranslations('Footer');
@@ -12,6 +13,8 @@ export default async function Footer() {
         { name: t('links.pricing'), href: '/pricing' },
         { name: t('links.blog'), href: '/blog' },
         { name: t('links.about'), href: '/about' },
+        { name: t('links.terms'), href: '/terms' },
+        { name: t('links.privacy'), href: '/privacy' },
     ];
 
     return (
@@ -43,8 +46,9 @@ export default async function Footer() {
             </div>
 
             <div className="border-t border-slate-100">
-                <div className="container mx-auto px-4 md:px-6 py-4 text-center text-xs text-slate-400">
-                    {t('copyright', { year })}
+                <div className="container mx-auto px-4 md:px-6 py-4 text-center text-xs text-slate-400 space-y-2">
+                    <LegalDisclaimer className="max-w-3xl mx-auto" />
+                    <div>{t('copyright', { year })}</div>
                 </div>
             </div>
         </footer>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { AUTH_SESSION_COOKIE, createSessionCookieValue } from '@/lib/auth/magicLinkSession';
+import { confirmPendingTrips } from '@/lib/guardian/tripConfirmation';
 
 const DEFAULT_REDIRECT_PATH = '/my-trips';
 
@@ -42,6 +43,9 @@ export async function GET(req: Request) {
     });
 
     await prisma.loginToken.delete({ where: { token } });
+
+    // Opening the link proves ownership of the address: this is the opt-in.
+    await confirmPendingTrips(user.id);
 
     const cookieStore = await cookies();
     cookieStore.set(AUTH_SESSION_COOKIE, createSessionCookieValue(user.id), {

@@ -4,7 +4,8 @@ export const FREE_TIER_LIMITS = {
   monitoredTrips: 1,
   advisorReports: 0,
   playbookAccess: false,
-  compensationLetters: false,
+  // Pricing promises a basic claim letter on Free.
+  compensationLetters: true,
 } as const;
 
 export const PRO_TIER = {

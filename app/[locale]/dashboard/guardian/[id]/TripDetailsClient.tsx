@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { useRouter } from '@/i18n/routing';
 import {
     AlertTriangle,
@@ -19,8 +20,17 @@ import { AIRLINE_CLAIM_PORTALS, getAirlineClaimUrl } from '@/lib/airlineClaimPor
 import { TripAuditLog } from '@/components/guardian/TripAuditLog';
 import { CompensationCard } from '@/components/guardian/CompensationCard';
 
+// Compensation engine result, computed on the server (same as the claim letter).
+export type TripCompensationView = {
+    regime: 'EU261' | 'UK261' | 'NONE';
+    status: 'LIKELY_ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_INFO';
+    amount: number | null;
+    currency: 'EUR' | 'GBP' | null;
+};
+
 type TripDetailsClientProps = {
     locale: string;
+    compensation: TripCompensationView;
     trip: {
         id: string;
         pnr: string | null;
@@ -156,7 +166,7 @@ const parseNotificationType = (eventId?: string | null): string => {
     return (parts[1] || 'UNKNOWN').toUpperCase();
 };
 
-export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
+export function TripDetailsClient({ trip, locale, compensation }: TripDetailsClientProps) {
     const t = useTranslations('GuardianTripDetails');
     const router = useRouter();
     const params = useParams<{ locale?: string | string[] }>();
@@ -209,33 +219,29 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
     const delayRisk = delayMinutes >= 120 ? 'HIGH' : delayMinutes >= 45 ? 'MEDIUM' : delayMinutes > 0 ? 'LOW' : 'LOW';
     const overallRisk = toRiskLevel(delayMinutes, cancellationRisk);
 
-    const eu261State = snapshot
-        ? snapshot.eu261Eligible
-            ? 'ELIGIBLE'
-            : 'NOT_ELIGIBLE'
-        : 'UNKNOWN';
+    // Display only: status and amount come from the compensation engine.
+    const eu261State = compensation.status;
+    const isLikelyEligible = eu261State === 'LIKELY_ELIGIBLE';
+    const compensationAmount = isLikelyEligible && compensation.amount !== null && compensation.currency
+        ? `${compensation.currency} ${compensation.amount}`
+        : null;
+    const regimeLabel = compensation.regime === 'NONE' ? t('eu261.regimeNone') : compensation.regime;
 
-    const compensationRange = eu261State === 'ELIGIBLE'
-        ? delayMinutes >= 180 || cancellationFlag
-            ? t('compensation.eligibleHigh')
-            : t('compensation.eligibleLow')
+    const compensationRange = compensationAmount
+        ? t('compensation.estimate', { amount: compensationAmount })
         : eu261State === 'NOT_ELIGIBLE'
             ? t('compensation.notEligible')
             : t('compensation.unknown');
 
-    const eu261Explanation = eu261State === 'ELIGIBLE'
+    const eu261Explanation = isLikelyEligible
         ? t('explanation.eligible')
         : eu261State === 'NOT_ELIGIBLE'
             ? t('explanation.notEligible')
             : t('explanation.unknown');
 
     const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
-    const hasSevereDisruption =
-        cancellationFlag ||
-        trip.status === 'CANCELLED' ||
-        trip.alertEvents.some((event) => event.severity === 'HIGH');
     const shouldShowClaimSection =
-        eu261State === 'ELIGIBLE' ||
+        isLikelyEligible ||
         hasDisruptionDetected ||
         (trip.lastCheckedAt !== null &&
             trip.lastCheckedAt !== undefined);
@@ -274,7 +280,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
         ? 'bg-red-50 border-red-200 text-red-700'
         : 'bg-emerald-50 border-emerald-200 text-emerald-700';
 
-    const eu261BadgeClasses = eu261State === 'ELIGIBLE'
+    const eu261BadgeClasses = isLikelyEligible
         ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
         : eu261State === 'NOT_ELIGIBLE'
             ? 'bg-slate-100 text-slate-700 border-slate-200'
@@ -419,22 +425,25 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
 
         setClaimCopyState('copying');
         try {
-            const delayHours = delayMinutes > 0 ? Math.round((delayMinutes / 60) * 10) / 10 : undefined;
-            const response = await fetch('/api/compensation/generate-letter', {
+            // The server derives flight, amount and passenger name from the trip.
+            const requestLetter = (passengerName?: string) => fetch('/api/compensation/generate-letter', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    passengerName: 'Passenger',
-                    flightDetails: {
-                        flightNumber: `${segmentForClaim.airlineCode}${segmentForClaim.flightNumber}`,
-                        origin: segmentForClaim.origin,
-                        destination: segmentForClaim.destination,
-                        scheduledDate: d(segmentForClaim.departureDate),
-                        delayHours,
-                        regulation: 'EU261',
-                    },
-                }),
+                body: JSON.stringify({ tripId: trip.id, passengerName }),
             });
+
+            let response = await requestLetter();
+            if (response.status === 422) {
+                const body = await response.clone().json().catch(() => null);
+                if (body?.error === 'passenger_name_required') {
+                    const name = window.prompt(t('claim.namePrompt'))?.trim();
+                    if (!name) {
+                        setClaimCopyState('idle');
+                        return;
+                    }
+                    response = await requestLetter(name);
+                }
+            }
 
             if (!response.ok) {
                 setClaimCopyState('failed');
@@ -461,7 +470,9 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                     <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
 
-                {hasSevereDisruption && <CompensationCard tripId={trip.id} />}
+                {isLikelyEligible && compensationAmount && (
+                    <CompensationCard tripId={trip.id} amount={compensationAmount} regime={compensation.regime} />
+                )}
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
@@ -603,18 +614,18 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                         <CheckCircle2 className="w-5 h-5" />
                                         <div className="text-xs uppercase tracking-wider font-bold">{t('eu261.protectionLabel')}</div>
                                     </div>
-                                    <div className="text-lg font-black text-slate-900 mt-2">{eu261State === 'ELIGIBLE' ? t('eu261.protected') : t('eu261.notProtected')}</div>
+                                    <div className="text-lg font-black text-slate-900 mt-2">{regimeLabel}</div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
                                     <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('eu261.compensation')}</div>
-                                    <div className={`font-black text-slate-900 ${eu261State === 'ELIGIBLE' ? 'text-3xl leading-tight' : 'text-lg'}`}>
+                                    <div className={`font-black text-slate-900 ${compensationAmount ? 'text-3xl leading-tight' : 'text-lg'}`}>
                                         {compensationRange}
                                     </div>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 p-4">
                                     <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">{t('eu261.eligibility')}</div>
                                     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${eu261BadgeClasses}`}>
-                                        {eu261State}
+                                        {t(`eu261.status.${eu261State}`)}
                                     </span>
                                     <div className="text-xs text-slate-500 mt-2">{t('eu261.dataQuality')} {snapshot?.dataQuality || 'UNKNOWN'}</div>
                                 </div>
@@ -629,7 +640,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                     <h2 className="text-lg font-bold text-slate-900">{t('claim.title')}</h2>
                                 </div>
                                 <p className="text-sm text-slate-700">
-                                    {hasDisruptionDetected || eu261State === 'ELIGIBLE'
+                                    {hasDisruptionDetected || isLikelyEligible
                                         ? t('claim.readyText')
                                         : t('claim.notReadyText')}
                                 </p>
@@ -666,6 +677,7 @@ export function TripDetailsClient({ trip, locale }: TripDetailsClientProps) {
                                 <p className="text-xs text-slate-500">
                                     {t('claim.pasteHint')}
                                 </p>
+                                <LegalDisclaimer />
                             </div>
                         )}
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { ShieldCheck, Bell, FileText, Mail, History } from 'lucide-react';
+import { ShieldCheck, Bell, FileText, History } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { isProCheckoutEnabled } from '@/lib/featureFlags';
 
 export default function PricingPage() {
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -81,12 +82,10 @@ export default function PricingPage() {
 
                         <ul className="mt-5 space-y-2.5 text-sm">
                             <li className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-emerald-600" /> {t('pro.item1')}</li>
-                            <li className="flex items-center gap-2 text-slate-700"><Bell className="w-4 h-4 text-emerald-600" /> {t('pro.item2')}</li>
-                            <li className="flex items-center gap-2 text-slate-700"><FileText className="w-4 h-4 text-emerald-600" /> {t('pro.item3')}</li>
-                            <li className="flex items-center gap-2 text-slate-700"><Mail className="w-4 h-4 text-emerald-600" /> {t('pro.item4')}</li>
-                            <li className="flex items-center gap-2 text-slate-700"><History className="w-4 h-4 text-emerald-600" /> {t('pro.item5')}</li>
+                            <li className="flex items-center gap-2 text-slate-700"><History className="w-4 h-4 text-emerald-600" /> {t('pro.item2')}</li>
                         </ul>
 
+                        {isProCheckoutEnabled() ? (
                         <button
                             type="button"
                             onClick={handleCheckout}
@@ -95,6 +94,11 @@ export default function PricingPage() {
                         >
                             {isCheckingOut ? t('pro.checkingOut') : t('pro.cta')}
                         </button>
+                        ) : (
+                            <p className="mt-6 rounded-xl border border-emerald-200 bg-white py-3 text-center text-sm font-semibold text-slate-600">
+                                {t('pro.comingSoon')}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -2,8 +2,20 @@ import NextAuth from "next-auth";
 import authConfig from "@/auth.config";
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicLinkSession';
+import { canEnterDashboard } from '@/lib/auth/dashboardAccess';
+import { getMissingRequiredEnv } from '@/lib/config/runtimeEnv';
 
 const { auth } = NextAuth(authConfig);
+
+// Signature-checked, not just present. A missing secret counts as no session.
+function hasValidMagicLinkSession(req: NextRequest): boolean {
+    try {
+        return verifySessionCookieValue(req.cookies.get(AUTH_SESSION_COOKIE)?.value) !== null;
+    } catch {
+        return false;
+    }
+}
 
 // Only these locales ever appear as a URL prefix. "en" (the default) never
 // does — it's the bare, unprefixed path.
@@ -14,30 +26,10 @@ function apiBypass(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
 
     if (pathname.startsWith('/api/')) {
-        console.log('[PROXY] API bypass - direct passthrough:', pathname);
         return NextResponse.next();
     }
 
     return null;
-}
-
-function notifyCompanyVisit(req: NextRequest, origin: string) {
-    const company = req.nextUrl.searchParams.get('c');
-    if (!company) {
-        return;
-    }
-
-    const notifyUrl = new URL('/api/notify-visit', origin);
-
-    void fetch(notifyUrl.toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            company,
-            path: req.nextUrl.pathname,
-            timestamp: Date.now(),
-        }),
-    }).catch(() => undefined);
 }
 
 // Detects an explicit /tr or /de prefix. Anything else (including "/" and
@@ -70,6 +62,15 @@ function getRequestOrigin(req: NextRequest) {
 
 // @ts-ignore
 export default auth((req) => {
+    // Runtime fail-fast for EVERY request, including prerendered static pages
+    // (the layout check never runs for those) and API routes. The proxy never
+    // runs during next build, so the build itself is unaffected.
+    const missingEnv = getMissingRequiredEnv();
+    if (missingEnv.length > 0) {
+        console.error(`[Startup Fail-Fast:proxy] Missing required runtime env vars: ${missingEnv.join(', ')} — ${req.method} ${req.nextUrl.pathname} → 500`);
+        return new NextResponse('Service unavailable: server configuration is incomplete.', { status: 500 });
+    }
+
     const apiBypassResult = apiBypass(req as NextRequest);
     if (apiBypassResult !== null) {
         return apiBypassResult;
@@ -77,8 +78,6 @@ export default auth((req) => {
 
     const pathname = req.nextUrl.pathname;
     const origin = getRequestOrigin(req as NextRequest);
-
-    notifyCompanyVisit(req as NextRequest, origin);
 
     // Loop guard: an explicit "/en" prefix is legacy/bookmarked. Strip it
     // with a single redirect and never re-add it — this path never reaches
@@ -96,7 +95,11 @@ export default auth((req) => {
     const isDashboard = pathname.includes('/dashboard');
     const isLogin = pathname === '/login' || pathname === '/tr/login' || pathname === '/de/login';
 
-    if (isDashboard && !isLoggedIn) {
+    if (isDashboard && !canEnterDashboard({
+        pathname,
+        hasNextAuthSession: isLoggedIn,
+        hasValidMagicLinkSession: hasValidMagicLinkSession(req as NextRequest),
+    })) {
         const loginUrl = new URL(`${localePrefix}/login`, origin);
         if (req.nextUrl.search) loginUrl.search = req.nextUrl.search;
         return NextResponse.redirect(loginUrl);
@@ -140,6 +143,8 @@ export default auth((req) => {
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|airlines|\.well-known).*)'
+        // /api is included so the env fail-fast above covers API routes too;
+        // apiBypass() passes them through untouched otherwise.
+        '/((?!_next/static|_next/image|favicon.ico|airlines|\.well-known).*)'
     ]
 };

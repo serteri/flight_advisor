@@ -1,0 +1,35 @@
+[
+  {
+    "greatCircleDistance": { "meter": 1420915.2, "km": 1420.92, "mile": 882.91, "nm": 767.23, "feet": 4661795.28 },
+    "departure": {
+      "airport": {
+        "icao": "EDDF", "iata": "FRA", "name": "Frankfurt-am-Main", "shortName": "Frankfurt-am-Main",
+        "municipalityName": "Frankfurt-am-Main", "location": { "lat": 50.0264, "lon": 8.543129 },
+        "countryCode": "DE", "timeZone": "Europe/Berlin"
+      },
+      "scheduledTime": { "utc": "2026-01-15 08:00Z", "local": "2026-01-15 09:00+01:00" },
+      "revisedTime": { "utc": "2026-01-15 08:04Z", "local": "2026-01-15 09:04+01:00" },
+      "runwayTime": { "utc": "2026-01-15 08:15Z", "local": "2026-01-15 09:15+01:00" },
+      "terminal": "1", "gate": "A26", "quality": ["Basic", "Live"]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "LEMD", "iata": "MAD", "name": "Madrid", "shortName": "Madrid",
+        "municipalityName": "Madrid", "location": { "lat": 40.4719, "lon": -3.56264 },
+        "countryCode": "ES", "timeZone": "Europe/Madrid"
+      },
+      "scheduledTime": { "utc": "2026-01-15 10:30Z", "local": "2026-01-15 11:30+01:00" },
+      "revisedTime": { "utc": "2026-01-15 10:25Z", "local": "2026-01-15 11:25+01:00" },
+      "runwayTime": { "utc": "2026-01-15 10:18Z", "local": "2026-01-15 11:18+01:00" },
+      "terminal": "2", "gate": "D8", "quality": ["Basic", "Live"]
+    },
+    "lastUpdatedUtc": "2026-01-15 10:30Z",
+    "number": "XX 1000",
+    "callSign": "XXX1000",
+    "status": "Arrived",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": { "reg": "D-MOCK", "modeS": "3C0000", "model": "Airbus A320" },
+    "airline": { "name": "Mock Air", "iata": "XX", "icao": "XXX" }
+  }
+]

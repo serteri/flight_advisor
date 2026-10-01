@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { AirlineClaimHistory } from './AirlineClaimHistory';
+import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { CompensationBadge, type CompensationBadgeStatus } from './CompensationBadge';
 
 export type CompensationTierView = {
@@ -31,7 +32,7 @@ export type CompensationDetailModalProps = {
   scheduledDate: string;
   carrier: string;
   status: CompensationBadgeStatus;
-  regulation: 'EU261' | 'UK261' | 'DGCA' | 'NONE';
+  regulation: 'EU261' | 'UK261' | 'AU_DOMESTIC' | 'NONE';
   distanceKm?: number | null;
   delayMinutes?: number | null;
   amount?: number | null;
@@ -42,15 +43,16 @@ export type CompensationDetailModalProps = {
 const regulationCopy: Record<CompensationDetailModalProps['regulation'], string> = {
   EU261: 'EU261/2004 may apply to flights departing the EU, or flights arriving in the EU on an EU carrier.',
   UK261: 'UK261 is the UK passenger-rights equivalent for eligible UK departures and some UK-carrier arrivals.',
-  DGCA: 'Australian rules focus on care obligations such as meals, hotel, and rebooking. Cash compensation is not mandatory.',
-  NONE: 'This route/carrier combination does not appear to fall under EU261, UK261, or Australian DGCA care rules.',
+  AU_DOMESTIC: 'Australian domestic flights have no statutory compensation scheme. Refunds and care depend on airline policy and Australian Consumer Law.',
+  NONE: 'This route/carrier combination does not appear to fall under EU261 or UK261.',
 };
 
 const learnMoreHref: Record<CompensationDetailModalProps['regulation'], string> = {
   EU261: 'https://transport.ec.europa.eu/transport-themes/passenger-rights/air_en',
   UK261: 'https://www.caa.co.uk/passengers/resolving-travel-problems/delays-and-cancellations/',
-  DGCA: 'https://www.infrastructure.gov.au/infrastructure-transport-vehicles/aviation/aviation-consumer-protection',
-  NONE: 'https://www.flightagent.io',
+  AU_DOMESTIC: 'https://www.infrastructure.gov.au/infrastructure-transport-vehicles/aviation/aviation-consumer-protection',
+  // Same-origin link: client components cannot read APP_BASE_URL.
+  NONE: '/',
 };
 
 export function CompensationDetailModal(props: CompensationDetailModalProps) {
@@ -65,16 +67,14 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         claimId: props.claimId,
-        passengerName: props.passengerName || 'Passenger',
+        passengerName: props.passengerName || undefined,
+        // Amount is computed server-side by the compensation engine.
         flightDetails: {
           flightNumber: props.flightNumber,
           origin: props.origin,
           destination: props.destination,
           scheduledDate: props.scheduledDate,
           delayHours,
-          compensationAmount: props.amount ?? undefined,
-          currency: props.currency ?? undefined,
-          regulation: props.regulation,
         },
       }),
     });
@@ -123,7 +123,7 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
           <section className="space-y-3">
             <div>
               <p className="text-sm font-semibold text-slate-900">Amount breakdown</p>
-              <p className="text-xs text-slate-500">Potential values are estimates, not guaranteed airline payment outcomes.</p>
+              <LegalDisclaimer />
             </div>
             <div className="divide-y rounded-md border border-slate-200">
               {props.tiers.map((tier) => (
@@ -155,7 +155,7 @@ export function CompensationDetailModal(props: CompensationDetailModalProps) {
               <span className="text-xs text-slate-500">
                 {copyState === 'copied' ? 'Claim letter copied.' : copyState === 'failed' ? 'Could not generate letter.' : ''}
               </span>
-              <Button type="button" onClick={generateLetter} disabled={props.regulation === 'DGCA' || props.regulation === 'NONE'}>
+              <Button type="button" onClick={generateLetter} disabled={props.regulation === 'AU_DOMESTIC' || props.regulation === 'NONE'}>
                 Generate Claim Letter
               </Button>
             </div>

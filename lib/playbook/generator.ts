@@ -2,8 +2,8 @@
 // Pure, server-side playbook generation logic.
 // No DB access here — keeps the generator testable in isolation.
 
-import { determineRegulationZone } from '@/lib/compensation/regulations';
-import type { RegulationZone } from '@/lib/compensation/regulations';
+import { determineRegulationZone } from '@/lib/compensation/engine';
+import type { RegulationZone } from '@/lib/compensation/engine';
 import { getAirlinePolicy } from './airlinePolicies';
 import type {
   AirlinePolicy,
@@ -21,8 +21,8 @@ function regulationNote(zone: RegulationZone): string | null {
       return 'EU Regulation 261/2004 applies to this itinerary. You may be entitled to cash compensation, care, and rebooking rights.';
     case 'UK261':
       return 'UK261 (retained EU law) applies to this itinerary. Rights mirror EU261 with GBP compensation amounts.';
-    case 'DGCA':
-      return 'Australian Consumer Law / DGCA guidelines apply. Cash compensation is not mandated, but airlines must provide care (meals, hotel, rebooking).';
+    case 'AU_DOMESTIC':
+      return 'Australian domestic flights have no statutory compensation scheme. Refunds and care depend on airline policy and Australian Consumer Law.';
     case 'NONE':
       return null;
   }
@@ -116,7 +116,7 @@ function buildSignificantDelayScenario(
   zone: RegulationZone,
 ): ScenarioCard {
   const isRegulated = zone === 'EU261' || zone === 'UK261';
-  const isDGCA = zone === 'DGCA';
+  const isAuDomestic = zone === 'AU_DOMESTIC';
   const currency = zone === 'UK261' ? 'GBP' : 'EUR';
 
   const steps: PlaybookStep[] = [
@@ -132,7 +132,7 @@ function buildSignificantDelayScenario(
       action: 'At 2-hour delay: request meals and refreshments',
       detail: isRegulated
         ? `The airline is legally required to provide meals/refreshments under ${zone}.`
-        : isDGCA
+        : isAuDomestic
           ? 'Airlines are expected to provide care under Australian Consumer Law — ask the gate agent.'
           : 'Ask the gate agent for a meal voucher; most airlines provide this as standard.',
       doThis: true,
@@ -161,7 +161,7 @@ function buildSignificantDelayScenario(
         ? `At 3h+ arrival delay: compensation of up to ${currency} 600 may be owed`
         : 'Check if compensation is owed',
       detail: isRegulated
-        ? `Under ${zone}, a 3h+ arrival delay may trigger cash compensation. Extraordinary circumstances (weather, ATC strike) exempt the airline.`
+        ? `Under ${zone}, a 3h+ arrival delay may trigger cash compensation. The airline may cite extraordinary circumstances (weather, ATC strike) to refuse it.`
         : 'Check your travel insurance and the airline\'s own delay compensation policy.',
       doThis: true,
       timeContext: 'After travel — via claim process',
@@ -219,7 +219,7 @@ function buildCancellationScenario(
         ? `If notified less than 14 days before departure: compensation up to ${currency} 600 may be owed`
         : 'Check if compensation applies',
       detail: isRegulated
-        ? `Under ${zone}, cancellations notified < 14 days before departure entitle you to cash compensation (subject to route distance and extraordinary circumstances).`
+        ? `Under ${zone}, cancellations notified < 14 days before departure may entitle you to cash compensation (subject to route distance and extraordinary circumstances).`
         : 'Check your travel insurance policy and the airline\'s own cancellation terms.',
       doThis: true,
       timeContext: 'Via claim process after travel',

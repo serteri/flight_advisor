@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { withFreemiumGate } from '@/lib/freemium/gate';
+import { initializeTripMonitoring } from '@/lib/guardian/tripLifecycle';
 
 // TODO: Keep this endpoint as the Guardian manual-monitoring entry point until
 // all remaining legacy callers are either migrated or deleted.
@@ -78,7 +79,6 @@ export async function POST(req: Request) {
                                 toDateTime(manualPayload.date, manualPayload.departureTime, safeReceivedDate || undefined)
                             ).toISOString(),
                         },
-                        aircraft: { code: '738' },
                     },
                 ],
             }
@@ -108,8 +108,7 @@ export async function POST(req: Request) {
                     originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
                     currency: normalizedFlightData.price?.currency || "AUD",
                     ticketClass: normalizedFlightData.travelClass || "ECONOMY",
-                    checkFrequency: 360,
-                    nextCheckAt: new Date(Date.now() + 6 * 60 * 60 * 1000), // Check in 6 hours
+                    nextCheckAt: new Date(),
                     snapshot: {
                         create: {
                             delayMinutes: 0,
@@ -129,11 +128,14 @@ export async function POST(req: Request) {
                             destination: seg.arrival?.iataCode || normalizedFlightData.destination,
                             departureDate: seg.departure?.at ? new Date(seg.departure.at) : fallbackDepartureDate,
                             arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : fallbackArrivalDate,
-                            aircraftType: seg.aircraft?.code || '738' // Default
+                            // Filled from the provider on the first check; never guessed.
+                            aircraftType: seg.aircraft?.code || null
                         }))
                     }
                 }
             });
+
+            await initializeTripMonitoring(trip.id);
 
             console.info('[TRIPS_MONITOR] Monitored trip created', {
                 tripId: trip.id,

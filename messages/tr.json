@@ -107,13 +107,15 @@
     }
   },
   "Footer": {
-    "tagline": "Rezervasyon edilen uçuşlar için yolculuk karar zekası ve şeffaf izleme.",
+    "tagline": "Rezervasyonlu uçuşlar için rötar ve iptal uyarıları, tazminat rehberliği.",
     "links": {
       "home": "Ana Sayfa",
       "guardian": "Guardian",
       "pricing": "Fiyatlandırma",
       "blog": "Blog",
-      "about": "Hakkımızda"
+      "about": "Hakkımızda",
+      "terms": "Koşullar",
+      "privacy": "Gizlilik"
     },
     "copyright": "© {year} FlightAgent. Tüm hakları saklıdır."
   },
@@ -138,22 +140,20 @@
     "guardian": {
       "backToHome": "Anasayfaya dön",
       "title": "Uçuş koruması için basit planlar",
-      "subtitle": "Seyahatlerini izle, bir şeyler ters giderse tazminat al.",
+      "subtitle": "Uçuşlarınızı izleyin ve tazminat hakkınız olup olmayabileceğini öğrenin.",
       "free": {
         "item1": "1 uçuşu izle",
         "item2": "Aksaklık uyarıları (e-posta)",
-        "item3": "AB261 uygunluk kontrolü",
+        "item3": "EU261 / UK261 uygunluk kontrolü",
         "item4": "Temel talep mektubu",
         "cta": "Ücretsiz başla"
       },
       "pro": {
-        "item1": "Sınırsız uçuş izle",
-        "item2": "Öncelikli aksaklık uyarıları",
-        "item3": "AB261 talep mektubu + PDF",
-        "item4": "Havayoluna e-posta (otomatik)",
-        "item5": "Uyarı geçmişi",
+        "item1": "Sınırsız uçuş takibi",
+        "item2": "Uyarı geçmişi",
         "checkingOut": "Ödeme başlatılıyor...",
-        "cta": "Pro'yu Başlat"
+        "cta": "Pro'yu Başlat",
+        "comingSoon": "Pro yakında geliyor."
       }
     }
   },
@@ -434,11 +434,11 @@
       }
     },
     "guardian": {
-      "badge": "Guardian modu aktif",
+      "badge": "Uçuş aksaklığı takibi",
       "hero": {
         "title": "Her rezervasyonu izle,",
         "titleHighlight": "aksaklık gelmeden önce harekete geç",
-        "subtitle": "FlightAgent artık Guardian iş akışlarına odaklanıyor: sürekli izleme, uçuş aksaklık uyarıları ve AB261 tazminat rehberliği."
+        "subtitle": "Rezervasyonu yapılmış uçuşlarınızı izliyor, rötar veya iptal olduğunda size e-posta gönderiyor ve EU261 ya da UK261 kapsamında tazminat hakkınız olabileceğini bildiriyoruz."
       },
       "cta": {
         "openGuardian": "Guardian'ı Aç",
@@ -480,7 +480,7 @@
         "emailPlaceholder": "Uyarılar için e-posta",
         "consentText": "Bu yolculukla ilgili uçuş uyarılarını e-posta ile almayı kabul ediyorum.",
         "submit": "Uçuşumu takip et",
-        "submitting": "İzleme başlatılıyor...",
+        "submitting": "Onay gönderiliyor...",
         "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
         "errors": {
           "invalidFlight": "Geçersiz uçuş numarası",
@@ -489,9 +489,9 @@
           "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz"
         },
         "confirmation": {
-          "title": "Uçuşunuzu takip ediyoruz",
-          "subtitle": "Bu yolculukla ilgili bir değişiklik olursa e-posta ile uyarı alacaksınız.",
-          "nextSteps": "Bu yolculuğun tam izleme panelini görmek için istediğiniz zaman ücretsiz bir hesap oluşturabilirsiniz.",
+          "title": "E-postanızı kontrol edin",
+          "subtitle": "Size bir onay bağlantısı gönderdik. Bağlantıyı açtığınız anda izleme başlar.",
+          "nextSteps": "Bağlantı 24 saat geçerlidir. E-postayı göremiyorsanız spam klasörünü kontrol edin.",
           "backHome": "Ana sayfaya dön"
         }
       }
@@ -499,14 +499,14 @@
   },
   "AboutPage": {
     "title": "FlightAgent Hakkinda",
-    "subtitle": "Trip decision intelligence for long-haul travelers.",
+    "subtitle": "Yolcular için uçuş aksaklığı uyarıları ve tazminat rehberliği.",
     "mission": {
       "title": "Misyonumuz",
-      "content": "FlightAgent, yolcularin rezervasyon oncesi itinerary kalitesini anlamasina ve booked tripleri seffaf scheduled checks ile izlemesine yardim eder. OTA degiliz; real-time airline operations vaadi vermeyiz."
+      "content": "FlightAgent, rezervasyonunu yaptığınız uçuşları izler. Uçuşunuz ciddi şekilde rötar yaparsa veya iptal edilirse size e-posta gönderir ve elimizdeki uçuş verilerine göre EU261 ya da UK261 kapsamında tazminat hakkınız olup olamayacağını tahmin ederiz."
     },
     "story": {
       "title": "Hikayemiz",
-      "content": "FlightAgent, cheap-price sorttan fazlasina ihtiyac duyan yolcular icin kuruldu. Long-haul itineraryler tight connection, self-transfer, stale data veya kotu rebooking opsiyonlariyla risk tasir; urun karar netligi ve honest monitoring state etrafinda tasarlandi."
+      "content": "Çoğu yolcu, aksayan bir uçuşun tazminata konu olabileceğini hiç öğrenmez ya da kurallar karmaşık olduğu için vazgeçer. FlightAgent bu durumları sizin için yakalamak ve sonraki adımları sade bir dille anlatmak için kuruldu. Bir hukuk bürosu değiliz ve hukuki tavsiye vermiyoruz."
     }
   },
   "Auth": {
@@ -653,7 +653,7 @@
       "cancellationFound": "İptal göstergeleri bulundu",
       "cancellationNone": "Henüz iptal göstergesi yok",
       "guardianLoop": "Guardian döngüsü",
-      "every6Hours": "Her 6 saatte bir",
+      "every6Hours": "Uçuşun önemli anlarında",
       "currentDisruptionLevel": "Mevcut aksaklık seviyesi:",
       "alerts": "Uyarılar",
       "active": "Aktif",
@@ -668,13 +668,17 @@
       "noSegments": "Segment verisi mevcut değil."
     },
     "eu261": {
-      "title": "AB261 durumu",
-      "protectionLabel": "Koruma",
-      "protected": "Korunuyor",
-      "notProtected": "Henüz Korunmuyor",
+      "title": "Tazminat durumu",
+      "protectionLabel": "Kapsam",
       "compensation": "Tazminat",
-      "eligibility": "Uygunluk",
-      "dataQuality": "Veri kalitesi:"
+      "eligibility": "Durum",
+      "dataQuality": "Veri kalitesi:",
+      "regimeNone": "Kapsam dışı",
+      "status": {
+        "LIKELY_ELIGIBLE": "Hak olabilir",
+        "NOT_ELIGIBLE": "Uygun değil",
+        "NEEDS_INFO": "Daha fazla bilgi gerekli"
+      }
     },
     "claim": {
       "title": "Talebini gönder",
@@ -686,7 +690,8 @@
       "copyLetter": "Talep mektubunu kopyala",
       "copied": "Talep mektubu kopyalandı.",
       "failed": "Mektup oluşturulamadı.",
-      "pasteHint": "Talep mektubunu havayolunun formuna yapıştır."
+      "pasteHint": "Talep mektubunu havayolunun formuna yapıştır.",
+      "namePrompt": "Rezervasyondaki yolcu adı:"
     },
     "changes": {
       "title": "Son değişiklikler",
@@ -748,16 +753,15 @@
       "onTime": "Zamanında"
     },
     "compensation": {
-      "eligibleHigh": "250 - 600 EUR (tahmini)",
-      "eligibleLow": "250 EUR (olası minimum, tahmini)",
-      "notEligible": "Korunuyor — aksaklık tespit edilmedi",
+      "notEligible": "Mevcut uçuş verilerine göre uygun değil",
       "unknown": "Bilinmiyor (daha fazla aksaklık verisi gerekli)",
       "title": "Tazminat hakkınız olabilir",
-      "description": "Uçuşunuzdaki aksaklık nedeniyle AB261 kapsamında 600€'ya kadar tazminat hakkınız olabilir.",
-      "buttonText": "Tazminat talebi başlat"
+      "description": "Uçuş verilerine göre {regime} kapsamında yaklaşık {amount} tazminata hakkınız olabilir. Havayolu, örneğin olağanüstü koşulları gerekçe göstererek itiraz edebilir.",
+      "buttonText": "Tazminat talebi başlat",
+      "estimate": "{amount} (tahmini)"
     },
     "explanation": {
-      "eligible": "Guardian, AB261 kriterlerini karşılayabilecek bir aksaklık örüntüsü tespit etti.",
+      "eligible": "Uçuş verilerine göre bu aksaklık tazminata konu olabilir. Bu bir tahmindir, hukuki değerlendirme değildir.",
       "notEligible": "Şu anda nitelikli bir iptal veya uzun rötar örüntüsü doğrulanmadı.",
       "unknown": "Guardian henüz yeterli doğrulanmış aksaklık verisi toplamadığı için uygunluk bilinmiyor."
     },
@@ -789,7 +793,7 @@
       "actions": "İşlemler"
     },
     "unknown": "Bilinmiyor",
-    "eligible": "Uygun",
+    "eligible": "Hak kazanmış olabilirsiniz",
     "view": "Görüntüle",
     "disruptionTimeline": "Aksaklık Zaman Çizelgesi",
     "noAlertEvents": "Henüz uyarı olayı kaydedilmedi."
@@ -1260,5 +1264,17 @@
   "social_proof_long_layover": "76% of users preferred a shorter flight over this saving.",
   "social_proof_lcc_longhaul": "65% recommend full-service airlines for flights over 6 hours.",
   "social_proof_meal_gap": "Traveler Tip: 90% recommend bringing extra food for this leg.",
-  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route."
+  "social_proof_red_eye": "Only 15% of business travelers choose red-eye flights on this route.",
+  "Legal": {
+    "disclaimer": "FlightAgent bir hukuk bürosu değildir ve hukuki tavsiye vermez. Tazminat bilgileri uçuş verilerine dayalı bir tahmindir; havayolu, örneğin olağanüstü koşulları gerekçe göstererek hakkınıza itiraz edebilir.",
+    "termsTitle": "Kullanım Koşulları",
+    "privacyTitle": "Gizlilik Politikası",
+    "placeholder": "Bu sayfa hazırlanıyor ve lansmandan önce yayımlanacak.",
+    "claimUnavailable": "Belgeyle talep gönderimi geçici olarak kullanılamıyor. Yolculuk sayfanızdan talep mektubunu kopyalayıp havayoluna kendiniz gönderebilirsiniz."
+  },
+  "Waitlist": {
+    "confirmationTitle": "Listeye eklendin",
+    "message": "E-posta uyarıları çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz.",
+    "loginNotice": "E-posta linkiyle giriş çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz."
+  }
 }

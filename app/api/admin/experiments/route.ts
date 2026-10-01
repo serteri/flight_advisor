@@ -7,12 +7,12 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { isListedAdminEmail } from '@/lib/auth/adminEmails';
 import ExperimentManager from '@/lib/experiment/experimentManager';
 
 const isAdmin = async (): Promise<boolean> => {
     const session = await auth();
-    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim());
-    return adminEmails.length > 0 && adminEmails.includes(session?.user?.email || '');
+    return isListedAdminEmail(session?.user?.email);
 };
 
 export async function GET(request: Request) {

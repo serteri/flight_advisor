@@ -1,0 +1,19 @@
+[
+  {
+    "departure": {
+      "airport": { "name": "Unknown" },
+      "scheduledTime": { "utc": "2026-01-15 14:00Z", "local": "2026-01-15 14:00+00:00" },
+      "quality": []
+    },
+    "arrival": {
+      "airport": { "name": "Unknown" },
+      "quality": []
+    },
+    "lastUpdatedUtc": "2026-01-15 06:00Z",
+    "number": "XX 1999",
+    "status": "Unknown",
+    "codeshareStatus": "Unknown",
+    "isCargo": false,
+    "airline": { "name": "Mock Air", "iata": "XX", "icao": "XXX" }
+  }
+]

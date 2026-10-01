@@ -1,0 +1,31 @@
+[
+  {
+    "greatCircleDistance": { "meter": 698300.0, "km": 698.3, "mile": 433.9, "nm": 377.05, "feet": 2291010.5 },
+    "departure": {
+      "airport": {
+        "icao": "EDDM", "iata": "MUC", "name": "Munich", "shortName": "Munich",
+        "municipalityName": "Munich", "location": { "lat": 48.3538, "lon": 11.7861 },
+        "countryCode": "DE", "timeZone": "Europe/Berlin"
+      },
+      "scheduledTime": { "utc": "2026-01-15 11:00Z", "local": "2026-01-15 12:00+01:00" },
+      "terminal": "2", "quality": ["Basic"]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "LIRF", "iata": "FCO", "name": "Rome Fiumicino", "shortName": "Fiumicino",
+        "municipalityName": "Rome", "location": { "lat": 41.8003, "lon": 12.2389 },
+        "countryCode": "IT", "timeZone": "Europe/Rome"
+      },
+      "scheduledTime": { "utc": "2026-01-15 12:30Z", "local": "2026-01-15 13:30+01:00" },
+      "terminal": "1", "quality": ["Basic"]
+    },
+    "lastUpdatedUtc": "2026-01-15 07:10Z",
+    "number": "XX 1300",
+    "callSign": "XXX1300",
+    "status": "Canceled",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": { "model": "Airbus A321" },
+    "airline": { "name": "Mock Air", "iata": "XX", "icao": "XXX" }
+  }
+]
