@@ -353,7 +353,29 @@ next build         → exit 0, 0 hata, 0 uyarı, 92 sayfa üretildi
 - Aynı olay için iki `DELAY_DETECTED` kaydı görünüyor. Biri "State: FAILED"; bu, dev'de e-posta düzeltmesinden önceki gönderim hatası.
 - `/api/auth/request-link` için rate limit yok. Herhangi bir adrese sınırsız giriş e-postası gönderilebilir.
 
-## 4. Şema adımı — branch'te uygulandı, prod bekliyor
+## 4. Şema adımı — prod'a uygulandı (2026-10-01)
+
+**Prod (`ep-gentle-math-a7ajyh5a`), 2026-10-01 UTC:**
+
+| Zaman (UTC) | Adım | Sonuç |
+|---|---|---|
+| 12:20:07 | Salt okunur diff | 11 ifade. İçerik `docs/phase1_schema.sql` ile birebir aynı (sadece 2. ve 4. ifadenin sırası farklı, branch'teki gibi). DROP, ALTER COLUMN ya da RENAME yok |
+| 12:22:25 | `phase1_schema_1_enum.sql`, tek başına, transaction dışında | OK: `TripStatus` + `PENDING_CONFIRMATION` |
+| 12:22:25 | `phase1_schema_2_rest.sql`, tek transaction | OK: 10 ifade commit edildi (hata olsaydı geri alınacaktı) |
+| 12:22:52 | Sorguyla doğrulama | 10 kolon (tip, null ve default değerleriyle), 2 tablo, enum değeri, 4 index (biri UNIQUE), FK (ON DELETE CASCADE) mevcut. Prisma client yeni alanları okuyor. Mevcut veriye dokunulmadı: 7 ACTIVE, 1 CANCELLED |
+| sonrası | Diff tekrar alındı | **Boş** ("empty migration") |
+
+- URL `.env`'den okundu ve `--database-url` ile `--i-understand-this-is-prod` birlikte verildi; host yazdırılıp 5 saniye beklendi. URL hiçbir çıktıda yer almadı.
+- İki dosya, uygulamadan önce `docs/phase1_schema.sql` ile karşılaştırıldı; uyuşmasaydı hiçbir şey çalıştırılmayacaktı.
+- Uygulama için kullanılan geçici script'ler silindi.
+
+**Merge için durum:**
+- Şema prod'da.
+- `phase-1` → `main` merge'ünü Kaptan yapacak. Merge sonrası deploy'u bekle, ardından §2 Adım 4: backfill `--complete-past`, önce dry-run.
+- Merge'den önce Vercel'de öneriler (§1. adım env kontrolü): elle tanımlanmış `NODE_ENV`'i sil. `AERODATABOX_MONTHLY_QUOTA`, `AERODATABOX_UNITS_PER_CALL` ve `ADMIN_EMAIL`'i ekle.
+
+### (Eski kayıt) Branch aşaması
+
 
 - Faz 1'deki tüm şema değişikliklerini (1.2, 1.3 ve 1.6) içeren tek diff: **`docs/phase1_schema.sql`**. Faz öncesi şemadan (`8350218:prisma/schema.prisma`) üretildi: `prisma migrate diff --from-schema-datamodel <eski> --to-schema-datamodel prisma/schema.prisma --script`. Veritabanına bağlanılmadı.
 - İçerik:
