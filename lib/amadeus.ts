@@ -289,12 +289,24 @@ export function getAmadeusClient(): AmadeusClientWrapper {
     return clientInstance;
 }
 
-// Create Amadeus SDK instance for direct SDK usage
-const amadeus = new Amadeus({
-    clientId: process.env.AMADEUS_API_KEY,
-    clientSecret: process.env.AMADEUS_API_SECRET,
-    hostname: process.env.AMADEUS_HOST === "production" ? "production" : "test",
-});
+// Amadeus SDK instance for direct SDK usage — created on first use, not at
+// module load: the SDK throws without credentials, which used to break
+// `next build` (page-data collection imports the routes) whenever the
+// AMADEUS_* env vars were absent. Dead pivot code (Faz 2 list); kept lazy.
+let sdkInstance: any = null;
+const getSdk = (): any => {
+    if (!sdkInstance) {
+        sdkInstance = new Amadeus({
+            clientId: process.env.AMADEUS_API_KEY,
+            clientSecret: process.env.AMADEUS_API_SECRET,
+            hostname: process.env.AMADEUS_HOST === "production" ? "production" : "test",
+        });
+    }
+    return sdkInstance;
+};
 
-// Default export for routes that use amadeus SDK directly
+// Default export for routes that use amadeus SDK directly (same API as before).
+const amadeus: any = new Proxy({}, {
+    get: (_target, prop) => Reflect.get(getSdk(), prop),
+});
 export default amadeus;
