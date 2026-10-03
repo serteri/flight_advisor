@@ -1,8 +1,7 @@
 // lib/email/legalFooter.ts
 //
 // Every outgoing email carries the "not legal advice" notice. It is appended
-// at the Resend send points (lib/email/sender.ts, services/notifications/
-// providers/resend.ts, services/notifications/sender.ts) so no template can
+// at the single send point (lib/email/deliver.ts) so no template can
 // forget it.
 
 export const LEGAL_DISCLAIMER_TEXT =

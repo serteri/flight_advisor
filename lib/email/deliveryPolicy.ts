@@ -8,9 +8,9 @@
 // Neon branches that are copies of production with real subscribers' addresses,
 // and RESEND_API_KEY is the real key.
 //
-// Every Resend send point asks this first: deliverViaResend (magic-link,
-// opt-in, disruption alert, quota alert), ResendProvider and the claim
-// attachment sender. EMAIL_FORCE_LIVE=true overrides it for a deliberate
+// Every send point asks this first: deliverEmail (magic-link,
+// opt-in, disruption alert, quota alert, notifications, claim attachment).
+// EMAIL_FORCE_LIVE=true overrides it for a deliberate
 // end-to-end test. scripts/send-test-alert.ts bypasses it explicitly.
 
 export function isRealEmailDeliveryAllowed(env: NodeJS.ProcessEnv = process.env): boolean {

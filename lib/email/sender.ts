@@ -1,27 +1,18 @@
 // lib/email/sender.ts
 //
-// Transactional email via Resend. Outside production nothing is sent: the
-// magic/claim link is logged and a mocked success is returned, so local and
-// preview environments never spend quota or email real users.
-//
-// In production every failure (missing config, Resend error, exception) is
-// logged with console.error and returned as { success: false, error } so the
-// caller can persist it — nothing is swallowed here.
+// Transactional email templates. Actual delivery (provider selection, delivery
+// policy, failure handling) lives in lib/email/deliver.ts. Outside production
+// nothing is sent: the magic/claim link is logged and a mocked success is
+// returned, so local and preview environments never email real users.
 
-import { Resend } from 'resend';
 import { render } from '@react-email/components';
 import { WelcomeTripEmail } from '@/components/emails/WelcomeTripEmail';
 import { DisruptionAlertEmail } from '@/components/emails/DisruptionAlertEmail';
-import { appUrl, getNotificationFromEmail } from '@/lib/config/runtimeEnv';
-import { withLegalFooter } from '@/lib/email/legalFooter';
+import { appUrl } from '@/lib/config/runtimeEnv';
+import { deliverEmail, type SendEmailResult } from '@/lib/email/deliver';
 
-export interface SendEmailResult {
-    success: boolean;
-    mocked: boolean;
-    messageId?: string;
-    error?: string;
-    previewUrl?: string;
-}
+export { deliverEmail };
+export type { SendEmailResult };
 
 type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
 
@@ -44,50 +35,6 @@ const buildLoginLink = (token: string, redirectTo?: string): string => {
 
 const buildClaimLink = (tripId: string): string => appUrl(`/claim-process/${tripId}`);
 
-// Sends through Resend and normalises every failure mode into a result.
-// `label` only identifies the email kind in logs.
-export async function deliverViaResend(
-    label: string,
-    message: { to: string; subject: string; html: string; text?: string },
-    // Only scripts/send-test-alert.ts sets this: an explicit, manual real send.
-    options: { bypassDeliveryPolicy?: boolean } = {},
-): Promise<SendEmailResult> {
-    if (!options.bypassDeliveryPolicy && !isRealEmailDeliveryAllowed()) {
-        console.log(`[Email:${label}] MOCK (not Vercel production): "${message.subject}" to ${message.to} not sent`);
-        return { success: true, mocked: true };
-    }
-
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-        const error = 'RESEND_API_KEY is not set';
-        console.error(`[Email:${label}] ${error} — recipient ${message.to}`);
-        return { success: false, mocked: false, error };
-    }
-
-    try {
-        const resend = new Resend(apiKey);
-        const { html, text } = withLegalFooter({ html: message.html, text: message.text });
-        const response = await resend.emails.send({
-            from: getNotificationFromEmail(),
-            to: message.to,
-            subject: message.subject,
-            html,
-            text,
-        });
-
-        if (response.error) {
-            console.error(`[Email:${label}] Resend rejected message to ${message.to}: ${response.error.message}`);
-            return { success: false, mocked: false, error: response.error.message };
-        }
-
-        return { success: true, mocked: false, messageId: response.data?.id };
-    } catch (err: any) {
-        const error = err?.message || 'Unknown email send error';
-        console.error(`[Email:${label}] Exception sending to ${message.to}: ${error}`);
-        return { success: false, mocked: false, error };
-    }
-}
-
 export async function sendWelcomeEmail(
     email: string,
     token: string,
@@ -104,7 +51,7 @@ export async function sendWelcomeEmail(
     }
 
     const html = await render(WelcomeTripEmail({ flightNumber, magicLink }));
-    const result = await deliverViaResend('welcome', {
+    const result = await deliverEmail('welcome', {
         to: email,
         subject: `Confirm alerts for flight ${flightNumber}`,
         html,
@@ -120,7 +67,7 @@ export async function sendLoginMagicLink(email: string, token: string): Promise<
         return { success: true, mocked: true };
     }
 
-    return deliverViaResend('magic-link', {
+    return deliverEmail('magic-link', {
         to: email,
         subject: 'Your FlightAgent login link',
         html: `<p>Click the link below to log in. This link expires in 15 minutes.</p><p><a href="${loginLink}">${loginLink}</a></p>`,
@@ -160,6 +107,6 @@ export async function sendDisruptionAlert(
     }
 
     const { subject, html } = await renderDisruptionAlert(flightNumber, claimLink, claimRuleType);
-    const result = await deliverViaResend('disruption-alert', { to: email, subject, html });
+    const result = await deliverEmail('disruption-alert', { to: email, subject, html });
     return { ...result, previewUrl: claimLink };
 }

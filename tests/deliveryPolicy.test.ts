@@ -28,23 +28,29 @@ test('EMAIL_FORCE_LIVE=true (exactly) forces real delivery', () => {
     assert.equal(isRealEmailDeliveryAllowed(env({ NODE_ENV: 'development', EMAIL_FORCE_LIVE: '1' })), false);
 });
 
-// Regression guard: every Resend send point consults the policy, including
-// deliverViaResend itself (the quota alert calls it directly).
-for (const file of ['lib/email/sender.ts', 'services/notifications/providers/resend.ts', 'services/notifications/sender.ts']) {
-    test(`${file} checks the delivery policy`, () => {
-        assert.match(readFileSync(file, 'utf8'), /isRealEmailDeliveryAllowed\(\)/);
-    });
-}
-
-test('deliverViaResend checks the policy before touching Resend; only the test script bypasses it', () => {
-    const src = readFileSync('lib/email/sender.ts', 'utf8');
-    const fn = src.slice(src.indexOf('export async function deliverViaResend'));
-    assert.ok(fn.indexOf('isRealEmailDeliveryAllowed()') < fn.indexOf('new Resend('));
+// Regression guard: there is exactly one real send point (deliverEmail), it
+// consults the policy before touching any provider, and everything else
+// (templates, notification provider, claim attachment) goes through it.
+test('deliverEmail checks the policy before any provider call; only the test script bypasses it', () => {
+    const src = readFileSync('lib/email/deliver.ts', 'utf8');
+    const fn = src.slice(src.indexOf('export async function deliverEmail'));
+    const policy = fn.indexOf('isRealEmailDeliveryAllowed()');
+    assert.ok(policy > 0);
+    assert.ok(policy < fn.indexOf('sendViaResend('));
+    assert.ok(policy < fn.indexOf('sendViaMailjet('));
     assert.match(readFileSync('scripts/send-test-alert.ts', 'utf8'), /bypassDeliveryPolicy: true/);
-    for (const caller of ['lib/flightData/quotaStore.ts']) {
+    for (const caller of ['lib/flightData/quotaStore.ts', 'lib/email/sender.ts', 'services/notifications/sender.ts', 'services/notifications/providers/emailProvider.ts']) {
         assert.doesNotMatch(readFileSync(caller, 'utf8'), /bypassDeliveryPolicy/, `${caller} must not bypass`);
     }
 });
+
+for (const file of ['lib/email/sender.ts', 'services/notifications/providers/emailProvider.ts', 'services/notifications/sender.ts', 'lib/flightData/quotaStore.ts']) {
+    test(`${file} sends only through deliverEmail (no direct provider SDK/API)`, () => {
+        const src = readFileSync(file, 'utf8');
+        assert.match(src, /deliverEmail/);
+        assert.doesNotMatch(src, /from 'resend'|api\.mailjet\.com/);
+    });
+}
 
 test('the policy does not look at NODE_ENV', () => {
     const src = readFileSync('lib/email/deliveryPolicy.ts', 'utf8').replace(/\/\/.*$/gm, '');

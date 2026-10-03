@@ -12,7 +12,8 @@
 //     --database-url '<PROD_URL>' --i-understand-this-is-prod
 //
 // --apply refuses unless real delivery is allowed (lib/email/deliveryPolicy.ts:
-// VERCEL_ENV=production AND EMAIL_DELIVERY_READY=true) and RESEND_API_KEY,
+// VERCEL_ENV=production AND EMAIL_DELIVERY_READY=true) and the selected
+// EMAIL_PROVIDER's keys (RESEND_API_KEY or MAILJET_API_KEY + MAILJET_SECRET_KEY),
 // NOTIFICATION_FROM_EMAIL and APP_BASE_URL are set — otherwise it would create
 // tokens (blocking a later real run) while the emails were only mocked.
 //
@@ -56,7 +57,14 @@ async function main() {
 
     if (apply) {
         const { isRealEmailDeliveryAllowed } = await import('@/lib/email/deliveryPolicy');
-        const missing = ['RESEND_API_KEY', 'NOTIFICATION_FROM_EMAIL', 'APP_BASE_URL'].filter((k) => !process.env[k]?.trim());
+        const { getEmailProvider, requiredEnvForProvider } = await import('@/lib/email/provider');
+        let providerEnv: string[];
+        try {
+            providerEnv = requiredEnvForProvider(getEmailProvider());
+        } catch (err: any) {
+            providerEnv = [`EMAIL_PROVIDER (${err.message})`];
+        }
+        const missing = [...providerEnv, 'NOTIFICATION_FROM_EMAIL', 'APP_BASE_URL'].filter((k) => !process.env[k]?.trim());
         if (!isRealEmailDeliveryAllowed() || missing.length) {
             console.error(
                 'REFUSED: --apply must send real email. Needs VERCEL_ENV=production and EMAIL_DELIVERY_READY=true'
@@ -129,7 +137,7 @@ async function main() {
         const result = await sendWelcomeEmail(g.email, token, g.flightNumber, `/dashboard/guardian/${g.firstTripId}`);
         if (result.success && !result.mocked) {
             sent++;
-            console.log(`SENT   ${maskEmail(g.email)}  resend id ${result.messageId ?? '-'}`);
+            console.log(`SENT   ${maskEmail(g.email)}  provider id ${result.messageId ?? '-'}`);
         } else {
             failed++;
             const error = result.error || (result.mocked ? 'mocked — not sent' : 'unknown error');

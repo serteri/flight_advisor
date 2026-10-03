@@ -5,7 +5,7 @@
 // mocked calls never touch the quota.
 
 import { prisma } from '@/lib/prisma';
-import { deliverViaResend } from '@/lib/email/sender';
+import { deliverEmail } from '@/lib/email/sender';
 import {
     computeUsageRatio,
     getMonthlyCallCapacity,
@@ -122,7 +122,7 @@ async function maybeAlertAdmin(status: QuotaStatus): Promise<void> {
         return;
     }
 
-    const result = await deliverViaResend('quota-alert', {
+    const result = await deliverEmail('quota-alert', {
         to: adminEmail,
         subject,
         html: `<pre style="font-family:monospace">${text}</pre>`,
