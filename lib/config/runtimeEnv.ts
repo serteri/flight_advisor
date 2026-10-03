@@ -4,8 +4,11 @@
 // - NOTIFICATION_FROM_EMAIL: Resend's shared onboarding@resend.dev sender only
 //   delivers to the account owner, so falling back to it silently drops every
 //   user-facing email.
+// - Provider credentials depend on EMAIL_PROVIDER (resend | mailjet).
 // - APP_BASE_URL: every absolute link we send (emails, Stripe redirects, PDFs)
 //   must point at the real deployment, never a hardcoded or localhost domain.
+
+import { getEmailProvider, requiredEnvForProvider } from '@/lib/email/provider';
 
 export class RuntimeEnvError extends Error {
     constructor(message: string) {
@@ -42,7 +45,13 @@ export function getMissingRequiredEnv(): string[] {
     // Sender settings are only required once email delivery is switched on
     // (EMAIL_DELIVERY_READY=true); in waitlist mode the domain isn't verified yet.
     if (process.env.EMAIL_DELIVERY_READY === 'true') {
-        if (!process.env.RESEND_API_KEY) missing.push('RESEND_API_KEY');
+        try {
+            for (const name of requiredEnvForProvider(getEmailProvider())) {
+                if (!process.env[name]?.trim()) missing.push(name);
+            }
+        } catch (err: any) {
+            missing.push(`EMAIL_PROVIDER (${err.message})`);
+        }
         if (!process.env.NOTIFICATION_FROM_EMAIL?.trim()) missing.push('NOTIFICATION_FROM_EMAIL');
     }
     if (!process.env.APP_BASE_URL?.trim()) missing.push('APP_BASE_URL');

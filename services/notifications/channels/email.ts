@@ -1,16 +1,13 @@
 // services/notifications/channels/email.ts
 import { NotificationPayload } from '../types';
-import { ResendProvider } from '../providers/resend';
+import { EmailDeliveryProvider } from '../providers/emailProvider';
 import { appUrl } from '@/lib/config/runtimeEnv';
 
 export class EmailChannel {
     private static instance: EmailChannel;
-    private provider: ResendProvider | null;
+    private provider = new EmailDeliveryProvider();
 
-    private constructor() {
-        const apiKey = process.env.RESEND_API_KEY;
-        this.provider = apiKey ? new ResendProvider(apiKey) : null;
-    }
+    private constructor() {}
 
     public static getInstance(): EmailChannel {
         if (!EmailChannel.instance) {
@@ -20,11 +17,6 @@ export class EmailChannel {
     }
 
     public async send(to: string, payload: NotificationPayload): Promise<{ success: boolean; id?: string; error?: string }> {
-        if (!this.provider) {
-            console.error(`[EmailChannel] RESEND_API_KEY is not set — email to ${to} not sent`);
-            return { success: false, error: 'RESEND_API_KEY is not set' };
-        }
-
         let html: string;
         try {
             html = this.generateHtml(payload);
