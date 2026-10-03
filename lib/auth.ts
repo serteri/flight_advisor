@@ -125,13 +125,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         (session.user as any).isPremium = dbUser.isPremium;
                         (session.user as any).subscriptionStatus = dbUser.subscriptionStatus;
                         (session.user as any).trialEndsAt = dbUser.trialEndsAt;
-                        
-                        console.log('✅ [SESSION_REFRESH] User subscription data updated from DB', {
-                            userId: token.sub,
-                            plan: dbUser.subscriptionPlan,
-                            isPremium: dbUser.isPremium,
-                            hasSubscription: !!dbUser.stripeSubscriptionId,
-                        });
                     }
                 } catch (error: any) {
                     console.error('❌ [SESSION_REFRESH] Failed to fetch user from DB:', error.message);

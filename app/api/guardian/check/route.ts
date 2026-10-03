@@ -12,7 +12,7 @@
 // worker holds the trip lease (safe to retry); 500 on unexpected errors.
 
 import { NextResponse } from 'next/server';
-import { Receiver } from '@upstash/qstash';
+import { isQStashAuthorized } from '@/lib/guardian/qstashAuth';
 import { processTripCheck } from '@/workers/guardianWorker';
 import { processPendingAlertRetries } from '@/services/notifications/alertRetryWorker';
 import { expireDueAlertEvents } from '@/lib/alertLifecycle';
@@ -20,37 +20,10 @@ import { assertRequiredRuntimeEnv } from '@/lib/config/runtimeEnv';
 
 export const dynamic = 'force-dynamic';
 
-async function isAuthorized(request: Request, rawBody: string): Promise<boolean> {
-    const signature = request.headers.get('upstash-signature');
-    const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
-    const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
-
-    if (!signature) {
-        if (process.env.NODE_ENV === 'development') {
-            console.warn('[GuardianCheck] DEV: accepting unsigned request');
-            return true;
-        }
-        return false;
-    }
-
-    if (!currentSigningKey || !nextSigningKey) {
-        console.error('[GuardianCheck] QSTASH_CURRENT_SIGNING_KEY / QSTASH_NEXT_SIGNING_KEY not configured');
-        return false;
-    }
-
-    try {
-        const receiver = new Receiver({ currentSigningKey, nextSigningKey });
-        return await receiver.verify({ signature, body: rawBody });
-    } catch (error: any) {
-        console.warn(`[GuardianCheck] Signature verification failed: ${error?.message || error}`);
-        return false;
-    }
-}
-
 export async function POST(request: Request) {
     const rawBody = await request.text();
 
-    if (!(await isAuthorized(request, rawBody))) {
+    if (!(await isQStashAuthorized(request, rawBody, 'GuardianCheck'))) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

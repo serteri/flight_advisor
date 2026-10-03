@@ -1279,5 +1279,11 @@
     "confirmationTitle": "Listeye eklendin",
     "message": "E-posta uyarıları çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz.",
     "loginNotice": "E-posta linkiyle giriş çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz."
+  },
+  "ConfirmLogin": {
+    "title": "Devam etmek için onaylayın",
+    "body": "E-posta adresinizi onaylamak ve yolculuklarınızı açmak için düğmeye basın. Bu ek adım, e-posta tarayıcılarının bağlantınızı tüketmesini engeller.",
+    "button": "Onayla ve devam et",
+    "submitting": "Onaylanıyor..."
   }
 }

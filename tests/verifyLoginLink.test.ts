@@ -102,3 +102,60 @@ test('AeroDataBox real-shaped leg (TK1234-like) still parses; codeshare operator
     assert.equal(flight.scheduledDepartureUtc, '2026-10-14T08:05:00.000Z');
     assert.equal(flight.status, 'scheduled');
 });
+
+// ── GET is read-only; concurrent consumption has exactly one winner ─────────
+
+import { readFileSync } from 'node:fs';
+import { inspectLoginLink } from '@/lib/auth/verifyLoginLink';
+
+// In-memory token table with deleteMany semantics (count of rows removed),
+// including a yield between find and delete so concurrent callers interleave.
+function tokenTable(initial: Record<string, { identifier: string; expiresAt: Date }>) {
+    const rows = new Map(Object.entries(initial));
+    const calls = { find: 0, consume: 0, confirm: [] as string[] };
+    const deps: VerifyDeps = {
+        findToken: async (t) => { calls.find++; await Promise.resolve(); return rows.get(t) ?? null; },
+        consumeToken: async (t) => { calls.consume++; await Promise.resolve(); return rows.delete(t); },
+        upsertUser: async () => ({ id: 'user_1' }),
+        confirmPendingTrips: async (id) => { calls.confirm.push(id); return []; },
+    };
+    return { rows, calls, deps };
+}
+
+test('GET path (inspectLoginLink) never consumes the token, however often it is called', async () => {
+    const { rows, calls, deps } = tokenTable({ t1: { identifier: 'u@example.com', expiresAt: future } });
+    for (let i = 0; i < 5; i++) assert.deepEqual(await inspectLoginLink('t1', deps), { kind: 'pending' });
+    assert.equal(calls.consume, 0);
+    assert.equal(calls.confirm.length, 0);
+    assert.ok(rows.has('t1'), 'token row is still there for the human click');
+    assert.deepEqual(await inspectLoginLink('nope', deps), { kind: 'expired' });
+    assert.deepEqual(await inspectLoginLink('t1', { ...deps, findToken: async () => { throw new Error('db down'); } }), { kind: 'failed' });
+});
+
+test('route GET handler contains no consuming call; POST does the consuming', () => {
+    const src = readFileSync('app/api/auth/verify/route.ts', 'utf8');
+    const get = src.slice(src.indexOf('export async function GET'), src.indexOf('export async function POST'));
+    assert.doesNotMatch(get, /consumeToken|verifyLoginLink|deleteMany|\.delete\(|confirmPendingTrips|cookieStore\.set/);
+    assert.match(get, /inspectLoginLink/);
+    const post = src.slice(src.indexOf('export async function POST'));
+    assert.match(post, /verifyLoginLink/);
+    assert.doesNotMatch(src, /loginToken\.delete\(/, 'delete() throws P2025 on a lost race; use deleteMany');
+});
+
+test('two concurrent consumptions: exactly one succeeds, the other gets a clean "expired"', async () => {
+    for (let round = 0; round < 20; round++) {
+        const { rows, calls, deps } = tokenTable({ t1: { identifier: 'u@example.com', expiresAt: future } });
+        const results = await Promise.all([verifyLoginLink('t1', deps), verifyLoginLink('t1', deps)]);
+        const kinds = results.map((r) => r.kind).sort();
+        assert.deepEqual(kinds, ['expired', 'ok']);
+        assert.deepEqual(calls.confirm, ['user_1'], 'trips confirmed once');
+        assert.equal(rows.size, 0);
+    }
+});
+
+test('five parallel clicks on one link: one ok, four expired, nothing thrown', async () => {
+    const { deps } = tokenTable({ t1: { identifier: 'u@example.com', expiresAt: future } });
+    const results = await Promise.all(Array.from({ length: 5 }, () => verifyLoginLink('t1', deps)));
+    assert.equal(results.filter((r) => r.kind === 'ok').length, 1);
+    assert.equal(results.filter((r) => r.kind === 'expired').length, 4);
+});

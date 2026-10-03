@@ -1,9 +1,16 @@
 // lib/auth/verifyLoginLink.ts
 //
-// Core of GET /api/auth/verify, with its side effects injected so it can be
-// tested. Contract: this function never throws and the route never answers
-// 500. The token is consumed before anything else can fail, trip activation
-// problems never block the login, and every failure is logged.
+// Core of /api/auth/verify, with its side effects injected so it can be
+// tested. Contract: these functions never throw and the route never answers
+// 500.
+//
+//  - inspectLoginLink (used by GET) is read-only. Mail clients and security
+//    scanners open links before the human does, so a GET must never use the
+//    token up; it only decides whether to show the "Confirm" page.
+//  - verifyLoginLink (used by POST, the human's click) consumes the token
+//    atomically before anything else can fail. Concurrent requests race on
+//    the delete: exactly one wins, the others get 'expired'. Trip activation
+//    problems never block the login, and every failure is logged.
 
 export type VerifyOutcome =
     | { kind: 'ok'; userId: string }
@@ -17,6 +24,22 @@ export interface VerifyDeps {
     upsertUser(email: string): Promise<{ id: string }>;
     confirmPendingTrips(userId: string): Promise<unknown>;
     now?: () => Date;
+}
+
+export type InspectOutcome = { kind: 'pending' } | { kind: 'expired' } | { kind: 'failed' };
+
+export async function inspectLoginLink(
+    token: string,
+    deps: Pick<VerifyDeps, 'findToken' | 'now'>,
+): Promise<InspectOutcome> {
+    try {
+        const row = await deps.findToken(token);
+        if (!row || row.expiresAt < (deps.now?.() ?? new Date())) return { kind: 'expired' };
+        return { kind: 'pending' };
+    } catch (error) {
+        console.error('[Auth:verify] login link inspection failed', error);
+        return { kind: 'failed' };
+    }
 }
 
 export async function verifyLoginLink(token: string, deps: VerifyDeps): Promise<VerifyOutcome> {

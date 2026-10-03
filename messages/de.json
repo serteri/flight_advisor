@@ -1279,5 +1279,11 @@
     "confirmationTitle": "Du bist auf der Liste",
     "message": "E-Mail-Benachrichtigungen werden in Kürze aktiv; wir informieren dich, sobald es so weit ist.",
     "loginNotice": "Die Anmeldung per E-Mail-Link wird in Kürze aktiv; wir informieren dich, sobald es so weit ist."
+  },
+  "ConfirmLogin": {
+    "title": "Zum Fortfahren bestätigen",
+    "body": "Tippe auf die Schaltfläche, um deine E-Mail-Adresse zu bestätigen und deine Reisen zu öffnen. Dieser zusätzliche Schritt verhindert, dass E-Mail-Scanner deinen Link verbrauchen.",
+    "button": "Bestätigen und fortfahren",
+    "submitting": "Wird bestätigt..."
   }
 }

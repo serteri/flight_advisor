@@ -1279,5 +1279,11 @@
     "confirmationTitle": "You're on the list",
     "message": "Email alerts will be active very soon; we'll let you know as soon as they are.",
     "loginNotice": "Sign-in by email link will be active very soon; we'll let you know as soon as it is."
+  },
+  "ConfirmLogin": {
+    "title": "Confirm to continue",
+    "body": "Press the button to confirm your email address and open your trips. This extra step keeps email scanners from using up your link.",
+    "button": "Confirm and continue",
+    "submitting": "Confirming..."
   }
 }
