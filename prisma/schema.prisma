@@ -885,6 +885,7 @@ enum TripStatus {
   ARCHIVED
   PENDING_CONFIRMATION // lead-capture trip awaiting double opt-in
   FLIGHT_NOT_FOUND     // provider reports the flight doesn't exist; monitoring stopped, user told once
+  PENDING_VERIFICATION // not found >7 days before departure (schedule may be unpublished); one re-check at −7 days, no email
 }
 
 // Persisted monitoring state — replaces in-memory lastAlertState.

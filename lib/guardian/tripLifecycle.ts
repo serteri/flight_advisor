@@ -18,6 +18,7 @@ import {
 } from '@/lib/guardian/checkpoints';
 import { cancelPendingChecks, scheduleTripChecks } from '@/lib/guardian/scheduler';
 import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from '@/lib/guardian/flightNotFound';
+import { defaultPendingVerificationDeps, deferVerification, notFoundDecision } from '@/lib/guardian/flightVerification';
 
 const UNKNOWN_IATA = 'UNK';
 
@@ -136,6 +137,44 @@ export async function replanTripChecks(
 
 // Called once a trip is ACTIVE: one registration lookup (route + schedule),
 // then the checkpoint plan. Works with approximate times if the lookup fails.
+// NOT_FOUND from the provider: final only ≤7 days before departure
+// (FLIGHT_NOT_FOUND + one email); further out the schedule may simply not be
+// published yet → PENDING_VERIFICATION, no email, one VERIFY_FLIGHT check at −7 days.
+export async function routeFlightNotFound(
+    tripId: string,
+    segment: SegmentLike,
+    now: Date,
+    options: { source: 'REGISTRATION' | 'CHECKPOINT'; excludeCheckId?: string },
+): Promise<'FLIGHT_NOT_FOUND' | 'PENDING_VERIFICATION' | 'UNCHANGED'> {
+    const { departureUtc } = resolveTripSchedule(segment);
+    if (notFoundDecision(departureUtc, now) === 'DEFER') {
+        const res = await deferVerification(tripId, departureUtc, now, await defaultPendingVerificationDeps(), { excludeCheckId: options.excludeCheckId });
+        return res.transitioned ? 'PENDING_VERIFICATION' : 'UNCHANGED';
+    }
+    const res = await handleFlightNotFound(tripId, await defaultFlightNotFoundDeps(), options);
+    return res.transitioned ? 'FLIGHT_NOT_FOUND' : 'UNCHANGED';
+}
+
+// VERIFY_FLIGHT verdict "monitor it": PENDING_VERIFICATION → ACTIVE, apply the
+// provider data when there is some, then the normal checkpoint plan. Without
+// provider data (verification couldn't run) the plan uses approximate times.
+export async function activateAfterVerification(
+    tripId: string,
+    segment: SegmentLike,
+    flight: NormalizedFlight | null,
+    now: Date,
+    options: { excludeCheckId?: string } = {},
+): Promise<boolean> {
+    const activated = await prisma.monitoredTrip.updateMany({
+        where: { id: tripId, status: 'PENDING_VERIFICATION' },
+        data: { status: 'ACTIVE' },
+    });
+    if (activated.count !== 1) return false;
+    const current = flight ? (await applyFlightDataToTrip(tripId, segment, flight)).segment : segment;
+    await replanTripChecks(tripId, resolveTripSchedule(current), now, { excludeCheckId: options.excludeCheckId });
+    return true;
+}
+
 export async function initializeTripMonitoring(tripId: string, now = new Date()): Promise<void> {
     const trip = await prisma.monitoredTrip.findUnique({
         where: { id: tripId },
@@ -150,9 +189,10 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
     }
 
     const result = await lookupWithinBudget(tripId, segment, 'REGISTRATION');
-    // Flight validation at opt-in: a flight the provider doesn't know is never monitored.
+    // Flight validation at opt-in: a flight the provider doesn't know is never
+    // monitored — definitive only within 7 days of departure (see routeFlightNotFound).
     if (isFlightNotFound(result)) {
-        await handleFlightNotFound(tripId, await defaultFlightNotFoundDeps(), { source: 'REGISTRATION' });
+        await routeFlightNotFound(tripId, segment, now, { source: 'REGISTRATION' });
         return;
     }
     if (result?.ok) {

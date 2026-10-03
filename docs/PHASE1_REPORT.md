@@ -515,16 +515,32 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 
 ## 8. Faz 2 listesi
 
-> **Faz 2'de yapılan — uçuş doğrulaması (`phase-2`):** Sağlayıcı uçuş için `NOT_FOUND` dediğinde, hem opt-in anındaki kayıt sorgusunda hem her checkpoint'te aynı şey olur:
-> - trip `FLIGHT_NOT_FOUND`'a geçer;
-> - kalan checkpoint'ler iptal edilir;
-> - kuyruktaki uyarı e-postaları `SUPPRESSED` yapılır;
-> - kullanıcıya **tek** bir "uçuşu bulamadık" e-postası gider.
+> **Faz 2'de yapılan — uçuş doğrulaması (`phase-2`)**
 >
-> Tek gönderim, koşullu durum geçişiyle sağlanıyor (`lib/guardian/flightNotFound.ts`). Kota ya da HTTP hataları "bulunamadı" sayılmaz. Mock'ta `XX404` var olmayan uçuştur.
+> **7 gün kuralı:** Sağlayıcının `NOT_FOUND` yanıtı yalnızca kalkışa **≤ 7 gün** kaldığında kesin kabul edilir (`lib/guardian/flightVerification.ts`). Kural hem opt-in anındaki kayıt sorgusunda hem her checkpoint'te geçerli.
+> - **≤ 7 gün:** trip `FLIGHT_NOT_FOUND` olur, kalan checkpoint'ler iptal edilir, kuyruktaki uyarı e-postaları `SUPPRESSED` yapılır ve **tek** bir "uçuşu bulamadık" e-postası gider (`lib/guardian/flightNotFound.ts`; tek gönderim koşullu durum geçişiyle sağlanıyor).
+> - **> 7 gün:** trip `PENDING_VERIFICATION` olur, **e-posta gönderilmez**, kalkış −7 güne tek bir `VERIFY_FLIGHT` checkpoint'i planlanır. Bu checkpoint 6 günlük QStash penceresinin dışındaysa veritabanında saklanır; günlük publish-due işi zamanı gelince yayınlar.
+> - **`VERIFY_FLIGHT` sonucu:**
+>   - Bulunursa trip `ACTIVE` olur ve normal checkpoint planı kurulur.
+>   - Bulunamazsa (artık ≤ 7 gün kaldığı için) `FLIGHT_NOT_FOUND` akışına girer.
+>   - Sonuç alınamazsa (kota ya da HTTP hatası) 12 saat sonra tekrar denenir. Kalkışa kadar zaman kalmazsa ya da trip başına çağrı sınırı dolarsa trip yaklaşık zamanlarla `ACTIVE` yapılır; böylece hiçbir zaman beklemede takılı kalmaz.
+> - `VERIFY_FLIGHT` kota `CRITICAL` seviyesindeyken de çalışır. Trip başına çağrı sınırı 7'den **8**'e çıkarıldı: kayıt + doğrulama + 5 checkpoint + 1 ek.
+> - Mock'ta `XX404` var olmayan bir uçuşu temsil eder.
 >
-> **Şema:** `docs/phase2_schema_flight_not_found.sql` (tek ifade: `ALTER TYPE "TripStatus" ADD VALUE 'FLIGHT_NOT_FOUND'`). **Henüz uygulanmadı.** Kod bu değeri yazdığı için SQL'in, transaction dışında ve kod deploy edilmeden **önce** uygulanması gerekir. Aksi hâlde NOT_FOUND durumunda durum güncellemesi hata verir.
+> **AeroDataBox'ın gerçek davranışı** (OpenAPI spec v1.15.3.0, `GET /flights/number/{n}/{dateLocal}`):
+> - Belgelenen yanıtlar: 200, **204 No Content**, 400, 401, 451, 500, 503. Bu endpoint için **404 belgelenmemiş**.
+> - `dateLocal` parametresinin açıklaması: "Maximum/minimum allowable date is determined by the current data coverage limitations and your pricing plan". Kapsam sayfası: tarifeler "up to 365 days in the future", ancak "depending on how far in the future airlines publish their schedules".
+> - **Sonuç:** Var olmayan bir uçuş da, tarifesi henüz yayınlanmamış gerçek bir uçuş da **204** döner; ikisi ayırt edilemez. 7 gün kuralı bu yüzden gerekli.
+> - **Kodun NOT_FOUND saydıkları** (`lib/flightData/client.ts`): HTTP **204**, HTTP 404 (belgelenmemiş, savunma amaçlı tutuldu) ve 200 dönüp içinde uçuş olmayan yanıt.
+> - **NOT_FOUND sayılmayanlar:** 400 (aralık dışı tarih ya da geçersiz istek; tarih anlamı belgelenmemiş, bu benim çıkarımım), 401, 451, 5xx, zaman aşımı ve kota. Bunlar "uçuş yok" sonucu doğurmaz.
+>
+> **Form (API çağrısı yok):** Tarih geçmişte olamaz (saat dilimi payı olarak 1 gün tolerans var) ve 330 günden ileri olamaz (`lib/flights/flightDateRule.ts`). Kural form ve `/api/trips/track` için ortak. Sunucu `{ field, code }` döndürür; form hatayı ilgili alanın altında gösterir (en/de/tr).
+>
+> **Dashboard:** Durumlar ham enum yerine okunur etiketlerle gösteriliyor (`TripDisplay.status`, en/de/tr). Örnek: `PENDING_VERIFICATION` → "Uçuş tarihi yaklaşınca doğrulanacak". Çözülmemiş rota "UNK → UNK" yerine "Rota doğrulanıyor" yazıyor. Geçerli yerler: dashboard, trip sayfası, geçmiş ve my-trips.
+>
+> **Şema:** `docs/phase2_schema_flight_not_found.sql`, **iki ayrı ifade**: `ADD VALUE 'FLIGHT_NOT_FOUND'` ve `ADD VALUE 'PENDING_VERIFICATION'`. Her biri ayrı, transaction dışında ve kod deploy edilmeden **önce** çalıştırılmalı. **Henüz hiçbir veritabanına uygulanmadı.**
 
+- **Engellemeyen havayolu kontrolü:** Tanınmayan bir havayolu kodu için formda yalnızca bir uyarı gösterilsin ("Bu havayolu kodunu tanımıyoruz, kontrol et"), gönderim engellenmesin. Eski bir yerel liste gerçek havayollarını reddedebileceği için engelleyici liste kullanılmayacak. Kaynak ileride gerçek API verisinden (AeroDataBox airline endpoint) beslenen bir önbellek olabilir. Bugünkü durum: kodun formatını regex kontrol ediyor, uçuşun gerçekten var olup olmadığını −7 gün doğrulaması kontrol ediyor.
 - **Tarih formatı (öncelikli):** Arayüzde ve e-postalarda tüm tarihler ay adıyla gösterilsin (ör. "7 Oct 2026"). Sayısal format (15/10/2026, 10/15/2026 gibi) hiçbir yerde kullanılmasın.
   - Örnek: takip onay sayfası şu an `toLocaleDateString()` ile "15/10/2026" gösteriyor.
   - Tek bir ortak format fonksiyonu yazılmalı, ay adı locale'e göre seçilmeli: en "7 Oct 2026", de "7. Okt. 2026", tr "7 Eki 2026".

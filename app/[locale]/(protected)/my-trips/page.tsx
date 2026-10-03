@@ -5,6 +5,7 @@ import { Link, redirect } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicLinkSession';
 import { ClaimProgress } from '@/components/claims/ClaimProgress';
+import { tripStatusLabelKey } from '@/lib/guardian/tripDisplay';
 
 type ClaimStatus = 'PENDING' | 'SUBMITTED' | 'LEGAL_REVIEW' | 'AIRLINE_CONTACTED' | 'SETTLED' | 'REJECTED';
 
@@ -12,6 +13,7 @@ export default async function MyTripsPage({ params }: { params: Promise<{ locale
     const { locale } = await params;
     setRequestLocale(locale);
     const t = await getTranslations('MyTrips');
+    const tDisplay = await getTranslations('TripDisplay');
     const claimT = await getTranslations('ClaimProgress');
 
     const cookieStore = await cookies();
@@ -76,7 +78,7 @@ export default async function MyTripsPage({ params }: { params: Promise<{ locale
                                     </div>
                                 )}
                                 <div className="mt-3 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                                    {trip.status}
+                                    {tDisplay(`status.${tripStatusLabelKey(trip.status)}`)}
                                 </div>
                             </Link>
                         );

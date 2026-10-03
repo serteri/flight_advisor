@@ -2,6 +2,7 @@ import { Link, redirect } from '@/i18n/routing';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { routeText } from '@/lib/guardian/tripDisplay';
 import { ArrowLeft, Clock3, Plane, ShieldAlert } from 'lucide-react';
 
 const toStatusLabel = (status?: string | null, delayMinutes?: number) => {
@@ -63,6 +64,7 @@ export default async function GuardianHistoryPage({ params }: { params: Promise<
     const { locale } = await params;
     setRequestLocale(locale);
     const t = await getTranslations('GuardianHistory');
+    const tDisplay = await getTranslations('TripDisplay');
     const session = await auth();
     if (!session || !session.user?.id) {
         redirect({ href: '/login', locale });
@@ -192,9 +194,8 @@ export default async function GuardianHistoryPage({ params }: { params: Promise<
                                         return (
                                             <tr key={trip.id} className="border-b border-slate-100 align-top">
                                                 <td className="py-3 pr-4 font-semibold text-slate-900">
-                                                    {firstSegment && lastSegment
-                                                        ? `${firstSegment.origin} → ${lastSegment.destination}`
-                                                        : trip.routeLabel}
+                                                    {(firstSegment && lastSegment ? routeText(firstSegment.origin, lastSegment.destination) : null)
+                                                        ?? tDisplay('routeVerifying')}
                                                 </td>
                                                 <td className="py-3 pr-4 text-slate-700">
                                                     {firstSegment

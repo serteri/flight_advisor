@@ -489,7 +489,9 @@
           "invalidFlight": "Ungültige Flugnummer",
           "invalidDate": "Bitte wähle ein gültiges, zukünftiges Datum",
           "invalidEmail": "Ungültige E-Mail-Adresse",
-          "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren"
+          "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren",
+          "datePast": "Dieses Datum liegt in der Vergangenheit. Wähle heute oder ein zukünftiges Datum.",
+          "dateTooFar": "Flüge können bis zu 330 Tage im Voraus verfolgt werden."
         },
         "confirmation": {
           "title": "Bitte prüfe dein Postfach",
@@ -564,8 +566,7 @@
     "lastUpdated": "Last updated: {time}",
     "nextUpdate": "Next update: {time}",
     "delete": "Stop Tracking",
-    "updatesDaily": "Updates Daily",
-    "flightNotFound": "Flug nicht gefunden"
+    "updatesDaily": "Updates Daily"
   },
   "priceOracle": {
     "title": "Preisorakel",
@@ -1290,5 +1291,18 @@
     "body": "Tippe auf die Schaltfläche, um deine E-Mail-Adresse zu bestätigen und deine Reisen zu öffnen. Dieser zusätzliche Schritt verhindert, dass E-Mail-Scanner deinen Link verbrauchen.",
     "button": "Bestätigen und fortfahren",
     "submitting": "Wird bestätigt..."
+  },
+  "TripDisplay": {
+    "routeVerifying": "Route wird überprüft",
+    "status": {
+      "ACTIVE": "Wird überwacht",
+      "PENDING_CONFIRMATION": "Wartet auf E-Mail-Bestätigung",
+      "PENDING_VERIFICATION": "Wird kurz vor dem Flugdatum überprüft",
+      "FLIGHT_NOT_FOUND": "Flug nicht gefunden",
+      "COMPLETED": "Abgeschlossen",
+      "CANCELLED": "Storniert",
+      "ARCHIVED": "Archiviert",
+      "UNKNOWN": "Unbekannt"
+    }
   }
 }

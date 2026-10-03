@@ -441,7 +441,9 @@
           "invalidFlight": "Invalid flight number",
           "invalidDate": "Please choose a valid, upcoming date",
           "invalidEmail": "Invalid email address",
-          "consentRequired": "Please agree to receive flight alerts to continue"
+          "consentRequired": "Please agree to receive flight alerts to continue",
+          "datePast": "This date is in the past. Choose today or a future date.",
+          "dateTooFar": "You can track flights up to 330 days ahead."
         },
         "confirmation": {
           "title": "Check your email",
@@ -564,8 +566,7 @@
     "delete": "Stop Tracking",
     "updatesDaily": "Updates Daily",
     "paymentSuccessTitle": "Payment confirmed — welcome aboard!",
-    "paymentSuccessBody": "Your plan is now active. You can start using itinerary scoring and scheduled monitoring tools.",
-    "flightNotFound": "Flight not found"
+    "paymentSuccessBody": "Your plan is now active. You can start using itinerary scoring and scheduled monitoring tools."
   },
   "Settings": {
     "subtitle": "Manage your account, subscription, and alerts.",
@@ -1290,5 +1291,18 @@
     "body": "Press the button to confirm your email address and open your trips. This extra step keeps email scanners from using up your link.",
     "button": "Confirm and continue",
     "submitting": "Confirming..."
+  },
+  "TripDisplay": {
+    "routeVerifying": "Route being verified",
+    "status": {
+      "ACTIVE": "Monitored",
+      "PENDING_CONFIRMATION": "Waiting for email confirmation",
+      "PENDING_VERIFICATION": "Will be verified closer to the flight date",
+      "FLIGHT_NOT_FOUND": "Flight not found",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "ARCHIVED": "Archived",
+      "UNKNOWN": "Unknown"
+    }
   }
 }

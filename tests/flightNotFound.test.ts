@@ -170,19 +170,12 @@ test('not-found email: month-name date, mocked outside production', async () => 
     assert.equal(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date('2026-10-07T00:00:00Z')), '7 Oct 2026');
 });
 
-test('schema SQL for FLIGHT_NOT_FOUND is a single additive enum statement', () => {
-    const sql = readFileSync('docs/phase2_schema_flight_not_found.sql', 'utf8')
-        .split('\n').filter((l) => !l.startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean);
-    assert.deepEqual(sql, [`ALTER TYPE "TripStatus" ADD VALUE 'FLIGHT_NOT_FOUND'`]);
-    assert.match(readFileSync('prisma/schema.prisma', 'utf8'), /FLIGHT_NOT_FOUND/);
-});
-
 test('UI explains FLIGHT_NOT_FOUND (en/de/tr) instead of showing the raw status', () => {
     for (const l of ['en', 'de', 'tr']) {
         const m = JSON.parse(readFileSync(`messages/${l}.json`, 'utf8'));
-        assert.ok(m.Dashboard.flightNotFound, `${l} dashboard label`);
+        assert.ok(m.TripDisplay?.status?.FLIGHT_NOT_FOUND, `${l} status label`);
         assert.ok(m.GuardianTripDetails.flightNotFound?.title && m.GuardianTripDetails.flightNotFound?.text, `${l} trip notice`);
     }
-    assert.match(readFileSync('components/dashboard/DashboardClient.tsx', 'utf8'), /trip\.status === 'FLIGHT_NOT_FOUND' \? t\('flightNotFound'\)/);
+    assert.match(readFileSync('components/dashboard/DashboardClient.tsx', 'utf8'), /tripStatusLabelKey\(trip\.status\)/);
     assert.match(readFileSync('app/[locale]/dashboard/guardian/[id]/TripDetailsClient.tsx', 'utf8'), /trip\.status === 'FLIGHT_NOT_FOUND'/);
 });

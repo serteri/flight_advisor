@@ -19,12 +19,15 @@ import type { CheckKind } from "@/lib/flightData/quotaPolicy";
 import { planExtraCheck, resolveTripSchedule } from "@/lib/guardian/checkpoints";
 import { cancelPendingChecks, scheduleTripChecks } from "@/lib/guardian/scheduler";
 import {
+    activateAfterVerification,
     applyFlightDataToTrip,
     lookupWithinBudget,
     replanTripChecks,
+    routeFlightNotFound,
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
-import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from "@/lib/guardian/flightNotFound";
+import { isFlightNotFound } from "@/lib/guardian/flightNotFound";
+import { verifyCheckOutcome } from "@/lib/guardian/flightVerification";
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -164,6 +167,15 @@ export async function processTripCheck(
         await markCheck('SKIPPED', `trip is ${trip.status}`);
         return { status: 'SKIPPED', reason: `trip-${trip.status.toLowerCase()}` };
     }
+    // A trip waiting for flight verification only runs its VERIFY_FLIGHT check.
+    if (trip.status === 'PENDING_VERIFICATION' && kind !== 'VERIFY_FLIGHT') {
+        await markCheck('SKIPPED', 'trip is PENDING_VERIFICATION');
+        return { status: 'SKIPPED', reason: 'trip-pending-verification' };
+    }
+    if (kind === 'VERIFY_FLIGHT' && trip.status !== 'PENDING_VERIFICATION') {
+        await markCheck('SKIPPED', `verification not needed (trip is ${trip.status})`);
+        return { status: 'SKIPPED', reason: 'verify-not-needed' };
+    }
 
     // Lifecycle: scheduled arrival + 48h → COMPLETED, no provider call.
     if (kind === 'COMPLETE' || (trip.monitoringEndsAt && now.getTime() >= trip.monitoringEndsAt.getTime())) {
@@ -220,6 +232,25 @@ async function runLeasedCheck(ctx: {
     let segment = ctx.segment;
 
     const result = await lookupWithinBudget(trip.id, segment, kind);
+    // VERIFY_FLIGHT (far-future flight not found at registration, now −7 days):
+    // found → ACTIVE + normal plan; not found → definitive FLIGHT_NOT_FOUND flow;
+    // no verdict → retry in 12 h, or monitor approximately when time/calls run out.
+    if (kind === 'VERIFY_FLIGHT') {
+        const outcome = verifyCheckOutcome(result, resolveTripSchedule(segment).departureUtc, now);
+        if (outcome.action === 'NOT_FOUND') {
+            const routed = await routeFlightNotFound(trip.id, segment, now, { source: 'CHECKPOINT', excludeCheckId: ctx.check?.id });
+            await markCheck('DONE', `NOT_FOUND at verification → ${routed}`);
+            return { status: 'DONE', reason: 'flight-not-found' };
+        }
+        if (outcome.action === 'RETRY') {
+            await scheduleTripChecks(trip.id, [outcome.check]);
+            await markCheck('FAILED', `${result && !result.ok ? result.code : 'no result'} — verification retry at ${outcome.check.runAt.toISOString()}`);
+            return { status: 'FAILED', reason: 'verify-retry' };
+        }
+        await activateAfterVerification(trip.id, segment, outcome.action === 'ACTIVATE' && result?.ok ? result.flight : null, now, { excludeCheckId: ctx.check?.id });
+        await markCheck('DONE', outcome.action === 'ACTIVATE' ? undefined : 'could not verify — monitoring with approximate plan');
+        return { status: 'DONE', reason: outcome.action === 'ACTIVATE' ? 'flight-verified' : 'verify-gave-up' };
+    }
     if (!result) {
         await markCheck('SKIPPED', 'per-trip provider call cap reached');
         return { status: 'SKIPPED', reason: 'trip-call-cap' };
@@ -227,13 +258,14 @@ async function runLeasedCheck(ctx: {
     // Flight validation at every checkpoint: provider says the flight doesn't
     // exist → FLIGHT_NOT_FOUND, remaining checks cancelled, no alert emails, one
     // "we couldn't find your flight" email (lib/guardian/flightNotFound.ts).
+    // Definitive only ≤7 days before departure; further out → PENDING_VERIFICATION.
     if (isFlightNotFound(result)) {
-        const outcome = await handleFlightNotFound(trip.id, await defaultFlightNotFoundDeps(), {
+        const outcome = await routeFlightNotFound(trip.id, segment, now, {
             source: 'CHECKPOINT',
             excludeCheckId: ctx.check?.id,
         });
-        await markCheck('DONE', 'NOT_FOUND: flight not found by provider');
-        return { status: 'DONE', reason: outcome.transitioned ? 'flight-not-found' : 'flight-not-found-already-handled' };
+        await markCheck('DONE', `NOT_FOUND: flight not found by provider → ${outcome}`);
+        return { status: 'DONE', reason: outcome === 'FLIGHT_NOT_FOUND' ? 'flight-not-found' : outcome === 'PENDING_VERIFICATION' ? 'pending-verification' : 'flight-not-found-already-handled' };
     }
     if (!result.ok) {
         await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { lastCheckedAt: now } });

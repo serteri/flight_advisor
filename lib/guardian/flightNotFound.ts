@@ -4,7 +4,9 @@
 // not exist (lookup code NOT_FOUND) — at opt-in confirmation (registration
 // lookup) or at any checkpoint — the trip leaves monitoring:
 //
-//   ACTIVE → FLIGHT_NOT_FOUND, remaining checkpoints cancelled, queued alert
+//   (only when definitive — see lib/guardian/flightVerification.ts: ≤7 days to
+//   departure; further out the trip goes to PENDING_VERIFICATION instead)
+//   ACTIVE/PENDING_VERIFICATION → FLIGHT_NOT_FOUND, remaining checkpoints cancelled, queued alert
 //   emails suppressed, and exactly ONE "we couldn't find your flight" email.
 //
 // Exactly-once comes from the conditional status update: only the call that
@@ -19,7 +21,7 @@ export function isFlightNotFound(result: FlightLookupResult | null | undefined):
 }
 
 export interface FlightNotFoundDeps {
-    /** ACTIVE → FLIGHT_NOT_FOUND; true only if this call changed the status. */
+    /** ACTIVE / PENDING_VERIFICATION → FLIGHT_NOT_FOUND; true only if this call changed the status. */
     transitionToNotFound(tripId: string): Promise<boolean>;
     cancelRemainingChecks(tripId: string, excludeCheckId?: string): Promise<number>;
     suppressQueuedAlerts(tripId: string): Promise<number>;
@@ -80,7 +82,7 @@ export async function defaultFlightNotFoundDeps(): Promise<FlightNotFoundDeps> {
     return {
         async transitionToNotFound(tripId) {
             const res = await prisma.monitoredTrip.updateMany({
-                where: { id: tripId, status: 'ACTIVE' },
+                where: { id: tripId, status: { in: ['ACTIVE', 'PENDING_VERIFICATION'] } },
                 data: { status: 'FLIGHT_NOT_FOUND', lastCheckedAt: new Date() },
             });
             return res.count === 1;

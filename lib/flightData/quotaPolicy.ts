@@ -11,10 +11,12 @@ export type CheckKind =
     | 'ARR_PLUS_1H'
     | 'ARR_PLUS_4H'
     | 'EXTRA_ARR_PLUS_1H'  // at most one, only when a ≥180 min delay looks likely
+    | 'VERIFY_FLIGHT'      // far-future flight not found at registration: one re-check at departure −7 days
     | 'COMPLETE';          // marks the trip COMPLETED; never calls the provider
 
-// Hard cap of provider calls per trip: 1 registration + 5 checkpoints + 1 extra.
-export const MAX_CALLS_PER_TRIP = 7;
+// Hard cap of provider calls per trip: 1 registration + 1 verification (far-
+// future flights only) + 5 checkpoints + 1 extra.
+export const MAX_CALLS_PER_TRIP = 8;
 // Typical trip: registration + 5 checkpoints, no extra check.
 export const EXPECTED_CALLS_PER_TRIP = 6;
 
@@ -96,7 +98,8 @@ export function reachedThreshold(ratio: number): number {
 export function isCheckAllowed(kind: CheckKind, level: QuotaLevel): boolean {
     if (kind === 'COMPLETE') return true;
     if (level === 'EXHAUSTED') return false;
-    if (level === 'CRITICAL') return kind === 'DEP' || kind === 'ARR_PLUS_4H';
+    // VERIFY_FLIGHT decides whether the trip is monitored at all (one call).
+    if (level === 'CRITICAL') return kind === 'DEP' || kind === 'ARR_PLUS_4H' || kind === 'VERIFY_FLIGHT';
     if (level === 'SKIP_EARLY') return kind !== 'DEP_MINUS_24H';
     return true;
 }
