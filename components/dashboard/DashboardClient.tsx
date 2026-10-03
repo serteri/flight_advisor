@@ -5,6 +5,7 @@ import { FileText, Plus, Plane } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { AddTripModal } from './AddTripModal';
+import { routeText, tripStatusLabelKey } from '@/lib/guardian/tripDisplay';
 
 interface DashboardClientProps {
     trips: Array<{
@@ -39,6 +40,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const t = useTranslations('Dashboard');
+    const tDisplay = useTranslations('TripDisplay');
 
     return (
         <div className="space-y-12">
@@ -87,10 +89,9 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                     <div className="grid gap-6">
                         {trips.map((trip) => {
                             const firstSegment = trip.segments?.[0];
-                            const routeFromSegment = firstSegment?.origin && firstSegment?.destination
-                                ? `${firstSegment.origin} ➝ ${firstSegment.destination}`
-                                : null;
-                            const routeLabel = routeFromSegment || trip.routeLabel || `${trip.origin || '-'} ➝ ${trip.destination || '-'}`;
+                            // Never "UNK ➝ UNK": an unresolved route reads "Route being verified".
+                            const routeLabel = routeText(firstSegment?.origin ?? trip.origin, firstSegment?.destination ?? trip.destination, '➝')
+                                ?? tDisplay('routeVerifying');
                             const flightLabel = firstSegment?.airlineCode && firstSegment?.flightNumber
                                 ? `${firstSegment.airlineCode}${firstSegment.flightNumber}`
                                 : trip.flightNumber || '-';
@@ -117,7 +118,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                     <div className="text-right">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${trip.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             }`}>
-                                            {trip.status === 'ACTIVE' ? t('monitored') : trip.status === 'FLIGHT_NOT_FOUND' ? t('flightNotFound') : (trip.status || '-')}
+                                            {tDisplay(`status.${tripStatusLabelKey(trip.status)}`)}
                                         </span>
                                     </div>
                                 </div>

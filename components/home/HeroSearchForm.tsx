@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Loader2, Mail, Plane, Calendar, ShieldCheck } from 'lucide-react';
 import { isValidFlightNumber } from '@/lib/flights/flightNumber';
+import { validateFlightDate, type FlightDateError } from '@/lib/flights/flightDateRule';
 
 type FieldErrors = {
     flightNumber?: string;
@@ -26,14 +27,29 @@ export function HeroSearchForm() {
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // Same rule as /api/trips/track (lib/flights/flightDateRule.ts): no past
+    // dates, at most 330 days ahead. Each error has its own message.
+    const dateMessages: Record<FlightDateError, string> = {
+        INVALID_DATE: t('errors.invalidDate'),
+        DATE_PAST: t('errors.datePast'),
+        DATE_TOO_FAR: t('errors.dateTooFar'),
+    };
+    // Server error codes → the field and message they belong to.
+    const serverFieldErrors: Record<string, { field: keyof FieldErrors; message: string }> = {
+        INVALID_FLIGHT: { field: 'flightNumber', message: t('errors.invalidFlight') },
+        INVALID_DATE: { field: 'date', message: dateMessages.INVALID_DATE },
+        DATE_PAST: { field: 'date', message: dateMessages.DATE_PAST },
+        DATE_TOO_FAR: { field: 'date', message: dateMessages.DATE_TOO_FAR },
+        INVALID_EMAIL: { field: 'email', message: t('errors.invalidEmail') },
+        CONSENT_REQUIRED: { field: 'consent', message: t('errors.consentRequired') },
+    };
 
     const formSchema = z.object({
         flightNumber: z.string().refine(isValidFlightNumber, { message: t('errors.invalidFlight') }),
-        date: z.coerce
-            .date({ message: t('errors.invalidDate') })
-            .min(startOfToday, { message: t('errors.invalidDate') }),
+        date: z.string().superRefine((value, ctx) => {
+            const check = validateFlightDate(value);
+            if (!check.ok) ctx.addIssue({ code: 'custom', message: dateMessages[check.code] });
+        }),
         email: z.string().email({ message: t('errors.invalidEmail') }),
     });
 
@@ -74,7 +90,12 @@ export function HeroSearchForm() {
             const data = await response.json();
 
             if (!response.ok) {
-                setError(data?.error || t('genericError'));
+                const mapped = data?.code ? serverFieldErrors[data.code] : undefined;
+                if (mapped) {
+                    setFieldErrors({ [mapped.field]: mapped.message });
+                } else {
+                    setError(data?.error || t('genericError'));
+                }
                 setIsSubmitting(false);
                 return;
             }

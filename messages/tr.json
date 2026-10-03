@@ -489,7 +489,9 @@
           "invalidFlight": "Geçersiz uçuş numarası",
           "invalidDate": "Lütfen geçerli, ileri bir tarih seçin",
           "invalidEmail": "Geçersiz e-posta adresi",
-          "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz"
+          "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz",
+          "datePast": "Bu tarih geçmişte. Bugünü ya da ileri bir tarihi seç.",
+          "dateTooFar": "Uçuşlar en fazla 330 gün öncesinden takip edilebilir."
         },
         "confirmation": {
           "title": "E-postanızı kontrol edin",
@@ -564,8 +566,7 @@
     "scoreItinerary": "Itinerary Skorla",
     "trackedItineraries": "Takip Edilen Itineraryler",
     "monitored": "MONITORING",
-    "trackedEmptyTitle": "Henuz tracked itinerary yok",
-    "flightNotFound": "Uçuş bulunamadı"
+    "trackedEmptyTitle": "Henuz tracked itinerary yok"
   },
   "Settings": {
     "subtitle": "Hesabını, üyeliğini ve uyarılarını yönet.",
@@ -1290,5 +1291,18 @@
     "body": "E-posta adresinizi onaylamak ve yolculuklarınızı açmak için düğmeye basın. Bu ek adım, e-posta tarayıcılarının bağlantınızı tüketmesini engeller.",
     "button": "Onayla ve devam et",
     "submitting": "Onaylanıyor..."
+  },
+  "TripDisplay": {
+    "routeVerifying": "Rota doğrulanıyor",
+    "status": {
+      "ACTIVE": "İzleniyor",
+      "PENDING_CONFIRMATION": "E-posta onayı bekleniyor",
+      "PENDING_VERIFICATION": "Uçuş tarihi yaklaşınca doğrulanacak",
+      "FLIGHT_NOT_FOUND": "Uçuş bulunamadı",
+      "COMPLETED": "Tamamlandı",
+      "CANCELLED": "İptal edildi",
+      "ARCHIVED": "Arşivlendi",
+      "UNKNOWN": "Bilinmiyor"
+    }
   }
 }

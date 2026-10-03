@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { sendWelcomeEmail } from '@/lib/email/sender';
 import { parseFlightNumber } from '@/lib/flights/flightNumber';
+import { MAX_DAYS_AHEAD, validateFlightDate } from '@/lib/flights/flightDateRule';
 import { isEmailDeliveryReady } from '@/lib/featureFlags';
 import {
     TRACK_RATE_WINDOW_MS,
@@ -12,11 +13,9 @@ import {
 } from '@/lib/guardian/trackRateLimit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 // The link doubles as the opt-in confirmation, so it must survive until the
 // subscriber actually opens their inbox.
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type TrackTripPayload = {
     flightNumber?: string;
@@ -38,32 +37,28 @@ export async function POST(req: Request) {
     const email = (body.email || '').trim().toLowerCase();
     const consent = body.consent === true;
 
-    if (!flightNumber || !date || !email) {
-        return NextResponse.json({ error: 'flightNumber, date, and email are required' }, { status: 400 });
-    }
-
-    if (!EMAIL_REGEX.test(email)) {
-        return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
-    }
-
-    if (!consent) {
-        return NextResponse.json({ error: 'Consent is required to start tracking' }, { status: 400 });
-    }
+    // Field-specific errors: { error, field, code } so the form can show the
+    // message under the right input (codes map to i18n keys there).
+    const fieldError = (field: 'flightNumber' | 'date' | 'email' | 'consent', code: string, error: string) =>
+        NextResponse.json({ error, field, code }, { status: 400 });
 
     const parsedFlight = parseFlightNumber(flightNumber);
-    if (!parsedFlight) {
-        return NextResponse.json({ error: 'Invalid flight number format' }, { status: 400 });
-    }
+    if (!parsedFlight) return fieldError('flightNumber', 'INVALID_FLIGHT', 'Invalid flight number format');
     const { airlineCode, number: flightDigits, full: fullFlightNumber } = parsedFlight;
 
-    const departureDate = DATE_REGEX.test(date) ? new Date(`${date}T00:00:00.000Z`) : new Date(NaN);
-    if (Number.isNaN(departureDate.getTime())) {
-        return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+    const dateCheck = validateFlightDate(date);
+    if (!dateCheck.ok) {
+        const messages = {
+            INVALID_DATE: 'Invalid date',
+            DATE_PAST: 'Flight date is in the past',
+            DATE_TOO_FAR: `Flight date is more than ${MAX_DAYS_AHEAD} days ahead`,
+        } as const;
+        return fieldError('date', dateCheck.code, messages[dateCheck.code]);
     }
-    // One day of slack for travellers in timezones ahead of UTC.
-    if (departureDate.getTime() < Date.now() - DAY_MS) {
-        return NextResponse.json({ error: 'Flight date is in the past' }, { status: 400 });
-    }
+    const departureDate = dateCheck.date;
+
+    if (!EMAIL_REGEX.test(email)) return fieldError('email', 'INVALID_EMAIL', 'Invalid email address');
+    if (!consent) return fieldError('consent', 'CONSENT_REQUIRED', 'Consent is required to start tracking');
 
     const requestIpHash = hashRequestIp(
         clientIpFromHeaders(req.headers),

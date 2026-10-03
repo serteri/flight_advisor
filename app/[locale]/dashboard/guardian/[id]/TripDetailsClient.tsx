@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
+import { routeText } from '@/lib/guardian/tripDisplay';
 import { useRouter } from '@/i18n/routing';
 import {
     AlertTriangle,
@@ -168,6 +169,7 @@ const parseNotificationType = (eventId?: string | null): string => {
 
 export function TripDetailsClient({ trip, locale, compensation }: TripDetailsClientProps) {
     const t = useTranslations('GuardianTripDetails');
+    const tDisplay = useTranslations('TripDisplay');
     const router = useRouter();
     const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
@@ -251,9 +253,9 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
         (airlineCodeForClaim ? t('airlineFallback', { code: airlineCodeForClaim }) : t('airlineFallback', { code: '' }));
     const claimUrl = getAirlineClaimUrl(airlineCodeForClaim, airlineNameForClaim);
 
-    const routeHero = firstSegment && trip.segments.length > 0
-        ? `${firstSegment.origin} → ${trip.segments[trip.segments.length - 1].destination}`
-        : trip.routeLabel;
+    const routeHero = (firstSegment && trip.segments.length > 0
+        ? routeText(firstSegment.origin, trip.segments[trip.segments.length - 1].destination)
+        : null) ?? tDisplay('routeVerifying');
 
     const statusBadge = cancellationFlag
         ? {
@@ -470,6 +472,11 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                     <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
 
+                {trip.status === 'PENDING_VERIFICATION' && (
+                    <div role="status" className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                        {tDisplay('status.PENDING_VERIFICATION')}
+                    </div>
+                )}
                 {trip.status === 'FLIGHT_NOT_FOUND' && (
                     <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <div className="font-semibold">{t('flightNotFound.title')}</div>
