@@ -540,6 +540,10 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 >
 > **Şema:** `docs/phase2_schema_flight_not_found.sql`, **iki ayrı ifade**: `ADD VALUE 'FLIGHT_NOT_FOUND'` ve `ADD VALUE 'PENDING_VERIFICATION'`. Her biri ayrı, transaction dışında ve kod deploy edilmeden **önce** çalıştırılmalı. **Henüz hiçbir veritabanına uygulanmadı.**
 
+- **Codeshare riski (FLIGHT_NOT_FOUND):** Kullanıcı satan havayolunun numarasını girmiş olabilir (ör. bir codeshare numarası), sağlayıcı ise uçuşu işleten havayolunun numarasıyla tanıyor olabilir. Bu durumda gerçek bir uçuş "bulunamadı" görünür.
+  - "Uçuşu bulamadık" e-postasına bir **"tekrar dene" butonu** ve "biniş kartında ya da rezervasyonda **işleten havayolunun (operated by) uçuş numarasını** dene" ipucu eklenmeli.
+  - Trip **kalıcı olarak kapanmamalı**: "tekrar dene" ile düzeltilmiş numara ya da aynı numara yeniden sorgulanabilmeli, bulunursa trip `ACTIVE` olmalı.
+  - Bugünkü durum: `FLIGHT_NOT_FOUND` worker için kalıcı bir pasif durum; e-postada sadece "uçuşu yeniden ekle" linki var.
 - **Engellemeyen havayolu kontrolü:** Tanınmayan bir havayolu kodu için formda yalnızca bir uyarı gösterilsin ("Bu havayolu kodunu tanımıyoruz, kontrol et"), gönderim engellenmesin. Eski bir yerel liste gerçek havayollarını reddedebileceği için engelleyici liste kullanılmayacak. Kaynak ileride gerçek API verisinden (AeroDataBox airline endpoint) beslenen bir önbellek olabilir. Bugünkü durum: kodun formatını regex kontrol ediyor, uçuşun gerçekten var olup olmadığını −7 gün doğrulaması kontrol ediyor.
 - **Tarih formatı (öncelikli):** Arayüzde ve e-postalarda tüm tarihler ay adıyla gösterilsin (ör. "7 Oct 2026"). Sayısal format (15/10/2026, 10/15/2026 gibi) hiçbir yerde kullanılmasın.
   - Örnek: takip onay sayfası şu an `toLocaleDateString()` ile "15/10/2026" gösteriyor.
