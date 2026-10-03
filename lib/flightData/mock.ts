@@ -7,6 +7,7 @@
 //   XX1000  on time (FRA→MAD)            XX1300  cancelled (MUC→FCO)
 //   XX1180  arrives 185 min late (CDG→JFK) XX1999  route unknown
 //   XX1240  arrives 245 min late (CDG→JFK) U21234  digit IATA code, intra-EU (BER→FCO)
+//   XX404   flight does not exist (empty provider response → NOT_FOUND)
 //   anything else → the on-time scenario with the requested flight number.
 
 import XX1000 from './__fixtures__/XX1000.json';
@@ -25,6 +26,8 @@ const SCENARIOS: Record<string, AdbFlight[]> = {
     XX1240: XX1240 as AdbFlight[],
     XX1300: XX1300 as AdbFlight[],
     XX1999: XX1999 as AdbFlight[],
+    // Flight that does not exist: the provider returns no flights (live: 204/empty).
+    XX404: [],
     U21234: U21234 as AdbFlight[],
 };
 

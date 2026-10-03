@@ -515,6 +515,16 @@ Varsayılan girdi: gecikme senaryolarında planlanan varış ile kapı açılı�
 
 ## 8. Faz 2 listesi
 
+> **Faz 2'de yapılan — uçuş doğrulaması (`phase-2`):** Sağlayıcı uçuş için `NOT_FOUND` dediğinde, hem opt-in anındaki kayıt sorgusunda hem her checkpoint'te aynı şey olur:
+> - trip `FLIGHT_NOT_FOUND`'a geçer;
+> - kalan checkpoint'ler iptal edilir;
+> - kuyruktaki uyarı e-postaları `SUPPRESSED` yapılır;
+> - kullanıcıya **tek** bir "uçuşu bulamadık" e-postası gider.
+>
+> Tek gönderim, koşullu durum geçişiyle sağlanıyor (`lib/guardian/flightNotFound.ts`). Kota ya da HTTP hataları "bulunamadı" sayılmaz. Mock'ta `XX404` var olmayan uçuştur.
+>
+> **Şema:** `docs/phase2_schema_flight_not_found.sql` (tek ifade: `ALTER TYPE "TripStatus" ADD VALUE 'FLIGHT_NOT_FOUND'`). **Henüz uygulanmadı.** Kod bu değeri yazdığı için SQL'in, transaction dışında ve kod deploy edilmeden **önce** uygulanması gerekir. Aksi hâlde NOT_FOUND durumunda durum güncellemesi hata verir.
+
 - **Tarih formatı (öncelikli):** Arayüzde ve e-postalarda tüm tarihler ay adıyla gösterilsin (ör. "7 Oct 2026"). Sayısal format (15/10/2026, 10/15/2026 gibi) hiçbir yerde kullanılmasın.
   - Örnek: takip onay sayfası şu an `toLocaleDateString()` ile "15/10/2026" gösteriyor.
   - Tek bir ortak format fonksiyonu yazılmalı, ay adı locale'e göre seçilmeli: en "7 Oct 2026", de "7. Okt. 2026", tr "7 Eki 2026".

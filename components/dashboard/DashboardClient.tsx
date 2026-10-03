@@ -117,7 +117,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                     <div className="text-right">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${trip.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             }`}>
-                                            {trip.status === 'ACTIVE' ? t('monitored') : (trip.status || '-')}
+                                            {trip.status === 'ACTIVE' ? t('monitored') : trip.status === 'FLIGHT_NOT_FOUND' ? t('flightNotFound') : (trip.status || '-')}
                                         </span>
                                     </div>
                                 </div>

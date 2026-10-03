@@ -470,6 +470,12 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                     <ArrowLeft className="w-4 h-4" /> {t('back')}
                 </button>
 
+                {trip.status === 'FLIGHT_NOT_FOUND' && (
+                    <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <div className="font-semibold">{t('flightNotFound.title')}</div>
+                        <p className="mt-1">{t('flightNotFound.text')}</p>
+                    </div>
+                )}
                 {isLikelyEligible && compensationAmount && (
                     <CompensationCard tripId={trip.id} amount={compensationAmount} regime={compensation.regime} />
                 )}

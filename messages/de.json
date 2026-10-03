@@ -564,7 +564,8 @@
     "lastUpdated": "Last updated: {time}",
     "nextUpdate": "Next update: {time}",
     "delete": "Stop Tracking",
-    "updatesDaily": "Updates Daily"
+    "updatesDaily": "Updates Daily",
+    "flightNotFound": "Flug nicht gefunden"
   },
   "priceOracle": {
     "title": "Preisorakel",
@@ -1103,6 +1104,10 @@
       "empty": "Noch keine Überwachungsereignisse.",
       "checkCompleted": "Regelmäßige Prüfung abgeschlossen: keine Probleme festgestellt.",
       "equipmentChangeNotice": "Achtung: Flugzeugtyp/Ausstattung wurde geändert. Ihre Sitzplatzzuweisung könnte betroffen sein."
+    },
+    "flightNotFound": {
+      "title": "Wir konnten diesen Flug nicht finden",
+      "text": "Unsere Flugdaten enthalten diese Flugnummer an diesem Datum nicht. Wir haben die Überwachung beendet und senden keine Warnungen. Bitte prüfe deine Buchung und füge den Flug erneut hinzu, falls etwas falsch eingegeben wurde."
     }
   },
   "GuardianHistory": {

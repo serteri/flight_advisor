@@ -17,6 +17,7 @@ import {
     type TripSchedule,
 } from '@/lib/guardian/checkpoints';
 import { cancelPendingChecks, scheduleTripChecks } from '@/lib/guardian/scheduler';
+import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from '@/lib/guardian/flightNotFound';
 
 const UNKNOWN_IATA = 'UNK';
 
@@ -149,6 +150,11 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
     }
 
     const result = await lookupWithinBudget(tripId, segment, 'REGISTRATION');
+    // Flight validation at opt-in: a flight the provider doesn't know is never monitored.
+    if (isFlightNotFound(result)) {
+        await handleFlightNotFound(tripId, await defaultFlightNotFoundDeps(), { source: 'REGISTRATION' });
+        return;
+    }
     if (result?.ok) {
         segment = (await applyFlightDataToTrip(tripId, segment, result.flight)).segment;
     } else {
