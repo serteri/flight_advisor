@@ -119,13 +119,21 @@ function pickFlight(flights: AdbFlight[]): AdbFlight | null {
     return flights.find((f) => f.codeshareStatus === 'IsOperator') ?? flights[0];
 }
 
+// A real leg always carries departure and/or arrival. Error bodies such as
+// {"message":"..."}, {} or null (200/204 with odd payloads) are not flights.
+function isFlightLike(value: unknown): value is AdbFlight {
+    if (!value || typeof value !== 'object') return false;
+    const f = value as AdbFlight;
+    return Boolean(f.departure || f.arrival);
+}
+
 export function parseAeroDataBoxResponse(
     payload: unknown,
     flightNumber: string,
     date: string,
     source: 'LIVE' | 'MOCK',
 ): NormalizedFlight | null {
-    const list = Array.isArray(payload) ? (payload as AdbFlight[]) : payload ? [payload as AdbFlight] : [];
+    const list = (Array.isArray(payload) ? payload : [payload]).filter(isFlightLike);
     const flight = pickFlight(list);
     if (!flight) return null;
 

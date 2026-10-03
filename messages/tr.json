@@ -40,7 +40,10 @@
     "submitting": "Gönderiliyor...",
     "sentTitle": "E-postanızı kontrol edin",
     "sentSubtitle": "Bu adrese kayıtlı bir hesap varsa, bir giriş bağlantısı yola çıktı. Bağlantı 15 dakika içinde geçerliliğini kaybeder.",
-    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "linkMissing": "Bu giriş bağlantısı eksik. Aşağıdan yenisini isteyin.",
+    "linkExpired": "Bu giriş bağlantısının süresi dolmuş ya da daha önce kullanılmış. Aşağıdan yenisini isteyin.",
+    "linkFailed": "Bu bağlantıdan girişinizi tamamlayamadık. Bağlantı kullanıldığı için lütfen aşağıdan yenisini isteyin. Sorun sürerse destekle iletişime geçin."
   },
   "MyTrips": {
     "title": "Takip ettiğiniz yolculuklar",
