@@ -24,6 +24,7 @@ import {
     replanTripChecks,
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
+import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from "@/lib/guardian/flightNotFound";
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -51,7 +52,7 @@ export type TripCheckOutcome = {
 type ComputedStatus = 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN';
 
 const LEASE_MS = 10 * 60 * 1000;
-const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIRMATION']);
+const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIRMATION', 'FLIGHT_NOT_FOUND']);
 
 // Delay alert thresholds (arrival delay, minutes). 180 and 240 are the EU261/
 // UK261 thresholds (3h eligibility, 4h full long-haul amount) — crossing them
@@ -222,6 +223,17 @@ async function runLeasedCheck(ctx: {
     if (!result) {
         await markCheck('SKIPPED', 'per-trip provider call cap reached');
         return { status: 'SKIPPED', reason: 'trip-call-cap' };
+    }
+    // Flight validation at every checkpoint: provider says the flight doesn't
+    // exist → FLIGHT_NOT_FOUND, remaining checks cancelled, no alert emails, one
+    // "we couldn't find your flight" email (lib/guardian/flightNotFound.ts).
+    if (isFlightNotFound(result)) {
+        const outcome = await handleFlightNotFound(trip.id, await defaultFlightNotFoundDeps(), {
+            source: 'CHECKPOINT',
+            excludeCheckId: ctx.check?.id,
+        });
+        await markCheck('DONE', 'NOT_FOUND: flight not found by provider');
+        return { status: 'DONE', reason: outcome.transitioned ? 'flight-not-found' : 'flight-not-found-already-handled' };
     }
     if (!result.ok) {
         await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { lastCheckedAt: now } });

@@ -564,7 +564,8 @@
     "scoreItinerary": "Itinerary Skorla",
     "trackedItineraries": "Takip Edilen Itineraryler",
     "monitored": "MONITORING",
-    "trackedEmptyTitle": "Henuz tracked itinerary yok"
+    "trackedEmptyTitle": "Henuz tracked itinerary yok",
+    "flightNotFound": "Uçuş bulunamadı"
   },
   "Settings": {
     "subtitle": "Hesabını, üyeliğini ve uyarılarını yönet.",
@@ -774,6 +775,10 @@
       "empty": "Henüz izleme olayı yok.",
       "checkCompleted": "Periyodik kontrol tamamlandı: sorun bulunmadı.",
       "equipmentChangeNotice": "Dikkat: Uçak tipi/ekipman değişti. Koltuk yerleşiminiz etkilenmiş olabilir."
+    },
+    "flightNotFound": {
+      "title": "Bu uçuşu bulamadık",
+      "text": "Uçuş verilerimizde bu tarihte bu uçuş numarası yok; bu yüzden izlemeyi durdurduk ve uyarı göndermeyeceğiz. Lütfen rezervasyonunu kontrol et; bir şey yanlış yazıldıysa uçuşu yeniden ekle."
     }
   },
   "GuardianHistory": {

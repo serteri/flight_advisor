@@ -564,7 +564,8 @@
     "delete": "Stop Tracking",
     "updatesDaily": "Updates Daily",
     "paymentSuccessTitle": "Payment confirmed — welcome aboard!",
-    "paymentSuccessBody": "Your plan is now active. You can start using itinerary scoring and scheduled monitoring tools."
+    "paymentSuccessBody": "Your plan is now active. You can start using itinerary scoring and scheduled monitoring tools.",
+    "flightNotFound": "Flight not found"
   },
   "Settings": {
     "subtitle": "Manage your account, subscription, and alerts.",
@@ -774,6 +775,10 @@
       "empty": "No monitoring events yet.",
       "checkCompleted": "Periodic check completed: no issues found.",
       "equipmentChangeNotice": "Heads up: the aircraft type/equipment changed. Your seat assignment may be affected."
+    },
+    "flightNotFound": {
+      "title": "We couldn't find this flight",
+      "text": "Our flight data has no record of this flight number on this date, so we stopped monitoring it and won't send alerts. Please check the booking and add the flight again if something was mistyped."
     }
   },
   "GuardianHistory": {
