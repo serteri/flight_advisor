@@ -40,7 +40,10 @@
     "submitting": "Gönderiliyor...",
     "sentTitle": "E-postanızı kontrol edin",
     "sentSubtitle": "Bu adrese kayıtlı bir hesap varsa, bir giriş bağlantısı yola çıktı. Bağlantı 15 dakika içinde geçerliliğini kaybeder.",
-    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    "genericError": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "linkMissing": "Bu giriş bağlantısı eksik. Aşağıdan yenisini isteyin.",
+    "linkExpired": "Bu giriş bağlantısının süresi dolmuş ya da daha önce kullanılmış. Aşağıdan yenisini isteyin.",
+    "linkFailed": "Bu bağlantıdan girişinizi tamamlayamadık. Bağlantı kullanıldığı için lütfen aşağıdan yenisini isteyin. Sorun sürerse destekle iletişime geçin."
   },
   "MyTrips": {
     "title": "Takip ettiğiniz yolculuklar",
@@ -1276,5 +1279,11 @@
     "confirmationTitle": "Listeye eklendin",
     "message": "E-posta uyarıları çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz.",
     "loginNotice": "E-posta linkiyle giriş çok yakında aktif olacak; aktif olduğunda seni bilgilendireceğiz."
+  },
+  "ConfirmLogin": {
+    "title": "Devam etmek için onaylayın",
+    "body": "E-posta adresinizi onaylamak ve yolculuklarınızı açmak için düğmeye basın. Bu ek adım, e-posta tarayıcılarının bağlantınızı tüketmesini engeller.",
+    "button": "Onayla ve devam et",
+    "submitting": "Onaylanıyor..."
   }
 }

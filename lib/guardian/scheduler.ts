@@ -4,6 +4,10 @@
 // planned checkpoint is persisted as a ScheduledTripCheck row first, so the
 // schedule is visible and cancellable even when publishing fails.
 //
+// QStash only accepts delays up to ~7 days (free plan), so only checkpoints due
+// within lib/guardian/publishWindow.ts' horizon are published here; later ones
+// stay SCHEDULED/unpublished until the daily publish-due run picks them up.
+//
 // Publishing is gated by lib/guardian/qstashPolicy.ts (Vercel production or
 // QSTASH_FORCE_LIVE=true). Outside that, the row is kept SCHEDULED without a
 // messageId and can be triggered by hand. Where publishing is allowed but
@@ -15,6 +19,8 @@ import { prisma } from '@/lib/prisma';
 import { appUrl } from '@/lib/config/runtimeEnv';
 import type { PlannedCheck } from '@/lib/guardian/checkpoints';
 import { isQStashPublishAllowed } from '@/lib/guardian/qstashPolicy';
+import { MAX_DELAY_ERROR_MARKER, withinPublishHorizon } from '@/lib/guardian/publishWindow';
+import { publishDueChecks, type PublishDueDeps, type PublishDueSummary } from '@/lib/guardian/publishDue';
 
 let cachedClient: Client | null | undefined;
 
@@ -40,6 +46,17 @@ export function checkEndpointUrl(tripId: string, checkId: string): string {
     return appUrl(`/api/guardian/check?tripId=${encodeURIComponent(tripId)}&checkId=${encodeURIComponent(checkId)}`);
 }
 
+async function publishCheck(client: Client, row: { id: string; runAt: Date }, tripId: string, kind: string): Promise<string | null> {
+    const response = await client.publishJSON({
+        url: checkEndpointUrl(tripId, row.id),
+        body: { tripId, checkId: row.id, kind },
+        notBefore: Math.floor(row.runAt.getTime() / 1000),
+        deduplicationId: row.id,
+        retries: 3,
+    });
+    return 'messageId' in response ? response.messageId : null;
+}
+
 export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[]): Promise<void> {
     const client = getQStashClient();
 
@@ -62,15 +79,13 @@ export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[])
             continue;
         }
 
+        if (!withinPublishHorizon(check.runAt, new Date())) {
+            console.log(`[Scheduler] ${check.kind} for trip ${tripId} is beyond the QStash delay window — stored, the daily publish-due run will publish it (check ${row.id}, runAt ${check.runAt.toISOString()})`);
+            continue;
+        }
+
         try {
-            const response = await client.publishJSON({
-                url: checkEndpointUrl(tripId, row.id),
-                body: { tripId, checkId: row.id, kind: check.kind },
-                notBefore: Math.floor(check.runAt.getTime() / 1000),
-                deduplicationId: row.id,
-                retries: 3,
-            });
-            const messageId = 'messageId' in response ? response.messageId : null;
+            const messageId = await publishCheck(client, row, tripId, check.kind);
             await prisma.scheduledTripCheck.update({ where: { id: row.id }, data: { messageId } });
         } catch (error: any) {
             const message = error?.message || 'QStash publish failed';
@@ -117,4 +132,48 @@ export async function cancelPendingChecks(
         data: { status: 'CANCELLED' },
     });
     return result.count;
+}
+
+// Daily catch-up (see lib/guardian/publishDue.ts). No-op outside the production
+// publish policy, so a copied database can never schedule real callbacks.
+export async function publishDueScheduledChecks(now = new Date()): Promise<PublishDueSummary | { skipped: string }> {
+    const client = getQStashClient();
+    if (!isQStashPublishAllowed()) return { skipped: 'QStash publishing is not allowed in this environment' };
+    if (!client) {
+        console.error('[PublishDue] QSTASH_TOKEN missing — nothing published');
+        return { skipped: 'QSTASH_TOKEN is not set' };
+    }
+
+    const deps: PublishDueDeps = {
+        resetMaxDelayFailures: async () =>
+            (
+                await prisma.scheduledTripCheck.updateMany({
+                    where: {
+                        status: 'FAILED',
+                        messageId: null,
+                        error: { contains: MAX_DELAY_ERROR_MARKER, mode: 'insensitive' },
+                        trip: { status: 'ACTIVE' },
+                    },
+                    data: { status: 'SCHEDULED', error: null },
+                })
+            ).count,
+        findUnpublished: () =>
+            prisma.scheduledTripCheck.findMany({
+                where: { status: 'SCHEDULED', messageId: null, trip: { status: 'ACTIVE' } },
+                orderBy: { runAt: 'asc' },
+                take: 500,
+                select: { id: true, tripId: true, kind: true, runAt: true },
+            }),
+        publish: (row) => publishCheck(client, row, row.tripId, row.kind),
+        markPublished: async (id, messageId) => {
+            await prisma.scheduledTripCheck.updateMany({
+                where: { id, status: 'SCHEDULED', messageId: null },
+                data: { messageId: messageId ?? 'published-no-id', error: null },
+            });
+        },
+        markFailed: async (id, error) => {
+            await prisma.scheduledTripCheck.update({ where: { id }, data: { status: 'FAILED', error } });
+        },
+    };
+    return publishDueChecks(now, deps);
 }

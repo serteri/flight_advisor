@@ -40,7 +40,10 @@
     "submitting": "Wird gesendet...",
     "sentTitle": "Überprüfe deine E-Mails",
     "sentSubtitle": "Falls für diese Adresse ein Konto existiert, ist ein Login-Link auf dem Weg. Der Link läuft in 15 Minuten ab.",
-    "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "linkMissing": "Dieser Login-Link ist unvollständig. Fordere unten einen neuen an.",
+    "linkExpired": "Dieser Login-Link ist abgelaufen oder wurde bereits verwendet. Fordere unten einen neuen an.",
+    "linkFailed": "Wir konnten die Anmeldung über diesen Link nicht abschließen. Er ist verbraucht, bitte fordere unten einen neuen an. Falls das öfter passiert, wende dich an den Support."
   },
   "MyTrips": {
     "title": "Deine verfolgten Reisen",
@@ -1276,5 +1279,11 @@
     "confirmationTitle": "Du bist auf der Liste",
     "message": "E-Mail-Benachrichtigungen werden in Kürze aktiv; wir informieren dich, sobald es so weit ist.",
     "loginNotice": "Die Anmeldung per E-Mail-Link wird in Kürze aktiv; wir informieren dich, sobald es so weit ist."
+  },
+  "ConfirmLogin": {
+    "title": "Zum Fortfahren bestätigen",
+    "body": "Tippe auf die Schaltfläche, um deine E-Mail-Adresse zu bestätigen und deine Reisen zu öffnen. Dieser zusätzliche Schritt verhindert, dass E-Mail-Scanner deinen Link verbrauchen.",
+    "button": "Bestätigen und fortfahren",
+    "submitting": "Wird bestätigt..."
   }
 }

@@ -40,7 +40,10 @@
     "submitting": "Sending...",
     "sentTitle": "Check your email",
     "sentSubtitle": "If an account exists for that address, a login link is on its way. The link expires in 15 minutes.",
-    "genericError": "Something went wrong. Please try again."
+    "genericError": "Something went wrong. Please try again.",
+    "linkMissing": "This login link is incomplete. Request a new one below.",
+    "linkExpired": "This login link has expired or was already used. Request a new one below.",
+    "linkFailed": "We couldn't finish signing you in from that link. It has been used up, so please request a new one below. If this keeps happening, contact support."
   },
   "MyTrips": {
     "title": "Your tracked trips",
@@ -1276,5 +1279,11 @@
     "confirmationTitle": "You're on the list",
     "message": "Email alerts will be active very soon; we'll let you know as soon as they are.",
     "loginNotice": "Sign-in by email link will be active very soon; we'll let you know as soon as it is."
+  },
+  "ConfirmLogin": {
+    "title": "Confirm to continue",
+    "body": "Press the button to confirm your email address and open your trips. This extra step keeps email scanners from using up your link.",
+    "button": "Confirm and continue",
+    "submitting": "Confirming..."
   }
 }
