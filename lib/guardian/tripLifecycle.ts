@@ -17,6 +17,7 @@ import {
     type TripSchedule,
 } from '@/lib/guardian/checkpoints';
 import { cancelPendingChecks, scheduleTripChecks } from '@/lib/guardian/scheduler';
+import { skipRegistrationLookup } from '@/lib/guardian/verifiedFlight';
 import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from '@/lib/guardian/flightNotFound';
 import { defaultPendingVerificationDeps, deferVerification, notFoundDecision } from '@/lib/guardian/flightVerification';
 
@@ -66,7 +67,11 @@ export async function lookupWithinBudget(
         console.warn(`[Guardian] Trip ${tripId} reached ${MAX_CALLS_PER_TRIP} provider calls — ${kind} not executed`);
         return null;
     }
-    return lookupFlight(segmentFlightNumber(segment), segmentLookupDate(segment), kind);
+    // A known route pins the leg (a number can fly several legs a day).
+    const leg = !isUnknownIata(segment.origin) && !isUnknownIata(segment.destination)
+        ? { origin: segment.origin.toUpperCase(), destination: segment.destination.toUpperCase() }
+        : undefined;
+    return lookupFlight(segmentFlightNumber(segment), segmentLookupDate(segment), kind, { leg });
 }
 
 export interface AppliedFlightData {
@@ -185,6 +190,13 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
     let segment: SegmentLike | undefined = trip.segments[0];
     if (!segment) {
         console.error(`[Guardian] Trip ${tripId} has no flight segment — monitoring not scheduled`);
+        return;
+    }
+
+    // The form's "find my flight" step already resolved this leg (route + times are
+    // stored on the segment): plan from that, no second provider call.
+    if (skipRegistrationLookup(trip)) {
+        await replanTripChecks(tripId, resolveTripSchedule(segment), now);
         return;
     }
 

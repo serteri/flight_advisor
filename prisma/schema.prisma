@@ -539,6 +539,7 @@ model MonitoredTrip {
   consentGiven    Boolean  @default(false)
   confirmedAt     DateTime? // double opt-in: magic link opened; null while PENDING_CONFIRMATION
   requestIpHash   String?   // HMAC of the submitting IP, only for rate limiting (never the raw IP)
+  flightVerifiedAt DateTime? // set when the form's "find my flight" step resolved the leg (route + times stored); opt-in then skips the registration lookup
 
   // Finansal Veriler (Bilet Bazlı)
   originalPrice   Float
@@ -1188,4 +1189,27 @@ model Lead {
   createdAt DateTime @default(now())
 
   @@map("leads")
+}
+
+// "Find my flight" step of the sign-up form: 6-hour cache of the provider's legs
+// per (flight number, local flight date). Also caches NOT_FOUND results.
+model FlightLookupCache {
+  id           String   @id @default(cuid())
+  flightNumber String   // normalised, e.g. TK1234
+  flightDate   String   // YYYY-MM-DD (local flight date as entered)
+  outcome      String   // FOUND | NOT_FOUND
+  options      Json     // FlightLegOption[] (lib/flightData/legs.ts)
+  fetchedAt    DateTime @default(now())
+
+  @@unique([flightNumber, flightDate])
+  @@index([fetchedAt])
+}
+
+// Per-IP rate limit of the lookup endpoint (HMAC of the IP, never the raw address).
+model FlightLookupAttempt {
+  id        String   @id @default(cuid())
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
 }
