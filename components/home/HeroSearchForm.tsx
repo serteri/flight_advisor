@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
+import { FlightLookupResult } from '@/components/home/FlightLookupResult';
+import { submitGate, type LookupState } from '@/lib/flights/lookupFormState';
 import { useRouter } from '@/i18n/routing';
-import { Loader2, Mail, Plane, Calendar, ShieldCheck } from 'lucide-react';
+import { Loader2, Mail, Plane, Calendar, ShieldCheck, Search } from 'lucide-react';
 import { isValidFlightNumber } from '@/lib/flights/flightNumber';
 import { validateFlightDate, type FlightDateError } from '@/lib/flights/flightDateRule';
 
@@ -13,6 +15,7 @@ type FieldErrors = {
     date?: string;
     email?: string;
     consent?: string;
+    lookup?: string;
 };
 
 export function HeroSearchForm() {
@@ -26,6 +29,14 @@ export function HeroSearchForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    // "Find my flight" step: server-side lookup of number + date. Any edit resets it.
+    const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' });
+    const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+    const resetLookup = () => {
+        setLookup({ kind: 'idle' });
+        setSelectedKey(null);
+    };
 
     // Same rule as /api/trips/track (lib/flights/flightDateRule.ts): no past
     // dates, at most 330 days ahead. Each error has its own message.
@@ -42,6 +53,9 @@ export function HeroSearchForm() {
         DATE_TOO_FAR: { field: 'date', message: dateMessages.DATE_TOO_FAR },
         INVALID_EMAIL: { field: 'email', message: t('errors.invalidEmail') },
         CONSENT_REQUIRED: { field: 'consent', message: t('errors.consentRequired') },
+        FLIGHT_NOT_FOUND: { field: 'flightNumber', message: t('lookup.notFoundBlocking') },
+        SEGMENT_REQUIRED: { field: 'lookup', message: t('lookup.errors.selectSegment') },
+        INVALID_SEGMENT: { field: 'lookup', message: t('lookup.errors.staleSegment') },
     };
 
     const formSchema = z.object({
@@ -52,6 +66,52 @@ export function HeroSearchForm() {
         }),
         email: z.string().email({ message: t('errors.invalidEmail') }),
     });
+
+    // Validates number + date locally (no API call), then asks the server.
+    const runLookup = async (): Promise<boolean> => {
+        const check = formSchema.pick({ flightNumber: true, date: true }).safeParse({ flightNumber, date });
+        if (!check.success) {
+            const next: FieldErrors = {};
+            for (const issue of check.error.issues) {
+                const field = issue.path[0] as keyof FieldErrors;
+                if (field && !next[field]) next[field] = issue.message;
+            }
+            setFieldErrors(next);
+            return false;
+        }
+        setFieldErrors({});
+        setLookup({ kind: 'loading' });
+        try {
+            const response = await fetch('/api/flights/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ flightNumber, date }),
+            });
+            const data = await response.json().catch(() => null);
+            if (response.status === 429 || data?.status === 'RATE_LIMITED') {
+                setLookup({ kind: 'rateLimited' });
+            } else if (response.ok && data?.status === 'FOUND' && Array.isArray(data.options) && data.options.length > 0) {
+                setLookup({ kind: 'found', options: data.options });
+                // A single leg still needs "This is my flight"; several need a choice.
+            } else if (response.ok && data?.status === 'NOT_FOUND') {
+                setLookup({ kind: 'notFound', blocking: data.blocking === true });
+            } else {
+                // SKIPPED (quota/provider), validation or server trouble: carry on as before.
+                setLookup({ kind: 'skipped' });
+            }
+        } catch {
+            setLookup({ kind: 'skipped' });
+        }
+        return true;
+    };
+
+    const gateMessages = {
+        LOOKUP_REQUIRED: null,
+        LOOKUP_PENDING: t('lookup.errors.pending'),
+        SELECT_SEGMENT: t('lookup.errors.selectSegment'),
+        CONFIRM_FLIGHT: t('lookup.errors.confirmFlight'),
+        FLIGHT_NOT_FOUND: t('lookup.notFoundBlocking'),
+    } as const;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,12 +139,24 @@ export function HeroSearchForm() {
             return;
         }
 
+        // The flight must be looked up (and, if found, confirmed) before sending.
+        // Quota/provider trouble or a far-off schedule never blocks (see submitGate).
+        const gate = submitGate(lookup, selectedKey);
+        if (gate === 'LOOKUP_REQUIRED') {
+            await runLookup();
+            return;
+        }
+        if (gate) {
+            setFieldErrors({ [gate === 'FLIGHT_NOT_FOUND' ? 'flightNumber' : 'lookup']: gateMessages[gate] ?? undefined });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const response = await fetch('/api/trips/track', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ flightNumber, date, email, consent }),
+                body: JSON.stringify({ flightNumber, date, email, consent, ...(selectedKey ? { legKey: selectedKey } : {}) }),
             });
 
             const data = await response.json();
@@ -93,6 +165,7 @@ export function HeroSearchForm() {
                 const mapped = data?.code ? serverFieldErrors[data.code] : undefined;
                 if (mapped) {
                     setFieldErrors({ [mapped.field]: mapped.message });
+                    if (data.code === 'INVALID_SEGMENT') resetLookup();
                 } else {
                     setError(data?.error || t('genericError'));
                 }
@@ -124,7 +197,7 @@ export function HeroSearchForm() {
                             id="flightNumber"
                             type="text"
                             value={flightNumber}
-                            onChange={(e) => setFlightNumber(e.target.value)}
+                            onChange={(e) => { setFlightNumber(e.target.value); resetLookup(); }}
                             placeholder={t('flightNumberPlaceholder')}
                             className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         />
@@ -144,7 +217,7 @@ export function HeroSearchForm() {
                             id="flightDate"
                             type="date"
                             value={date}
-                            onChange={(e) => setDate(e.target.value)}
+                            onChange={(e) => { setDate(e.target.value); resetLookup(); }}
                             className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
@@ -152,6 +225,29 @@ export function HeroSearchForm() {
                         <p className="text-red-500 text-sm">{fieldErrors.date}</p>
                     )}
                 </div>
+            </div>
+
+            <div className="space-y-2" aria-live="polite">
+                <button
+                    type="button"
+                    onClick={() => void runLookup()}
+                    disabled={isSubmitting || lookup.kind === 'loading'}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-60"
+                >
+                    {lookup.kind === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {lookup.kind === 'loading' ? t('lookup.finding') : t('lookup.find')}
+                </button>
+                {lookup.kind === 'found' && (
+                    <FlightLookupResult options={lookup.options} selectedKey={selectedKey} onSelect={setSelectedKey} />
+                )}
+                {lookup.kind === 'notFound' && (
+                    <p className={`text-sm ${lookup.blocking ? 'text-red-600 font-medium' : 'text-amber-700'}`}>
+                        {lookup.blocking ? t('lookup.notFoundBlocking') : t('lookup.notFoundSoft')}
+                    </p>
+                )}
+                {lookup.kind === 'skipped' && <p className="text-sm text-slate-500">{t('lookup.skipped')}</p>}
+                {lookup.kind === 'rateLimited' && <p className="text-sm text-slate-500">{t('lookup.rateLimited')}</p>}
+                {fieldErrors.lookup && <p className="text-red-500 text-sm">{fieldErrors.lookup}</p>}
             </div>
 
             <div className="space-y-1.5">

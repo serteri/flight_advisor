@@ -450,6 +450,28 @@
           "subtitle": "We sent you a confirmation link. Monitoring starts as soon as you open it.",
           "nextSteps": "The link is valid for 24 hours. If you do not see the email, check your spam folder.",
           "backHome": "Back to home"
+        },
+        "lookup": {
+          "find": "Find my flight",
+          "finding": "Looking up…",
+          "foundTitle": "We found your flight",
+          "chooseTitle": "This flight number has several segments. Which one is yours?",
+          "departs": "Departs",
+          "arrives": "Arrives",
+          "airline": "Airline",
+          "localTimes": "Times are local to each airport.",
+          "confirm": "This is my flight",
+          "confirmed": "Confirmed",
+          "notFoundBlocking": "We couldn't find this flight. Check the flight number and date.",
+          "notFoundSoft": "The schedule may not be published yet. We'll verify your flight closer to departure — you can continue.",
+          "skipped": "We couldn't check the flight right now. You can continue; we'll verify it after you confirm your email.",
+          "rateLimited": "Too many lookups from your connection. You can continue; we'll verify the flight after you confirm your email.",
+          "errors": {
+            "pending": "Looking up your flight…",
+            "selectSegment": "Choose which segment is yours.",
+            "confirmFlight": "Please confirm this is your flight.",
+            "staleSegment": "That choice is no longer valid. Look up your flight again."
+          }
         }
       }
     }

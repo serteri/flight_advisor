@@ -19,6 +19,8 @@ export interface AdbAirport {
     countryCode?: string;
     timeZone?: string;
     location?: { lat: number; lon: number };
+    shortName?: string;
+    municipalityName?: string;
 }
 
 export interface AdbMovement {
@@ -113,10 +115,34 @@ const normalizeAirport = (airport?: AdbAirport): NormalizedAirport => ({
     lon: typeof airport?.location?.lon === 'number' ? airport.location.lon : null,
 });
 
+// The leg a trip was registered on (airports as stored on the trip segment).
+export interface LegHint {
+    origin: string;
+    destination: string;
+}
+
+// Thrown when the trip's leg is not among several legs the provider returned:
+// reading another leg's times would produce wrong delays and EU261 results.
+export class LegMismatchError extends Error {
+    constructor(hint: LegHint) {
+        super(`Selected leg ${hint.origin}-${hint.destination} is not in the provider response`);
+        this.name = 'LegMismatchError';
+    }
+}
+
 // Picks the operating flight when AeroDataBox returns several legs/codeshares.
-function pickFlight(flights: AdbFlight[]): AdbFlight | null {
+// With a leg hint and several legs, the leg between the hinted airports wins.
+function pickFlight(flights: AdbFlight[], leg?: LegHint): AdbFlight | null {
     if (flights.length === 0) return null;
-    return flights.find((f) => f.codeshareStatus === 'IsOperator') ?? flights[0];
+    const operatorFirst = (list: AdbFlight[]) => list.find((f) => f.codeshareStatus === 'IsOperator') ?? list[0];
+    if (leg && flights.length > 1) {
+        const matching = flights.filter(
+            (f) => f.departure?.airport?.iata?.toUpperCase() === leg.origin && f.arrival?.airport?.iata?.toUpperCase() === leg.destination,
+        );
+        if (matching.length === 0) throw new LegMismatchError(leg);
+        return operatorFirst(matching);
+    }
+    return operatorFirst(flights);
 }
 
 // A real leg always carries departure and/or arrival. Error bodies such as
@@ -132,9 +158,10 @@ export function parseAeroDataBoxResponse(
     flightNumber: string,
     date: string,
     source: 'LIVE' | 'MOCK',
+    leg?: LegHint,
 ): NormalizedFlight | null {
     const list = (Array.isArray(payload) ? payload : [payload]).filter(isFlightLike);
-    const flight = pickFlight(list);
+    const flight = pickFlight(list, leg);
     if (!flight) return null;
 
     const origin = normalizeAirport(flight.departure?.airport);

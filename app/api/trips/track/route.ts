@@ -5,6 +5,9 @@ import { sendWelcomeEmail } from '@/lib/email/sender';
 import { parseFlightNumber } from '@/lib/flights/flightNumber';
 import { MAX_DAYS_AHEAD, validateFlightDate } from '@/lib/flights/flightDateRule';
 import { isEmailDeliveryReady } from '@/lib/featureFlags';
+import { resolveFlightSelection, type SelectionResult } from '@/lib/flightData/formLookup';
+import { getLookupCache } from '@/lib/flightData/formLookupStore';
+import { verifiedSegmentData } from '@/lib/guardian/verifiedFlight';
 import {
     TRACK_RATE_WINDOW_MS,
     clientIpFromHeaders,
@@ -22,6 +25,9 @@ type TrackTripPayload = {
     date?: string;
     email?: string;
     consent?: boolean;
+    // Key of the leg chosen in the "find my flight" step. Only the key is taken
+    // from the client; route and times come from the server's own cached lookup.
+    legKey?: string;
 };
 
 export async function POST(req: Request) {
@@ -39,7 +45,7 @@ export async function POST(req: Request) {
 
     // Field-specific errors: { error, field, code } so the form can show the
     // message under the right input (codes map to i18n keys there).
-    const fieldError = (field: 'flightNumber' | 'date' | 'email' | 'consent', code: string, error: string) =>
+    const fieldError = (field: 'flightNumber' | 'date' | 'email' | 'consent' | 'legKey', code: string, error: string) =>
         NextResponse.json({ error, field, code }, { status: 400 });
 
     const parsedFlight = parseFlightNumber(flightNumber);
@@ -59,6 +65,29 @@ export async function POST(req: Request) {
 
     if (!EMAIL_REGEX.test(email)) return fieldError('email', 'INVALID_EMAIL', 'Invalid email address');
     if (!consent) return fieldError('consent', 'CONSENT_REQUIRED', 'Consent is required to start tracking');
+
+    // The "find my flight" step: what the server cached for this number + date
+    // decides — a definitive NOT_FOUND (≤7 days out) or an unchosen leg blocks;
+    // anything else (no lookup, quota, errors) creates the trip as before.
+    let selection: SelectionResult = { action: 'UNVERIFIED' };
+    try {
+        selection = resolveFlightSelection({
+            cache: await getLookupCache(fullFlightNumber, date),
+            date,
+            legKey: typeof body.legKey === 'string' ? body.legKey : null,
+        });
+    } catch (error) {
+        console.error('[POST /api/trips/track] lookup cache unavailable, continuing unverified:', error);
+    }
+    if (selection.action === 'BLOCK') {
+        const messages = {
+            FLIGHT_NOT_FOUND: 'We could not find this flight. Check the flight number and date.',
+            SEGMENT_REQUIRED: 'This flight number has several segments. Choose yours first.',
+            INVALID_SEGMENT: 'The selected segment is no longer valid. Look up your flight again.',
+        } as const;
+        return fieldError(selection.code === 'FLIGHT_NOT_FOUND' ? 'flightNumber' : 'legKey', selection.code, messages[selection.code]);
+    }
+    const verified = selection.action === 'VERIFIED' ? verifiedSegmentData(selection.leg, departureDate) : null;
 
     const requestIpHash = hashRequestIp(
         clientIpFromHeaders(req.headers),
@@ -88,13 +117,13 @@ export async function POST(req: Request) {
             create: { email },
         });
 
-        // Route and schedule are resolved by the registration lookup in
-        // initializeTripMonitoring; until then the route is UNK.
+        // Without a verified leg, route and schedule come from the registration
+        // lookup in initializeTripMonitoring; until then the route is UNK.
         const now = new Date();
         const trip = await prisma.monitoredTrip.create({
             data: {
                 userId: user.id,
-                routeLabel: `Flight ${fullFlightNumber}`,
+                routeLabel: verified ? `${verified.origin} ➝ ${verified.destination}` : `Flight ${fullFlightNumber}`,
                 originalPrice: 0,
                 currency: 'AUD',
                 ticketClass: 'UNKNOWN',
@@ -103,17 +132,20 @@ export async function POST(req: Request) {
                 requestIpHash,
                 // Double opt-in: monitoring starts when the emailed link is opened.
                 status: 'PENDING_CONFIRMATION',
-                routeUnknown: true,
+                routeUnknown: !verified,
+                // Leg resolved in the form: opt-in makes no second provider call.
+                ...(verified ? { flightVerifiedAt: now } : {}),
                 nextCheckAt: now,
                 segments: {
                     create: [{
                         segmentOrder: 0,
                         airlineCode,
                         flightNumber: flightDigits,
-                        origin: 'UNK',
-                        destination: 'UNK',
+                        origin: verified?.origin ?? 'UNK',
+                        destination: verified?.destination ?? 'UNK',
                         departureDate,
-                        arrivalDate: departureDate,
+                        arrivalDate: verified?.arrivalDate ?? departureDate,
+                        ...(verified ? { scheduledDepartureUtc: verified.scheduledDepartureUtc, scheduledArrivalUtc: verified.scheduledArrivalUtc } : {}),
                     }],
                 },
             },

@@ -158,7 +158,10 @@ test('wiring: checkpoint and registration paths handle NOT_FOUND before any aler
     const lifecycle = readFileSync('lib/guardian/tripLifecycle.ts', 'utf8');
     const init = lifecycle.slice(lifecycle.indexOf('export async function initializeTripMonitoring'));
     const reg = init.indexOf('if (isFlightNotFound(result))');
-    assert.ok(reg > 0 && reg < init.indexOf('replanTripChecks('), 'no checkpoints are planned for a missing flight');
+    // The early replan belongs to trips whose leg the form already found (flightVerifiedAt,
+    // no provider call); every replan after the registration lookup comes after the NOT_FOUND check.
+    assert.ok(reg > 0 && reg < init.lastIndexOf('replanTripChecks('), 'no checkpoints are planned for a missing flight');
+    assert.ok(init.indexOf('skipRegistrationLookup(trip)') < reg);
 });
 
 test('not-found email: month-name date, mocked outside production', async () => {
