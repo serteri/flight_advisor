@@ -10,6 +10,7 @@
 import { prisma } from '@/lib/prisma';
 import { getUserPlan } from '@/lib/freemium/usage';
 import { countHoldingTrips, planActivation } from '@/lib/guardian/freeLimit';
+import { trackGuardianEvent } from '@/lib/analytics/guardianEvents';
 import { initializeTripMonitoring } from '@/lib/guardian/tripLifecycle';
 
 export async function confirmPendingTrips(userId: string, now = new Date()): Promise<string[]> {
@@ -40,6 +41,8 @@ export async function confirmPendingTrips(userId: string, now = new Date()): Pro
         where: { id: { in: ids }, status: 'PENDING_CONFIRMATION' },
         data: { status: 'ACTIVE', confirmedAt: now, nextCheckAt: now },
     });
+
+    void trackGuardianEvent('guardian_confirmed', { trips: ids.length });
 
     for (const id of ids) {
         try {

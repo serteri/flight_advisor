@@ -31,6 +31,7 @@ import { isFlightNotFound } from "@/lib/guardian/flightNotFound";
 import { verifyCheckOutcome } from "@/lib/guardian/flightVerification";
 import { classifyLookupFailure, shouldRetry, MAX_CHECK_RETRIES } from "@/lib/guardian/failureClass";
 import { formatFailure } from "@/lib/guardian/failureText";
+import { trackGuardianEvent } from "@/lib/analytics/guardianEvents";
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -359,6 +360,7 @@ async function runLeasedCheck(ctx: {
     ]);
 
     await markCheck('DONE');
+    void trackGuardianEvent('guardian_check_completed', { check_kind: kind, events: events.count, data_source: flight.source });
     return { status: 'DONE', events: events.count };
 }
 
@@ -438,6 +440,9 @@ async function deriveAndDispatchEvents(ctx: {
             ...(computedStatus === 'CANCELLED' ? { disruption: 'CANCELLATION' as const } : {}),
         });
     const compensationEligible = compensation?.status === 'LIKELY_ELIGIBLE';
+    if (compensation && (computedStatus === 'DELAYED' || computedStatus === 'CANCELLED')) {
+        void trackGuardianEvent('guardian_compensation_evaluated', { regime: compensation.regime, status: compensation.status, disruption: computedStatus });
+    }
 
     const generatedEvents: GuardianEvent[] = [];
     const notificationPromises: Promise<void>[] = [];
@@ -506,6 +511,7 @@ async function deriveAndDispatchEvents(ctx: {
         };
         generatedEvents.push(eventPayload);
         newSnapshot.lastEventId = key;
+        void trackGuardianEvent('guardian_disruption_detected', { event_type: event.type, severity: event.severity });
 
         await prisma.guardianAlert.create({
             data: {
@@ -526,6 +532,7 @@ async function deriveAndDispatchEvents(ctx: {
     const dispatchNotification = (eventPayload: GuardianEvent, event: { type: GuardianEventType; severity: GuardianEventSeverity }) =>
         notifyGuardianEvent(eventPayload, trip.user!)
             .then(() => {
+                void trackGuardianEvent('guardian_alert_sent', { event_type: event.type, severity: event.severity });
                 recordGuardianMetric({
                     tripId: trip.id,
                     eventType: event.type,
@@ -587,6 +594,7 @@ async function deriveAndDispatchEvents(ctx: {
             } else {
                 const disruptionEmailResult = await sendDisruptionAlert(recipientEmail, trip.id, fullFlightNumber, ruleType);
                 if (disruptionEmailResult.success) {
+                    void trackGuardianEvent('guardian_alert_sent', { event_type: 'COMPENSATION', rule: ruleType });
                     const sentAt = new Date();
                     await prisma.monitoredTrip.update({
                         where: { id: trip.id },

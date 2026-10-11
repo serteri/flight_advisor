@@ -5,6 +5,7 @@ import { sendWelcomeEmail } from '@/lib/email/sender';
 import { parseFlightNumber } from '@/lib/flights/flightNumber';
 import { MAX_DAYS_AHEAD, validateFlightDate } from '@/lib/flights/flightDateRule';
 import { isEmailDeliveryReady } from '@/lib/featureFlags';
+import { trackGuardianEvent } from '@/lib/analytics/guardianEvents';
 import { resolveFlightSelection, type SelectionResult } from '@/lib/flightData/formLookup';
 import { getLookupCache } from '@/lib/flightData/formLookupStore';
 import { verifiedSegmentData } from '@/lib/guardian/verifiedFlight';
@@ -151,6 +152,8 @@ export async function POST(req: Request) {
             },
         });
 
+        void trackGuardianEvent('guardian_form_submitted', { verified_leg: Boolean(verified), waitlist: !isEmailDeliveryReady() });
+
         // Waitlist mode (sending domain not verified yet): keep the sign-up as
         // PENDING_CONFIRMATION, create no token, attempt no email.
         // scripts/send-pending-confirmations.ts emails them once delivery is on.
@@ -184,6 +187,8 @@ export async function POST(req: Request) {
                 { status: 502 },
             );
         }
+
+        void trackGuardianEvent('guardian_confirmation_sent', { provider_outcome: emailResult.outcome ?? 'UNKNOWN' });
 
         const responsePayload: { id: string; pendingConfirmation: true; devMagicLoginUrl?: string } = {
             id: trip.id,

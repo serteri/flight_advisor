@@ -9,8 +9,9 @@ import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import Footer from "@/components/Footer";
 import { assertRequiredRuntimeEnv } from "@/lib/config/runtimeEnv";
 import "../globals.css";
+import { GA_MEASUREMENT_ID } from "@/lib/analytics/ga";
 
-const GA_ID = "G-04HJXKRJFE";
+const GA_ID = GA_MEASUREMENT_ID;
 
 assertRequiredRuntimeEnv('layout');
 

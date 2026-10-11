@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getCurrentUserId } from '@/lib/auth/currentUser';
 import { withFreemiumGate } from '@/lib/freemium/gate';
 import { prisma } from '@/lib/prisma';
+import { trackGuardianEvent } from '@/lib/analytics/guardianEvents';
 import { isOwnedBy } from '@/lib/auth/ownership';
 import { evaluateCompensation, type CompensationInput } from '@/lib/compensation/engine';
 import { compensationInputFromTrip } from '@/lib/compensation/tripCompensation';
@@ -170,6 +171,8 @@ export async function POST(req: Request) {
           { status: 422 },
         );
       }
+
+      void trackGuardianEvent('guardian_claim_letter_generated', { regime: compensation.regime, disruption: source.disruption });
 
       return new NextResponse(letter, {
         status: 200,

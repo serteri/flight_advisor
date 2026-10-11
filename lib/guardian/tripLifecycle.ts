@@ -6,6 +6,7 @@
 //  - (re)planning QStash checkpoints and monitoringEndsAt
 
 import { prisma } from '@/lib/prisma';
+import { trackGuardianEvent } from '@/lib/analytics/guardianEvents';
 import type { NormalizedFlight } from '@/lib/flightData/aerodatabox';
 import { lookupFlight, type FlightLookupResult } from '@/lib/flightData/client';
 import { MAX_CALLS_PER_TRIP, type CheckKind } from '@/lib/flightData/quotaPolicy';
@@ -229,4 +230,5 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
 
     const schedule = resolveTripSchedule(segment);
     await replanTripChecks(tripId, schedule, now);
+    void trackGuardianEvent('guardian_monitoring_started', { approximate_schedule: schedule.approximate });
 }
