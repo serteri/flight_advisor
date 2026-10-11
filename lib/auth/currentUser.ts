@@ -10,6 +10,7 @@
 import { cookies } from 'next/headers';
 import { auth } from '@/auth';
 import { AUTH_SESSION_COOKIE, verifySessionCookieValue } from '@/lib/auth/magicLinkSession';
+import { isAdminEmail } from '@/lib/auth/adminAccess';
 import { prisma } from '@/lib/prisma';
 
 export async function getCurrentUserId(): Promise<string | null> {
@@ -43,10 +44,5 @@ export async function getCurrentUserEmail(): Promise<string | null> {
 }
 
 export function isAdmin(email: string | null | undefined): boolean {
-    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-    if (!adminEmail || !email) {
-        return false;
-    }
-
-    return email.trim().toLowerCase() === adminEmail;
+    return isAdminEmail(email);
 }
