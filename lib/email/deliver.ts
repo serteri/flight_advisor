@@ -14,6 +14,7 @@ import { getNotificationFromEmail } from '@/lib/config/runtimeEnv';
 import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
 import { withLegalFooter } from '@/lib/email/legalFooter';
 import { getEmailProvider } from '@/lib/email/provider';
+import { getEmailConfigIssues, isProductionDeployment, type EmailOutcome } from '@/lib/email/status';
 
 export { EMAIL_PROVIDERS, getEmailProvider, requiredEnvForProvider, UnknownEmailProviderError } from '@/lib/email/provider';
 export type { EmailProvider } from '@/lib/email/provider';
@@ -21,6 +22,8 @@ export type { EmailProvider } from '@/lib/email/provider';
 export interface SendEmailResult {
     success: boolean;
     mocked: boolean;
+    /** How the send ended; see lib/email/status.ts. */
+    outcome?: EmailOutcome;
     messageId?: string;
     error?: string;
     previewUrl?: string;
@@ -148,6 +151,15 @@ async function sendViaMailjet(label: string, m: AdapterBody): Promise<SendEmailR
 }
 
 // `label` only identifies the email kind in logs.
+//
+// Outcomes (every one is logged with its name):
+//  - DELIVERY_DISABLED: outside Vercel production this is a quiet mock (success,
+//    so local and preview flows keep working). In Vercel PRODUCTION it is a
+//    failure logged with console.error: nothing was sent and the caller must
+//    not record the email as delivered.
+//  - CONFIGURATION_ERROR: sending allowed but required env is missing/invalid.
+//  - PROVIDER_ERROR: the provider rejected the message or the call threw.
+//  - DELIVERED: the provider accepted the message.
 export async function deliverEmail(
     label: string,
     message: EmailMessage,
@@ -155,8 +167,20 @@ export async function deliverEmail(
     options: { bypassDeliveryPolicy?: boolean } = {},
 ): Promise<SendEmailResult> {
     if (!options.bypassDeliveryPolicy && !isRealEmailDeliveryAllowed()) {
-        console.log(`[Email:${label}] MOCK (not Vercel production): "${message.subject}" to ${message.to} not sent`);
-        return { success: true, mocked: true };
+        if (isProductionDeployment()) {
+            const error = 'Email delivery is disabled in production (EMAIL_DELIVERY_READY is not "true"); nothing was sent';
+            console.error(`[Email:${label}] DELIVERY_DISABLED: "${message.subject}" to ${message.to} NOT sent - ${error}`);
+            return { success: false, mocked: false, outcome: 'DELIVERY_DISABLED', error };
+        }
+        console.log(`[Email:${label}] DELIVERY_DISABLED (not Vercel production): "${message.subject}" to ${message.to} not sent`);
+        return { success: true, mocked: true, outcome: 'DELIVERY_DISABLED' };
+    }
+
+    const issues = getEmailConfigIssues();
+    if (issues.length > 0) {
+        const error = `Email configuration error: ${issues.join(', ')}`;
+        console.error(`[Email:${label}] CONFIGURATION_ERROR: ${error} - recipient ${message.to} NOT emailed`);
+        return { success: false, mocked: false, outcome: 'CONFIGURATION_ERROR', error };
     }
 
     try {
@@ -170,10 +194,14 @@ export async function deliverEmail(
             attachments: message.attachments,
             from: getNotificationFromEmail(),
         };
-        return provider === 'mailjet' ? await sendViaMailjet(label, body) : await sendViaResend(label, body);
+        const result = provider === 'mailjet' ? await sendViaMailjet(label, body) : await sendViaResend(label, body);
+        const outcome: EmailOutcome = result.success ? 'DELIVERED' : 'PROVIDER_ERROR';
+        if (result.success) console.log(`[Email:${label}] DELIVERED via ${provider}${result.messageId ? ` (message ${result.messageId})` : ''}`);
+        else console.error(`[Email:${label}] PROVIDER_ERROR via ${provider}: ${result.error}`);
+        return { ...result, outcome };
     } catch (err: any) {
         const error = err?.message || 'Unknown email send error';
-        console.error(`[Email:${label}] Exception sending to ${message.to}: ${error}`);
-        return { success: false, mocked: false, error };
+        console.error(`[Email:${label}] PROVIDER_ERROR: exception sending to ${message.to}: ${error}`);
+        return { success: false, mocked: false, outcome: 'PROVIDER_ERROR', error };
     }
 }

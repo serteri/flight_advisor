@@ -17,8 +17,12 @@ export type { SendEmailResult };
 type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
 
 import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
+import { isProductionDeployment } from '@/lib/email/status';
 
-const isProduction = (): boolean => isRealEmailDeliveryAllowed();
+// True when the send must go through deliverEmail: real delivery is allowed,
+// or this is the Vercel production deployment, where a disabled/misconfigured
+// sender has to fail loudly instead of being mocked (lib/email/deliver.ts).
+const isProduction = (): boolean => isRealEmailDeliveryAllowed() || isProductionDeployment();
 
 // Mocked login links carry a live token. Print them for local work only, never
 // into Vercel (preview) logs.
