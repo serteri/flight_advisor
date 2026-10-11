@@ -57,8 +57,8 @@ export async function getPublishScheduleStatus(env: NodeJS.ProcessEnv = process.
     let schedule: ScheduleLike | null;
     try {
         schedule = await client.schedules.get(PUBLISH_SCHEDULE_ID);
-    } catch (error: any) {
-        const message = String(error?.message ?? error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         // QStash answers an unknown schedule id with 404; anything else is a reachability problem.
         if (/not ?found|404/i.test(message)) schedule = null;
         else return { health: 'UNREACHABLE', tokenPresent: true, detail: message.slice(0, 200) };
