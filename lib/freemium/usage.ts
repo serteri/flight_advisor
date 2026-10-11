@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { FREE_MONITORED_FLIGHT_LIMIT, countHoldingTrips } from '@/lib/guardian/freeLimit';
 import {
   FEATURE_TO_LIMIT_KEY,
   FREE_TIER_LIMITS,
@@ -143,6 +144,13 @@ export async function checkLimit(
       limit: toLimitNumber(getFeatureLimitForPlan(feature, 'pro')),
       isPro: true,
     };
+  }
+
+  // Monitored flights are limited by how many are being monitored right now
+  // (lib/guardian/freeLimit.ts), not by a monthly counter.
+  if (feature === 'monitored_trip') {
+    const holding = await countHoldingTrips(userId);
+    return { allowed: holding < FREE_MONITORED_FLIGHT_LIMIT, current: holding, limit: FREE_MONITORED_FLIGHT_LIMIT, isPro: false };
   }
 
   const current = await getCurrentUsage(userId, feature);
