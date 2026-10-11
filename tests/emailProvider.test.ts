@@ -71,15 +71,22 @@ for (const provider of ['resend', 'mailjet']) {
     test(`policy applies to ${provider}: preview/local/waitlist never reach the provider`, async () => {
         const calls = stubFetch(200, {});
         console.log = () => {};
+        const errors: string[] = [];
+        console.error = (...a: unknown[]) => { errors.push(a.join(' ')); };
         for (const vars of [
             { VERCEL_ENV: 'preview', EMAIL_DELIVERY_READY: 'true' },
-            { VERCEL_ENV: 'production' },
             {},
         ]) {
             setEnv({ ...vars, EMAIL_PROVIDER: provider, RESEND_API_KEY: 'k', MAILJET_API_KEY: 'a', MAILJET_SECRET_KEY: 'b', NOTIFICATION_FROM_EMAIL: 'a@b.c' });
             const r = await deliverEmail('t', msg);
-            assert.deepEqual(r, { success: true, mocked: true });
+            assert.deepEqual(r, { success: true, mocked: true, outcome: 'DELIVERY_DISABLED' });
         }
+        // Vercel production with the waitlist flag off must NOT pretend to send.
+        setEnv({ VERCEL_ENV: 'production', EMAIL_PROVIDER: provider, RESEND_API_KEY: 'k', MAILJET_API_KEY: 'a', MAILJET_SECRET_KEY: 'b', NOTIFICATION_FROM_EMAIL: 'a@b.c' });
+        const prod = await deliverEmail('t', msg);
+        assert.equal(prod.success, false);
+        assert.equal(prod.outcome, 'DELIVERY_DISABLED');
+        assert.ok(errors.some((e) => e.includes('DELIVERY_DISABLED')));
         assert.equal(calls.length, 0);
     });
 }
@@ -148,7 +155,8 @@ test('mailjet: missing credentials name the exact env vars; Resend key not neede
     console.error = (...a: unknown[]) => { logged.push(a.join(' ')); };
     const r = await deliverEmail('t', msg);
     assert.equal(r.success, false);
-    assert.match(r.error!, /MAILJET_SECRET_KEY is not set/);
+    assert.match(r.error!, /MAILJET_SECRET_KEY/);
+    assert.equal(r.outcome, 'CONFIGURATION_ERROR');
     assert.doesNotMatch(r.error!, /RESEND/);
     assert.equal(calls.length, 0);
     assert.ok(logged.length > 0);
@@ -160,7 +168,8 @@ test('resend selected without RESEND_API_KEY fails with its name (and never call
     console.error = () => {};
     const r = await deliverEmail('t', msg);
     assert.equal(r.success, false);
-    assert.equal(r.error, 'RESEND_API_KEY is not set');
+    assert.match(r.error!, /RESEND_API_KEY/);
+    assert.equal(r.outcome, 'CONFIGURATION_ERROR');
     assert.equal(calls.length, 0);
 });
 
@@ -169,7 +178,8 @@ test('invalid EMAIL_PROVIDER at send time is a logged failure, not a silent fall
     console.error = () => {};
     const r = await deliverEmail('t', msg);
     assert.equal(r.success, false);
-    assert.match(r.error!, /EMAIL_PROVIDER "sendgrid" is invalid/);
+    assert.match(r.error!, /EMAIL_PROVIDER/);
+    assert.equal(r.outcome, 'CONFIGURATION_ERROR');
 });
 
 test('notification provider surfaces a Mailjet rejection as a failed ChannelResponse (persisted by callers)', async () => {

@@ -48,8 +48,10 @@ export function isValidAppUrl(raw: string | undefined, production: boolean): boo
 }
 
 // Configuration problems for actually sending, independent of whether
-// sending is currently switched on.
-export function getEmailConfigIssues(env: NodeJS.ProcessEnv = process.env): string[] {
+// sending is currently switched on. The app URL is part of the readiness
+// report only: deliverEmail itself does not use it (links are built by the
+// templates, which throw when APP_BASE_URL is missing).
+export function getEmailConfigIssues(env: NodeJS.ProcessEnv = process.env, options: { includeAppUrl?: boolean } = {}): string[] {
     const issues: string[] = [];
     const raw = env.EMAIL_PROVIDER?.trim();
     if (raw && !(EMAIL_PROVIDERS as readonly string[]).includes(raw)) {
@@ -61,7 +63,7 @@ export function getEmailConfigIssues(env: NodeJS.ProcessEnv = process.env): stri
         }
     }
     if (!env.NOTIFICATION_FROM_EMAIL?.trim()) issues.push('NOTIFICATION_FROM_EMAIL');
-    if (!isValidAppUrl(env.APP_BASE_URL, isProductionDeployment(env))) {
+    if (options.includeAppUrl && !isValidAppUrl(env.APP_BASE_URL, isProductionDeployment(env))) {
         issues.push(env.APP_BASE_URL?.trim() ? 'APP_BASE_URL (not a valid public https URL)' : 'APP_BASE_URL');
     }
     return issues;
@@ -71,7 +73,7 @@ export function getEmailReadiness(env: NodeJS.ProcessEnv = process.env): EmailRe
     const raw = env.EMAIL_PROVIDER?.trim();
     const provider: EmailProvider | 'INVALID' =
         !raw ? 'resend' : (EMAIL_PROVIDERS as readonly string[]).includes(raw) ? (raw as EmailProvider) : 'INVALID';
-    const configIssues = getEmailConfigIssues(env);
+    const configIssues = getEmailConfigIssues(env, { includeAppUrl: true });
     const deliveryEnabled = isRealEmailDeliveryAllowed(env);
     return {
         productionDeployment: isProductionDeployment(env),

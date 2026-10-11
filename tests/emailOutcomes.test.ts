@@ -69,10 +69,12 @@ test('production, delivery on, config missing: CONFIGURATION_ERROR naming the va
     assert.ok(errors.some((e) => e.includes('CONFIGURATION_ERROR')));
 });
 
-test('production: a localhost / http APP_BASE_URL is a configuration error', async () => {
+test('production: a localhost / http APP_BASE_URL makes the readiness report CONFIGURATION_ERROR', () => {
     prodEnv();
     process.env.APP_BASE_URL = 'http://localhost:3000';
-    assert.equal((await deliverEmail('t', msg)).outcome, 'CONFIGURATION_ERROR');
+    const r = getEmailReadiness();
+    assert.equal(r.state, 'CONFIGURATION_ERROR');
+    assert.equal(r.appUrlValid, false);
     assert.equal(isValidAppUrl('https://www.flightagent.io', true), true);
     assert.equal(isValidAppUrl('http://www.flightagent.io', true), false);
     assert.equal(isValidAppUrl('not a url', false), false);
@@ -123,5 +125,6 @@ test('readiness report: names only, state reflects the blocking reason', () => {
     assert.equal(broken.provider, 'INVALID');
     assert.ok(broken.configIssues.some((i) => i.startsWith('EMAIL_PROVIDER')));
     assert.ok(!JSON.stringify(broken).includes('sendgrid'));
-    assert.deepEqual(getEmailConfigIssues(env({})).sort(), ['APP_BASE_URL', 'NOTIFICATION_FROM_EMAIL', 'RESEND_API_KEY']);
+    assert.deepEqual(getEmailConfigIssues(env({})).sort(), ['NOTIFICATION_FROM_EMAIL', 'RESEND_API_KEY']);
+    assert.ok(getEmailConfigIssues(env({}), { includeAppUrl: true }).includes('APP_BASE_URL'));
 });
