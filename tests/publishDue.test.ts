@@ -40,7 +40,7 @@ function fakeWorld() {
             }
             return n;
         },
-        findUnpublished: async () => [...rows.values()].filter((r) => r.status === 'SCHEDULED' && !r.messageId),
+        findUnpublished: async () => [...rows.values()].filter((r) => r.status === 'SCHEDULED' && (!r.messageId || clock.getTime() - r.runAt.getTime() > 2 * 60 * 60 * 1000)),
         publish: async (r) => {
             const delaySec = Math.floor((r.runAt.getTime() - clock.getTime()) / 1000);
             if (delaySec > 604800) throw new Error('quota maxDelay exceeded');
@@ -50,6 +50,7 @@ function fakeWorld() {
         },
         markPublished: async (id, messageId) => { const r = rows.get(id)!; r.messageId = messageId ?? 'published-no-id'; },
         markFailed: async (id, error) => { const r = rows.get(id)!; r.status = 'FAILED'; r.error = error; },
+        markSkipped: async (id, reason) => { const r = rows.get(id)!; r.status = 'SKIPPED'; r.error = reason; },
     };
 
     return {
@@ -164,7 +165,7 @@ test('a QStash error is logged and recorded on the row; the run continues', asyn
     assert.ok(logged.some((l) => l.includes('check x') && l.includes('QStash 503')));
 });
 
-test('long-overdue unpublished rows are reported, not run blindly', async () => {
+test('long-overdue obsolete rows are skipped with a recorded reason, not run blindly', async () => {
     const now = new Date('2026-10-04T06:00:00Z');
     console.warn = () => {};
     const w = fakeWorld();
@@ -172,6 +173,8 @@ test('long-overdue unpublished rows are reported, not run blindly', async () => 
     const s = await publishDueChecks(now, w.deps);
     assert.deepEqual({ published: s.published, stale: s.stale }, { published: 0, stale: 1 });
     assert.equal(w.qstash.length, 0);
+    assert.equal(w.rows.get('old')!.status, 'SKIPPED');
+    assert.match(w.rows.get('old')!.error!, /obsolete/);
 });
 
 test('wiring: scheduler defers beyond the window; the endpoint is signature-verified; same verifier as the check route', () => {

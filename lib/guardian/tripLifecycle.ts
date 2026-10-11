@@ -57,6 +57,15 @@ export async function reserveProviderCall(tripId: string): Promise<boolean> {
     return reserved.count === 1;
 }
 
+// Gives a reserved call back (a retried TEMPORARY failure must not eat the
+// per-trip budget that the remaining checkpoints need).
+export async function releaseProviderCall(tripId: string): Promise<void> {
+    await prisma.monitoredTrip.updateMany({
+        where: { id: tripId, apiCallsUsed: { gt: 0 } },
+        data: { apiCallsUsed: { decrement: 1 } },
+    });
+}
+
 // Reserves a call then looks the flight up. Returns null when the cap blocks it.
 export async function lookupWithinBudget(
     tripId: string,

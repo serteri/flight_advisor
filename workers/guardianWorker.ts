@@ -22,12 +22,15 @@ import {
     activateAfterVerification,
     applyFlightDataToTrip,
     lookupWithinBudget,
+    releaseProviderCall,
     replanTripChecks,
     routeFlightNotFound,
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
 import { isFlightNotFound } from "@/lib/guardian/flightNotFound";
 import { verifyCheckOutcome } from "@/lib/guardian/flightVerification";
+import { classifyLookupFailure, shouldRetry, MAX_CHECK_RETRIES } from "@/lib/guardian/failureClass";
+import { formatFailure } from "@/lib/guardian/failureText";
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -138,6 +141,8 @@ export async function processTripCheck(
     tripId: string,
     checkId: string | null,
     now = new Date(),
+    // Redeliveries so far (Upstash-Retried header); bounds provider-failure retries.
+    retried = 0,
 ): Promise<TripCheckOutcome> {
     const check = checkId ? await prisma.scheduledTripCheck.findUnique({ where: { id: checkId } }) : null;
     if (checkId && (!check || check.tripId !== tripId)) {
@@ -204,7 +209,7 @@ export async function processTripCheck(
     }
 
     try {
-        return await runLeasedCheck({ trip, segment, check, kind, now, markCheck });
+        return await runLeasedCheck({ trip, segment, check, kind, now, markCheck, retried });
     } finally {
         await prisma.monitoredTrip.updateMany({
             where: { id: trip.id, processingLeaseId: leaseId },
@@ -227,6 +232,7 @@ async function runLeasedCheck(ctx: {
     kind: CheckKind;
     now: Date;
     markCheck: (status: 'DONE' | 'SKIPPED' | 'FAILED', error?: string) => Promise<void>;
+    retried: number;
 }): Promise<TripCheckOutcome> {
     const { trip, kind, now, markCheck } = ctx;
     let segment = ctx.segment;
@@ -269,9 +275,34 @@ async function runLeasedCheck(ctx: {
     }
     if (!result.ok) {
         await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { lastCheckedAt: now } });
-        const skipped = result.code === 'QUOTA_BLOCKED';
-        await markCheck(skipped ? 'SKIPPED' : 'FAILED', `${result.code}: ${result.message}`);
-        return { status: skipped ? 'SKIPPED' : 'FAILED', reason: result.code };
+        const failureClass = classifyLookupFailure(result);
+        const text = formatFailure(failureClass, result.code, result.message);
+
+        if (failureClass === 'QUOTA') {
+            await markCheck('SKIPPED', text);
+            return { status: 'SKIPPED', reason: result.code };
+        }
+        // Temporary provider trouble (5xx, 429, timeout): leave the check
+        // SCHEDULED and answer 503 so QStash redelivers, at most MAX_CHECK_RETRIES
+        // times. Nothing has been written to the snapshot or alerts yet, so a
+        // retry cannot duplicate either. The reserved provider call is given back
+        // so retries do not starve the later checkpoints of this trip.
+        if (shouldRetry(failureClass, ctx.retried)) {
+            await releaseProviderCall(trip.id);
+            if (ctx.check) {
+                await prisma.scheduledTripCheck.update({
+                    where: { id: ctx.check.id },
+                    data: { error: `${text} (retry ${ctx.retried + 1}/${MAX_CHECK_RETRIES} pending)`.slice(0, 500) },
+                });
+            }
+            console.warn(`[Guardian] ${kind} for trip ${trip.id} hit a ${failureClass} failure (${result.code}); retry ${ctx.retried + 1}/${MAX_CHECK_RETRIES}`);
+            return { status: 'RETRY', reason: `${failureClass}:${result.code}` };
+        }
+        if (failureClass === 'AUTHENTICATION') {
+            console.error(`[Guardian] AUTHENTICATION failure from the flight-data provider (${result.code}) - check RAPID_API_KEY / RAPID_API_HOST_AERODATABOX. Trip ${trip.id}, ${kind}.`);
+        }
+        await markCheck('FAILED', failureClass === 'TEMPORARY' ? `${text} (retries exhausted)` : text);
+        return { status: 'FAILED', reason: result.code };
     }
 
     const flight = result.flight;

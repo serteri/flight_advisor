@@ -22,7 +22,7 @@ export type FlightLookupErrorCode =
     | 'HTTP_ERROR'
     | 'EXCEPTION';
 
-export type FlightLookupFailure = { ok: false; code: FlightLookupErrorCode; message: string };
+export type FlightLookupFailure = { ok: false; code: FlightLookupErrorCode; message: string; httpStatus?: number };
 
 export type FlightLookupResult =
     | { ok: true; flight: NormalizedFlight }
@@ -95,7 +95,7 @@ async function fetchPayload(flightNumberInput: string, date: string, kind: Check
     if (!response.ok) {
         const body = await response.text().catch(() => '');
         console.error(`[AeroDataBox] LIVE HTTP ${response.status} for ${flightNumber} on ${date}: ${body.slice(0, 300)}`);
-        return { ok: false, code: 'HTTP_ERROR', message: `AeroDataBox returned HTTP ${response.status}` };
+        return { ok: false, code: 'HTTP_ERROR', message: `AeroDataBox returned HTTP ${response.status}`, httpStatus: response.status };
     }
 
     try {
