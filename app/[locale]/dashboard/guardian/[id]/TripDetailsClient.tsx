@@ -1,5 +1,6 @@
 'use client';
 
+import { pnrLabel } from '@/lib/guardian/tripBuckets';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
@@ -504,8 +505,12 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                 </span>
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                <span>{t('header.pnr', { pnr: trip.pnr || t('header.pnrUnknown') })}</span>
-                                <span className="text-slate-300">•</span>
+                                {pnrLabel(trip.pnr) && (
+                                    <>
+                                        <span>{t('header.pnr', { pnr: pnrLabel(trip.pnr) ?? '' })}</span>
+                                        <span className="text-slate-300">•</span>
+                                    </>
+                                )}
                                 <span>{t('header.airline', { airlines: airlines.length > 0 ? airlines.join(', ') : t('unknown') })}</span>
                             </div>
                         </div>

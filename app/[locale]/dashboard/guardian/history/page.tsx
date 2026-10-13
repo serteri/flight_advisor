@@ -1,3 +1,4 @@
+import { routeVerifyingApplies } from '@/lib/guardian/tripBuckets';
 import { Link, redirect } from '@/i18n/routing';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -195,7 +196,7 @@ export default async function GuardianHistoryPage({ params }: { params: Promise<
                                             <tr key={trip.id} className="border-b border-slate-100 align-top">
                                                 <td className="py-3 pr-4 font-semibold text-slate-900">
                                                     {(firstSegment && lastSegment ? routeText(firstSegment.origin, lastSegment.destination) : null)
-                                                        ?? tDisplay('routeVerifying')}
+                                                        ?? (routeVerifyingApplies(trip.status) ? tDisplay('routeVerifying') : (firstSegment ? `${firstSegment.airlineCode}${firstSegment.flightNumber}` : tDisplay('status.UNKNOWN')))}
                                                 </td>
                                                 <td className="py-3 pr-4 text-slate-700">
                                                     {firstSegment

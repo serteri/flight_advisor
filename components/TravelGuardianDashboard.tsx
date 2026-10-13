@@ -1,4 +1,5 @@
 
+import { pnrLabel } from '@/lib/guardian/tripBuckets';
 import React from 'react';
 import { ShieldCheck, Clock, Armchair, Plane } from "lucide-react";
 import type { AlertEvent, FlightSegment, GuardianAlert, MonitoredTrip, TripSnapshot } from "@prisma/client";
@@ -127,7 +128,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                         Travel Guardian Active
                     </h2>
                     <p className="text-slate-400 text-sm mt-1">
-                        PNR: <span className="font-mono text-white">{trip.pnr}</span> • {trip.routeLabel} monitored.
+                        {pnrLabel(trip.pnr) && <>PNR: <span className="font-mono text-white">{pnrLabel(trip.pnr)}</span> • </>}{trip.routeLabel} monitored.
                     </p>
                 </div>
                 <div className="text-right">

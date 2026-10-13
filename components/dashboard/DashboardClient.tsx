@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { AddTripModal } from './AddTripModal';
 import { routeText, tripStatusLabelKey } from '@/lib/guardian/tripDisplay';
+import { pnrLabel, routeVerifyingApplies, splitTrips } from '@/lib/guardian/tripBuckets';
 
 interface DashboardClientProps {
     trips: Array<{
@@ -41,6 +42,8 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
 
     const t = useTranslations('Dashboard');
     const tDisplay = useTranslations('TripDisplay');
+    // One model: current trips on this page (count and cards come from the same list), the rest is history.
+    const { current: currentTrips, history: historyTrips } = splitTrips(trips);
 
     return (
         <div className="space-y-12">
@@ -59,7 +62,7 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                     </button>
                 </div>
 
-                {trips.length === 0 ? (
+                {currentTrips.length === 0 ? (
                     <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center flex flex-col items-center">
                         <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-slate-400">
                             <Plane className="w-6 h-6" />
@@ -87,14 +90,16 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                     </div>
                 ) : (
                     <div className="grid gap-6">
-                        {trips.map((trip) => {
+                        {currentTrips.map((trip) => {
                             const firstSegment = trip.segments?.[0];
                             // Never "UNK ➝ UNK": an unresolved route reads "Route being verified".
-                            const routeLabel = routeText(firstSegment?.origin ?? trip.origin, firstSegment?.destination ?? trip.destination, '➝')
-                                ?? tDisplay('routeVerifying');
                             const flightLabel = firstSegment?.airlineCode && firstSegment?.flightNumber
                                 ? `${firstSegment.airlineCode}${firstSegment.flightNumber}`
-                                : trip.flightNumber || '-';
+                                : trip.flightNumber || null;
+                            // "Route being verified" only while a trip is being set up; never on a finished record.
+                            const routeLabel = routeText(firstSegment?.origin ?? trip.origin, firstSegment?.destination ?? trip.destination, '➝')
+                                ?? (routeVerifyingApplies(trip.status) ? tDisplay('routeVerifying') : flightLabel ?? tDisplay('status.UNKNOWN'));
+                            const pnr = pnrLabel(trip.pnr);
                             const departureForCard = trip.departureDate || firstSegment?.departureDate;
 
                             return (
@@ -107,11 +112,19 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                                         <div>
                                             <h3 className="font-bold text-lg text-slate-900 group-hover:text-emerald-700 transition-colors">{routeLabel}</h3>
                                             <div className="flex items-center gap-2 text-sm text-slate-500">
-                                                <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{trip.pnr || '-'}</span>
-                                                <span>•</span>
-                                                <span>{departureForCard ? new Date(departureForCard).toLocaleDateString('tr-TR') : '-'}</span>
-                                                <span>•</span>
-                                                <span>{flightLabel}</span>
+                                                {pnr && (
+                                                    <>
+                                                        <span className="font-mono font-bold bg-slate-100 px-1 rounded text-slate-700">{tDisplay('pnr', { pnr })}</span>
+                                                        <span aria-hidden="true">•</span>
+                                                    </>
+                                                )}
+                                                {departureForCard && (
+                                                    <>
+                                                        <span>{new Date(departureForCard).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</span>
+                                                        {flightLabel && <span aria-hidden="true">•</span>}
+                                                    </>
+                                                )}
+                                                {flightLabel && <span>{flightLabel}</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -125,6 +138,14 @@ export function DashboardClient({ trips, user }: DashboardClientProps) {
                             </Link>
                             );
                         })}
+                    </div>
+                )}
+
+                {historyTrips.length > 0 && (
+                    <div className="mt-6 text-sm">
+                        <Link href="/dashboard/guardian/history" className="font-bold text-slate-600 underline hover:text-slate-900">
+                            {tDisplay('viewHistory', { count: historyTrips.length })}
+                        </Link>
                     </div>
                 )}
             </div>
