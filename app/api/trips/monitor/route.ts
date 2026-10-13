@@ -1,150 +1,139 @@
+// app/api/trips/monitor/route.ts
+//
+// Signed-in "Add booked trip". The browser sends { flightNumber, date, legKey, pnr }
+// and nothing else is trusted: origin, destination and scheduled times come from
+// the server's own FlightLookupCache entry (written by /api/flights/lookup), the
+// same verified-leg flow /api/trips/track uses. No fresh cached lookup, a missing
+// or unknown legKey: the request fails and nothing is saved.
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { withFreemiumGate } from '@/lib/freemium/gate';
 import { initializeTripMonitoring } from '@/lib/guardian/tripLifecycle';
+import { parseFlightNumber } from '@/lib/flights/flightNumber';
+import { MAX_DAYS_AHEAD, validateFlightDate } from '@/lib/flights/flightDateRule';
+import { getLookupCache } from '@/lib/flightData/formLookupStore';
+import type { LookupCacheEntry } from '@/lib/flightData/formLookup';
+import { normalizePnr, resolveMonitorSelection } from '@/lib/guardian/monitorSelection';
 
-// TODO: Keep this endpoint as the Guardian manual-monitoring entry point until
-// all remaining legacy callers are either migrated or deleted.
-
-type MonitoredSegmentInput = {
-    carrierCode?: string;
-    number?: string;
-    departure?: { iataCode?: string; at?: string };
-    arrival?: { iataCode?: string; at?: string };
-    aircraft?: { code?: string };
-};
-
-type ManualAddTripPayload = {
-    airlineCode?: string;
+type MonitorPayload = {
     flightNumber?: string;
     date?: string;
-    origin?: string;
-    departureTime?: string;
-    destination?: string;
-    arrivalTime?: string;
+    legKey?: string;
     pnr?: string;
 };
 
-const toDateTime = (date?: string, time?: string, fallback?: Date) => {
-    if (date && time) {
-        const parsed = new Date(`${date}T${time}:00`);
-        if (!Number.isNaN(parsed.getTime())) {
-            return parsed;
-        }
-    }
-    return fallback || new Date();
-};
+const fieldError = (field: string, code: string, error: string) =>
+    NextResponse.json({ error, field, code }, { status: 400 });
 
 export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const sessionUser = session.user as {
-        id?: string;
         isPremium?: boolean;
         plan?: string;
         subscriptionPlan?: string;
     };
 
+    let body: MonitorPayload;
     try {
-        const body = await req.json();
-        const { pnr, flightData } = body as { pnr?: string; flightData?: any };
-        const manualPayload = body as ManualAddTripPayload;
-        const receivedDateRaw = manualPayload.date || flightData?.date;
-        const receivedDate = receivedDateRaw ? new Date(receivedDateRaw) : null;
-        const safeReceivedDate = receivedDate && !Number.isNaN(receivedDate.getTime()) ? receivedDate : null;
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
-        console.log('Received date:', body.date);
+    const parsed = parseFlightNumber(typeof body.flightNumber === 'string' ? body.flightNumber.trim() : '');
+    if (!parsed) return fieldError('flightNumber', 'INVALID_FLIGHT', 'Invalid flight number format');
 
-        const normalizedFlightData = flightData || (manualPayload.origin && manualPayload.destination
-            ? {
-                origin: manualPayload.origin,
-                destination: manualPayload.destination,
-                travelClass: 'ECONOMY',
-                price: null,
-                segments: [
-                    {
-                        carrierCode: manualPayload.airlineCode,
-                        number: manualPayload.flightNumber,
-                        departure: {
-                            iataCode: manualPayload.origin,
-                            at: toDateTime(manualPayload.date, manualPayload.departureTime, safeReceivedDate || undefined).toISOString(),
-                        },
-                        arrival: {
-                            iataCode: manualPayload.destination,
-                            at: toDateTime(
-                                manualPayload.date,
-                                manualPayload.arrivalTime,
-                                toDateTime(manualPayload.date, manualPayload.departureTime, safeReceivedDate || undefined)
-                            ).toISOString(),
-                        },
-                    },
-                ],
-            }
-            : null);
+    const date = typeof body.date === 'string' ? body.date.trim() : '';
+    const dateCheck = validateFlightDate(date);
+    if (!dateCheck.ok) {
+        const messages = {
+            INVALID_DATE: 'Invalid date',
+            DATE_PAST: 'Flight date is in the past',
+            DATE_TOO_FAR: `Flight date is more than ${MAX_DAYS_AHEAD} days ahead`,
+        } as const;
+        return fieldError('date', dateCheck.code, messages[dateCheck.code]);
+    }
 
-        console.info('[TRIPS_MONITOR] Received monitor request', {
-            userId: session.user.id,
-            pnr,
-            hasFlightData: Boolean(flightData),
-            hasManualPayload: Boolean(manualPayload.origin && manualPayload.destination),
-        });
+    const pnr = normalizePnr(body.pnr);
+    if (pnr === 'INVALID') return fieldError('pnr', 'INVALID_PNR', 'Invalid booking reference');
 
-        if (!normalizedFlightData) {
-            console.warn('[TRIPS_MONITOR] Missing required fields', { pnr, normalizedFlightData });
-            return NextResponse.json({ error: 'Uçuş verisi gereklidir.' }, { status: 400 });
-        }
+    let cache: LookupCacheEntry | null = null;
+    try {
+        cache = await getLookupCache(parsed.full, date);
+    } catch (error) {
+        console.error('[POST /api/trips/monitor] lookup cache unavailable:', error);
+        return NextResponse.json({ error: 'Flight verification unavailable', code: 'SAVE_FAILED' }, { status: 503 });
+    }
 
-        return withFreemiumGate(session.user.id!, 'monitored_trip', async () => {
-            const segments = Array.isArray(normalizedFlightData.segments) ? normalizedFlightData.segments : [];
-            const fallbackDepartureDate = safeReceivedDate || new Date(body.date || body.flightData?.date || Date.now());
-            const fallbackArrivalDate = new Date(fallbackDepartureDate.getTime() + 2 * 60 * 60 * 1000);
+    const selection = resolveMonitorSelection({
+        cache,
+        date,
+        departureDate: dateCheck.date,
+        legKey: typeof body.legKey === 'string' ? body.legKey : null,
+    });
+    if (!selection.ok) {
+        const messages = {
+            FLIGHT_NOT_FOUND: 'We could not find this flight. Check the flight number and date.',
+            INVALID_SEGMENT: 'The selected flight is no longer valid. Look up your flight again.',
+        } as const;
+        return fieldError(selection.code === 'FLIGHT_NOT_FOUND' ? 'flightNumber' : 'legKey', selection.code, messages[selection.code]);
+    }
+    const { segment: verified } = selection;
+
+    try {
+        return await withFreemiumGate(userId, 'monitored_trip', async () => {
             const trip = await prisma.monitoredTrip.create({
                 data: {
-                    userId: session.user.id!,
-                    pnr: pnr || null,
-                    routeLabel: `${normalizedFlightData.origin} ➝ ${normalizedFlightData.destination}`,
-                    originalPrice: normalizedFlightData.price?.total || normalizedFlightData.price || 0,
-                    currency: normalizedFlightData.price?.currency || "AUD",
-                    ticketClass: normalizedFlightData.travelClass || "ECONOMY",
+                    userId,
+                    pnr,
+                    routeLabel: `${verified.origin} ➝ ${verified.destination}`,
+                    originalPrice: 0,
+                    currency: 'AUD',
+                    ticketClass: 'ECONOMY',
                     nextCheckAt: new Date(),
+                    // Leg resolved server-side: initializeTripMonitoring makes no second provider call.
+                    flightVerifiedAt: new Date(),
                     snapshot: {
                         create: {
                             delayMinutes: 0,
                             status: 'scheduled',
                             dataQuality: 'UNKNOWN',
                             eu261Eligible: false,
-                        }
+                        },
                     },
-
-                    // 2. Segmentleri İçine Göm (Nested Write)
                     segments: {
-                        create: (segments as MonitoredSegmentInput[]).map((seg, index) => ({
-                            segmentOrder: index, // 0: İlk uçak, 1: İkinci uçak
-                            airlineCode: seg.carrierCode || 'XX',   // SQ
-                            flightNumber: String(seg.number || (seg as MonitoredSegmentInput & { flightNumber?: string | number }).flightNumber || `SEG${index + 1}`),       // 236
-                            origin: seg.departure?.iataCode || normalizedFlightData.origin,
-                            destination: seg.arrival?.iataCode || normalizedFlightData.destination,
-                            departureDate: seg.departure?.at ? new Date(seg.departure.at) : fallbackDepartureDate,
-                            arrivalDate: seg.arrival?.at ? new Date(seg.arrival.at) : fallbackArrivalDate,
-                            // Filled from the provider on the first check; never guessed.
-                            aircraftType: seg.aircraft?.code || null
-                        }))
-                    }
-                }
+                        create: [{
+                            segmentOrder: 0,
+                            airlineCode: parsed.airlineCode,
+                            flightNumber: parsed.number,
+                            origin: verified.origin,
+                            destination: verified.destination,
+                            departureDate: dateCheck.date,
+                            arrivalDate: verified.arrivalDate,
+                            scheduledDepartureUtc: verified.scheduledDepartureUtc,
+                            scheduledArrivalUtc: verified.scheduledArrivalUtc,
+                        }],
+                    },
+                },
             });
 
             await initializeTripMonitoring(trip.id);
 
-            console.info('[TRIPS_MONITOR] Monitored trip created', {
+            return NextResponse.json({
+                success: true,
                 tripId: trip.id,
-                userId: session.user.id,
-                pnr,
-                routeLabel: trip.routeLabel,
+                flight: {
+                    flightNumber: parsed.full,
+                    origin: verified.origin,
+                    destination: verified.destination,
+                    date,
+                },
             });
-
-            return NextResponse.json({ success: true, tripId: trip.id });
         }, {
             planHint: {
                 isPremium: sessionUser.isPremium,
@@ -154,6 +143,6 @@ export async function POST(req: Request) {
         });
     } catch (error) {
         console.error('[TRIPS_MONITOR] Trip creation error', error);
-        return NextResponse.json({ error: 'Uçuş takibi başlatılamadı.' }, { status: 500 });
+        return NextResponse.json({ error: 'Could not start monitoring', code: 'SAVE_FAILED' }, { status: 500 });
     }
 }
