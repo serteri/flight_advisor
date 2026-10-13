@@ -17,8 +17,12 @@ export type { SendEmailResult };
 type ClaimRuleType = 'COMPENSATION_CANCELLED' | 'COMPENSATION_DELAYED' | 'REFUND_AND_EXPENSES';
 
 import { isRealEmailDeliveryAllowed } from '@/lib/email/deliveryPolicy';
+import { isProductionDeployment } from '@/lib/email/status';
 
-const isProduction = (): boolean => isRealEmailDeliveryAllowed();
+// True when the send must go through deliverEmail: real delivery is allowed,
+// or this is the Vercel production deployment, where a disabled/misconfigured
+// sender has to fail loudly instead of being mocked (lib/email/deliver.ts).
+const isProduction = (): boolean => isRealEmailDeliveryAllowed() || isProductionDeployment();
 
 // Mocked login links carry a live token. Print them for local work only, never
 // into Vercel (preview) logs.
@@ -89,6 +93,45 @@ export async function renderDisruptionAlert(
     const subject = claimRuleType ? subjectMap[claimRuleType] : `Urgent: Flight ${flightNumber} disruption detected`;
 
     return { subject, html };
+}
+
+// Month-name date ("7 Oct 2026"); never a numeric format (Faz 2 rule).
+const formatFlightDate = (date: Date): string =>
+    new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
+// Sent once, when the provider reports that the tracked flight does not exist
+// (lib/guardian/flightNotFound.ts). Monitoring has stopped for this trip.
+export async function sendFlightNotFoundEmail(
+    email: string,
+    flightNumber: string,
+    flightDate: Date,
+    tripId: string,
+): Promise<SendEmailResult> {
+    const dateText = formatFlightDate(flightDate);
+    const subject = `We couldn't find flight ${flightNumber} on ${dateText}`;
+
+    if (!isProduction()) {
+        console.log(`[Email] DEV MODE — would send flight-not-found email to ${email} for ${flightNumber} on ${dateText} (trip ${tripId})`);
+        return { success: true, mocked: true };
+    }
+    const homeLink = appUrl('/');
+
+    const f = escapeHtml(flightNumber);
+    const d = escapeHtml(dateText);
+    const html = [
+        `<p>We couldn't find flight <strong>${f}</strong> on <strong>${d}</strong> in our flight data, so we are not monitoring it and won't send alerts for it.</p>`,
+        '<p>Please check the flight number and date on your booking confirmation. If something was mistyped, you can add the flight again:</p>',
+        `<p><a href="${homeLink}">${homeLink}</a></p>`,
+    ].join('');
+    const text = [
+        `We couldn't find flight ${flightNumber} on ${dateText} in our flight data, so we are not monitoring it and won't send alerts for it.`,
+        'Please check the flight number and date on your booking confirmation. If something was mistyped, you can add the flight again:',
+        homeLink,
+    ].join('\n\n');
+
+    return deliverEmail('flight-not-found', { to: email, subject, html, text });
 }
 
 export async function sendDisruptionAlert(

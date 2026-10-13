@@ -16,8 +16,9 @@ import { Client } from '@upstash/qstash';
 loadEnv({ path: '.env.local' });
 loadEnv({ path: '.env' });
 
-export const PUBLISH_SCHEDULE_ID = 'flightagent-publish-due';
-export const PUBLISH_SCHEDULE_CRON = '0 3 * * *'; // 03:00 UTC daily
+import { PUBLISH_SCHEDULE_CRON, PUBLISH_SCHEDULE_ID } from '@/lib/guardian/publishSchedule';
+
+export { PUBLISH_SCHEDULE_CRON, PUBLISH_SCHEDULE_ID };
 
 async function main() {
     const apply = process.argv.includes('--apply');

@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { isQStashAuthorized } from '@/lib/guardian/qstashAuth';
 import { publishDueScheduledChecks } from '@/lib/guardian/scheduler';
+import { recordPublishDueRun } from '@/lib/guardian/opsState';
 import { assertRequiredRuntimeEnv } from '@/lib/config/runtimeEnv';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
         assertRequiredRuntimeEnv('publish-due');
         const summary = await publishDueScheduledChecks();
         console.log('[PublishDue] run complete', summary);
+        if (!('skipped' in summary)) await recordPublishDueRun(summary);
         // 200 even when some rows failed: they are recorded as FAILED with the
         // reason, and a QStash retry would not change a rejected publish.
         return NextResponse.json(summary);

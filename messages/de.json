@@ -489,13 +489,37 @@
           "invalidFlight": "Ungültige Flugnummer",
           "invalidDate": "Bitte wähle ein gültiges, zukünftiges Datum",
           "invalidEmail": "Ungültige E-Mail-Adresse",
-          "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren"
+          "consentRequired": "Bitte stimme zu, Flugbenachrichtigungen zu erhalten, um fortzufahren",
+          "datePast": "Dieses Datum liegt in der Vergangenheit. Wähle heute oder ein zukünftiges Datum.",
+          "dateTooFar": "Flüge können bis zu 330 Tage im Voraus verfolgt werden."
         },
         "confirmation": {
           "title": "Bitte prüfe dein Postfach",
           "subtitle": "Wir haben dir einen Bestätigungslink geschickt. Die Überwachung beginnt, sobald du ihn öffnest.",
           "nextSteps": "Der Link ist 24 Stunden gültig. Falls du die E-Mail nicht siehst, prüfe deinen Spam-Ordner.",
           "backHome": "Zurück zur Startseite"
+        },
+        "lookup": {
+          "find": "Meinen Flug finden",
+          "finding": "Suche läuft…",
+          "foundTitle": "Wir haben deinen Flug gefunden",
+          "chooseTitle": "Diese Flugnummer hat mehrere Teilstrecken. Welche ist deine?",
+          "departs": "Abflug",
+          "arrives": "Ankunft",
+          "airline": "Airline",
+          "localTimes": "Alle Zeiten sind Ortszeit des jeweiligen Flughafens.",
+          "confirm": "Das ist mein Flug",
+          "confirmed": "Bestätigt",
+          "notFoundBlocking": "Wir konnten diesen Flug nicht finden. Prüfe Flugnummer und Datum.",
+          "notFoundSoft": "Der Flugplan ist möglicherweise noch nicht veröffentlicht. Wir prüfen deinen Flug kurz vor dem Abflug — du kannst fortfahren.",
+          "skipped": "Wir konnten den Flug gerade nicht prüfen. Du kannst fortfahren; wir prüfen ihn nach der Bestätigung deiner E-Mail.",
+          "rateLimited": "Zu viele Abfragen von deiner Verbindung. Du kannst fortfahren; wir prüfen den Flug nach der Bestätigung deiner E-Mail.",
+          "errors": {
+            "pending": "Dein Flug wird gesucht…",
+            "selectSegment": "Wähle deine Teilstrecke aus.",
+            "confirmFlight": "Bitte bestätige, dass dies dein Flug ist.",
+            "staleSegment": "Diese Auswahl ist nicht mehr gültig. Suche deinen Flug erneut."
+          }
         }
       }
     }
@@ -1103,6 +1127,10 @@
       "empty": "Noch keine Überwachungsereignisse.",
       "checkCompleted": "Regelmäßige Prüfung abgeschlossen: keine Probleme festgestellt.",
       "equipmentChangeNotice": "Achtung: Flugzeugtyp/Ausstattung wurde geändert. Ihre Sitzplatzzuweisung könnte betroffen sein."
+    },
+    "flightNotFound": {
+      "title": "Wir konnten diesen Flug nicht finden",
+      "text": "Unsere Flugdaten enthalten diese Flugnummer an diesem Datum nicht. Wir haben die Überwachung beendet und senden keine Warnungen. Bitte prüfe deine Buchung und füge den Flug erneut hinzu, falls etwas falsch eingegeben wurde."
     }
   },
   "GuardianHistory": {
@@ -1285,5 +1313,18 @@
     "body": "Tippe auf die Schaltfläche, um deine E-Mail-Adresse zu bestätigen und deine Reisen zu öffnen. Dieser zusätzliche Schritt verhindert, dass E-Mail-Scanner deinen Link verbrauchen.",
     "button": "Bestätigen und fortfahren",
     "submitting": "Wird bestätigt..."
+  },
+  "TripDisplay": {
+    "routeVerifying": "Route wird überprüft",
+    "status": {
+      "ACTIVE": "Wird überwacht",
+      "PENDING_CONFIRMATION": "Wartet auf E-Mail-Bestätigung",
+      "PENDING_VERIFICATION": "Wird kurz vor dem Flugdatum überprüft",
+      "FLIGHT_NOT_FOUND": "Flug nicht gefunden",
+      "COMPLETED": "Abgeschlossen",
+      "CANCELLED": "Storniert",
+      "ARCHIVED": "Archiviert",
+      "UNKNOWN": "Unbekannt"
+    }
   }
 }

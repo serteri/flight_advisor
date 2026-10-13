@@ -16,6 +16,7 @@ import { isQStashAuthorized } from '@/lib/guardian/qstashAuth';
 import { processTripCheck } from '@/workers/guardianWorker';
 import { processPendingAlertRetries } from '@/services/notifications/alertRetryWorker';
 import { expireDueAlertEvents } from '@/lib/alertLifecycle';
+import { retriedFromHeader } from '@/lib/guardian/failureClass';
 import { assertRequiredRuntimeEnv } from '@/lib/config/runtimeEnv';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
     try {
         assertRequiredRuntimeEnv('guardian-check');
-        const outcome = await processTripCheck(tripId, checkId);
+        const outcome = await processTripCheck(tripId, checkId, new Date(), retriedFromHeader(request.headers.get('upstash-retried')));
 
         // Housekeeping previously run by the removed polling cron. DB-only,
         // no provider calls.

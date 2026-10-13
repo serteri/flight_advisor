@@ -19,11 +19,19 @@ import type { CheckKind } from "@/lib/flightData/quotaPolicy";
 import { planExtraCheck, resolveTripSchedule } from "@/lib/guardian/checkpoints";
 import { cancelPendingChecks, scheduleTripChecks } from "@/lib/guardian/scheduler";
 import {
+    activateAfterVerification,
     applyFlightDataToTrip,
     lookupWithinBudget,
+    releaseProviderCall,
     replanTripChecks,
+    routeFlightNotFound,
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
+import { isFlightNotFound } from "@/lib/guardian/flightNotFound";
+import { verifyCheckOutcome } from "@/lib/guardian/flightVerification";
+import { classifyLookupFailure, shouldRetry, MAX_CHECK_RETRIES } from "@/lib/guardian/failureClass";
+import { formatFailure } from "@/lib/guardian/failureText";
+import { trackGuardianEvent } from "@/lib/analytics/guardianEvents";
 
 export type GuardianEventType = 'DELAY' | 'GATE_CHANGE' | 'CANCELLED' | 'DATA_ISSUE' | 'EQUIPMENT_CHANGE';
 export type GuardianEventSeverity = 'low' | 'medium' | 'high';
@@ -51,7 +59,7 @@ export type TripCheckOutcome = {
 type ComputedStatus = 'ON_TIME' | 'DELAYED' | 'CANCELLED' | 'UNKNOWN';
 
 const LEASE_MS = 10 * 60 * 1000;
-const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIRMATION']);
+const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIRMATION', 'FLIGHT_NOT_FOUND']);
 
 // Delay alert thresholds (arrival delay, minutes). 180 and 240 are the EU261/
 // UK261 thresholds (3h eligibility, 4h full long-haul amount) — crossing them
@@ -134,6 +142,8 @@ export async function processTripCheck(
     tripId: string,
     checkId: string | null,
     now = new Date(),
+    // Redeliveries so far (Upstash-Retried header); bounds provider-failure retries.
+    retried = 0,
 ): Promise<TripCheckOutcome> {
     const check = checkId ? await prisma.scheduledTripCheck.findUnique({ where: { id: checkId } }) : null;
     if (checkId && (!check || check.tripId !== tripId)) {
@@ -163,6 +173,15 @@ export async function processTripCheck(
         await markCheck('SKIPPED', `trip is ${trip.status}`);
         return { status: 'SKIPPED', reason: `trip-${trip.status.toLowerCase()}` };
     }
+    // A trip waiting for flight verification only runs its VERIFY_FLIGHT check.
+    if (trip.status === 'PENDING_VERIFICATION' && kind !== 'VERIFY_FLIGHT') {
+        await markCheck('SKIPPED', 'trip is PENDING_VERIFICATION');
+        return { status: 'SKIPPED', reason: 'trip-pending-verification' };
+    }
+    if (kind === 'VERIFY_FLIGHT' && trip.status !== 'PENDING_VERIFICATION') {
+        await markCheck('SKIPPED', `verification not needed (trip is ${trip.status})`);
+        return { status: 'SKIPPED', reason: 'verify-not-needed' };
+    }
 
     // Lifecycle: scheduled arrival + 48h → COMPLETED, no provider call.
     if (kind === 'COMPLETE' || (trip.monitoringEndsAt && now.getTime() >= trip.monitoringEndsAt.getTime())) {
@@ -191,7 +210,7 @@ export async function processTripCheck(
     }
 
     try {
-        return await runLeasedCheck({ trip, segment, check, kind, now, markCheck });
+        return await runLeasedCheck({ trip, segment, check, kind, now, markCheck, retried });
     } finally {
         await prisma.monitoredTrip.updateMany({
             where: { id: trip.id, processingLeaseId: leaseId },
@@ -214,20 +233,77 @@ async function runLeasedCheck(ctx: {
     kind: CheckKind;
     now: Date;
     markCheck: (status: 'DONE' | 'SKIPPED' | 'FAILED', error?: string) => Promise<void>;
+    retried: number;
 }): Promise<TripCheckOutcome> {
     const { trip, kind, now, markCheck } = ctx;
     let segment = ctx.segment;
 
     const result = await lookupWithinBudget(trip.id, segment, kind);
+    // VERIFY_FLIGHT (far-future flight not found at registration, now −7 days):
+    // found → ACTIVE + normal plan; not found → definitive FLIGHT_NOT_FOUND flow;
+    // no verdict → retry in 12 h, or monitor approximately when time/calls run out.
+    if (kind === 'VERIFY_FLIGHT') {
+        const outcome = verifyCheckOutcome(result, resolveTripSchedule(segment).departureUtc, now);
+        if (outcome.action === 'NOT_FOUND') {
+            const routed = await routeFlightNotFound(trip.id, segment, now, { source: 'CHECKPOINT', excludeCheckId: ctx.check?.id });
+            await markCheck('DONE', `NOT_FOUND at verification → ${routed}`);
+            return { status: 'DONE', reason: 'flight-not-found' };
+        }
+        if (outcome.action === 'RETRY') {
+            await scheduleTripChecks(trip.id, [outcome.check]);
+            await markCheck('FAILED', `${result && !result.ok ? result.code : 'no result'} — verification retry at ${outcome.check.runAt.toISOString()}`);
+            return { status: 'FAILED', reason: 'verify-retry' };
+        }
+        await activateAfterVerification(trip.id, segment, outcome.action === 'ACTIVATE' && result?.ok ? result.flight : null, now, { excludeCheckId: ctx.check?.id });
+        await markCheck('DONE', outcome.action === 'ACTIVATE' ? undefined : 'could not verify — monitoring with approximate plan');
+        return { status: 'DONE', reason: outcome.action === 'ACTIVATE' ? 'flight-verified' : 'verify-gave-up' };
+    }
     if (!result) {
         await markCheck('SKIPPED', 'per-trip provider call cap reached');
         return { status: 'SKIPPED', reason: 'trip-call-cap' };
     }
+    // Flight validation at every checkpoint: provider says the flight doesn't
+    // exist → FLIGHT_NOT_FOUND, remaining checks cancelled, no alert emails, one
+    // "we couldn't find your flight" email (lib/guardian/flightNotFound.ts).
+    // Definitive only ≤7 days before departure; further out → PENDING_VERIFICATION.
+    if (isFlightNotFound(result)) {
+        const outcome = await routeFlightNotFound(trip.id, segment, now, {
+            source: 'CHECKPOINT',
+            excludeCheckId: ctx.check?.id,
+        });
+        await markCheck('DONE', `NOT_FOUND: flight not found by provider → ${outcome}`);
+        return { status: 'DONE', reason: outcome === 'FLIGHT_NOT_FOUND' ? 'flight-not-found' : outcome === 'PENDING_VERIFICATION' ? 'pending-verification' : 'flight-not-found-already-handled' };
+    }
     if (!result.ok) {
         await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { lastCheckedAt: now } });
-        const skipped = result.code === 'QUOTA_BLOCKED';
-        await markCheck(skipped ? 'SKIPPED' : 'FAILED', `${result.code}: ${result.message}`);
-        return { status: skipped ? 'SKIPPED' : 'FAILED', reason: result.code };
+        const failureClass = classifyLookupFailure(result);
+        const text = formatFailure(failureClass, result.code, result.message);
+
+        if (failureClass === 'QUOTA') {
+            await markCheck('SKIPPED', text);
+            return { status: 'SKIPPED', reason: result.code };
+        }
+        // Temporary provider trouble (5xx, 429, timeout): leave the check
+        // SCHEDULED and answer 503 so QStash redelivers, at most MAX_CHECK_RETRIES
+        // times. Nothing has been written to the snapshot or alerts yet, so a
+        // retry cannot duplicate either. The reserved provider call is given back
+        // so retries do not starve the later checkpoints of this trip.
+        if (shouldRetry(failureClass, ctx.retried)) {
+            await releaseProviderCall(trip.id);
+            if (ctx.check) {
+                await prisma.scheduledTripCheck.update({
+                    where: { id: ctx.check.id },
+                    data: { error: `${text} (retry ${ctx.retried + 1}/${MAX_CHECK_RETRIES} pending)`.slice(0, 500) },
+                });
+            }
+            console.warn(`[Guardian] ${kind} for trip ${trip.id} hit a ${failureClass} failure (${result.code}); retry ${ctx.retried + 1}/${MAX_CHECK_RETRIES}`);
+            return { status: 'RETRY', reason: `${failureClass}:${result.code}` };
+        }
+        if (failureClass === 'AUTHENTICATION') {
+            console.error(`[Guardian] AUTHENTICATION failure from the flight-data provider (${result.code}) - check RAPID_API_KEY / RAPID_API_HOST_AERODATABOX. Trip ${trip.id}, ${kind}.`);
+        }
+        await markCheck('FAILED', failureClass === 'TEMPORARY' ? `${text} (retries exhausted)` : text);
+        return { status: 'FAILED', reason: result.code };
     }
 
     const flight = result.flight;
@@ -284,6 +360,7 @@ async function runLeasedCheck(ctx: {
     ]);
 
     await markCheck('DONE');
+    void trackGuardianEvent('guardian_check_completed', { check_kind: kind, events: events.count, data_source: flight.source });
     return { status: 'DONE', events: events.count };
 }
 
@@ -363,6 +440,9 @@ async function deriveAndDispatchEvents(ctx: {
             ...(computedStatus === 'CANCELLED' ? { disruption: 'CANCELLATION' as const } : {}),
         });
     const compensationEligible = compensation?.status === 'LIKELY_ELIGIBLE';
+    if (compensation && (computedStatus === 'DELAYED' || computedStatus === 'CANCELLED')) {
+        void trackGuardianEvent('guardian_compensation_evaluated', { regime: compensation.regime, status: compensation.status, disruption: computedStatus });
+    }
 
     const generatedEvents: GuardianEvent[] = [];
     const notificationPromises: Promise<void>[] = [];
@@ -431,6 +511,7 @@ async function deriveAndDispatchEvents(ctx: {
         };
         generatedEvents.push(eventPayload);
         newSnapshot.lastEventId = key;
+        void trackGuardianEvent('guardian_disruption_detected', { event_type: event.type, severity: event.severity });
 
         await prisma.guardianAlert.create({
             data: {
@@ -451,6 +532,7 @@ async function deriveAndDispatchEvents(ctx: {
     const dispatchNotification = (eventPayload: GuardianEvent, event: { type: GuardianEventType; severity: GuardianEventSeverity }) =>
         notifyGuardianEvent(eventPayload, trip.user!)
             .then(() => {
+                void trackGuardianEvent('guardian_alert_sent', { event_type: event.type, severity: event.severity });
                 recordGuardianMetric({
                     tripId: trip.id,
                     eventType: event.type,
@@ -512,6 +594,7 @@ async function deriveAndDispatchEvents(ctx: {
             } else {
                 const disruptionEmailResult = await sendDisruptionAlert(recipientEmail, trip.id, fullFlightNumber, ruleType);
                 if (disruptionEmailResult.success) {
+                    void trackGuardianEvent('guardian_alert_sent', { event_type: 'COMPENSATION', rule: ruleType });
                     const sentAt = new Date();
                     await prisma.monitoredTrip.update({
                         where: { id: trip.id },

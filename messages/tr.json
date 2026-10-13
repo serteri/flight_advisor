@@ -489,13 +489,37 @@
           "invalidFlight": "Geçersiz uçuş numarası",
           "invalidDate": "Lütfen geçerli, ileri bir tarih seçin",
           "invalidEmail": "Geçersiz e-posta adresi",
-          "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz"
+          "consentRequired": "Devam etmek için uçuş uyarıları almayı kabul etmelisiniz",
+          "datePast": "Bu tarih geçmişte. Bugünü ya da ileri bir tarihi seç.",
+          "dateTooFar": "Uçuşlar en fazla 330 gün öncesinden takip edilebilir."
         },
         "confirmation": {
           "title": "E-postanızı kontrol edin",
           "subtitle": "Size bir onay bağlantısı gönderdik. Bağlantıyı açtığınız anda izleme başlar.",
           "nextSteps": "Bağlantı 24 saat geçerlidir. E-postayı göremiyorsanız spam klasörünü kontrol edin.",
           "backHome": "Ana sayfaya dön"
+        },
+        "lookup": {
+          "find": "Uçuşunu bul",
+          "finding": "Aranıyor…",
+          "foundTitle": "Uçuşunu bulduk",
+          "chooseTitle": "Bu uçuş numarasının birden fazla bölümü var. Hangisi senin uçuşun?",
+          "departs": "Kalkış",
+          "arrives": "Varış",
+          "airline": "Havayolu",
+          "localTimes": "Saatler her havalimanının yerel saatidir.",
+          "confirm": "Bu benim uçuşum",
+          "confirmed": "Onaylandı",
+          "notFoundBlocking": "Bu uçuşu bulamadık. Uçuş numarasını ve tarihi kontrol et.",
+          "notFoundSoft": "Tarife henüz yayınlanmamış olabilir. Uçuşunu kalkışa yakın doğrulayacağız — devam edebilirsin.",
+          "skipped": "Uçuşu şu anda kontrol edemedik. Devam edebilirsin; e-postanı onayladıktan sonra doğrulayacağız.",
+          "rateLimited": "Bağlantından çok fazla sorgu yapıldı. Devam edebilirsin; e-postanı onayladıktan sonra uçuşu doğrulayacağız.",
+          "errors": {
+            "pending": "Uçuşun aranıyor…",
+            "selectSegment": "Hangi bölümün senin olduğunu seç.",
+            "confirmFlight": "Lütfen bunun senin uçuşun olduğunu onayla.",
+            "staleSegment": "Bu seçim artık geçerli değil. Uçuşunu yeniden ara."
+          }
         }
       }
     }
@@ -774,6 +798,10 @@
       "empty": "Henüz izleme olayı yok.",
       "checkCompleted": "Periyodik kontrol tamamlandı: sorun bulunmadı.",
       "equipmentChangeNotice": "Dikkat: Uçak tipi/ekipman değişti. Koltuk yerleşiminiz etkilenmiş olabilir."
+    },
+    "flightNotFound": {
+      "title": "Bu uçuşu bulamadık",
+      "text": "Uçuş verilerimizde bu tarihte bu uçuş numarası yok; bu yüzden izlemeyi durdurduk ve uyarı göndermeyeceğiz. Lütfen rezervasyonunu kontrol et; bir şey yanlış yazıldıysa uçuşu yeniden ekle."
     }
   },
   "GuardianHistory": {
@@ -1285,5 +1313,18 @@
     "body": "E-posta adresinizi onaylamak ve yolculuklarınızı açmak için düğmeye basın. Bu ek adım, e-posta tarayıcılarının bağlantınızı tüketmesini engeller.",
     "button": "Onayla ve devam et",
     "submitting": "Onaylanıyor..."
+  },
+  "TripDisplay": {
+    "routeVerifying": "Rota doğrulanıyor",
+    "status": {
+      "ACTIVE": "İzleniyor",
+      "PENDING_CONFIRMATION": "E-posta onayı bekleniyor",
+      "PENDING_VERIFICATION": "Uçuş tarihi yaklaşınca doğrulanacak",
+      "FLIGHT_NOT_FOUND": "Uçuş bulunamadı",
+      "COMPLETED": "Tamamlandı",
+      "CANCELLED": "İptal edildi",
+      "ARCHIVED": "Arşivlendi",
+      "UNKNOWN": "Bilinmiyor"
+    }
   }
 }

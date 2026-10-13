@@ -19,7 +19,7 @@ import { prisma } from '@/lib/prisma';
 import { appUrl } from '@/lib/config/runtimeEnv';
 import type { PlannedCheck } from '@/lib/guardian/checkpoints';
 import { isQStashPublishAllowed } from '@/lib/guardian/qstashPolicy';
-import { MAX_DELAY_ERROR_MARKER, withinPublishHorizon } from '@/lib/guardian/publishWindow';
+import { MAX_DELAY_ERROR_MARKER, ORPHAN_AFTER_MS, withinPublishHorizon } from '@/lib/guardian/publishWindow';
 import { publishDueChecks, type PublishDueDeps, type PublishDueSummary } from '@/lib/guardian/publishDue';
 
 let cachedClient: Client | null | undefined;
@@ -157,18 +157,31 @@ export async function publishDueScheduledChecks(now = new Date()): Promise<Publi
                     data: { status: 'SCHEDULED', error: null },
                 })
             ).count,
-        findUnpublished: () =>
-            prisma.scheduledTripCheck.findMany({
-                where: { status: 'SCHEDULED', messageId: null, trip: { status: 'ACTIVE' } },
+        findUnpublished: async () => {
+            const orphanBefore = new Date(now.getTime() - ORPHAN_AFTER_MS);
+            const rows = await prisma.scheduledTripCheck.findMany({
+                where: {
+                    status: 'SCHEDULED',
+                    trip: { status: 'ACTIVE' },
+                    OR: [{ messageId: null }, { messageId: { not: null }, runAt: { lt: orphanBefore }, updatedAt: { lt: orphanBefore } }],
+                },
                 orderBy: { runAt: 'asc' },
                 take: 500,
-                select: { id: true, tripId: true, kind: true, runAt: true },
-            }),
+                select: { id: true, tripId: true, kind: true, runAt: true, trip: { select: { monitoringEndsAt: true } } },
+            });
+            return rows.map(({ trip, ...row }) => ({ ...row, monitoringEndsAt: trip.monitoringEndsAt }));
+        },
         publish: (row) => publishCheck(client, row, row.tripId, row.kind),
         markPublished: async (id, messageId) => {
             await prisma.scheduledTripCheck.updateMany({
-                where: { id, status: 'SCHEDULED', messageId: null },
+                where: { id, status: 'SCHEDULED' },
                 data: { messageId: messageId ?? 'published-no-id', error: null },
+            });
+        },
+        markSkipped: async (id, reason) => {
+            await prisma.scheduledTripCheck.updateMany({
+                where: { id, status: 'SCHEDULED' },
+                data: { status: 'SKIPPED', error: reason.slice(0, 500) },
             });
         },
         markFailed: async (id, error) => {

@@ -21,9 +21,9 @@ test('config reads env with conservative defaults', () => {
 
 test('monthly call and trip capacity', () => {
     const config = { monthlyQuotaUnits: 600, unitsPerCall: 2 };
-    assert.equal(MAX_CALLS_PER_TRIP, 7);
+    assert.equal(MAX_CALLS_PER_TRIP, 8);
     assert.equal(getMonthlyCallCapacity(config), 300);
-    assert.deepEqual(getMonthlyTripCapacity(config), { worstCase: 42, typical: 50 });
+    assert.deepEqual(getMonthlyTripCapacity(config), { worstCase: 37, typical: 50 });
 });
 
 test('usage ratio prefers provider headers over the internal counter', () => {

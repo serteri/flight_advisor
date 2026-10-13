@@ -1,3 +1,6 @@
+// NOTE: sign-in is served by lib/auth.ts (mounted at /api/auth/[...nextauth]); the
+// providers below are only used to decode sessions in proxy.ts and auth(). A
+// provider must exist in lib/auth.ts before a login button may use it.
 import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import type { NextAuthConfig } from "next-auth";

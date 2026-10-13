@@ -1,0 +1,191 @@
+[
+  {
+    "greatCircleDistance": {
+      "km": 1000
+    },
+    "departure": {
+      "airport": {
+        "icao": "EDDF",
+        "iata": "FRA",
+        "name": "Frankfurt-am-Main",
+        "shortName": "Frankfurt-am-Main",
+        "municipalityName": "Frankfurt-am-Main",
+        "countryCode": "DE",
+        "timeZone": "Europe/Berlin",
+        "location": {
+          "lat": 50.0264,
+          "lon": 8.543129
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 12:35Z",
+        "local": "2026-01-15 13:35+01:00"
+      },
+      "terminal": "1",
+      "quality": [
+        "Basic"
+      ]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "KJFK",
+        "iata": "JFK",
+        "name": "New York John F. Kennedy",
+        "shortName": "New York Kennedy",
+        "municipalityName": "New York",
+        "countryCode": "US",
+        "timeZone": "America/New_York",
+        "location": {
+          "lat": 40.6398,
+          "lon": -73.7787
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 21:20Z",
+        "local": "2026-01-15 16:20-05:00"
+      },
+      "quality": [
+        "Basic"
+      ]
+    },
+    "lastUpdatedUtc": "2026-01-14 21:00Z",
+    "number": "XX 2020",
+    "status": "Expected",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": {
+      "model": "Airbus A330"
+    },
+    "airline": {
+      "name": "Mock Air",
+      "iata": "XX",
+      "icao": "XXX"
+    }
+  },
+  {
+    "greatCircleDistance": {
+      "km": 1000
+    },
+    "departure": {
+      "airport": {
+        "icao": "LTFM",
+        "iata": "IST",
+        "name": "Istanbul",
+        "shortName": "Istanbul",
+        "municipalityName": "Istanbul",
+        "countryCode": "TR",
+        "timeZone": "Europe/Istanbul",
+        "location": {
+          "lat": 41.2753,
+          "lon": 28.7519
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 07:50Z",
+        "local": "2026-01-15 10:50+03:00"
+      },
+      "terminal": "1",
+      "quality": [
+        "Basic"
+      ]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "EDDF",
+        "iata": "FRA",
+        "name": "Frankfurt-am-Main",
+        "shortName": "Frankfurt-am-Main",
+        "municipalityName": "Frankfurt-am-Main",
+        "countryCode": "DE",
+        "timeZone": "Europe/Berlin",
+        "location": {
+          "lat": 50.0264,
+          "lon": 8.543129
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 11:40Z",
+        "local": "2026-01-15 12:40+01:00"
+      },
+      "quality": [
+        "Basic"
+      ]
+    },
+    "lastUpdatedUtc": "2026-01-14 21:00Z",
+    "number": "XX 2020",
+    "status": "Expected",
+    "codeshareStatus": "IsOperator",
+    "isCargo": false,
+    "aircraft": {
+      "model": "Airbus A330"
+    },
+    "airline": {
+      "name": "Mock Air",
+      "iata": "XX",
+      "icao": "XXX"
+    }
+  },
+  {
+    "greatCircleDistance": {
+      "km": 1000
+    },
+    "departure": {
+      "airport": {
+        "icao": "LTFM",
+        "iata": "IST",
+        "name": "Istanbul",
+        "shortName": "Istanbul",
+        "municipalityName": "Istanbul",
+        "countryCode": "TR",
+        "timeZone": "Europe/Istanbul",
+        "location": {
+          "lat": 41.2753,
+          "lon": 28.7519
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 07:50Z",
+        "local": "2026-01-15 10:50+03:00"
+      },
+      "terminal": "1",
+      "quality": [
+        "Basic"
+      ]
+    },
+    "arrival": {
+      "airport": {
+        "icao": "EDDF",
+        "iata": "FRA",
+        "name": "Frankfurt-am-Main",
+        "shortName": "Frankfurt-am-Main",
+        "municipalityName": "Frankfurt-am-Main",
+        "countryCode": "DE",
+        "timeZone": "Europe/Berlin",
+        "location": {
+          "lat": 50.0264,
+          "lon": 8.543129
+        }
+      },
+      "scheduledTime": {
+        "utc": "2026-01-15 11:40Z",
+        "local": "2026-01-15 12:40+01:00"
+      },
+      "quality": [
+        "Basic"
+      ]
+    },
+    "lastUpdatedUtc": "2026-01-14 21:00Z",
+    "number": "XX 2020",
+    "status": "Expected",
+    "codeshareStatus": "IsCodeshared",
+    "isCargo": false,
+    "aircraft": {
+      "model": "Airbus A330"
+    },
+    "airline": {
+      "name": "Partner Air",
+      "iata": "ZZ",
+      "icao": "ZZZ"
+    }
+  }
+]

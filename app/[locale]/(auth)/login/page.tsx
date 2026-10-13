@@ -94,18 +94,9 @@ export default function LoginPage(props: LoginPageProps) {
                                 {t("signInWithGoogle")}
                             </Button>
                         </form>
-
-                        <form
-                            action={async () => {
-                                "use server"
-                                await signIn("microsoft-entra-id", { redirectTo: callbackUrl })
-                            }}
-                        >
-                            <Button type="submit" variant="outline" className="w-full gap-2">
-                                <svg viewBox="0 0 23 23" className="h-5 w-5" fill="currentColor"><path d="M0 0h11.31v11.31H0V0zm11.31 11.31v11.31H0V11.31h11.31zm11.31-11.31v11.31h-11.31V0h11.31zm0 22.62H11.31v-11.31h11.31v11.31z" /></svg>
-                                {t("signInWithMicrosoft")}
-                            </Button>
-                        </form>
+                        {/* Microsoft sign-in is hidden: lib/auth.ts (the mounted handler) has no
+                            Entra ID provider, so the button could only fail. Re-add it together with
+                            the provider in lib/auth.ts. */}
                     </div>
                 </div>
 

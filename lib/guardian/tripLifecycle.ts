@@ -6,6 +6,7 @@
 //  - (re)planning QStash checkpoints and monitoringEndsAt
 
 import { prisma } from '@/lib/prisma';
+import { trackGuardianEvent } from '@/lib/analytics/guardianEvents';
 import type { NormalizedFlight } from '@/lib/flightData/aerodatabox';
 import { lookupFlight, type FlightLookupResult } from '@/lib/flightData/client';
 import { MAX_CALLS_PER_TRIP, type CheckKind } from '@/lib/flightData/quotaPolicy';
@@ -17,6 +18,9 @@ import {
     type TripSchedule,
 } from '@/lib/guardian/checkpoints';
 import { cancelPendingChecks, scheduleTripChecks } from '@/lib/guardian/scheduler';
+import { skipRegistrationLookup } from '@/lib/guardian/verifiedFlight';
+import { defaultFlightNotFoundDeps, handleFlightNotFound, isFlightNotFound } from '@/lib/guardian/flightNotFound';
+import { defaultPendingVerificationDeps, deferVerification, notFoundDecision } from '@/lib/guardian/flightVerification';
 
 const UNKNOWN_IATA = 'UNK';
 
@@ -54,6 +58,15 @@ export async function reserveProviderCall(tripId: string): Promise<boolean> {
     return reserved.count === 1;
 }
 
+// Gives a reserved call back (a retried TEMPORARY failure must not eat the
+// per-trip budget that the remaining checkpoints need).
+export async function releaseProviderCall(tripId: string): Promise<void> {
+    await prisma.monitoredTrip.updateMany({
+        where: { id: tripId, apiCallsUsed: { gt: 0 } },
+        data: { apiCallsUsed: { decrement: 1 } },
+    });
+}
+
 // Reserves a call then looks the flight up. Returns null when the cap blocks it.
 export async function lookupWithinBudget(
     tripId: string,
@@ -64,7 +77,11 @@ export async function lookupWithinBudget(
         console.warn(`[Guardian] Trip ${tripId} reached ${MAX_CALLS_PER_TRIP} provider calls — ${kind} not executed`);
         return null;
     }
-    return lookupFlight(segmentFlightNumber(segment), segmentLookupDate(segment), kind);
+    // A known route pins the leg (a number can fly several legs a day).
+    const leg = !isUnknownIata(segment.origin) && !isUnknownIata(segment.destination)
+        ? { origin: segment.origin.toUpperCase(), destination: segment.destination.toUpperCase() }
+        : undefined;
+    return lookupFlight(segmentFlightNumber(segment), segmentLookupDate(segment), kind, { leg });
 }
 
 export interface AppliedFlightData {
@@ -135,6 +152,44 @@ export async function replanTripChecks(
 
 // Called once a trip is ACTIVE: one registration lookup (route + schedule),
 // then the checkpoint plan. Works with approximate times if the lookup fails.
+// NOT_FOUND from the provider: final only ≤7 days before departure
+// (FLIGHT_NOT_FOUND + one email); further out the schedule may simply not be
+// published yet → PENDING_VERIFICATION, no email, one VERIFY_FLIGHT check at −7 days.
+export async function routeFlightNotFound(
+    tripId: string,
+    segment: SegmentLike,
+    now: Date,
+    options: { source: 'REGISTRATION' | 'CHECKPOINT'; excludeCheckId?: string },
+): Promise<'FLIGHT_NOT_FOUND' | 'PENDING_VERIFICATION' | 'UNCHANGED'> {
+    const { departureUtc } = resolveTripSchedule(segment);
+    if (notFoundDecision(departureUtc, now) === 'DEFER') {
+        const res = await deferVerification(tripId, departureUtc, now, await defaultPendingVerificationDeps(), { excludeCheckId: options.excludeCheckId });
+        return res.transitioned ? 'PENDING_VERIFICATION' : 'UNCHANGED';
+    }
+    const res = await handleFlightNotFound(tripId, await defaultFlightNotFoundDeps(), options);
+    return res.transitioned ? 'FLIGHT_NOT_FOUND' : 'UNCHANGED';
+}
+
+// VERIFY_FLIGHT verdict "monitor it": PENDING_VERIFICATION → ACTIVE, apply the
+// provider data when there is some, then the normal checkpoint plan. Without
+// provider data (verification couldn't run) the plan uses approximate times.
+export async function activateAfterVerification(
+    tripId: string,
+    segment: SegmentLike,
+    flight: NormalizedFlight | null,
+    now: Date,
+    options: { excludeCheckId?: string } = {},
+): Promise<boolean> {
+    const activated = await prisma.monitoredTrip.updateMany({
+        where: { id: tripId, status: 'PENDING_VERIFICATION' },
+        data: { status: 'ACTIVE' },
+    });
+    if (activated.count !== 1) return false;
+    const current = flight ? (await applyFlightDataToTrip(tripId, segment, flight)).segment : segment;
+    await replanTripChecks(tripId, resolveTripSchedule(current), now, { excludeCheckId: options.excludeCheckId });
+    return true;
+}
+
 export async function initializeTripMonitoring(tripId: string, now = new Date()): Promise<void> {
     const trip = await prisma.monitoredTrip.findUnique({
         where: { id: tripId },
@@ -148,7 +203,20 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
         return;
     }
 
+    // The form's "find my flight" step already resolved this leg (route + times are
+    // stored on the segment): plan from that, no second provider call.
+    if (skipRegistrationLookup(trip)) {
+        await replanTripChecks(tripId, resolveTripSchedule(segment), now);
+        return;
+    }
+
     const result = await lookupWithinBudget(tripId, segment, 'REGISTRATION');
+    // Flight validation at opt-in: a flight the provider doesn't know is never
+    // monitored — definitive only within 7 days of departure (see routeFlightNotFound).
+    if (isFlightNotFound(result)) {
+        await routeFlightNotFound(tripId, segment, now, { source: 'REGISTRATION' });
+        return;
+    }
     if (result?.ok) {
         segment = (await applyFlightDataToTrip(tripId, segment, result.flight)).segment;
     } else {
@@ -162,4 +230,5 @@ export async function initializeTripMonitoring(tripId: string, now = new Date())
 
     const schedule = resolveTripSchedule(segment);
     await replanTripChecks(tripId, schedule, now);
+    void trackGuardianEvent('guardian_monitoring_started', { approximate_schedule: schedule.approximate });
 }
