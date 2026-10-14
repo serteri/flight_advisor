@@ -3,10 +3,25 @@
 import { scheduleDate, scheduleTime } from '@/lib/guardian/flightScheduleDisplay';
 import { pnrLabel } from '@/lib/guardian/tripBuckets';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { routeText } from '@/lib/guardian/tripDisplay';
+import { dayFirstLocale, formatCheckTime } from '@/lib/guardian/checkTimeFormat';
+import {
+    flightState,
+    guardianStatus,
+    historyGroup,
+    isScheduleChangeEventType,
+    isSystemEventType,
+    lastCheckSummary,
+    monitoringDelayState,
+    monitoringPlanKeys,
+    nextScheduledCheck,
+    scheduleState,
+    usesNeutralRightsCopy,
+    type FlightState,
+} from '@/lib/guardian/tripPresentation';
 import { useRouter } from '@/i18n/routing';
 import {
     AlertTriangle,
@@ -41,6 +56,7 @@ type TripDetailsClientProps = {
         status: string;
         lastCheckedAt: Date | string | null;
         nextCheckAt: Date | string;
+        scheduledChecks: Array<{ kind: string; runAt: Date | string; status: string }>;
         checkFrequency: number;
         watchDelay: boolean;
         watchSchedule: boolean;
@@ -137,14 +153,6 @@ const formatDateTime = (value: Date | string | null | undefined, intlLocale: str
     });
 };
 
-const toRiskLevel = (delayMinutes: number, cancellationRisk: number) => {
-    const delayRisk = delayMinutes >= 120 ? 3 : delayMinutes >= 45 ? 2 : delayMinutes > 0 ? 1 : 0;
-    const score = Math.max(delayRisk, cancellationRisk);
-    if (score >= 3) return 'HIGH';
-    if (score >= 2) return 'MEDIUM';
-    return 'LOW';
-};
-
 const parseNotificationType = (eventId?: string | null): string => {
     if (!eventId) return 'UNKNOWN';
     const parts = eventId.split(':');
@@ -154,6 +162,7 @@ const parseNotificationType = (eventId?: string | null): string => {
 export function TripDetailsClient({ trip, locale, compensation }: TripDetailsClientProps) {
     const t = useTranslations('GuardianTripDetails');
     const tDisplay = useTranslations('TripDisplay');
+    const tv = useTranslations('GuardianV2');
     const router = useRouter();
     const params = useParams<{ locale?: string | string[] }>();
     const [isClearingStale, setIsClearingStale] = useState(false);
@@ -171,27 +180,16 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
     const dt = (value: Date | string | null | undefined) => formatDateTime(value, intlLocale, unknownLabel);
     const unavailable = t('scheduleUnavailable');
 
-    const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
-        const normalized = (snapshotStatus || '').toLowerCase();
-        if (normalized.includes('cancel')) return t('status.cancelled');
-        if (delayMinutes && delayMinutes > 0) return t('status.delayed', { minutes: delayMinutes });
-        if (!snapshotStatus) return t('status.unknown');
-        if (normalized.includes('scheduled')) return t('status.onTime');
-        return snapshotStatus;
-    };
-
-    useEffect(() => {
-        console.log('locale value:', locale);
-        console.log('locale param value:', localeParam);
-        console.log('back link href:', backLinkHref);
-    }, [locale, localeParam, backLinkHref]);
-
     const firstSegment = trip.segments[0] || null;
-    const airlines = Array.from(new Set(trip.segments.map((segment) => segment.airlineCode))).filter(Boolean);
 
     const snapshot = trip.snapshot;
     const delayMinutes = snapshot?.delayMinutes ?? 0;
-    const currentFlightStatus = toStatusLabel(snapshot?.status, delayMinutes);
+    const state = flightState(trip);
+    const guardian = guardianStatus(trip);
+    const nextCheck = nextScheduledCheck(trip.scheduledChecks);
+    const lastCheck = lastCheckSummary(trip);
+    const lastSegment = trip.segments[trip.segments.length - 1] || null;
+    const checkTime = (value: Date | string) => formatCheckTime(value, intlLocale, firstSegment);
 
     const cancellationFlag =
         (snapshot?.status || '').toLowerCase().includes('cancel') ||
@@ -199,10 +197,6 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
 
     const delayFlag = delayMinutes > 0 || trip.alerts.some((alert) => /delay/i.test(alert.type) || /delay/i.test(alert.title));
     const scheduleFlag = trip.alerts.some((alert) => /schedule|gate/i.test(alert.type) || /schedule|gate/i.test(alert.title));
-
-    const cancellationRisk = cancellationFlag ? 3 : scheduleFlag ? 2 : 1;
-    const delayRisk = delayMinutes >= 120 ? 'HIGH' : delayMinutes >= 45 ? 'MEDIUM' : delayMinutes > 0 ? 'LOW' : 'LOW';
-    const overallRisk = toRiskLevel(delayMinutes, cancellationRisk);
 
     // Display only: status and amount come from the compensation engine.
     const eu261State = compensation.status;
@@ -224,7 +218,10 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
             ? t('explanation.notEligible')
             : t('explanation.unknown');
 
-    const hasDisruptionDetected = cancellationFlag || delayFlag || scheduleFlag;
+    const scheduleChangeSeen = scheduleFlag || trip.alertEvents.some((event) => isScheduleChangeEventType(event.eventType));
+    const scheduleSt = scheduleState(trip, scheduleChangeSeen);
+    const delayStateNow = monitoringDelayState(trip.alertEvents);
+    const hasDisruptionDetected = state === 'CANCELLED' || state === 'DELAYED' || cancellationFlag || delayFlag || scheduleFlag;
     const shouldShowClaimSection =
         isLikelyEligible ||
         hasDisruptionDetected ||
@@ -240,30 +237,16 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
         ? routeText(firstSegment.origin, trip.segments[trip.segments.length - 1].destination)
         : null) ?? tDisplay('routeVerifying');
 
-    const statusBadge = cancellationFlag
-        ? {
-            label: t('statusBadge.cancelled'),
-            classes: 'bg-red-100 text-red-700 border-red-200',
-        }
-        : delayMinutes > 0
-            ? {
-                label: t('statusBadge.delayed'),
-                classes: 'bg-amber-100 text-amber-700 border-amber-200',
-            }
-            : {
-                label: t('statusBadge.onTime'),
-                classes: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            };
-
-    const delayRiskClasses = delayRisk === 'HIGH'
-        ? 'bg-red-50 border-red-200 text-red-700'
-        : delayRisk === 'MEDIUM'
-            ? 'bg-amber-50 border-amber-200 text-amber-700'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-700';
-
-    const cancellationRiskClasses = cancellationFlag
-        ? 'bg-red-50 border-red-200 text-red-700'
-        : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+    const STATE_CLASSES: Record<FlightState, string> = {
+        ON_TIME: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        DELAYED: 'bg-amber-100 text-amber-700 border-amber-200',
+        CANCELLED: 'bg-red-100 text-red-700 border-red-200',
+        NOT_VERIFIED: 'bg-slate-100 text-slate-700 border-slate-200',
+        UNABLE_TO_VERIFY: 'bg-slate-100 text-slate-700 border-slate-200',
+    };
+    const hasVerifiedStatus = state !== 'NOT_VERIFIED';
+    const flightStateLabel = tv(`flightStatus.${state}`);
+    const flightStateDesc = tv(`flightStatus.desc.${state}`, { minutes: delayMinutes });
 
     const eu261BadgeClasses = isLikelyEligible
         ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
@@ -280,11 +263,11 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
     const canShowGateNumbers = hoursUntilDeparture === null || hoursUntilDeparture <= 24;
 
     const recentChanges = [
-        ...trip.alertEvents.slice(0, 5).map((alert) => ({
+        ...trip.alertEvents.filter((alert) => !isSystemEventType(alert.eventType)).slice(0, 5).map((alert) => ({
             id: alert.id,
             when: dt(alert.detectedAt),
             type: alert.eventType,
-            text: `${alert.title}: ${alert.message} State: ${alert.state}.`,
+            text: `${alert.title}: ${alert.message}`,
             severity: alert.severity,
         })),
         ...trip.alerts.slice(0, 5).map((alert) => ({
@@ -314,16 +297,16 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
             : []),
     ].slice(0, 6);
 
-    const checks = [
-        { label: t('checks.disruptionHunter'), enabled: trip.watchDelay },
-        { label: t('checks.scheduleGuardian'), enabled: trip.watchSchedule },
-        { label: t('checks.seatWatch'), enabled: trip.watchSeat },
-        { label: t('checks.upgradeWatch'), enabled: trip.watchUpgrade },
-    ];
+    const watching = [
+        trip.watchDelay && tv('watching.delay'),
+        tv('watching.cancellation'),
+        trip.watchSchedule && tv('watching.schedule'),
+        trip.watchSchedule && tv('watching.gate'),
+    ].filter(Boolean) as string[];
+    const planKeys = monitoringPlanKeys(trip.scheduledChecks);
 
-    const alertsTriggered = trip.alertEvents.filter((alert) => alert.state !== 'SUPPRESSED').length || trip.alerts.length;
+    const alertsTriggered = trip.alertEvents.filter((alert) => alert.state !== 'SUPPRESSED' && !isSystemEventType(alert.eventType)).length;
     const unreadAlerts = trip.alerts.filter((alert) => !alert.isRead).length;
-    const latestRunAt = trip.lastCheckedAt || snapshot?.snapshotAt || null;
 
     const lifecycleDeliveries = trip.alertEvents.flatMap((alert) => alert.deliveries);
     const deliveryRows = lifecycleDeliveries.length > 0 ? lifecycleDeliveries : trip.deliveries;
@@ -472,37 +455,54 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
 
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                        <div className="space-y-4">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('header.label')}</div>
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">{routeHero}</h1>
+                        <div className="space-y-3 min-w-0">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-400">{tv('productLabel')}</div>
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 break-words">
+                                {firstSegment ? `${firstSegment.airlineCode}${firstSegment.flightNumber}` : routeHero}
+                            </h1>
+                            <p className="text-2xl font-bold text-slate-700">{routeHero}</p>
+                            <p className="text-slate-600">
+                                {scheduleDate(firstSegment?.scheduledDepartureLocal, dayFirstLocale(intlLocale), unavailable)}
+                            </p>
+                            <p className="text-xl font-bold text-slate-900">
+                                {scheduleTime(firstSegment?.scheduledDepartureLocal, unavailable)}
+                                <span className="mx-2 text-slate-400" aria-hidden="true">→</span>
+                                <span className="sr-only">{tv('times.arrives')}</span>
+                                {scheduleTime(lastSegment?.scheduledArrivalLocal, unavailable)}
+                            </p>
                             <div className="flex flex-wrap items-center gap-3">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5">
-                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                                        {firstSegment?.airlineCode || 'QF'}
-                                    </span>
-                                    <span className="text-sm font-semibold text-slate-700">{t('header.airlineBadge')}</span>
-                                </div>
-                                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${statusBadge.classes}`}>
-                                    {statusBadge.label}
+                                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold ${STATE_CLASSES[state]}`}>
+                                    {flightStateLabel}
                                 </span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                                 {pnrLabel(trip.pnr) && (
-                                    <>
-                                        <span>{t('header.pnr', { pnr: pnrLabel(trip.pnr) ?? '' })}</span>
-                                        <span className="text-slate-300">•</span>
-                                    </>
+                                    <span className="text-sm text-slate-500">{t('header.pnr', { pnr: pnrLabel(trip.pnr) ?? '' })}</span>
                                 )}
-                                <span>{t('header.airline', { airlines: airlines.length > 0 ? airlines.join(', ') : t('unknown') })}</span>
                             </div>
+                            <p className="text-sm text-slate-600">{flightStateDesc}</p>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 min-w-full lg:min-w-[320px] shadow-sm">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('departureCard.label')}</div>
-                            <div className="text-2xl md:text-3xl font-black text-slate-900">{scheduleDate(firstSegment?.scheduledDepartureLocal, intlLocale, unavailable)}</div>
-                            <div className="text-sm text-slate-600 mt-2">{t('departureCard.flightStatus')} <span className="font-semibold text-slate-800">{currentFlightStatus}</span></div>
-                            {snapshot && canShowGateNumbers && (
-                                <div className="flex flex-wrap gap-3 mt-2">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 min-w-full lg:min-w-[320px] shadow-sm space-y-3">
+                            <div>
+                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{tv('guardianStatus.title')}</div>
+                                <div className="text-base font-bold text-slate-900">{tv(`guardianStatus.${guardian}`)}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{tv('check.last')}</div>
+                                <div className="text-sm text-slate-800">
+                                    {lastCheck.kind === 'VERIFIED' && checkTime(lastCheck.at)}
+                                    {lastCheck.kind === 'ATTEMPTED' && tv('check.attempted', { time: checkTime(lastCheck.at) })}
+                                    {lastCheck.kind === 'NEVER' && tv('check.notChecked')}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">
+                                    {lastCheck.kind === 'NEVER' ? tv('check.first') : tv('check.next')}
+                                </div>
+                                <div className="text-sm text-slate-800">{nextCheck ? checkTime(nextCheck.runAt) : tv('check.notScheduled')}</div>
+                                {nextCheck?.labelKey && <div className="text-xs text-slate-500">{tv(`checkKind.${nextCheck.labelKey}`)}</div>}
+                            </div>
+                            {snapshot && canShowGateNumbers && (snapshot.departureGate || snapshot.arrivalGate) && (
+                                <div className="flex flex-wrap gap-3">
                                     {snapshot.departureGate && (
                                         <span className="text-sm text-slate-700">{t('departureCard.depGate')} <span className="font-bold">{snapshot.departureGate}</span></span>
                                     )}
@@ -511,51 +511,43 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                     )}
                                 </div>
                             )}
-                            {snapshot && !canShowGateNumbers && (
-                                <div className="text-sm text-slate-600 mt-2">{t('departureCard.gateCloser')}</div>
+                            {snapshot?.statusDetail && hasVerifiedStatus && (
+                                <div className="text-sm text-slate-600 italic">{snapshot.statusDetail}</div>
                             )}
-                            {snapshot?.statusDetail && (
-                                <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
-                            )}
-                            <div className="text-sm text-slate-500 mt-3">{t('departureCard.lastChecked')} {dt(latestRunAt)}</div>
-                            <div className="text-sm text-slate-500">{t('departureCard.nextCheck')} {dt(trip.nextCheckAt)}</div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        <div className="font-semibold mb-1">{t('honesty.title')}</div>
-                        <p>{t('honesty.text')}</p>
+                    {delayStateNow === 'DELAYED' && (
+                        <div role="status" className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                            <div className="font-semibold mb-1">{tv('monitoringDelay.title')}</div>
+                            <p>{tv('monitoringDelay.text')}</p>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{tv('flightStatus.title')}</div>
+                            <div className="text-lg font-black text-slate-900">{flightStateLabel}</div>
+                            <div className="text-sm text-slate-500 mt-1">{flightStateDesc}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{tv('schedule.title')}</div>
+                            <div className="text-lg font-black text-slate-900">{tv(`schedule.${scheduleSt}`)}</div>
+                            <div className="text-sm text-slate-500 mt-1">{tv(`schedule.desc.${scheduleSt}`)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{tv('watching.title')}</div>
+                            <div className="text-sm font-semibold text-slate-900">{watching.join(' · ')}</div>
+                            <div className={`text-sm mt-1 font-bold ${state === 'CANCELLED' ? 'text-red-700' : 'text-emerald-700'}`}>
+                                {state === 'CANCELLED' ? tv('action.needed') : tv('action.none')}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        <div className={`rounded-2xl border p-4 ${delayRiskClasses}`}>
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.delayRisk')}</div>
-                            <div className="text-lg font-black">{delayRisk}</div>
-                            <div className="text-sm text-slate-500 mt-1">{t('kpi.currentDelay')} {snapshot ? t('kpi.delayMinutes', { minutes: delayMinutes }) : t('unknown')}</div>
-                        </div>
-                        <div className={`rounded-2xl border p-4 ${cancellationRiskClasses}`}>
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.cancellationRisk')}</div>
-                            <div className="text-lg font-black">{cancellationFlag ? 'HIGH' : 'LOW'}</div>
-                            <div className="text-sm text-slate-500 mt-1">{t('kpi.signal')} {cancellationFlag ? t('kpi.cancellationFound') : t('kpi.cancellationNone')}</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.guardianLoop')}</div>
-                            <div className="flex items-center gap-2 text-lg font-black text-slate-900">
-                                <Clock className="w-5 h-5 text-sky-600" /> {t('kpi.every6Hours')}
-                            </div>
-                            <div className="text-sm text-slate-500 mt-1">{t('kpi.currentDisruptionLevel')} {overallRisk}</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-                            <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('kpi.alerts')}</div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-black text-slate-900">{alertsTriggered}</span>
-                                <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-700">
-                                    {t('kpi.active')}
-                                </span>
-                            </div>
-                            <div className="text-sm text-slate-500 mt-1">{t('kpi.unreadLegacy')} {unreadAlerts}</div>
-                        </div>
-                    </div>
+                    <details className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                        <summary className="cursor-pointer font-semibold">{tv('dataNote.title')}</summary>
+                        <p className="mt-2">{tv('dataNote.text')}</p>
+                    </details>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -603,6 +595,16 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                             </div>
                         </div>
 
+                        {usesNeutralRightsCopy(compensation.regime) ? (
+                            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-slate-500" />
+                                    <h2 className="text-lg font-bold text-slate-900">{tv('rights.title')}</h2>
+                                </div>
+                                <p className="text-sm text-slate-800">{tv('rights.neutral')}</p>
+                                <p className="text-sm text-slate-600">{tv('rights.neutralMore')}</p>
+                            </div>
+                        ) : (
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
                             <div className="flex items-center gap-2">
                                 <Euro className="w-5 h-5 text-emerald-600" />
@@ -631,6 +633,21 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                 </div>
                             </div>
                             <p className="text-sm text-slate-700">{eu261Explanation}</p>
+                        </div>
+                        )}
+
+                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-3">
+                            <h2 className="text-lg font-bold text-slate-900">{tv('howItWorks.title')}</h2>
+                            <p className="text-sm text-slate-700">{tv('howItWorks.intro')}</p>
+                            <ul className="space-y-1 text-sm text-slate-800">
+                                {planKeys.map((key) => (
+                                    <li key={key} className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+                                        {tv(`checkKind.${key}`)}
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="text-xs text-slate-500">{tv('howItWorks.extra')}</p>
                         </div>
 
                         {shouldShowClaimSection && (
@@ -742,11 +759,11 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                             <ul className="space-y-3 text-sm text-slate-700">
                                 <li className="flex items-start gap-2">
                                     <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{t('activity.lastRun')} {dt(latestRunAt)}</span>
+                                    <span>{tv('check.last')}: {lastCheck.kind === 'NEVER' ? tv('check.notChecked') : checkTime(lastCheck.at)}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{t('activity.checked')} {checks.filter((item) => item.enabled).map((item) => item.label).join(', ') || t('activity.noChecks')}</span>
+                                    <span>{tv('watching.title')}: {watching.join(', ')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <Bell className="w-4 h-4 mt-0.5 text-slate-400" />
@@ -771,24 +788,36 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                         )}
                                     </div>
                                 )) : (
-                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">{t('notifications.noRecords')}</div>
+                                    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">{tv('notifications.none')}</div>
                                 )}
                             </div>
-                            <div className="text-sm text-slate-600">
-                                {t('notifications.lastNotificationSent')} {latestNotification ? dt(latestNotification.sentAt) : t('unknown')}
-                            </div>
-                            <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                                <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('notifications.detailTitle')}</div>
-                                <div className="text-sm text-slate-800 mt-1">{t('notifications.type')} {latestNotification ? latestNotificationType : 'UNKNOWN'}</div>
-                                <div className="text-sm text-slate-800 mt-1">{t('notifications.summary')} {latestLifecycleAlert ? `${latestLifecycleAlert.title}: ${latestLifecycleAlert.message}` : latestNotification ? latestAlertSummary : t('unknown')}</div>
-                                <div className="text-sm text-slate-800 mt-1">{t('notifications.lifecycle')} {latestLifecycleAlert?.state || 'UNKNOWN'}</div>
-                            </div>
+                            {(latestNotification || latestLifecycleAlert) && (
+                                <>
+                                    {latestNotification && (
+                                        <div className="text-sm text-slate-600">
+                                            {t('notifications.lastNotificationSent')} {dt(latestNotification.sentAt)}
+                                        </div>
+                                    )}
+                                    <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                        <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('notifications.detailTitle')}</div>
+                                        {latestNotification && (
+                                            <div className="text-sm text-slate-800 mt-1">{t('notifications.type')} {latestNotificationType}</div>
+                                        )}
+                                        <div className="text-sm text-slate-800 mt-1">
+                                            {t('notifications.summary')} {latestLifecycleAlert ? `${latestLifecycleAlert.title}: ${latestLifecycleAlert.message}` : latestAlertSummary}
+                                        </div>
+                                        {latestLifecycleAlert && (
+                                            <div className="text-sm text-slate-800 mt-1">{t('notifications.lifecycle')} {latestLifecycleAlert.state}</div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="bg-slate-900 rounded-3xl p-6 text-white">
                             <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">{t('nextStep.title')}</div>
                             <p className="text-sm text-slate-200 leading-relaxed">
-                                {t('nextStep.text', { time: dt(trip.nextCheckAt) })}
+                                {nextCheck ? t('nextStep.text', { time: checkTime(nextCheck.runAt) }) : tv('check.notScheduled')}
                             </p>
                         </div>
                     </div>
@@ -804,6 +833,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                         title: event.title,
                         message: event.message,
                         when: dt(event.detectedAt),
+                        group: tv(`history.${historyGroup(event.eventType)}`),
                     }))}
                 />
             </div>

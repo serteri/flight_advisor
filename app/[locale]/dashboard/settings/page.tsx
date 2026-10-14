@@ -7,7 +7,6 @@ import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
     Card,
     CardContent,
@@ -38,12 +37,6 @@ type ProfileResponse = {
     nextBillingDate: string | null;
 };
 
-type PreferencesResponse = {
-    priceDropAlerts: boolean;
-    disruptionAlerts: boolean;
-    weeklySummary: boolean;
-};
-
 const toPlanLabel = (plan?: string): 'Free' | 'Basic' | 'Pro' => {
     const normalized = (plan || '').toUpperCase();
     if (normalized === 'BASIC') return 'Basic';
@@ -62,6 +55,7 @@ const toStatusLabel = (status?: string | null): 'Active' | 'Cancelled' | 'Trial'
 export default function SettingsPage() {
     const t = useTranslations('Dashboard');
     const ts = useTranslations('Settings');
+    const tv = useTranslations('GuardianV2');
     const { data: session, status } = useSession();
 
     const [name, setName] = useState('');
@@ -70,13 +64,8 @@ export default function SettingsPage() {
     const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
     const [nextBillingDate, setNextBillingDate] = useState<string | null>(null);
 
-    const [priceDropAlerts, setPriceDropAlerts] = useState(true);
-    const [disruptionAlerts, setDisruptionAlerts] = useState(true);
-    const [weeklySummary, setWeeklySummary] = useState(false);
-
     const [loadingPage, setLoadingPage] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
-    const [savingPreferences, setSavingPreferences] = useState(false);
     const [managingBilling, setManagingBilling] = useState(false);
     const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -95,10 +84,7 @@ export default function SettingsPage() {
         let mounted = true;
         const loadSettings = async () => {
             try {
-                const [profileRes, prefRes] = await Promise.all([
-                    fetch('/api/user/profile', { method: 'GET' }),
-                    fetch('/api/user/preferences', { method: 'GET' }),
-                ]);
+                const profileRes = await fetch('/api/user/profile', { method: 'GET' });
 
                 if (profileRes.ok) {
                     const profileData = (await profileRes.json()) as ProfileResponse;
@@ -108,15 +94,6 @@ export default function SettingsPage() {
                         setSubscriptionPlan(profileData.subscriptionPlan || session.user.subscriptionPlan || 'FREE');
                         setSubscriptionStatus(profileData.subscriptionStatus || null);
                         setNextBillingDate(profileData.nextBillingDate || null);
-                    }
-                }
-
-                if (prefRes.ok) {
-                    const prefData = (await prefRes.json()) as PreferencesResponse;
-                    if (mounted) {
-                        setPriceDropAlerts(Boolean(prefData.priceDropAlerts));
-                        setDisruptionAlerts(Boolean(prefData.disruptionAlerts));
-                        setWeeklySummary(Boolean(prefData.weeklySummary));
                     }
                 }
             } catch (error) {
@@ -162,33 +139,6 @@ export default function SettingsPage() {
             toast.error(message);
         } finally {
             setSavingProfile(false);
-        }
-    };
-
-    const onSavePreferences = async () => {
-        setSavingPreferences(true);
-        try {
-            const res = await fetch('/api/user/preferences', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    priceDropAlerts,
-                    disruptionAlerts,
-                    weeklySummary,
-                }),
-            });
-
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                throw new Error(data?.error || ts('toast.savePreferencesFailed'));
-            }
-
-            toast.success(ts('toast.preferencesSaved'));
-        } catch (error) {
-            const message = error instanceof Error ? error.message : ts('toast.savePreferencesFailed');
-            toast.error(message);
-        } finally {
-            setSavingPreferences(false);
         }
     };
 
@@ -329,35 +279,15 @@ export default function SettingsPage() {
                                 <CardTitle>{ts('notifications.title')}</CardTitle>
                                 <CardDescription>{ts('notifications.desc')}</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-5">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                        <p className="font-medium text-slate-900">{ts('notifications.priceDrop.title')}</p>
-                                        <p className="text-sm text-slate-500">{ts('notifications.priceDrop.desc')}</p>
-                                    </div>
-                                    <Switch checked={priceDropAlerts} onChange={(e) => setPriceDropAlerts(e.target.checked)} />
-                                </div>
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                        <p className="font-medium text-slate-900">{ts('notifications.disruption.title')}</p>
-                                        <p className="text-sm text-slate-500">{ts('notifications.disruption.desc')}</p>
-                                    </div>
-                                    <Switch checked={disruptionAlerts} onChange={(e) => setDisruptionAlerts(e.target.checked)} />
-                                </div>
-
-                                <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                        <p className="font-medium text-slate-900">{ts('notifications.weeklySummary.title')}</p>
-                                        <p className="text-sm text-slate-500">{ts('notifications.weeklySummary.desc')}</p>
-                                    </div>
-                                    <Switch checked={weeklySummary} onChange={(e) => setWeeklySummary(e.target.checked)} />
-                                </div>
-
-                                <Button onClick={onSavePreferences} disabled={savingPreferences}>
-                                    {savingPreferences && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {ts('notifications.save')}
-                                </Button>
+                            <CardContent className="space-y-3">
+                                <p className="text-sm text-slate-700">{tv('settingsNotifications.intro')}</p>
+                                <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+                                    <li>{tv('settingsNotifications.disruption')}</li>
+                                    <li>{tv('settingsNotifications.schedule')}</li>
+                                    <li>{tv('settingsNotifications.gate')}</li>
+                                    <li>{tv('settingsNotifications.compensation')}</li>
+                                </ul>
+                                <p className="text-xs text-slate-500">{tv('settingsNotifications.note')}</p>
                             </CardContent>
                         </Card>
 

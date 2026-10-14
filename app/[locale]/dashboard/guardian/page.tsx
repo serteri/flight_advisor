@@ -7,25 +7,17 @@ import { Prisma } from "@prisma/client";
 import { GuardianOverviewActions } from "@/components/guardian/GuardianOverviewActions";
 import { DeleteTripButton } from "@/components/guardian/DeleteTripButton";
 import { Link, redirect } from '@/i18n/routing';
-import { calculateAirportDistanceKm } from '@/lib/compensation/haversine';
-
-const estimateEu261Value = (trip: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>) => {
-    if (!trip.snapshot?.eu261Eligible) return 0;
-
-    const firstSegment = trip.segments[0];
-    if (!firstSegment) return 0;
-
-    const distanceKm = calculateAirportDistanceKm(firstSegment.origin, firstSegment.destination);
-    if (!distanceKm) return 0;
-    if (distanceKm <= 1500) return 250;
-    if (distanceKm <= 3500) return 400;
-    return 600;
-};
+import { withLocalSchedules } from '@/lib/guardian/segmentSchedules';
+import { splitTrips } from '@/lib/guardian/tripBuckets';
+import { alertsSentCount, earliestNextCheck, nextScheduledCheck, tripHasChanges } from '@/lib/guardian/tripPresentation';
+import { formatCheckTime } from '@/lib/guardian/checkTimeFormat';
+import { getLocale } from 'next-intl/server';
 
 export default async function GuardianDashboard({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     setRequestLocale(locale);
     const t = await getTranslations("GuardianDashboard");
+    const tv = await getTranslations("GuardianV2");
     const session = await auth();
 
     if (!session || !session.user?.id) {
@@ -34,7 +26,8 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
     const userId = session!.user!.id;
     const subscriptionPlan = session!.user!.subscriptionPlan || 'FREE';
 
-    let trips: Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true } }>[] = [];
+    type GuardianTrip = Prisma.MonitoredTripGetPayload<{ include: { alerts: true; segments: true; snapshot: true; alertEvents: true; scheduledChecks: { select: { kind: true; runAt: true; status: true } } } }>;
+    let trips: GuardianTrip[] = [];
     try {
         // Fetch only current user's Monitored Trips
         trips = await prisma.monitoredTrip.findMany({
@@ -45,6 +38,11 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
                 segments: { orderBy: { segmentOrder: 'asc' } },
                 snapshot: true,
                 alertEvents: true,
+                scheduledChecks: {
+                    where: { status: 'SCHEDULED' },
+                    select: { kind: true, runAt: true, status: true },
+                    orderBy: { runAt: 'asc' },
+                },
             }
         });
     } catch (error) {
@@ -59,12 +57,18 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
         );
     }
 
-    const activeTrips = trips.filter(t => t.status === 'ACTIVE');
-    const alertsTotal = trips.reduce((acc, t) => acc + t.alerts.length, 0);
-    const estimatedValueFound = activeTrips.reduce((sum, trip) => sum + estimateEu261Value(trip), 0);
-    const estimatedValueFoundLabel = estimatedValueFound > 0
-        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(estimatedValueFound)
-        : '$0';
+    // Current trips only (same model as /dashboard); finished ones live in history.
+    const { current: currentTrips } = splitTrips(trips);
+    const activeTrips = currentTrips.filter((trip) => trip.status === 'ACTIVE');
+    const now = new Date();
+    const tripsWithChanges = activeTrips.filter((trip) => tripHasChanges(trip, now)).length;
+    const alertsSent = alertsSentCount(currentTrips);
+    const nextPerTrip = activeTrips.map((trip) => ({ id: trip.id, next: nextScheduledCheck(trip.scheduledChecks) }));
+    const nextCheck = earliestNextCheck(nextPerTrip.map((entry) => entry.next));
+    const nextCheckTripId = nextPerTrip.find((entry) => entry.next && entry.next === nextCheck)?.id;
+    const checkLocale = await getLocale();
+    const cardTrips = await Promise.all(currentTrips.map(async (trip) => ({ ...trip, segments: await withLocalSchedules(trip.segments) })));
+    const nextCheckSegment = cardTrips.find((trip) => trip.id === nextCheckTripId)?.segments[0];
 
     return (
         <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -93,23 +97,26 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
                 </div>
             </div>
 
-            {/* KPI CARDS */}
+            {/* KPI CARDS: Guardian-specific, from current trips only */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">{t('kpi.monitoredTrips')}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">{tv('kpi.activeTrips')}</p>
                     <p className="text-2xl font-bold text-slate-800">{activeTrips.length}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">{t('kpi.activeAlerts')}</p>
-                    <p className="text-2xl font-bold text-amber-600">{alertsTotal}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">{tv('kpi.tripsWithChanges')}</p>
+                    <p className={`text-2xl font-bold ${tripsWithChanges > 0 ? 'text-amber-600' : 'text-slate-800'}`}>{tripsWithChanges}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">{t('kpi.checkInterval')}</p>
-                    <p className="text-2xl font-bold text-blue-600">{t('kpi.every6Hours')}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">{tv('kpi.nextCheck')}</p>
+                    <p className="text-lg font-bold text-slate-800">
+                        {nextCheck ? formatCheckTime(nextCheck.runAt, checkLocale, nextCheckSegment) : tv('kpi.noneScheduled')}
+                    </p>
+                    {nextCheck?.labelKey && <p className="text-xs text-slate-500">{tv(`checkKind.${nextCheck.labelKey}`)}</p>}
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-400 uppercase">{t('kpi.valueFound')}</p>
-                    <p className="text-2xl font-bold text-emerald-600">{estimatedValueFoundLabel}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">{tv('kpi.alertsSent')}</p>
+                    <p className="text-2xl font-bold text-slate-800">{alertsSent}</p>
                 </div>
             </div>
 
@@ -117,7 +124,7 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
             <div className="space-y-6">
                 <h2 className="text-xl font-bold text-slate-800">{t('yourTrips')}</h2>
 
-                {trips.length === 0 ? (
+                {cardTrips.length === 0 ? (
                     <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
                         <Plane className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                         <h3 className="text-lg font-medium text-slate-900">{t('noTrips')}</h3>
@@ -125,14 +132,14 @@ export default async function GuardianDashboard({ params }: { params: Promise<{ 
                     </div>
                 ) : (
                     <div className="space-y-8">
-                        {trips.map(trip => (
+                        {cardTrips.map(trip => (
                             <div key={trip.id} className="relative">
                                 <DeleteTripButton tripId={trip.id} />
                                 <Link href={`/dashboard/guardian/${trip.id}`} className="block">
                                     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 cursor-pointer hover:shadow-md transition">
                                         {/* Pass trip data to the Dashboard Component we created earlier */}
                                         {/* Need to adapt type if necessary, but structure matches closely */}
-                                        <TravelGuardianDashboard trip={trip as any} />
+                                        <TravelGuardianDashboard trip={trip} />
                                     </div>
                                 </Link>
                             </div>

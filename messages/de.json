@@ -941,20 +941,7 @@
     },
     "notifications": {
       "title": "Benachrichtigungen",
-      "desc": "Lege fest, welche E-Mail-Benachrichtigungen du erhältst.",
-      "priceDrop": {
-        "title": "E-Mail-Benachrichtigungen bei Preisrückgang",
-        "desc": "Werde benachrichtigt, wenn verfolgte Strecken günstiger werden."
-      },
-      "disruption": {
-        "title": "E-Mail-Benachrichtigungen bei Flugstörungen",
-        "desc": "Erhalte Updates zu Verspätungen und größeren Änderungen."
-      },
-      "weeklySummary": {
-        "title": "Wöchentliche Preiszusammenfassung per E-Mail",
-        "desc": "Eine wöchentliche Übersicht deiner verfolgten Strecken."
-      },
-      "save": "Einstellungen speichern"
+      "desc": "E-Mails, die FlightAgent zu Ihren überwachten Flügen sendet."
     },
     "account": {
       "title": "Konto",
@@ -970,8 +957,6 @@
       "nameEmpty": "Name darf nicht leer sein.",
       "saveProfileFailed": "Profil konnte nicht gespeichert werden",
       "profileUpdated": "Profil erfolgreich aktualisiert.",
-      "savePreferencesFailed": "Benachrichtigungseinstellungen konnten nicht gespeichert werden",
-      "preferencesSaved": "Benachrichtigungseinstellungen gespeichert.",
       "billingPortalFailed": "Abrechnungsportal konnte nicht geöffnet werden",
       "deleteAccountFailed": "Konto konnte nicht gelöscht werden",
       "accountDeleted": "Konto erfolgreich gelöscht."
@@ -996,25 +981,6 @@
       "gateCloser": "Gate wird näher am Abflug zugewiesen",
       "lastChecked": "Zuletzt geprüft:",
       "nextCheck": "Nächste Prüfung:"
-    },
-    "honesty": {
-      "title": "Datenehrlichkeit",
-      "text": "Guardian meldet periodische Überwachungsergebnisse. Unbekannte Felder, verzögerte Prüfungen und wiederholte Zustellversuche werden explizit angezeigt, statt als gesicherte Fakten behandelt zu werden."
-    },
-    "kpi": {
-      "delayRisk": "Verspätungsrisiko",
-      "currentDelay": "Aktuelle Verspätung:",
-      "delayMinutes": "{minutes} Min.",
-      "cancellationRisk": "Stornierungsrisiko",
-      "signal": "Signal:",
-      "cancellationFound": "Stornierungsindikatoren gefunden",
-      "cancellationNone": "Noch kein Stornierungsindikator",
-      "guardianLoop": "Guardian-Zyklus",
-      "every6Hours": "Zu wichtigen Flugzeitpunkten",
-      "currentDisruptionLevel": "Aktuelles Störungsniveau:",
-      "alerts": "Warnungen",
-      "active": "Aktiv",
-      "unreadLegacy": "Ungelesene Alt-Warnungen:"
     },
     "summary": {
       "title": "Reiseübersicht",
@@ -1092,12 +1058,6 @@
       "tripRemoved": "Reise erfolgreich entfernt",
       "deleteFailed": "Überwachung kann momentan nicht beendet werden. Bitte versuche es erneut."
     },
-    "checks": {
-      "disruptionHunter": "Störungsjäger",
-      "scheduleGuardian": "Zeitplan-Wächter",
-      "seatWatch": "Sitzplatzüberwachung",
-      "upgradeWatch": "Upgrade-Überwachung"
-    },
     "status": {
       "cancelled": "Gestrichen",
       "delayed": "Verspätet ({minutes}m)",
@@ -1165,13 +1125,6 @@
     "title": "Travel Guardian",
     "subtitle": "Periodische Störungsüberwachung aktiviert.",
     "viewHistory": "Flugverlauf ansehen",
-    "kpi": {
-      "monitoredTrips": "Überwachte Reisen",
-      "activeAlerts": "Aktive Warnungen",
-      "checkInterval": "Prüfintervall",
-      "every6Hours": "Alle 6 Stunden",
-      "valueFound": "Geschätzter gefundener Wert"
-    },
     "yourTrips": "Deine überwachten Reisen",
     "noTrips": "Keine Reisen gefunden",
     "noTripsDesc": "Importiere ein PNR, um die Überwachung zu starten."
@@ -1328,6 +1281,118 @@
       "CANCELLED": "Storniert",
       "ARCHIVED": "Archiviert",
       "UNKNOWN": "Unbekannt"
+    }
+  },
+  "GuardianV2": {
+    "productLabel": "Travel Guardian",
+    "flightStatus": {
+      "title": "Flugstatus",
+      "ON_TIME": "Pünktlich",
+      "DELAYED": "Verspätet",
+      "CANCELLED": "Annulliert",
+      "NOT_VERIFIED": "Noch nicht verifiziert",
+      "UNABLE_TO_VERIFY": "Derzeit nicht überprüfbar",
+      "desc": {
+        "ON_TIME": "Es wurde keine Annullierung und keine nennenswerte Verspätung festgestellt.",
+        "DELAYED": "Der Abflug ist derzeit um {minutes} Minuten verspätet.",
+        "CANCELLED": "Die Airline meldet diesen Flug derzeit als annulliert.",
+        "NOT_VERIFIED": "Die Überwachung ist geplant. FlightAgent hat diesen Flug noch nicht geprüft.",
+        "UNABLE_TO_VERIFY": "Der Flugdatenanbieter hat kein verwertbares Ergebnis geliefert. FlightAgent prüft erneut."
+      }
+    },
+    "guardianStatus": {
+      "title": "Guardian-Status",
+      "MONITORING_ACTIVE": "Überwachung aktiv",
+      "WAITING_FIRST_CHECK": "Warten auf erste Prüfung",
+      "VERIFYING": "Flug wird überprüft",
+      "CONFIRMATION": "Wartet auf Bestätigung",
+      "NOT_MONITORING": "Nicht überwacht"
+    },
+    "schedule": {
+      "title": "Flugplan",
+      "WAITING": "Überwachung geplant",
+      "CHANGED": "Geändert",
+      "NO_CHANGE": "Keine Änderungen",
+      "desc": {
+        "WAITING": "Planänderungen können nach der ersten verifizierten Prüfung verglichen werden.",
+        "CHANGED": "Gate-, Terminal- oder Planänderungen wurden erfasst.",
+        "NO_CHANGE": "Keine Planänderungen festgestellt."
+      }
+    },
+    "times": {
+      "departs": "Abflug",
+      "arrives": "Ankunft",
+      "notAvailable": "Nicht verfügbar"
+    },
+    "check": {
+      "next": "Nächste Guardian-Prüfung",
+      "first": "Erste Guardian-Prüfung",
+      "last": "Zuletzt geprüft",
+      "notScheduled": "Noch nicht geplant",
+      "notChecked": "Noch nicht geprüft",
+      "attempted": "Prüfung versucht: {time}. Flug noch nicht verifiziert."
+    },
+    "checkKind": {
+      "dep24": "24 Stunden vor Abflug",
+      "dep3": "3 Stunden vor Abflug",
+      "dep": "Zum planmäßigen Abflug",
+      "arr1": "1 Stunde nach Ankunft",
+      "arr4": "4 Stunden nach Ankunft",
+      "arrExtra": "Nach der geschätzten Ankunft",
+      "verify": "Verifizierungsprüfung"
+    },
+    "watching": {
+      "title": "Überwacht",
+      "delay": "Verspätung",
+      "cancellation": "Annullierung",
+      "schedule": "Flugplan",
+      "gate": "Gate / Terminal"
+    },
+    "action": {
+      "none": "Keine Aktion nötig",
+      "needed": "Aktion nötig"
+    },
+    "kpi": {
+      "activeTrips": "Aktive Reisen",
+      "tripsWithChanges": "Reisen mit Änderungen",
+      "nextCheck": "Nächste Guardian-Prüfung",
+      "alertsSent": "Gesendete Benachrichtigungen",
+      "noneScheduled": "Noch nicht geplant",
+      "noChanges": "Keine"
+    },
+    "monitoringDelay": {
+      "title": "Guardian-Status",
+      "text": "Eine geplante Überwachungsprüfung hat sich verzögert. Von Ihnen ist keine Aktion nötig. FlightAgent versucht es automatisch erneut."
+    },
+    "howItWorks": {
+      "title": "So überwacht Guardian diesen Flug",
+      "intro": "FlightAgent prüft Ihren Flug zu wichtigen Zeitpunkten:",
+      "extra": "Bei einer erkannten Störung können zusätzliche Prüfungen erfolgen."
+    },
+    "notifications": {
+      "none": "Noch keine Benachrichtigungen gesendet."
+    },
+    "rights": {
+      "title": "Fluggastrechte",
+      "neutral": "Für diese Strecke gilt keine feste gesetzliche EU-/UK-Entschädigung.",
+      "neutralMore": "Andere Airline- oder Verbraucherrechte können dennoch gelten, wenn Ihr Flug annulliert oder stark gestört wird."
+    },
+    "dataNote": {
+      "title": "Über die Guardian-Daten",
+      "text": "FlightAgent meldet nur verifizierte Überwachungsergebnisse. Unbekannte oder verzögerte Daten werden ausdrücklich angezeigt."
+    },
+    "history": {
+      "FLIGHT_CHANGE": "Flugänderung",
+      "SYSTEM": "Systemüberwachung",
+      "NOTIFICATION": "Benachrichtigung"
+    },
+    "settingsNotifications": {
+      "intro": "FlightAgent informiert Sie per E-Mail über Ihre überwachten Flüge:",
+      "disruption": "Flugstörungen: nennenswerte Verspätungen und Annullierungen.",
+      "schedule": "Planänderungen: wesentliche Änderungen Ihres Flugplans.",
+      "gate": "Gate- und Terminaländerungen: wichtige Änderungen kurz vor Abflug.",
+      "compensation": "Entschädigungsmöglichkeiten: wenn ein möglicher Anspruch erkannt wird.",
+      "note": "Diese E-Mails werden automatisch für Ihre überwachten Flüge gesendet. Einzelne Benachrichtigungseinstellungen sind noch nicht verfügbar."
     }
   }
 }

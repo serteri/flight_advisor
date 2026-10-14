@@ -10,6 +10,7 @@ export type TripAuditLogEvent = {
     title: string;
     message: string;
     when: string;
+    group?: string;
 };
 
 type TripAuditLogProps = {
@@ -104,6 +105,7 @@ export function TripAuditLog({ events }: TripAuditLogProps) {
                                             <ToneIcon tone={tone} />
                                             {event.title}
                                         </span>
+                                        {event.group && <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{event.group}</span>}
                                         <span className="text-xs text-slate-500">{event.when}</span>
                                     </div>
                                     <p className="mt-2 text-sm text-slate-700">{message}</p>
