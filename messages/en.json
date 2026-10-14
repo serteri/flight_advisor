@@ -649,6 +649,7 @@
     }
   },
   "GuardianTripDetails": {
+    "scheduleUnavailable": "Not available",
     "back": "Back to booked trip monitoring",
     "unknown": "Unknown",
     "header": {
@@ -688,9 +689,9 @@
     },
     "summary": {
       "title": "Trip summary",
-      "depTime": "Dep time",
+      "depTime": "Scheduled departure",
       "flight": "Flight",
-      "arrTime": "Arr time",
+      "arrTime": "Scheduled arrival",
       "cabin": "Cabin:",
       "noSegments": "No segment data available."
     },

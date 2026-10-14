@@ -978,6 +978,7 @@
     }
   },
   "GuardianTripDetails": {
+    "scheduleUnavailable": "Nicht verfügbar",
     "back": "Zurück zur Überwachung der gebuchten Reise",
     "unknown": "Unbekannt",
     "header": {
@@ -1017,9 +1018,9 @@
     },
     "summary": {
       "title": "Reiseübersicht",
-      "depTime": "Abflugzeit",
+      "depTime": "Geplanter Abflug",
       "flight": "Flug",
-      "arrTime": "Ankunftszeit",
+      "arrTime": "Geplante Ankunft",
       "cabin": "Kabine:",
       "noSegments": "Keine Segmentdaten verfügbar."
     },
