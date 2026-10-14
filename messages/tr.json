@@ -649,6 +649,7 @@
     }
   },
   "GuardianTripDetails": {
+    "scheduleUnavailable": "Mevcut değil",
     "back": "Rezerve edilmiş uçuş izlemeye dön",
     "unknown": "Bilinmiyor",
     "header": {
@@ -688,9 +689,9 @@
     },
     "summary": {
       "title": "Uçuş özeti",
-      "depTime": "Kalkış saati",
+      "depTime": "Planlanan kalkış",
       "flight": "Uçuş",
-      "arrTime": "Varış saati",
+      "arrTime": "Planlanan varış",
       "cabin": "Kabin:",
       "noSegments": "Segment verisi mevcut değil."
     },

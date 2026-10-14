@@ -1,3 +1,5 @@
+import { airportSchedule } from '@/lib/guardian/flightScheduleDisplay';
+import type { FlightLegOption } from '@/lib/flightData/legs';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { redirect } from '@/i18n/routing';
@@ -54,6 +56,18 @@ export default async function TripDetailsPage({ params }: { params: Promise<{ lo
     const { regime, status, amount, currency } = evaluateTripCompensation(trip);
     const compensation = { regime, status, amount, currency };
 
+    const segments = await Promise.all(trip.segments.map(async segment => {
+        const cache = await prisma.flightLookupCache.findUnique({
+            where: { flightNumber_flightDate: {
+                flightNumber: `${segment.airlineCode}${segment.flightNumber}`.toUpperCase().replace(/\s/g, ''),
+                flightDate: segment.departureDate.toISOString().slice(0, 10),
+            } },
+            select: { options: true },
+        });
+        const options = Array.isArray(cache?.options) ? cache.options as unknown as FlightLegOption[] : [];
+        return { ...segment, ...airportSchedule(segment, options) };
+    }));
+
     // 2. Client Component'e Gönder
-    return <TripDetailsClient trip={trip} locale={locale} compensation={compensation} />;
+    return <TripDetailsClient trip={{ ...trip, segments }} locale={locale} compensation={compensation} />;
 }

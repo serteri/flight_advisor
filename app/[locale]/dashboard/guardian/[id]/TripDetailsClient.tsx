@@ -1,5 +1,6 @@
 'use client';
 
+import { scheduleDate, scheduleTime } from '@/lib/guardian/flightScheduleDisplay';
 import { pnrLabel } from '@/lib/guardian/tripBuckets';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -55,6 +56,10 @@ type TripDetailsClientProps = {
             destination: string;
             departureDate: Date | string;
             arrivalDate: Date | string;
+            scheduledDepartureUtc: Date | string | null;
+            scheduledArrivalUtc: Date | string | null;
+            scheduledDepartureLocal: string | null;
+            scheduledArrivalLocal: string | null;
             cabinClass: string | null;
         }>;
         alerts: Array<{
@@ -132,28 +137,6 @@ const formatDateTime = (value: Date | string | null | undefined, intlLocale: str
     });
 };
 
-const formatDate = (value: Date | string | null | undefined, intlLocale: string, unknownLabel: string) => {
-    if (!value) return unknownLabel;
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return unknownLabel;
-    return parsed.toLocaleDateString(intlLocale, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
-};
-
-const formatTime = (value: Date | string | null | undefined, intlLocale: string, unknownLabel: string) => {
-    if (!value) return unknownLabel;
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return unknownLabel;
-    return parsed.toLocaleTimeString(intlLocale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    });
-};
-
 const toRiskLevel = (delayMinutes: number, cancellationRisk: number) => {
     const delayRisk = delayMinutes >= 120 ? 3 : delayMinutes >= 45 ? 2 : delayMinutes > 0 ? 1 : 0;
     const score = Math.max(delayRisk, cancellationRisk);
@@ -186,8 +169,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
 
     const unknownLabel = t('unknown');
     const dt = (value: Date | string | null | undefined) => formatDateTime(value, intlLocale, unknownLabel);
-    const d = (value: Date | string | null | undefined) => formatDate(value, intlLocale, unknownLabel);
-    const tm = (value: Date | string | null | undefined) => formatTime(value, intlLocale, unknownLabel);
+    const unavailable = t('scheduleUnavailable');
 
     const toStatusLabel = (snapshotStatus?: string | null, delayMinutes?: number) => {
         const normalized = (snapshotStatus || '').toLowerCase();
@@ -517,7 +499,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 min-w-full lg:min-w-[320px] shadow-sm">
                             <div className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{t('departureCard.label')}</div>
-                            <div className="text-2xl md:text-3xl font-black text-slate-900">{d(firstSegment?.departureDate)}</div>
+                            <div className="text-2xl md:text-3xl font-black text-slate-900">{scheduleDate(firstSegment?.scheduledDepartureLocal, intlLocale, unavailable)}</div>
                             <div className="text-sm text-slate-600 mt-2">{t('departureCard.flightStatus')} <span className="font-semibold text-slate-800">{currentFlightStatus}</span></div>
                             {snapshot && canShowGateNumbers && (
                                 <div className="flex flex-wrap gap-3 mt-2">
@@ -599,7 +581,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                                                     <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.depTime')}</div>
-                                                    <div className="text-base font-bold text-slate-900">{tm(segment.departureDate)}</div>
+                                                    <div className="text-base font-bold text-slate-900">{scheduleTime(segment.scheduledDepartureLocal, unavailable)}</div>
                                                 </div>
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                                                     <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.flight')}</div>
@@ -607,7 +589,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                                 </div>
                                                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                                                     <div className="text-xs uppercase tracking-wider font-bold text-slate-500">{t('summary.arrTime')}</div>
-                                                    <div className="text-base font-bold text-slate-900">{segment.arrivalDate ? tm(segment.arrivalDate) : '—'}</div>
+                                                    <div className="text-base font-bold text-slate-900">{scheduleTime(segment.scheduledArrivalLocal, unavailable)}</div>
                                                 </div>
                                             </div>
                                             <div className="text-xs text-slate-500">
