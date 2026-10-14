@@ -147,7 +147,7 @@ export async function replanTripChecks(
         where: { id: tripId },
         data: { monitoringEndsAt: monitoringEndsAt(schedule) },
     });
-    await scheduleTripChecks(tripId, planCheckpoints(schedule, now));
+    await scheduleTripChecks(tripId, planCheckpoints(schedule, now), { now, excludeCheckId: options.excludeCheckId });
 }
 
 // Called once a trip is ACTIVE: one registration lookup (route + schedule),

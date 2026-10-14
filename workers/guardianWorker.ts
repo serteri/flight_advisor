@@ -5,6 +5,7 @@
 // call, derive events against the previous snapshot, write the result.
 // There is no polling loop — see lib/guardian/checkpoints.ts for the plan.
 
+import { findNextCheckAt } from '@/lib/guardian/nextCheck';
 import { createHash, randomUUID } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
@@ -185,7 +186,7 @@ export async function processTripCheck(
 
     // Lifecycle: scheduled arrival + 48h → COMPLETED, no provider call.
     if (kind === 'COMPLETE' || (trip.monitoringEndsAt && now.getTime() >= trip.monitoringEndsAt.getTime())) {
-        await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { status: 'COMPLETED', lastCheckedAt: now } });
+        await prisma.monitoredTrip.update({ where: { id: trip.id }, data: { status: 'COMPLETED' } });
         await cancelPendingChecks(trip.id, { excludeCheckId: check?.id });
         await markCheck(kind === 'COMPLETE' ? 'DONE' : 'SKIPPED', kind === 'COMPLETE' ? undefined : 'monitoring window ended');
         return { status: 'DONE', reason: 'completed' };
@@ -341,16 +342,12 @@ async function runLeasedCheck(ctx: {
         });
     }
 
-    const nextPending = await prisma.scheduledTripCheck.findFirst({
-        where: { tripId: trip.id, status: 'SCHEDULED', ...(ctx.check ? { id: { not: ctx.check.id } } : {}) },
-        orderBy: { runAt: 'asc' },
-        select: { runAt: true },
-    });
+    const nextCheckAt = await findNextCheckAt(trip.id, now, ctx.check?.id);
 
     await prisma.$transaction([
         prisma.monitoredTrip.update({
             where: { id: trip.id },
-            data: { lastCheckedAt: now, nextCheckAt: nextPending?.runAt ?? trip.monitoringEndsAt ?? now },
+            data: { lastCheckedAt: now, ...(nextCheckAt ? { nextCheckAt } : {}) },
         }),
         prisma.tripSnapshot.upsert({
             where: { tripId: trip.id },

@@ -978,6 +978,8 @@
     }
   },
   "GuardianTripDetails": {
+    "notCheckedYet": "Noch nicht geprüft",
+    "notScheduled": "Nicht geplant",
     "scheduleUnavailable": "Nicht verfügbar",
     "back": "Zurück zur Überwachung der gebuchten Reise",
     "unknown": "Unbekannt",

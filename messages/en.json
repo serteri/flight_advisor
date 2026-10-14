@@ -649,6 +649,8 @@
     }
   },
   "GuardianTripDetails": {
+    "notCheckedYet": "Not checked yet",
+    "notScheduled": "Not scheduled",
     "scheduleUnavailable": "Not available",
     "back": "Back to booked trip monitoring",
     "unknown": "Unknown",

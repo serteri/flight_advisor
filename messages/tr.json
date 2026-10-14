@@ -649,6 +649,8 @@
     }
   },
   "GuardianTripDetails": {
+    "notCheckedYet": "Henüz kontrol edilmedi",
+    "notScheduled": "Planlanmadı",
     "scheduleUnavailable": "Mevcut değil",
     "back": "Rezerve edilmiş uçuş izlemeye dön",
     "unknown": "Bilinmiyor",
