@@ -612,20 +612,7 @@
     },
     "notifications": {
       "title": "Notifications",
-      "desc": "Control which email alerts you receive.",
-      "priceDrop": {
-        "title": "Email alerts for price drops",
-        "desc": "Get notified when tracked routes get cheaper."
-      },
-      "disruption": {
-        "title": "Email alerts for flight disruptions",
-        "desc": "Receive updates about delays and major changes."
-      },
-      "weeklySummary": {
-        "title": "Weekly price summary email",
-        "desc": "A weekly digest of your tracked routes."
-      },
-      "save": "Save preferences"
+      "desc": "Emails FlightAgent sends about your monitored flights."
     },
     "account": {
       "title": "Account",
@@ -641,8 +628,6 @@
       "nameEmpty": "Name cannot be empty.",
       "saveProfileFailed": "Failed to save profile",
       "profileUpdated": "Profile updated successfully.",
-      "savePreferencesFailed": "Failed to save notification preferences",
-      "preferencesSaved": "Notification preferences saved.",
       "billingPortalFailed": "Unable to open billing portal",
       "deleteAccountFailed": "Failed to delete account",
       "accountDeleted": "Account deleted successfully."
@@ -667,25 +652,6 @@
       "gateCloser": "Gate assigned closer to departure",
       "lastChecked": "Last checked:",
       "nextCheck": "Next check:"
-    },
-    "honesty": {
-      "title": "Data honesty",
-      "text": "Guardian reports periodic monitoring results. Unknown fields, delayed checks, and retried notification delivery are shown explicitly instead of being treated as confirmed facts."
-    },
-    "kpi": {
-      "delayRisk": "Delay risk",
-      "currentDelay": "Current delay:",
-      "delayMinutes": "{minutes} min",
-      "cancellationRisk": "Cancellation risk",
-      "signal": "Signal:",
-      "cancellationFound": "Cancellation indicators found",
-      "cancellationNone": "No cancellation indicator yet",
-      "guardianLoop": "Guardian loop",
-      "every6Hours": "At key flight milestones",
-      "currentDisruptionLevel": "Current disruption level:",
-      "alerts": "Alerts",
-      "active": "Active",
-      "unreadLegacy": "Unread legacy alerts:"
     },
     "summary": {
       "title": "Trip summary",
@@ -763,12 +729,6 @@
       "tripRemoved": "Trip removed successfully",
       "deleteFailed": "Unable to stop monitoring right now. Please try again."
     },
-    "checks": {
-      "disruptionHunter": "Disruption Hunter",
-      "scheduleGuardian": "Schedule Guardian",
-      "seatWatch": "Seat Watch",
-      "upgradeWatch": "Upgrade Watch"
-    },
     "status": {
       "cancelled": "Cancelled",
       "delayed": "Delayed ({minutes}m)",
@@ -836,13 +796,6 @@
     "title": "Travel Guardian",
     "subtitle": "Periodic disruption monitoring enabled.",
     "viewHistory": "View flight history",
-    "kpi": {
-      "monitoredTrips": "Monitored Trips",
-      "activeAlerts": "Active Alerts",
-      "checkInterval": "Check Interval",
-      "every6Hours": "Every 6 hours",
-      "valueFound": "Est. Value Found"
-    },
     "yourTrips": "Your Monitored Trips",
     "noTrips": "No trips found",
     "noTripsDesc": "Import a PNR to start monitoring."
@@ -1328,6 +1281,118 @@
       "CANCELLED": "Cancelled",
       "ARCHIVED": "Archived",
       "UNKNOWN": "Unknown"
+    }
+  },
+  "GuardianV2": {
+    "productLabel": "Travel Guardian",
+    "flightStatus": {
+      "title": "Flight status",
+      "ON_TIME": "On time",
+      "DELAYED": "Delayed",
+      "CANCELLED": "Cancelled",
+      "NOT_VERIFIED": "Not verified yet",
+      "UNABLE_TO_VERIFY": "Unable to verify right now",
+      "desc": {
+        "ON_TIME": "No cancellation or meaningful delay has been detected.",
+        "DELAYED": "Departure is currently delayed by {minutes} minutes.",
+        "CANCELLED": "The airline currently reports this flight as cancelled.",
+        "NOT_VERIFIED": "Monitoring is scheduled. FlightAgent has not checked this flight yet.",
+        "UNABLE_TO_VERIFY": "The flight-data provider did not return a usable result. FlightAgent will check again."
+      }
+    },
+    "guardianStatus": {
+      "title": "Guardian status",
+      "MONITORING_ACTIVE": "Monitoring active",
+      "WAITING_FIRST_CHECK": "Waiting for first check",
+      "VERIFYING": "Flight being verified",
+      "CONFIRMATION": "Waiting for confirmation",
+      "NOT_MONITORING": "Not monitored"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "WAITING": "Monitoring scheduled",
+      "CHANGED": "Changed",
+      "NO_CHANGE": "No changes",
+      "desc": {
+        "WAITING": "Schedule changes can be compared after the first verified check.",
+        "CHANGED": "Gate, terminal or schedule changes have been recorded.",
+        "NO_CHANGE": "No schedule changes detected."
+      }
+    },
+    "times": {
+      "departs": "Departs",
+      "arrives": "Arrives",
+      "notAvailable": "Not available"
+    },
+    "check": {
+      "next": "Next Guardian check",
+      "first": "First Guardian check",
+      "last": "Last checked",
+      "notScheduled": "Not scheduled yet",
+      "notChecked": "Not checked yet",
+      "attempted": "Check attempted {time}. Flight not verified yet."
+    },
+    "checkKind": {
+      "dep24": "24 hours before departure",
+      "dep3": "3 hours before departure",
+      "dep": "At scheduled departure",
+      "arr1": "1 hour after arrival",
+      "arr4": "4 hours after arrival",
+      "arrExtra": "After estimated arrival",
+      "verify": "Verification check"
+    },
+    "watching": {
+      "title": "Watching",
+      "delay": "Delay",
+      "cancellation": "Cancellation",
+      "schedule": "Schedule",
+      "gate": "Gate / terminal"
+    },
+    "action": {
+      "none": "No action needed",
+      "needed": "Action needed"
+    },
+    "kpi": {
+      "activeTrips": "Active trips",
+      "tripsWithChanges": "Trips with changes",
+      "nextCheck": "Next Guardian check",
+      "alertsSent": "Alerts sent",
+      "noneScheduled": "Not scheduled yet",
+      "noChanges": "None"
+    },
+    "monitoringDelay": {
+      "title": "Guardian status",
+      "text": "A scheduled monitoring check was delayed. No action is required from you. FlightAgent will retry automatically."
+    },
+    "howItWorks": {
+      "title": "How Guardian monitors this flight",
+      "intro": "FlightAgent checks your flight at important milestones:",
+      "extra": "Additional checks may run if a disruption is detected."
+    },
+    "notifications": {
+      "none": "No notifications sent yet."
+    },
+    "rights": {
+      "title": "Passenger rights",
+      "neutral": "No fixed EU/UK statutory compensation applies to this route.",
+      "neutralMore": "Other airline or consumer rights may still apply if your flight is cancelled or significantly disrupted."
+    },
+    "dataNote": {
+      "title": "About Guardian data",
+      "text": "FlightAgent reports only verified monitoring results. Unknown or delayed data is shown explicitly."
+    },
+    "history": {
+      "FLIGHT_CHANGE": "Flight change",
+      "SYSTEM": "System monitoring",
+      "NOTIFICATION": "Notification"
+    },
+    "settingsNotifications": {
+      "intro": "FlightAgent emails you about your monitored flights:",
+      "disruption": "Flight disruptions: meaningful delays and cancellations.",
+      "schedule": "Schedule changes: significant changes to your flight schedule.",
+      "gate": "Gate and terminal changes: important changes close to departure.",
+      "compensation": "Compensation opportunities: if a possible claim is identified.",
+      "note": "These emails are sent automatically for your monitored flights. Individual alert controls are not available yet."
     }
   }
 }

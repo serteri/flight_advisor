@@ -612,20 +612,7 @@
     },
     "notifications": {
       "title": "Bildirimler",
-      "desc": "Hangi e-posta uyarılarını alacağını kontrol et.",
-      "priceDrop": {
-        "title": "Fiyat düşüşü için e-posta uyarıları",
-        "desc": "Takip ettiğin rotalar ucuzladığında bildirim al."
-      },
-      "disruption": {
-        "title": "Uçuş aksaklıkları için e-posta uyarıları",
-        "desc": "Rötarlar ve büyük değişiklikler hakkında güncellemeler al."
-      },
-      "weeklySummary": {
-        "title": "Haftalık fiyat özeti e-postası",
-        "desc": "Takip ettiğin rotaların haftalık özeti."
-      },
-      "save": "Tercihleri kaydet"
+      "desc": "FlightAgent'ın izlenen uçuşlarınız hakkında gönderdiği e-postalar."
     },
     "account": {
       "title": "Hesap",
@@ -641,8 +628,6 @@
       "nameEmpty": "Ad boş olamaz.",
       "saveProfileFailed": "Profil kaydedilemedi",
       "profileUpdated": "Profil başarıyla güncellendi.",
-      "savePreferencesFailed": "Bildirim tercihleri kaydedilemedi",
-      "preferencesSaved": "Bildirim tercihleri kaydedildi.",
       "billingPortalFailed": "Faturalandırma portalı açılamadı",
       "deleteAccountFailed": "Hesap silinemedi",
       "accountDeleted": "Hesap başarıyla silindi."
@@ -667,25 +652,6 @@
       "gateCloser": "Kapı, kalkışa yaklaşınca atanacak",
       "lastChecked": "Son kontrol:",
       "nextCheck": "Sonraki kontrol:"
-    },
-    "honesty": {
-      "title": "Veri dürüstlüğü",
-      "text": "Guardian periyodik izleme sonuçlarını raporlar. Bilinmeyen alanlar, geciken kontroller ve yeniden denenen bildirim teslimatları kesin gerçek gibi gösterilmek yerine açıkça belirtilir."
-    },
-    "kpi": {
-      "delayRisk": "Rötar riski",
-      "currentDelay": "Mevcut rötar:",
-      "delayMinutes": "{minutes} dk",
-      "cancellationRisk": "İptal riski",
-      "signal": "Sinyal:",
-      "cancellationFound": "İptal göstergeleri bulundu",
-      "cancellationNone": "Henüz iptal göstergesi yok",
-      "guardianLoop": "Guardian döngüsü",
-      "every6Hours": "Uçuşun önemli anlarında",
-      "currentDisruptionLevel": "Mevcut aksaklık seviyesi:",
-      "alerts": "Uyarılar",
-      "active": "Aktif",
-      "unreadLegacy": "Okunmamış eski uyarılar:"
     },
     "summary": {
       "title": "Uçuş özeti",
@@ -763,12 +729,6 @@
       "tripRemoved": "Uçuş başarıyla kaldırıldı",
       "deleteFailed": "İzleme şu anda durdurulamıyor. Lütfen tekrar deneyin."
     },
-    "checks": {
-      "disruptionHunter": "Aksaklık Avcısı",
-      "scheduleGuardian": "Program Bekçisi",
-      "seatWatch": "Koltuk Gözlemi",
-      "upgradeWatch": "Yükseltme Gözlemi"
-    },
     "status": {
       "cancelled": "İptal Edildi",
       "delayed": "Rötarlı ({minutes}dk)",
@@ -836,13 +796,6 @@
     "title": "Travel Guardian",
     "subtitle": "Periyodik aksaklık izleme etkin.",
     "viewHistory": "Uçuş geçmişini görüntüle",
-    "kpi": {
-      "monitoredTrips": "İzlenen Uçuşlar",
-      "activeAlerts": "Aktif Uyarılar",
-      "checkInterval": "Kontrol Aralığı",
-      "every6Hours": "Her 6 saatte bir",
-      "valueFound": "Tahmini Bulunan Değer"
-    },
     "yourTrips": "İzlenen Uçuşların",
     "noTrips": "Uçuş bulunamadı",
     "noTripsDesc": "İzlemeye başlamak için bir PNR içe aktar."
@@ -1328,6 +1281,118 @@
       "CANCELLED": "İptal edildi",
       "ARCHIVED": "Arşivlendi",
       "UNKNOWN": "Bilinmiyor"
+    }
+  },
+  "GuardianV2": {
+    "productLabel": "Travel Guardian",
+    "flightStatus": {
+      "title": "Uçuş durumu",
+      "ON_TIME": "Zamanında",
+      "DELAYED": "Gecikmeli",
+      "CANCELLED": "İptal edildi",
+      "NOT_VERIFIED": "Henüz doğrulanmadı",
+      "UNABLE_TO_VERIFY": "Şu anda doğrulanamıyor",
+      "desc": {
+        "ON_TIME": "İptal veya önemli bir gecikme tespit edilmedi.",
+        "DELAYED": "Kalkış şu anda {minutes} dakika gecikmeli.",
+        "CANCELLED": "Havayolu bu uçuşu şu anda iptal edilmiş olarak bildiriyor.",
+        "NOT_VERIFIED": "İzleme planlandı. FlightAgent bu uçuşu henüz kontrol etmedi.",
+        "UNABLE_TO_VERIFY": "Uçuş verisi sağlayıcısı kullanılabilir bir sonuç döndürmedi. FlightAgent tekrar kontrol edecek."
+      }
+    },
+    "guardianStatus": {
+      "title": "Guardian durumu",
+      "MONITORING_ACTIVE": "İzleme aktif",
+      "WAITING_FIRST_CHECK": "İlk kontrol bekleniyor",
+      "VERIFYING": "Uçuş doğrulanıyor",
+      "CONFIRMATION": "Onay bekleniyor",
+      "NOT_MONITORING": "İzlenmiyor"
+    },
+    "schedule": {
+      "title": "Program",
+      "WAITING": "İzleme planlandı",
+      "CHANGED": "Değişti",
+      "NO_CHANGE": "Değişiklik yok",
+      "desc": {
+        "WAITING": "Program değişiklikleri ilk doğrulanmış kontrolden sonra karşılaştırılabilir.",
+        "CHANGED": "Kapı, terminal veya program değişiklikleri kaydedildi.",
+        "NO_CHANGE": "Program değişikliği tespit edilmedi."
+      }
+    },
+    "times": {
+      "departs": "Kalkış",
+      "arrives": "Varış",
+      "notAvailable": "Mevcut değil"
+    },
+    "check": {
+      "next": "Sonraki Guardian kontrolü",
+      "first": "İlk Guardian kontrolü",
+      "last": "Son kontrol",
+      "notScheduled": "Henüz planlanmadı",
+      "notChecked": "Henüz kontrol edilmedi",
+      "attempted": "Kontrol denendi: {time}. Uçuş henüz doğrulanmadı."
+    },
+    "checkKind": {
+      "dep24": "Kalkıştan 24 saat önce",
+      "dep3": "Kalkıştan 3 saat önce",
+      "dep": "Planlanan kalkışta",
+      "arr1": "Varıştan 1 saat sonra",
+      "arr4": "Varıştan 4 saat sonra",
+      "arrExtra": "Tahmini varıştan sonra",
+      "verify": "Doğrulama kontrolü"
+    },
+    "watching": {
+      "title": "İzlenenler",
+      "delay": "Gecikme",
+      "cancellation": "İptal",
+      "schedule": "Program",
+      "gate": "Kapı / terminal"
+    },
+    "action": {
+      "none": "İşlem gerekmiyor",
+      "needed": "İşlem gerekli"
+    },
+    "kpi": {
+      "activeTrips": "Aktif seyahatler",
+      "tripsWithChanges": "Değişiklik olan seyahatler",
+      "nextCheck": "Sonraki Guardian kontrolü",
+      "alertsSent": "Gönderilen uyarılar",
+      "noneScheduled": "Henüz planlanmadı",
+      "noChanges": "Yok"
+    },
+    "monitoringDelay": {
+      "title": "Guardian durumu",
+      "text": "Planlanan bir izleme kontrolü gecikti. Sizden bir işlem gerekmiyor. FlightAgent otomatik olarak yeniden deneyecek."
+    },
+    "howItWorks": {
+      "title": "Guardian bu uçuşu nasıl izler",
+      "intro": "FlightAgent uçuşunuzu önemli aşamalarda kontrol eder:",
+      "extra": "Bir aksama tespit edilirse ek kontroller yapılabilir."
+    },
+    "notifications": {
+      "none": "Henüz bildirim gönderilmedi."
+    },
+    "rights": {
+      "title": "Yolcu hakları",
+      "neutral": "Bu güzergâh için sabit bir AB/Birleşik Krallık yasal tazminatı geçerli değildir.",
+      "neutralMore": "Uçuşunuz iptal edilirse veya ciddi şekilde aksarsa diğer havayolu veya tüketici hakları yine de geçerli olabilir."
+    },
+    "dataNote": {
+      "title": "Guardian verileri hakkında",
+      "text": "FlightAgent yalnızca doğrulanmış izleme sonuçlarını bildirir. Bilinmeyen veya gecikmiş veriler açıkça gösterilir."
+    },
+    "history": {
+      "FLIGHT_CHANGE": "Uçuş değişikliği",
+      "SYSTEM": "Sistem izleme",
+      "NOTIFICATION": "Bildirim"
+    },
+    "settingsNotifications": {
+      "intro": "FlightAgent, izlenen uçuşlarınız hakkında size e-posta gönderir:",
+      "disruption": "Uçuş aksamaları: önemli gecikmeler ve iptaller.",
+      "schedule": "Program değişiklikleri: uçuş programınızdaki önemli değişiklikler.",
+      "gate": "Kapı ve terminal değişiklikleri: kalkışa yakın önemli değişiklikler.",
+      "compensation": "Tazminat fırsatları: olası bir talep tespit edilirse.",
+      "note": "Bu e-postalar izlenen uçuşlarınız için otomatik gönderilir. Tekil uyarı ayarları henüz mevcut değil."
     }
   }
 }
