@@ -40,7 +40,7 @@ type TripDetailsClientProps = {
         routeLabel: string;
         status: string;
         lastCheckedAt: Date | string | null;
-        nextCheckAt: Date | string;
+        nextCheckAt: Date | string | null;
         checkFrequency: number;
         watchDelay: boolean;
         watchSchedule: boolean;
@@ -323,7 +323,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
 
     const alertsTriggered = trip.alertEvents.filter((alert) => alert.state !== 'SUPPRESSED').length || trip.alerts.length;
     const unreadAlerts = trip.alerts.filter((alert) => !alert.isRead).length;
-    const latestRunAt = trip.lastCheckedAt || snapshot?.snapshotAt || null;
+    const latestRunAt = trip.lastCheckedAt;
 
     const lifecycleDeliveries = trip.alertEvents.flatMap((alert) => alert.deliveries);
     const deliveryRows = lifecycleDeliveries.length > 0 ? lifecycleDeliveries : trip.deliveries;
@@ -517,8 +517,8 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                             {snapshot?.statusDetail && (
                                 <div className="text-sm text-slate-600 mt-1 italic">{snapshot.statusDetail}</div>
                             )}
-                            <div className="text-sm text-slate-500 mt-3">{t('departureCard.lastChecked')} {dt(latestRunAt)}</div>
-                            <div className="text-sm text-slate-500">{t('departureCard.nextCheck')} {dt(trip.nextCheckAt)}</div>
+                            <div className="text-sm text-slate-500 mt-3">{t('departureCard.lastChecked')} {latestRunAt ? dt(latestRunAt) : t('notCheckedYet')}</div>
+                            <div className="text-sm text-slate-500">{t('departureCard.nextCheck')} {trip.nextCheckAt ? dt(trip.nextCheckAt) : t('notScheduled')}</div>
                         </div>
                     </div>
 
@@ -742,7 +742,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                             <ul className="space-y-3 text-sm text-slate-700">
                                 <li className="flex items-start gap-2">
                                     <Clock className="w-4 h-4 mt-0.5 text-slate-400" />
-                                    <span>{t('activity.lastRun')} {dt(latestRunAt)}</span>
+                                    <span>{t('activity.lastRun')} {latestRunAt ? dt(latestRunAt) : t('notCheckedYet')}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="w-4 h-4 mt-0.5 text-slate-400" />
@@ -788,7 +788,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                         <div className="bg-slate-900 rounded-3xl p-6 text-white">
                             <div className="text-xs uppercase tracking-wider font-bold text-sky-300 mb-2">{t('nextStep.title')}</div>
                             <p className="text-sm text-slate-200 leading-relaxed">
-                                {t('nextStep.text', { time: dt(trip.nextCheckAt) })}
+                                {t('nextStep.text', { time: trip.nextCheckAt ? dt(trip.nextCheckAt) : t('notScheduled') })}
                             </p>
                         </div>
                     </div>

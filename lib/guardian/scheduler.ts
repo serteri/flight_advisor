@@ -14,6 +14,7 @@
 // QSTASH_TOKEN is missing, the row is marked FAILED and logged as an error —
 // nothing is silently dropped.
 
+import { refreshNextCheckAt } from '@/lib/guardian/nextCheck';
 import { Client } from '@upstash/qstash';
 import { prisma } from '@/lib/prisma';
 import { appUrl } from '@/lib/config/runtimeEnv';
@@ -57,7 +58,7 @@ async function publishCheck(client: Client, row: { id: string; runAt: Date }, tr
     return 'messageId' in response ? response.messageId : null;
 }
 
-export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[]): Promise<void> {
+export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[], options: { now?: Date; excludeCheckId?: string } = {}): Promise<void> {
     const client = getQStashClient();
 
     for (const check of checks) {
@@ -96,6 +97,7 @@ export async function scheduleTripChecks(tripId: string, checks: PlannedCheck[])
             });
         }
     }
+    await refreshNextCheckAt(tripId, options.now ?? new Date(), options.excludeCheckId);
 }
 
 // Cancels future SCHEDULED checks (optionally only some kinds) both in QStash
