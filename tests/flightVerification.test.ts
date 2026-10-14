@@ -159,7 +159,7 @@ test('form + API share the rule and return field-specific errors (en/de/tr)', ()
 
 test('human-readable status labels for every status in en/de/tr', () => {
     const tr = JSON.parse(readFileSync('messages/tr.json', 'utf8')).TripDisplay;
-    assert.equal(tr.status.PENDING_VERIFICATION, 'Uçuş tarihi yaklaşınca doğrulanacak');
+    assert.equal(tr.status.PENDING_VERIFICATION, 'Uçuş doğrulanıyor');
     assert.equal(tr.routeVerifying, 'Rota doğrulanıyor');
     for (const l of ['en', 'de', 'tr']) {
         const d = JSON.parse(readFileSync(`messages/${l}.json`, 'utf8')).TripDisplay;

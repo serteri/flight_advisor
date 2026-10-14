@@ -1315,13 +1315,15 @@
     "submitting": "Confirming..."
   },
   "TripDisplay": {
+    "pnr": "PNR {pnr}",
+    "viewHistory": "View history ({count})",
     "routeVerifying": "Route being verified",
     "status": {
-      "ACTIVE": "Monitored",
-      "PENDING_CONFIRMATION": "Waiting for email confirmation",
-      "PENDING_VERIFICATION": "Will be verified closer to the flight date",
+      "ACTIVE": "Monitoring active",
+      "PENDING_CONFIRMATION": "Waiting for confirmation",
+      "PENDING_VERIFICATION": "Flight being verified",
       "FLIGHT_NOT_FOUND": "Flight not found",
-      "COMPLETED": "Completed",
+      "COMPLETED": "Monitoring completed",
       "CANCELLED": "Cancelled",
       "ARCHIVED": "Archived",
       "UNKNOWN": "Unknown"

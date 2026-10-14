@@ -1315,13 +1315,15 @@
     "submitting": "Onaylanıyor..."
   },
   "TripDisplay": {
+    "pnr": "PNR {pnr}",
+    "viewHistory": "Geçmişi görüntüle ({count})",
     "routeVerifying": "Rota doğrulanıyor",
     "status": {
-      "ACTIVE": "İzleniyor",
-      "PENDING_CONFIRMATION": "E-posta onayı bekleniyor",
-      "PENDING_VERIFICATION": "Uçuş tarihi yaklaşınca doğrulanacak",
+      "ACTIVE": "İzleme aktif",
+      "PENDING_CONFIRMATION": "Onay bekleniyor",
+      "PENDING_VERIFICATION": "Uçuş doğrulanıyor",
       "FLIGHT_NOT_FOUND": "Uçuş bulunamadı",
-      "COMPLETED": "Tamamlandı",
+      "COMPLETED": "İzleme tamamlandı",
       "CANCELLED": "İptal edildi",
       "ARCHIVED": "Arşivlendi",
       "UNKNOWN": "Bilinmiyor"

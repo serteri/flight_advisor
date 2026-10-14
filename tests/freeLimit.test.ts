@@ -45,7 +45,7 @@ test('wiring: confirmation applies the plan; monitor route and checkLimit use th
     const usage = readFileSync('lib/freemium/usage.ts', 'utf8');
     assert.match(usage, /feature === 'monitored_trip'[\s\S]*countHoldingTrips\(userId\)/);
     const monitor = readFileSync('app/api/trips/monitor/route.ts', 'utf8');
-    assert.match(monitor, /withFreemiumGate\(session\.user\.id!, 'monitored_trip'/);
+    assert.match(monitor, /withFreemiumGate\(userId, 'monitored_trip'/);
 });
 
 test('anonymous /api/trips/track never reveals whether an address is registered', () => {

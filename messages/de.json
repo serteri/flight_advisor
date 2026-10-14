@@ -1315,13 +1315,15 @@
     "submitting": "Wird bestätigt..."
   },
   "TripDisplay": {
+    "pnr": "PNR {pnr}",
+    "viewHistory": "Verlauf anzeigen ({count})",
     "routeVerifying": "Route wird überprüft",
     "status": {
-      "ACTIVE": "Wird überwacht",
-      "PENDING_CONFIRMATION": "Wartet auf E-Mail-Bestätigung",
-      "PENDING_VERIFICATION": "Wird kurz vor dem Flugdatum überprüft",
+      "ACTIVE": "Überwachung aktiv",
+      "PENDING_CONFIRMATION": "Wartet auf Bestätigung",
+      "PENDING_VERIFICATION": "Flug wird überprüft",
       "FLIGHT_NOT_FOUND": "Flug nicht gefunden",
-      "COMPLETED": "Abgeschlossen",
+      "COMPLETED": "Überwachung abgeschlossen",
       "CANCELLED": "Storniert",
       "ARCHIVED": "Archiviert",
       "UNKNOWN": "Unbekannt"
