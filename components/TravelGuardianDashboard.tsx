@@ -12,6 +12,7 @@ import {
     isScheduleChangeEventType,
     lastCheckSummary,
     legacyAlertKind,
+    latestMeaningfulChange,
     legacyAlertNeedsAction,
     monitoringDelayState,
     nextScheduledCheck,
@@ -19,6 +20,8 @@ import {
     type FlightState,
 } from '@/lib/guardian/tripPresentation';
 import { routeText } from '@/lib/guardian/tripDisplay';
+import { actionGuidance, describeChange } from '@/lib/guardian/disruptionContent';
+import { airlineActions } from '@/lib/guardian/airlineActions';
 import { dayFirstLocale, formatCheckTime } from '@/lib/guardian/checkTimeFormat';
 
 export type GuardianCardSegment = FlightSegment & {
@@ -68,7 +71,13 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
 
     const flightAlerts = trip.alerts.filter((alert) => legacyAlertKind(alert.type) === 'FLIGHT');
     const actionAlerts = flightAlerts.filter(legacyAlertNeedsAction);
-    const needsAction = state === 'CANCELLED' || actionAlerts.length > 0;
+    const change = latestMeaningfulChange(trip);
+    const airlineName = airlineActions(first?.airlineCode).airlineName;
+    const guidance = actionGuidance(change?.facts ?? null, airlineName);
+    const changeText = change ? describeChange(change.facts, {
+        flightNumber, airlineCode: first?.airlineCode ?? null, origin: first?.origin ?? null, destination: last?.destination ?? null,
+    }).whatChanged : null;
+    const needsAction = guidance.required || actionAlerts.length > 0;
     const pnr = pnrLabel(trip.pnr);
 
     return (
@@ -100,7 +109,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
             </div>
 
             <p className="mt-3 text-sm text-slate-600">
-                {t(`flightStatus.desc.${state}`, { minutes: delayMinutes })}
+                {changeText ?? t(`flightStatus.desc.${state}`, { minutes: delayMinutes })}
             </p>
 
             {/* GUARDIAN: next check, watching, action */}
@@ -139,7 +148,7 @@ export function TravelGuardianDashboard({ trip }: DashboardProps) {
                     ].filter(Boolean).join(' · ')}
                 </p>
                 <p className={`text-sm font-bold ${needsAction ? 'text-red-700' : 'text-emerald-700'}`}>
-                    {needsAction ? t('action.needed') : t('action.none')}
+                    {guidance.required ? guidance.summary : needsAction ? t('action.needed') : t('action.none')}
                 </p>
             </div>
 

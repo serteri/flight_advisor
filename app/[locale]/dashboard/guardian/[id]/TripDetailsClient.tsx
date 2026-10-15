@@ -7,12 +7,15 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LegalDisclaimer } from '@/components/legal/LegalDisclaimer';
 import { routeText } from '@/lib/guardian/tripDisplay';
+import { actionGuidance, describeChange } from '@/lib/guardian/disruptionContent';
+import { airlineActions } from '@/lib/guardian/airlineActions';
 import { dayFirstLocale, formatCheckTime } from '@/lib/guardian/checkTimeFormat';
 import {
     flightState,
     guardianStatus,
     historyGroup,
     isScheduleChangeEventType,
+    latestMeaningfulChange,
     isSystemEventType,
     lastCheckSummary,
     monitoringDelayState,
@@ -95,6 +98,7 @@ type TripDetailsClientProps = {
             title: string;
             message: string;
             detectedAt: Date | string;
+            payload: unknown;
             queuedAt: Date | string | null;
             sentAt: Date | string | null;
             deliveredAt: Date | string | null;
@@ -218,6 +222,14 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
             ? t('explanation.notEligible')
             : t('explanation.unknown');
 
+    const change = latestMeaningfulChange(trip);
+    const airlineLinks = airlineActions(firstSegment?.airlineCode);
+    const flightIdentity = {
+        flightNumber: firstSegment ? `${firstSegment.airlineCode}${firstSegment.flightNumber}` : null,
+        airlineCode: firstSegment?.airlineCode ?? null, origin: firstSegment?.origin ?? null, destination: lastSegment?.destination ?? null,
+    };
+    const changeView = change ? describeChange(change.facts, flightIdentity) : null;
+    const guidance = actionGuidance(change?.facts ?? null, airlineLinks.airlineName);
     const scheduleChangeSeen = scheduleFlag || trip.alertEvents.some((event) => isScheduleChangeEventType(event.eventType));
     const scheduleSt = scheduleState(trip, scheduleChangeSeen);
     const delayStateNow = monitoringDelayState(trip.alertEvents);
@@ -515,6 +527,41 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                                 <div className="text-sm text-slate-600 italic">{snapshot.statusDetail}</div>
                             )}
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <section aria-labelledby="what-changed" className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <h2 id="what-changed" className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{tv('whatChanged.title')}</h2>
+                            {changeView ? (
+                                <>
+                                    <div className="text-lg font-black text-slate-900">{changeView.headline}</div>
+                                    <p className="text-sm text-slate-700 mt-1">{changeView.whatChanged}</p>
+                                    {(changeView.before || changeView.now) && (
+                                        <p className="text-sm text-slate-600 mt-1">
+                                            {changeView.before && <span>{changeView.before}</span>}
+                                            {changeView.before && changeView.now && <span className="mx-1" aria-hidden="true">→</span>}
+                                            {changeView.now && <span className="font-semibold">{changeView.now}</span>}
+                                            {changeView.delta && <span className="ml-2 text-slate-500">({changeView.delta})</span>}
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-sm text-slate-700">{tv('whatChanged.none')}</p>
+                            )}
+                        </section>
+                        <section aria-labelledby="what-to-do" className="rounded-2xl border border-slate-200 p-4 bg-white">
+                            <h2 id="what-to-do" className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">{tv('whatToDo.title')}</h2>
+                            <div className={`text-lg font-black ${guidance.required ? 'text-amber-700' : 'text-emerald-700'}`}>{guidance.summary}</div>
+                            <ul className="mt-1 space-y-1 text-sm text-slate-700 list-disc pl-5">
+                                {guidance.steps.map((step) => <li key={step}>{step}</li>)}
+                            </ul>
+                            {guidance.required && airlineLinks.supportUrl && airlineLinks.supportLabel && (
+                                <a href={airlineLinks.supportUrl} target="_blank" rel="noopener noreferrer"
+                                    className="mt-3 inline-flex rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+                                    {airlineLinks.supportLabel}
+                                </a>
+                            )}
+                        </section>
                     </div>
 
                     {delayStateNow === 'DELAYED' && (
@@ -833,7 +880,7 @@ export function TripDetailsClient({ trip, locale, compensation }: TripDetailsCli
                         title: event.title,
                         message: event.message,
                         when: dt(event.detectedAt),
-                        group: tv(`history.${historyGroup(event.eventType)}`),
+                        group: [tv(`history.${historyGroup(event.eventType)}`), event.deliveries.some((d) => /sent|delivered/i.test(d.status)) ? tv('history.EMAIL_SENT') : null].filter(Boolean).join(' · '),
                     }))}
                 />
             </div>

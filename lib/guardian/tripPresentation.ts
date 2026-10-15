@@ -10,6 +10,10 @@
 //  - nothing is "On time" / "No change" until a real provider observation exists.
 //  - nothing is derived from a hard-coded interval.
 
+
+import { classifyChange, type ChangeFacts } from '@/lib/guardian/disruptionContent';
+import { factsFromAlertEvent, type StoredAlertEvent } from '@/lib/guardian/notificationPolicy';
+
 export const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 // ── Checkpoint labels (from ScheduledTripCheck.kind, never guessed from time gaps) ──
@@ -263,3 +267,43 @@ export function alertsSentCount(trips: readonly KpiTripLike[]): number {
 
 /** No EU/UK261 regime → neutral rights copy instead of "Not covered / Not eligible". */
 export const usesNeutralRightsCopy = (regime: string | null | undefined): boolean => !regime || regime === 'NONE';
+
+// ── Latest meaningful change ("What changed" / "What should I do?") ─────────
+
+
+export const GATE_CHANGE_RELEVANT_MS = 3 * ONE_DAY_MS;
+
+export interface ChangeTripLike extends TripStateLike {
+    alertEvents?: readonly StoredAlertEvent[] | null;
+}
+
+/**
+ * The latest change worth telling the user about, or null ("No material changes detected").
+ *  - delay: only while the verified snapshot still shows a delay (current minutes win over the event's)
+ *  - cancellation: when the snapshot or an event says cancelled
+ *  - gate / terminal: recent events only
+ * Suppressed events and anything classified INFO are not material.
+ */
+export function latestMeaningfulChange(trip: ChangeTripLike, now: Date = new Date()): { facts: ChangeFacts; detectedAt: Date } | null {
+    const state = flightState(trip);
+    const events = [...(trip.alertEvents ?? [])]
+        .filter((event) => (event.state ?? '').toUpperCase() !== 'SUPPRESSED')
+        .sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime());
+
+    for (const event of events) {
+        let facts = factsFromAlertEvent(event);
+        if (!facts) continue;
+        const detectedAt = new Date(event.detectedAt);
+        if (facts.kind === 'DELAY') {
+            if (state !== 'DELAYED') continue;
+            facts = { ...facts, minutes: Math.max(trip.snapshot?.delayMinutes ?? 0, 0) || facts.minutes };
+        } else if (facts.kind === 'CANCELLATION') {
+            if (state === 'ON_TIME' || state === 'DELAYED') continue;
+        } else if (now.getTime() - detectedAt.getTime() > GATE_CHANGE_RELEVANT_MS) {
+            continue;
+        }
+        if (classifyChange(facts) === 'INFO' && facts.kind !== 'GATE_CHANGE' && facts.kind !== 'TERMINAL_CHANGE') continue;
+        return { facts, detectedAt };
+    }
+    return null;
+}
