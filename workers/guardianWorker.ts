@@ -28,6 +28,7 @@ import {
     segmentFlightNumber,
 } from "@/lib/guardian/tripLifecycle";
 import { isFlightNotFound } from "@/lib/guardian/flightNotFound";
+import { DELAY_BUCKETS, getDelayBucket } from "@/lib/guardian/disruptionContent";
 import { verifyCheckOutcome } from "@/lib/guardian/flightVerification";
 import { classifyLookupFailure, shouldRetry, MAX_CHECK_RETRIES } from "@/lib/guardian/failureClass";
 import { formatFailure } from "@/lib/guardian/failureText";
@@ -64,16 +65,8 @@ const INACTIVE_TRIP_STATUSES = new Set(['COMPLETED', 'ARCHIVED', 'PENDING_CONFIR
 // Delay alert thresholds (arrival delay, minutes). 180 and 240 are the EU261/
 // UK261 thresholds (3h eligibility, 4h full long-haul amount) — crossing them
 // re-evaluates compensation instead of stopping at 60.
-export const DELAY_BUCKETS = [15, 30, 60, 180, 240] as const;
-const BUCKET_SEVERITY: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'medium', 180: 'high', 240: 'high' };
-
-export const getDelayBucket = (minutes: number): number => {
-    let bucket = 0;
-    for (const threshold of DELAY_BUCKETS) {
-        if (minutes >= threshold) bucket = threshold;
-    }
-    return bucket;
-};
+export { DELAY_BUCKETS, getDelayBucket };
+const BUCKET_SEVERITY: Record<number, GuardianEventSeverity> = { 15: 'low', 30: 'medium', 60: 'medium', 120: 'high', 180: 'high', 240: 'high' };
 
 const normalizeCode = (value: unknown): string => String(value || '').trim().toUpperCase();
 
@@ -729,12 +722,17 @@ async function deriveAndDispatchEvents(ctx: {
                     ? 'gate_change_departure'
                     : 'gate_change_arrival';
 
+            // Timing context for the notification policy (gate changes far from departure stay history-only).
+            const departureIso = flight.scheduledDepartureUtc ?? segment.scheduledDepartureUtc?.toISOString() ?? null;
+            const departureMs = departureIso ? Date.parse(departureIso) : NaN;
+            const hoursToDeparture = Number.isNaN(departureMs) ? null : Math.round(((departureMs - ctx.now.getTime()) / 3_600_000) * 10) / 10;
+
             await queueDispatch({
                 type: 'GATE_CHANGE',
                 subType: gateSubType,
                 severity: 'high',
                 previous: { departureGate: previousState.departureGate, arrivalGate: previousState.arrivalGate },
-                current: { departureGate: newDepGate, arrivalGate: newArrGate, ...flightContext },
+                current: { departureGate: newDepGate, arrivalGate: newArrGate, hoursToDeparture, ...flightContext },
             }, {
                 transition: transitionMarker,
                 previousDepartureGate: previousState.departureGate,

@@ -15,10 +15,12 @@ const delayResult = (origin: string, destination: string, carrier: string, minut
         actualGateArrivalUtc: new Date(Date.parse(SCHED) + minutes * 60000).toISOString(),
     });
 
-test('delay buckets extend past 60 to the 180/240 legal thresholds', () => {
-    assert.deepEqual([...DELAY_BUCKETS], [15, 30, 60, 180, 240]);
+test('delay buckets: 120 added for the CRITICAL tier, 180/240 legal thresholds kept', () => {
+    assert.deepEqual([...DELAY_BUCKETS], [15, 30, 60, 120, 180, 240]);
     assert.equal(getDelayBucket(59), 30);
-    assert.equal(getDelayBucket(179), 60);
+    assert.equal(getDelayBucket(119), 60);
+    assert.equal(getDelayBucket(120), 120);
+    assert.equal(getDelayBucket(179), 120);
     assert.equal(getDelayBucket(180), 180);
     assert.equal(getDelayBucket(239), 180);
     assert.equal(getDelayBucket(240), 240);

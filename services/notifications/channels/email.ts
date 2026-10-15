@@ -19,7 +19,7 @@ export class EmailChannel {
     public async send(to: string, payload: NotificationPayload): Promise<{ success: boolean; id?: string; error?: string }> {
         let html: string;
         try {
-            html = this.generateHtml(payload);
+            html = typeof payload.data?.html === 'string' ? payload.data.html : this.generateHtml(payload);
         } catch (error: any) {
             const message = error?.message || 'Failed to build email HTML';
             console.error(`[EmailChannel] ${message} — email to ${to} not sent`);

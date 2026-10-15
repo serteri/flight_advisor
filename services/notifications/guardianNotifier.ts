@@ -7,7 +7,7 @@ import type { ChannelResponse } from "@/services/notifications/types";
 import { EmailChannel } from "@/services/notifications/channels/email";
 import { SmsChannel } from "@/services/notifications/channels/sms";
 import { NotificationProviderManager } from "@/services/notifications/providers";
-import { GuardianEvent } from "@/workers/guardianWorker";
+import type { GuardianEvent } from "@/workers/guardianWorker";
 import type { CompensationResult } from "@/lib/compensation/engine";
 import {
     AlertDeliveryChannel,
@@ -17,6 +17,8 @@ import {
     recordDeliverySuccess,
     recordSkippedDelivery,
 } from "@/lib/alertLifecycle";
+import { appUrl } from "@/lib/config/runtimeEnv";
+import { decideNotification, renderEmailHtml, renderEmailText } from "@/lib/guardian/notificationPolicy";
 
 // Helper sleep mapping
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,7 +27,6 @@ const STALE_PROCESSING_MS = 5 * 60 * 1000;
 const MAX_STALE_RECLAIM_ATTEMPTS = 2;
 
 type DeliveryChannel = 'EMAIL' | 'SMS' | 'PUSH';
-type NotificationSeverityLabel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 type DeliveryClaim =
     | { kind: 'claimed'; deliveryId: string; claimId: string; mode: 'new' | 'failed' | 'stale-reclaimed' }
@@ -78,8 +79,6 @@ async function reclaimStaleProcessingDelivery(
 const emailChannel = EmailChannel.getInstance();
 const smsChannel = SmsChannel.getInstance();
 const providerManager = NotificationProviderManager.getInstance();
-const LOW_SEVERITY_THROTTLE_MS = 6 * 60 * 60 * 1000;
-
 // Result of lib/compensation/engine.ts attached by the worker as event.current.compensation.
 type Eu261Assessment = CompensationResult;
 
@@ -89,34 +88,22 @@ const getEu261Assessment = (event: GuardianEvent): Eu261Assessment | null => {
     return assessment as Eu261Assessment;
 };
 
-const formatEu261Hint = (assessment: Eu261Assessment | null): string => {
-    if (!assessment) return '';
-
-    const scheme = assessment.regime === 'NONE' ? 'EU261/UK261' : assessment.regime;
-
-    if (assessment.status === 'LIKELY_ELIGIBLE') {
-        const amountText = assessment.amount !== null && assessment.currency
-            ? ` (potentially ${assessment.currency} ${assessment.amount})`
-            : '';
-        return ` Based on flight data you may be eligible for compensation under ${scheme}${amountText}. The airline may claim extraordinary circumstances.`;
-    }
-
-    if (assessment.status === 'NEEDS_INFO') {
-        return ` ${scheme} may apply, but more information is needed to assess eligibility.`;
-    }
-
-    return ` Based on flight data this disruption does not appear to qualify for ${scheme} compensation.`;
-};
-
-async function sendGuardianEmail(to: string, subject: string, body: string, tripId: string, eu261Assessment: Eu261Assessment | null): Promise<ChannelResponse> {
+async function sendGuardianEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html: string,
+    tripId: string,
+    eu261Assessment: Eu261Assessment | null,
+): Promise<ChannelResponse> {
     const result = await emailChannel.send(to, {
         userId: 'guardian-system',
         tripId,
         type: 'DISRUPTION',
         title: subject,
-        message: body,
+        message: text,
         priority: 'CRITICAL',
-        data: eu261Assessment ? { eu261Assessment } : undefined,
+        data: { html, ...(eu261Assessment ? { eu261Assessment } : {}) },
     });
 
     return {
@@ -132,7 +119,7 @@ async function sendGuardianSMS(to: string, body: string, tripId: string, eu261As
         userId: 'guardian-system',
         tripId,
         type: 'DISRUPTION',
-        title: 'Trip Protection Alert',
+        title: 'FlightAgent flight alert',
         message: body,
         priority: 'CRITICAL',
         data: eu261Assessment ? { eu261Assessment } : undefined,
@@ -383,246 +370,11 @@ async function attemptDispatch(
     }
 }
 
-// ── EVENT CONTENT MAPPING ──
-
-interface FormattedMessage {
-    severityLabel: NotificationSeverityLabel;
-    title: string;
-    shortSummary: string;
-    reason: string;
-    actionHint: string;
-    confidenceTone?: string;
-    emailSubject: string;
-    emailBody: string;
-    smsBody: string;
-    pushBody: string;
-}
-
-const getFlightContext = (event: GuardianEvent): { routeText: string; flightText: string } => {
-    const current = (event.current || {}) as Record<string, unknown>;
-    const origin = String(current.origin || '').trim().toUpperCase();
-    const destination = String(current.destination || '').trim().toUpperCase();
-    const airlineCode = String(current.airlineCode || '').trim().toUpperCase();
-    const flightNumber = String(current.flightNumber || '').trim().toUpperCase();
-    const routeText = origin && destination ? `${origin} to ${destination}` : 'your monitored route';
-    const flightText = airlineCode && flightNumber ? `${airlineCode}${flightNumber}` : 'your monitored flight';
-    return { routeText, flightText };
-};
-
-const deriveSeverityLabel = (event: GuardianEvent, eu261Assessment: Eu261Assessment | null): NotificationSeverityLabel => {
-    const subType = String(event.subType || '').toLowerCase();
-
-    if (
-        event.type === 'CANCELLED' ||
-        event.type === 'GATE_CHANGE' ||
-        event.type === 'DELAY' ||
-        eu261Assessment?.status === 'LIKELY_ELIGIBLE'
-    ) {
-        return 'HIGH';
-    }
-
-    if (
-        event.type === 'DATA_ISSUE' ||
-        subType.includes('risk') ||
-        subType.includes('schedule') ||
-        subType.includes('connection')
-    ) {
-        return 'MEDIUM';
-    }
-
-    return 'LOW';
-};
-
-const shouldUseLowConfidenceTone = (event: GuardianEvent, eu261Assessment: Eu261Assessment | null): boolean => {
-    if (event.type === 'DATA_ISSUE') return true;
-    return eu261Assessment?.status === 'NEEDS_INFO';
-};
-
-const buildEmailBody = (message: Omit<FormattedMessage, 'emailBody' | 'smsBody' | 'pushBody' | 'emailSubject'>): string => {
-    const toneSuffix = message.confidenceTone ? `\n\nConfidence note: ${message.confidenceTone}` : '';
-    return [
-        `Severity: ${message.severityLabel}`,
-        `Summary: ${message.shortSummary}`,
-        `Reason: ${message.reason}`,
-        `Action: ${message.actionHint}`,
-        toneSuffix ? toneSuffix.trim() : '',
-    ].filter(Boolean).join('\n');
-};
-
-const mapEventToMessage = (event: GuardianEvent): FormattedMessage => {
-    const eu261Assessment = getEu261Assessment(event);
-    const eu261Hint = formatEu261Hint(eu261Assessment);
-    const severityLabel = deriveSeverityLabel(event, eu261Assessment);
-    const lowConfidenceTone = shouldUseLowConfidenceTone(event, eu261Assessment)
-        ? 'This signal is preliminary and may change after the next verification cycle.'
-        : undefined;
-    const { routeText, flightText } = getFlightContext(event);
-
-    if (event.type === 'DELAY') {
-        const delayMinutes = Number((event.current as any)?.delayMinutes || 0);
-        const title = `Flight delayed by ${delayMinutes || 'unknown'} minutes`;
-        const shortSummary = delayMinutes > 0
-            ? `${flightText} is now delayed by ${delayMinutes} minutes.`
-            : `${flightText} delay signal detected.`;
-        const reason = `You are receiving this alert because periodic monitoring detected delayed status for ${flightText} on ${routeText}.${eu261Hint}`;
-        const actionHint = 'Check rebooking options and monitor further periodic updates.';
-        const emailSubject = `[${severityLabel}] ${title}`;
-        const emailBody = buildEmailBody({
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-        });
-        return {
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-            emailSubject,
-            emailBody,
-            smsBody: `${title}. ${actionHint}`,
-            pushBody: `${title}. ${actionHint}`,
-        };
-    }
-
-    if (event.type === 'CANCELLED') {
-        const title = 'Flight cancellation detected';
-        const shortSummary = `${flightText} is now marked as cancelled.`;
-        const reason = `You are receiving this alert because the latest monitoring check identified a possible cancellation for ${flightText} on ${routeText}.${eu261Hint}`;
-        const actionHint = 'Contact the airline for rebooking confirmation and keep this notification for claim support.';
-        const emailSubject = `[${severityLabel}] ${title}`;
-        const emailBody = buildEmailBody({
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-        });
-        return {
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-            emailSubject,
-            emailBody,
-            smsBody: `${title}. ${actionHint}`,
-            pushBody: `${title}. ${actionHint}`,
-        };
-    }
-
-    if (event.type === 'GATE_CHANGE') {
-        const departureGate = (event.current as any)?.departureGate || 'unknown';
-        const title = `Gate change detected${departureGate !== 'unknown' ? `: ${departureGate}` : ''}`;
-        const shortSummary = `${flightText} has a gate update.`;
-        const reason = `You are receiving this alert because the latest check identified changed gate information for ${flightText} on ${routeText}.`;
-        const actionHint = 'Head to airport displays and confirm your terminal/gate before boarding.';
-        const emailSubject = `[${severityLabel}] ${title}`;
-        const emailBody = buildEmailBody({
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-        });
-        return {
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-            emailSubject,
-            emailBody,
-            smsBody: `${title}. ${actionHint}`,
-            pushBody: `${title}. ${actionHint}`,
-        };
-    }
-
-    if (event.type === 'DATA_ISSUE') {
-        const title = 'Monitoring confidence reduced';
-        const shortSummary = 'Monitoring currently has low-confidence status data.';
-        const reason = `You are receiving this alert because provider status data for ${flightText} is currently delayed or unavailable.`;
-        const actionHint = 'Monitor updates and verify critical changes directly with the airline.';
-        const emailSubject = `[${severityLabel}] ${title}`;
-        const emailBody = buildEmailBody({
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-        });
-        return {
-            severityLabel,
-            title,
-            shortSummary,
-            reason,
-            actionHint,
-            confidenceTone: lowConfidenceTone,
-            emailSubject,
-            emailBody,
-            smsBody: `${title}. ${actionHint}`,
-            pushBody: `${title}. ${actionHint}`,
-        };
-    }
-
-    const title = 'Trip monitoring update';
-    const shortSummary = 'Guardian detected a minor update.';
-    const reason = 'You are receiving this update because your booked trip is actively monitored.';
-    const actionHint = 'No immediate action required. Keep monitoring for major changes.';
-    const emailSubject = `[${severityLabel}] ${title}`;
-    const emailBody = buildEmailBody({
-        severityLabel,
-        title,
-        shortSummary,
-        reason,
-        actionHint,
-        confidenceTone: lowConfidenceTone,
-    });
-    return {
-        severityLabel,
-        title,
-        shortSummary,
-        reason,
-        actionHint,
-        confidenceTone: lowConfidenceTone,
-        emailSubject,
-        emailBody,
-        smsBody: `${title}. ${actionHint}`,
-        pushBody: `${title}. ${actionHint}`,
-    };
-};
-
-async function shouldThrottleLowSeverity(tripId: string, channel: DeliveryChannel, now: Date): Promise<boolean> {
-    const cutoff = new Date(now.getTime() - LOW_SEVERITY_THROTTLE_MS);
-    const recent = await prisma.notificationDelivery.findFirst({
-        where: {
-            tripId,
-            channel,
-            status: 'sent',
-            sentAt: {
-                gte: cutoff,
-            },
-        },
-        select: { id: true },
-        orderBy: { sentAt: 'desc' },
-    });
-
-    return Boolean(recent);
-}
-
 // ── CORE NOTIFICATION DISPATCHER ──
-
-// Event types that are internal-only and must never result in user emails/SMS/push.
-const INTERNAL_ONLY_TYPES: ReadonlySet<string> = new Set(['DATA_ISSUE']);
+//
+// Whether and what to send is decided by lib/guardian/notificationPolicy.ts.
+// Events without a user-meaningful mapping are recorded as SKIPPED with a reason
+// (history/admin keep them); they are never emailed, texted or pushed.
 
 export async function notifyGuardianEvent(event: GuardianEvent, user: User | null): Promise<void> {
     if (!user) {
@@ -630,47 +382,41 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
         return;
     }
 
-    // DATA_ISSUE events are internal monitoring quality signals — never email users.
-    if (INTERNAL_ONLY_TYPES.has(event.type)) {
-        console.log(`[NOTIFIER] Suppressing user notification for internal event type ${event.type} (trip ${event.tripId}).`);
+    const eventId = event.eventId || `${event.tripId}:${event.type}`;
+    const eu261Assessment = getEu261Assessment(event);
+    const decision = decideNotification(event, eu261Assessment);
+
+    if (!decision.notify) {
+        console.log(`[NOTIFIER] No user notification for ${event.type} (trip ${event.tripId}): ${decision.reason}`);
+        await persistSkippedDelivery(eventId, event.tripId, 'EMAIL');
+        if (event.alertEventId) {
+            await recordSkippedDelivery(event.alertEventId, 'EMAIL', decision.reason);
+        }
         return;
     }
 
-    const eventId = event.eventId || `${event.tripId}:${event.type}`;
-    const eu261Assessment = getEu261Assessment(event);
-    const formatted = mapEventToMessage(event);
     const notifications: Promise<void>[] = [];
-    const now = new Date();
+    const tripUrl = appUrl(`/dashboard/guardian/${event.tripId}`);
 
-    // 1. Queue Email Dispatch safely via Dedup Envelope
+    // 1. Email (IMPORTANT and CRITICAL) via the dedup envelope
     if (user.email) {
-        const emailKey = `${eventId}:EMAIL`;
-        const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'EMAIL', now);
-        if (throttleLow) {
-            await persistSkippedDelivery(eventId, event.tripId, 'EMAIL');
-            if (event.alertEventId) {
-                await recordSkippedDelivery(event.alertEventId, 'EMAIL', 'Low severity notification throttled');
-            }
-        } else {
-            notifications.push(attemptDispatch(
-                () => sendGuardianEmail(user.email!, formatted.emailSubject, formatted.emailBody, event.tripId, eu261Assessment),
-                emailKey,
-                eventId,
-                event.tripId,
-                'EMAIL',
-                event.alertEventId
-            ));
-        }
+        notifications.push(attemptDispatch(
+            () => sendGuardianEmail(user.email!, decision.subject, renderEmailText(decision, tripUrl), renderEmailHtml(decision, tripUrl), event.tripId, eu261Assessment),
+            `${eventId}:EMAIL`,
+            eventId,
+            event.tripId,
+            'EMAIL',
+            event.alertEventId
+        ));
     }
 
-    // 2. SMS stays short + urgent only
-    const requiresSMS = formatted.severityLabel === 'HIGH';
-    if (requiresSMS) {
+    // 2. SMS stays short and CRITICAL only
+    if (decision.severity === 'CRITICAL') {
         const smsKey = `${eventId}:SMS`;
 
         if (user.phoneNumber) {
             notifications.push(attemptDispatch(
-                () => sendGuardianSMS(user.phoneNumber!, formatted.smsBody, event.tripId, eu261Assessment),
+                () => sendGuardianSMS(user.phoneNumber!, decision.smsText, event.tripId, eu261Assessment),
                 smsKey,
                 eventId,
                 event.tripId,
@@ -686,25 +432,16 @@ export async function notifyGuardianEvent(event: GuardianEvent, user: User | nul
         }
     }
 
-    // 3. Optional push channel: short + actionable when user has push token
+    // 3. Optional push channel when the user has a push token
     if (user.pushToken) {
-        const pushKey = `${eventId}:PUSH`;
-        const throttleLow = formatted.severityLabel === 'LOW' && await shouldThrottleLowSeverity(event.tripId, 'PUSH', now);
-        if (throttleLow) {
-            await persistSkippedDelivery(eventId, event.tripId, 'PUSH');
-            if (event.alertEventId) {
-                await recordSkippedDelivery(event.alertEventId, 'PUSH', 'Low severity notification throttled');
-            }
-        } else {
-            notifications.push(attemptDispatch(
-                () => sendGuardianPush(user.id, formatted.title, formatted.pushBody, event.tripId, eventId),
-                pushKey,
-                eventId,
-                event.tripId,
-                'PUSH',
-                event.alertEventId
-            ));
-        }
+        notifications.push(attemptDispatch(
+            () => sendGuardianPush(user.id, decision.subject, decision.pushText, event.tripId, eventId),
+            `${eventId}:PUSH`,
+            eventId,
+            event.tripId,
+            'PUSH',
+            event.alertEventId
+        ));
     }
 
     // 4. Executing Delivery Matrix Non-Blocking

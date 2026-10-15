@@ -143,11 +143,15 @@ export async function replanTripChecks(
     options: { excludeCheckId?: string } = {},
 ): Promise<void> {
     await cancelPendingChecks(tripId, { kinds: REGULAR_KINDS, excludeCheckId: options.excludeCheckId });
+    const planned = planCheckpoints(schedule, now);
+    // nextCheckAt starts as a "now" placeholder at creation; keep it equal to the first real
+    // provider checkpoint (COMPLETE makes no provider call) so it never shows a stale time.
+    const firstCheck = planned.filter((check) => check.kind !== 'COMPLETE').sort((a, b) => a.runAt.getTime() - b.runAt.getTime())[0];
     await prisma.monitoredTrip.update({
         where: { id: tripId },
-        data: { monitoringEndsAt: monitoringEndsAt(schedule) },
+        data: { monitoringEndsAt: monitoringEndsAt(schedule), ...(firstCheck ? { nextCheckAt: firstCheck.runAt } : {}) },
     });
-    await scheduleTripChecks(tripId, planCheckpoints(schedule, now));
+    await scheduleTripChecks(tripId, planned);
 }
 
 // Called once a trip is ACTIVE: one registration lookup (route + schedule),
